@@ -1,0 +1,12 @@
+# Per-task budgets (plan.md §4.4). The scorer reads exactly these four keys under `evaluation:`;
+# a missing key means NO limit, and the harness default (60 min/task) would blow the 12 h run budget.
+# VERIFY(Q2): confirm key names and the `evaluation:` nesting against data/raw/sample_submission/eval_config.yaml.
+# Worst case per plan: 120 tasks x (4.5 + 1.0 min setup) = 11.0 h <= 11.0 h gate (tools/estimate_budget.py).
+evaluation:
+  max_time_minutes: 4.5   # hard cap on the agent loop (asyncio timeout); edits on disk are still graded
+  max_tool_calls: 45      # get_status and submit_patch are free and do not count
+  max_turns: 70
+  timeout_seconds: 300    # VERIFY(Q2): per community source reading this ALSO caps the Phase-2 grading pytest
+                          # run, so we keep the harness default instead of plan's 150 s. The agent-side
+                          # command timeout is min(timeout_seconds, remaining task time), so 300 costs nothing;
+                          # the prompt wraps pytest in `timeout 90` to bound it anyway.

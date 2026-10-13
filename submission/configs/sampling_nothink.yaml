@@ -1,0 +1,8 @@
+# E3 variant: thinking off + strict tool-arg rules in the prompt. Not referenced by agent.yaml (not shipped).
+# To use: point agent.yaml's generate_content_config at this file.
+temperature: 0.2
+top_p: 0.95
+top_k: 64
+max_output_tokens: 4096
+thinking_config:
+  include_thoughts: false
