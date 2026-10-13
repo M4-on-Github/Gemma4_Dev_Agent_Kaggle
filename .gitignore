@@ -1,0 +1,53 @@
+# --- competition data: never redistribute (rules §2.4b) ---
+data/
+runs/
+wheelhouse/
+*.tgz
+*.npz
+*.parquet
+tasks.jsonl
+snapshots/
+graphs/
+embeddings/
+traces/
+trace_*.json
+model_trace.json
+agent_trace.json
+*.jsonl
+!tests/fixtures/*.jsonl
+!experiments/**/summary.jsonl
+
+# --- weights / archives ---
+*.safetensors
+*.zip
+*.bin
+*.pt
+*.pth
+*.gguf
+dist/
+build/
+
+# --- credentials ---
+.env
+*.env
+.kaggle/
+kaggle.json
+access_token
+*.token
+*.pem
+
+# --- python ---
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+
+# --- editors / os ---
+.vscode/
+.idea/
+.DS_Store
+*.swp

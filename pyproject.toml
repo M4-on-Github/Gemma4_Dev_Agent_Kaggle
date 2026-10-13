@@ -1,0 +1,15 @@
+[project]
+name = "gemma4-dev-agent-kaggle"
+version = "0.1.0"
+description = "Tooling for our entry to the Kaggle 'Google - The Gemma 4 Developer Agent' competition (dev tools only; the submission itself is declarative YAML under submission/)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+dependencies = ["pyyaml>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
