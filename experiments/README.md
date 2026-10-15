@@ -744,3 +744,61 @@ still open.
 Remaining work: root-cause the 10 newly surfaced failures (6 `rich`, 4 `fastapi`) listed in
 `gold_failures.txt`; apply the pending `tools/validate_submission.py` cap-assertion change; enter the
 paper track (user's call).
+
+---
+
+## 1j. Real Kaggle gold-control run (full 129 tasks) diverges sharply from the local sweep — 2026-10-15
+
+The local sweep above (§1g/1i) used our own wheel pool, assembled and then curated by
+`tools/curate_wheels.py` before invoking the harness. That curation step — dropping the package under
+test from the pool, pinning `pygments==2.20.0`, filtering non-importable ABI tags — is **pure dev
+tooling**: it runs before the harness is called, so it has no equivalent during real grading. To find
+out what the gold patch actually scores against the organizers' own environment, we ran
+`notebooks/exp000/exp000_gold_control.ipynb` for real on Kaggle (kernel `rainm4/gemma4-exp000-gold-control`,
+version 7, `N_TASKS=129`, no curation — the notebook's `GoldEvaluator` calls the stock `Evaluator`
+directly against whatever `/kaggle/input/datasets/metric/gemma-4-developer-agent-wheelhouse` and the
+harness's own `resolve_wheels_dir`/`_deduplicate_wheels` (highest-version-wins, no curation) hand it).
+
+**Result: 52/129 sound (40.3%), 77/129 failing — far below the local curated 111/129 (86.0%).**
+
+Breaking down all 77 failures by cause (`runs/EXP-000-push6/runs/EXP-000-gold-control/gold_control.jsonl`):
+
+| Cause | Count | Notes |
+|---|---|---|
+| `starlette.routing.Router.__init__()` rejects `on_startup`/`on_shutdown` kwarg | 21 | pool's starlette is too new for the fastapi commit under test; a version-pin class, same family as local class B/C'. |
+| `ModuleNotFoundError: inline_snapshot` | 20 | package is simply **absent** from the pool entirely — not a version conflict, a missing wheel. |
+| `ModuleNotFoundError: dirty_equals` | 5 | same: wheel never shipped in the pool. |
+| `requests` (pytest-httpbin, whole-file grading) | 10 | matches local class D exactly (8 known + `requests_6644`, `requests_7205` newly seen at full scale). |
+| `rich` (pygments pool: ANSI/markdown rendering) | 9 | matches local classes A/C/G plus the 3 tasks (`rich_4070/4079/3782`) our local pygments pin fixes — unpinned here since no curation runs. |
+| `httpx_3672` | 1 | the exact package-under-test-gets-shadowed-by-a-wheel bug `curate_wheels.py`'s "drop the package under test" step exists to fix. |
+| other fastapi (mixed, multiple collection errors) | 11 | same three fastapi causes above, compounding within one task. |
+
+**Confirmed this is not fixable from the submission side.** Read `swegemma/harness/container_setup.py`
+(`install_test_dependencies` → organizer's own pre-baked `/sandbox/setup.py`, run before any agent
+patch exists) and `swegemma/harness/agent_runner.py:375` (the harness's own system prompt to the
+model: *"Environment is offline (no network/PyPI access). All repository and test dependencies are
+ALREADY pre-installed. Do NOT attempt to run pip install or download packages."*). The real grading
+sandbox is offline by design, identically to our test setup — a missing wheel has no live-install
+fallback in either environment. Our submission never gets a hook into which wheels populate the
+sandbox; that is 100% organizer infrastructure, identical for every competitor.
+
+**Precedent**: this is the same situation OpenAI/Princeton hit building SWE-bench Verified — their own
+announcement states human annotators screened the full instance set down to 500 "verified" tasks
+specifically because some were "difficult or impossible to solve" for environment reasons unrelated to
+patch quality, and that curated subset became the standard benchmark. Our local curation (`tools/
+curate_wheels.py`) was solving the same class of problem for our *own* dev sweeps, but — as this real
+run confirms — doesn't tell us what the organizers' actual environment can resolve.
+
+**Practical upshot:**
+1. For our own cohort construction (dev-48 / held-out-24), use the **real Kaggle-confirmed 77-item
+   failure list** (`runs/EXP-000-push6/runs/EXP-000-gold-control/gold_failures.txt`, local-only /
+   gitignored) as `EXCLUDE_IDS`, not the local 18-item list from §1g — the local curated number
+   overstates what's actually winnable in the real grading environment by a wide margin.
+2. The realistic ceiling for an agent on these 129 public tasks, even with a hypothetically perfect
+   patch, is ~40%, not ~86%. Recalibrate expectations for leaderboard score accordingly — this is an
+   environment ceiling, not an agent-quality ceiling, and it affects every competitor equally.
+3. `inline_snapshot` + `dirty_equals` missing wheels (25/77, ~32% of all real failures) look like a
+   clean, verifiable omission in the organizers' published wheel pool (both are real public PyPI test
+   dependencies that fastapi's own test suite imports) — worth flagging on the competition discussion
+   forum if we want to try to get it fixed for everyone (not yet done; needs explicit sign-off before
+   posting anything public).
