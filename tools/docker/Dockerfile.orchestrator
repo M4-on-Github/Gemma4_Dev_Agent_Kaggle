@@ -1,0 +1,24 @@
+# Local orchestrator for EXP-000 gold control.
+#
+# Why this exists: Kaggle cannot run Docker, and swegemma's `subprocess` sandbox never installs
+# per-task dependencies (container_setup.py returns early for SubprocessManager), so gold control
+# there grades every task against the host's packages and fails all of them identically. Q5 needs
+# the real `docker` sandbox, which needs a Linux orchestrator -- this image.
+#
+# Python 3.12 to match the wheelhouse's cp312 wheels (the graded sandbox is 3.13; these are two
+# different environments). Talks to the host daemon over a mounted socket and spawns sibling
+# swebench-sandbox containers.
+FROM python:3.12-slim
+
+RUN apt-get update -qq \
+    && apt-get install -y -qq --no-install-recommends git patch \
+    && rm -rf /var/lib/apt/lists/*
+
+# The competition wheelhouse is supplementary: it ships swegemma/adk_* but not their core
+# transitive deps (pydantic, opentelemetry-api, ...), so resolve those from PyPI. Only the four
+# packages gold control needs are installed -- vllm/torch are not required with RUN_AGENT off.
+COPY wheelhouse/swegemma-*.whl wheelhouse/adk_submission-*.whl \
+     wheelhouse/adk_eval_core-*.whl wheelhouse/google_adk-*.whl /tmp/wh/
+RUN pip install --no-cache-dir docker /tmp/wh/*.whl && rm -rf /tmp/wh
+
+WORKDIR /work

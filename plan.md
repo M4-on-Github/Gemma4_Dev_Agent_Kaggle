@@ -110,12 +110,12 @@ kaggle datasets download metric/gemma-4-developer-agent-wheelhouse -p data/wheel
 ```
 Unzip into empty dirs; treat as untrusted. Then read **in this order**: `HARNESS_README.md`, `sample_submission/`
 (every file), the starter notebook (`ryanholbrook/getting-started-gemma-4-developer-agent`), the wheelhouse
-packages `swegemma 0.2.7`, `adk-submission 0.2.11/0.2.12`, `adk-eval-core 0.1.0`, `google-adk 1.36.1` (read
+packages `swegemma 0.2.11`, `adk-submission 0.2.13`, `adk-eval-core 0.1.0`, `google-adk 1.36.1` (read
 `validate_directory` / `compile_submission` source — this is the real schema).
 
 ### 3.3 Local environment
 - `uv venv --python 3.11` (or whatever the wheelhouse targets — verify); `uv pip install --no-index --find-links data/wheelhouse ...`.
-- No GPU locally (Python 3.13 box, no ML libs). Local work = validation, packing, trace analysis, fake-LLM smoke tests. Truthful evals happen on Kaggle L4×4 (§5).
+- No GPU locally. The orchestrator/agent-side process runs Python 3.12; the grading **sandbox** container is Python 3.13 — pin wheel curation to the sandbox's 3.13 (VERIFIED this phase: wheel ABI tags must match 3.13, not 3.12, or `_deduplicate_wheels` silently picks an unimportable cp312 build — see `experiments/README.md` §1g class E). Local work = validation, packing, trace analysis, fake-LLM smoke tests. Truthful evals happen on Kaggle L4×4 (§5).
 - Optional: install `damsolanke/gemma4-swe-kit` (Apache-2.0) for `g4kit-fake-llm` + `g4kit-harness run` GPU-free smoke tests and `g4kit-scorer-time`.
 
 ### 3.4 Verification checklist (each item: owner, resolved-by date, answer recorded in `experiments/README.md`)
@@ -169,10 +169,12 @@ Hard rules baked into the prompt (each from a measured failure mode):
 
 ### 4.3 Sampling starting values (`configs/sampling.yaml`)
 ```yaml
-temperature: 0.2          # scorer default 1.0 [M]; we A/B 0.1–0.3 vs 1.0
+temperature: 0.2          # matches the official scorer default 0.2 (corrected from an earlier [M] claim of 1.0); we A/B 0.1–0.3 vs 0.2
 top_p: 0.95
 top_k: 64
-max_output_tokens: 4096   # keep ≤ 6–8k to avoid 32k overflow [M]
+max_output_tokens: 4096   # official default is 16384 WITH thinking enabled (thinking tokens share this budget,
+                          # so a small cap truncates thinking first, not output) [VERIFIED]; see E11 below—this
+                          # is a deliberate A/B point, not yet the recommended value
 thinking_config:
   include_thoughts: true  # compiler requires per [M]
   thinking_budget: 256    # see budget math; A/B 0/128/512/1024
@@ -190,8 +192,10 @@ max_tool_calls: 45
 max_turns: 70
 timeout_seconds: 150      # per run_command
 ```
-Sanity: 120 × 4.5 min = 9.0 h worst case for agent time + 2.0 h setup = 11.0 h < 12 h. The reported sample config
-(60 min/100/500/3600 s [M]) would blow the cap — never submit it. `tools/budget_estimator.py` must print the
+Sanity: 120 × 4.5 min = 9.0 h worst case for agent time + 2.0 h setup = 11.0 h < 12 h. The reported sample config values were mis-transcribed earlier; the actual sample is
+(1 min / 10 calls / 60 s / 50 turns [VERIFIED against `sample_submission/eval_config.yaml`]), which is *tighter*
+than ours, not looser — our 4.5 min/45 calls/70 turns/150 s budget is intentionally larger than the sample and
+still fits the 12 h cap per the sanity check below; it would not "blow the cap". `tools/budget_estimator.py` must print the
 projected total (p50 and worst-case) from a cohort run before every submission; **block packing if worst case > 11.0 h**.
 
 ### 4.5 Tooling to build in Phase 1
@@ -264,14 +268,14 @@ Unknown exact quota (Q — record it). Planning assumption: ~30 L4×4 hours/week
 | E1 | Prompt protocol: phased + ledger vs. flat sample prompt | Phased protocol cuts empty-patch and spin rates by > 50% without hurting resolves | empty %, spin %, resolve | 2 runs |
 | E2 | Thinking: off / budget 128 / 256 / 1024 (`thinking_budget` binding per Q3) | Thinking-on reduces malformed (24→2%) and repeats (50→9%) [M] but costs 65–71% of time [M]; a small budget keeps most of the benefit | malformed %, wall, resolve | 4 runs |
 | E3 | Thinking-off + strict tool-arg rules | Strict rules alone get malformed ≈ 1.4% [M], freeing time for more calls | malformed %, calls, resolve | 1 run |
-| E4 | Temperature 0.2 vs 1.0 (scorer default) | Lower T reduces spin and malformed; may reduce exploration diversity | spin %, resolve | 1–2 runs |
+| E4 | Temperature 0.2 (scorer default, matches ours) vs 1.0 | Our default already matches the scorer; this now tests whether *raising* T buys exploration diversity at the cost of more spin/malformed | spin %, resolve | 1–2 runs |
 | E5 | Graph tools on vs off (prompt-demoted vs declared-and-encouraged vs undeclared) | grep-based localization matches graph tools and avoids 0-byte/async gaps [M] | LOCATE calls, resolve | 2 runs |
 | E6 | Budget tuning: calls 35/45/60, time 4/4.5/5 min, timeout 120/150/180 | Resolves saturate around 45 calls; extra time mostly feeds spin | resolve vs wall curve | 3 runs (can reuse traces by truncation analysis first) |
 | E7 | Compaction behavior: state-note cadence 0 / 3 / 5 turns; `read_file` range caps | State notes recover post-compaction context; fewer repeated reads | compactions, repeats after compaction, resolve | 2 runs |
 | E8 | Skills: `pytest-triage/SKILL.md` and `edit-anchoring/SKILL.md` on vs off | Skills reduce failed edit_file calls | failed edit %, resolve | 1 run (if skills load without `run_skill_script`) |
 | E9 | Sub-agent `analyzer` (localization only, via agent_tool) on vs off | Expected negative or neutral [M]; keep only if ≥ +3 tasks | resolve, wall | 1 run |
 | E10 | Submit policy: always submit at 80% budget vs only after VERIFY | Early forced submission raises resolve via partial fixes, kills empty patches | empty %, resolve | 1 run |
-| E11 | `max_output_tokens` 2048 / 4096 / 6144 | 4096 avoids overflow and nudge chains | overflow %, nudges | 1 run |
+| E11 | `max_output_tokens` 2048 / 4096 / 6144 / 16384 (official default) | **Premise corrected**: thinking tokens are drawn from this same budget, so a *small* cap is what starves thinking and triggers overflow/nudge chains, not what avoids them — original hypothesis had this backwards. Expect overflow %% to fall, not rise, as the cap grows toward the 16384 default | overflow %, nudges | 1 run |
 
 Order: E1 → E2/E3 → E4 → E6 → E5 → E10 → E7 → E11 → E8 → E9. After each adopted change, re-run the budget estimator. Every ~5 experiments, run held-out-24 to check we are not overfitting dev-48.
 

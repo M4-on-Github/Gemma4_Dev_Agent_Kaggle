@@ -39,8 +39,9 @@ EXCLUDE_IDS = []                  # known-unsound tasks from a previous gold con
 SUBMISSION_ZIP = "/kaggle/input/datasets/YOUR_KAGGLE_USERNAME/gemma4-sub-v1/submission.zip"   # VERIFY path
 SUBMISSION_B64 = ""               # filled in by tools/build_notebook.py --embed
 
-# Compaction settings: HARNESS_README says interval 5; the hosts' notebook mirror used 15 (plan Q7).
-COMPACTION_INTERVAL = 5
+# Compaction settings: Q7 ANSWERED [V] from HARNESS_README.md section 7.2 (interval 15, overlap 2,
+# token_threshold 14,336, event_retention_size 5). The 'interval 5' reading confused retention with interval.
+COMPACTION_INTERVAL = 15   # [V] HARNESS_README §7.2: interval 15, overlap 2, threshold 14,336, retention 5
 COMPACTION_TOKEN_THRESHOLD = 14336
 
 # %%
@@ -69,11 +70,57 @@ for w in WHEELHOUSE_DIR.glob('*.whl'):
     name = w.name.replace('cu128', '+cu128') if ('cu128' in w.name and '+' not in w.name) else w.name
     if not (tmp_whl / name).exists():
         os.symlink(w, tmp_whl / name)
+# The wheelhouse ships cp312 binary wheels (orchestrator env = Python 3.12), but the grading sandbox and
+# Kaggle's CPU image are Python 3.13 (docker/Dockerfile.sandbox is `python:3.13-slim`). A single bulk
+# `pip install ... check=True` aborts the WHOLE install when one wheel is incompatible, which is what killed
+# the first EXP-000 push (apache_tvm_ffi cp312 on py3.13). Filter by interpreter tag, then assert that the
+# packages we actually need for this run arrived.
+# Import names, not distribution names: the `google_adk` wheel installs the `google.adk`
+# namespace package, so importing 'google_adk' always fails. [V] google_adk-1.36.1.dist-info
+REQUIRED_PKGS = ('swegemma', 'adk_submission', 'adk_eval_core', 'google.adk')
+
+def _wheel_is_compatible(path: Path) -> bool:
+    """True when the wheel's tags intersect this interpreter's supported tags."""
+    try:
+        from packaging.tags import sys_tags
+        from packaging.utils import parse_wheel_filename
+    except Exception:  # noqa: BLE001 - fall back to accepting everything
+        return True
+    try:
+        _, _, _, tags = parse_wheel_filename(path.name)
+    except Exception:  # noqa: BLE001 - odd filename: let pip decide
+        return True
+    supported = set(sys_tags())
+    return any(t in supported for t in tags)
+
+all_wheels = sorted(tmp_whl.glob('*.whl'))
+usable = [w for w in all_wheels if _wheel_is_compatible(w)]
+skipped = [w.name for w in all_wheels if w not in usable]
 T_INSTALL = time.time()
-subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--no-deps', '--force-reinstall',
-                *sorted(str(w) for w in tmp_whl.glob('*.whl'))], check=True)
+proc = subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--no-deps', '--force-reinstall',
+                       *(str(w) for w in usable)], capture_output=True, text=True)
+if proc.returncode != 0:
+    print('bulk install failed; retrying wheel-by-wheel to isolate the bad ones')
+    failed = []
+    for w in usable:
+        r = subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--no-deps', '--force-reinstall', str(w)],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            failed.append(w.name)
+    skipped += failed
 importlib.invalidate_caches()
-print(f'wheelhouse installed in {time.time() - T_INSTALL:.0f}s')
+print(f'wheelhouse: installed {len(all_wheels) - len(skipped)}/{len(all_wheels)} wheels in {time.time() - T_INSTALL:.0f}s '
+      f'(python {sys.version_info.major}.{sys.version_info.minor})')
+if skipped:
+    print(f'  incompatible/failed ({len(skipped)}):', ', '.join(sorted(skipped)[:12]))
+missing = []
+for _pkg in REQUIRED_PKGS:
+    try:
+        importlib.import_module(_pkg)
+    except Exception as _exc:  # noqa: BLE001
+        missing.append(f'{_pkg} ({_exc.__class__.__name__}: {_exc})')
+assert not missing, 'required packages unavailable: ' + '; '.join(missing)
+print('  required packages present:', ', '.join(REQUIRED_PKGS))
 
 DATA_DIR = next(Path(p) for p in ['/kaggle/input/competitions/gemma-4-developer-agent',
                                   '/kaggle/input/gemma-4-developer-agent'] if Path(p).exists())
@@ -135,7 +182,7 @@ if RUN_PHASE0_CHECKS:
 
 # %%
 # ---------------------------------------------------------------- tasks + candidates
-from swegemma.models import load_tasks  # VERIFY import path
+from swegemma.models import load_tasks  # [V] swegemma/models/__init__.py exports load_tasks(path)->list[Task]
 TASKS_PATH = DATA_DIR / 'tasks.jsonl'
 all_tasks = load_tasks(TASKS_PATH)
 from collections import Counter
@@ -156,50 +203,77 @@ if SUBMISSION_B64:
     zipfile.ZipFile(io.BytesIO(base64.b64decode(SUBMISSION_B64))).extractall(AGENT_DIR)
 elif Path(SUBMISSION_ZIP).exists():
     zipfile.ZipFile(SUBMISSION_ZIP).extractall(AGENT_DIR)
+elif not RUN_AGENT and (DATA_DIR / 'sample_submission').is_dir():
+    # A gold-control run never calls a model, so it needs no submission of ours. Fall back to the
+    # official sample_submission: it is a real, schema-valid submission dir, so the model/adapter/limits
+    # validation below still runs for real instead of being skipped.
+    shutil.copytree(DATA_DIR / 'sample_submission', AGENT_DIR, dirs_exist_ok=True)
+    print('no submission supplied; using official sample_submission (RUN_AGENT=False)')
 else:
     raise SystemExit('no submission: set SUBMISSION_ZIP to your uploaded dataset file or embed with tools/build_notebook.py')
 print('agent files:', sorted(str(p.relative_to(AGENT_DIR)) for p in AGENT_DIR.rglob('*') if p.is_file()))
 import yaml
 EVAL = (yaml.safe_load((AGENT_DIR / 'eval_config.yaml').read_text()) or {}).get('evaluation', {}) \
     if (AGENT_DIR / 'eval_config.yaml').exists() else {}
+if not RUN_AGENT:
+    # The official sample eval_config is deliberately tiny (1 min / 10 tool calls) to demo the schema.
+    # Gold control runs no agent loop, so those caps only risk failing a sound task for budget reasons
+    # and corrupting the Q5 answer. Give the grader room; the agent budget is irrelevant here.
+    EVAL = {**EVAL, 'timeout_seconds': 300, 'max_time_minutes': 60.0, 'max_tool_calls': 100}
 print('eval_config:', EVAL)
 
 # %%
 # ---------------------------------------------------------------- vLLM server (hosts' recipe)  # VERIFY
-import litellm, torch
-from adk_submission import ModelRegistry, VllmConfig, VllmServer, discover_adapters
-from google.adk.models.lite_llm import LiteLlm
+# CPU-safe imports only: a gold-control run (RUN_AGENT=False) never loads vLLM/litellm/torch, and on
+# Kaggle's Python 3.13 CPU image those cp312 wheels are not installed at all.
+from adk_submission import ModelRegistry, discover_adapters, discover_declared_models
 from swegemma.config import ALLOWED_ADAPTER_EXTENSIONS, EvalConfig, build_submission_limits
-from swegemma.models.discovery import validate_single_declared_model
-try:
-    from adk_submission.resolvers.generation import install_litellm_reasoning_patch
-    install_litellm_reasoning_patch()
-except Exception as exc:  # noqa: BLE001
-    print('reasoning patch not installed:', exc)
-litellm.drop_params = True
 
 TARGET = 'gemma-4-31b-it-qat-w4a16-ct'
 MODEL_DIR = '/kaggle/input/models/google/gemma-4/other/gemma-4-31b-it-qat-w4a16-ct/2'
-declared = validate_single_declared_model(AGENT_DIR)
-assert str(declared).endswith(TARGET), declared
+# [V] adk_submission.discovery.discover_declared_models(submission_dir) -> set[str]; walks the root
+# agent, sub_agents and agent_tools. There is no `validate_single_declared_model` anywhere in the
+# wheelhouse -- that was an invented name. Exactly one model may be declared, so assert the set size.
+declared = discover_declared_models(str(AGENT_DIR))
+assert len(declared) == 1, f'submission must declare exactly one model, got {sorted(declared)}'
+assert next(iter(declared)).endswith(TARGET), declared
 adapters = discover_adapters(str(AGENT_DIR), adapter_extensions=ALLOWED_ADAPTER_EXTENSIONS)
-gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
-assert gpu_count >= 1, 'no GPU: select the L4 x4 accelerator'
-tp = 4 if gpu_count >= 4 else (2 if gpu_count >= 2 else 1)
-t0 = time.time()
-server = VllmServer(VllmConfig(
-    model=MODEL_DIR, port=8000, host='127.0.0.1', tool_call_parser='gemma4', reasoning_parser='gemma4',
-    default_chat_template_kwargs={'enable_thinking': True}, max_model_len=32768,
-    dtype='bfloat16' if torch.cuda.is_bf16_supported() else 'auto', gpu_memory_utilization=0.90,
-    enable_auto_tool_choice=True, enable_lora=True, max_loras=8, max_lora_rank=128,
-    tensor_parallel_size=tp, startup_timeout=60 * 20), adapter_manifest=adapters)
-server.start()
-SERVER_START_S = round(time.time() - t0, 1)
-print(f'vLLM up in {SERVER_START_S}s (tp={tp}, gpus={gpu_count}) at {server.base_url}')
-target_id = getattr(server, 'effective_model_path', MODEL_DIR)
+# EXP-000 gold control needs no model: it applies each task's reference patch and runs test_patch.
+# Gate the server so a gold-control-only run costs ZERO GPU quota (plan §5.7) and can use a CPU notebook.
+NEED_SERVER = RUN_AGENT or MEASURE_DECODE_SPEED
+server = None
+SERVER_START_S = None
+target_id = None
 models = ModelRegistry()
-for alias in {declared, TARGET}:
-    models.register(alias, LiteLlm(model=f'openai/{target_id}', api_base=server.base_url, api_key='EMPTY'))
+
+if NEED_SERVER:
+    import litellm, torch
+    from adk_submission import VllmConfig, VllmServer
+    from google.adk.models.lite_llm import LiteLlm
+    try:
+        from adk_submission.resolvers.generation import install_litellm_reasoning_patch
+        install_litellm_reasoning_patch()
+    except Exception as exc:  # noqa: BLE001
+        print('reasoning patch not installed:', exc)
+    litellm.drop_params = True
+    gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    assert gpu_count >= 1, 'no GPU: select the L4 x4 accelerator'
+    tp = 4 if gpu_count >= 4 else (2 if gpu_count >= 2 else 1)
+    t0 = time.time()
+    server = VllmServer(VllmConfig(
+        model=MODEL_DIR, port=8000, host='127.0.0.1', tool_call_parser='gemma4', reasoning_parser='gemma4',
+        default_chat_template_kwargs={'enable_thinking': True}, max_model_len=32768,
+        dtype='bfloat16' if torch.cuda.is_bf16_supported() else 'auto', gpu_memory_utilization=0.90,
+        enable_auto_tool_choice=True, enable_lora=True, max_loras=8, max_lora_rank=128,
+        tensor_parallel_size=tp, startup_timeout=60 * 20), adapter_manifest=adapters)
+    server.start()
+    SERVER_START_S = round(time.time() - t0, 1)
+    print(f'vLLM up in {SERVER_START_S}s (tp={tp}, gpus={gpu_count}) at {server.base_url}')
+    target_id = getattr(server, 'effective_model_path', MODEL_DIR)
+    for alias in {declared, TARGET}:
+        models.register(alias, LiteLlm(model=f'openai/{target_id}', api_base=server.base_url, api_key='EMPTY'))
+else:
+    print('vLLM server SKIPPED (RUN_AGENT and MEASURE_DECODE_SPEED are both False) - no GPU required.')
 
 # %%
 # ---------------------------------------------------------------- Q10: decode speed probe
@@ -222,7 +296,7 @@ if MEASURE_DECODE_SPEED:
 # ---------------------------------------------------------------- evaluator helpers
 import asyncio, concurrent.futures
 from google.adk.agents.context_cache_config import ContextCacheConfig
-from google.adk.apps._configs import EventsCompactionConfig  # VERIFY import path (hosts' notebook mirror)
+from google.adk.apps._configs import EventsCompactionConfig  # [V] google/adk/apps/_configs.py:50
 from swegemma.evaluate import Evaluator
 
 def run_sync(fn):
@@ -271,13 +345,14 @@ def append_row(path: Path, row: dict) -> None:
 
 # %%
 # ---------------------------------------------------------------- EXP-000 gold control (Q5)
+# `sound` must exist even when the gold control is skipped, or the agent cell below raises NameError.
 sound = list(candidates)
 if RUN_GOLD_CONTROL:
-    from adk_eval_core.tracing import SessionTrace  # VERIFY import path
+    from adk_eval_core.tracing import SessionTrace  # [V] tracing/__init__.py re-exports it; no-arg ctor
 
     class GoldEvaluator(Evaluator):
         """Phase 1 returns the reference patch; no model call, nothing is shown to any agent."""
-        async def _run_agent_sandbox(self, task, *args, **kwargs):  # VERIFY method name/signature
+        async def _run_agent_sandbox(self, task, *args, **kwargs):  # [V] evaluate.py:194 -> tuple[str, str|None, SessionTrace]
             return task.patch, None, SessionTrace()
 
     gold = GoldEvaluator(make_config(RUN_DIR / 'gold_control'))
@@ -286,7 +361,7 @@ if RUN_GOLD_CONTROL:
         t0 = time.time()
         r = run_sync(lambda: gold.evaluate_task(task=t, task_index=i, total_tasks=len(candidates)))
         row = {'instance_id': t.instance_id, 'repo': t.repo, 'mode': 'gold', 'resolved': bool(r.resolved),
-               'exit': r.test_exit_code, 'seconds': round(time.time() - t0, 1), 'error': (getattr(r, 'error', '') or '')[:300],
+               'exit': r.test_exit_code, 'status': getattr(r, 'status', None), 'seconds': round(time.time() - t0, 1), 'error': (getattr(r, 'error', '') or '')[:300],
                'tail': (r.test_output or '')[-600:]}
         gold_rows.append(row)
         append_row(RUN_DIR / 'gold_control.jsonl', row)
