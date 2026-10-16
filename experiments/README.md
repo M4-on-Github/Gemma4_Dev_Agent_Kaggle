@@ -925,3 +925,63 @@ attempt should either pick an easier/shallower known-affected task (shorter LOCA
 collection and the `ModuleNotFoundError` are reached well inside budget) or do one throwaway diagnostic
 push with a temporarily raised `max_time_minutes` (never the real submission's `eval_config.yaml`) purely
 to confirm the shim fires and resolves a task end-to-end.
+
+## 1l. `RUN_AGENT=True` easier-task follow-up (exp003) — 2026-10-16
+
+Followed up on exp002 by forking the same kernel (new version, same `rainm4/getting-started-gemma-4-developer-agent`
+kernel id — `notebooks/exp003_fork_shim_easy/`, version 2) and re-targeting `TARGET_IDS` at 3 known-affected
+tasks chosen for smallest reference-patch size in `data/raw/tasks.jsonl`, as a cheap proxy for a shallower
+LOCATE phase: `fastapi_14361` (462 chars), `fastapi_14360` (518 chars), `fastapi_14303` (629 chars) — all
+three fail gold-control with `ModuleNotFoundError: No module named 'dirty_equals'`/`'inline_snapshot'` per
+`runs/EXP-000-push6/runs/EXP-000-gold-control/gold_control.jsonl`.
+
+Kernel log per-task summary:
+```
+fastapi_14361: resolved=False, exit_code=2,  patch_chars=511,  tool_calls=20, duration=142.5s
+fastapi_14360: resolved=False, exit_code=-1, patch_chars=0,    tool_calls=23, duration=274.0s
+fastapi_14303: resolved=False, exit_code=2,  patch_chars=1427, tool_calls=45, duration=237.2s
+```
+
+**The patch-size proxy only partly worked.** Only `fastapi_14361` actually completed a clean, self-paced
+VERIFY cycle inside budget (19 tool calls, reached `get_status`/`submit_patch` on its own). The other two
+never got there: `fastapi_14303` spent its entire 45-call budget investigating a different, unrelated bug
+(multi-value query-param handling in `fastapi/dependencies/utils.py`'s `request_params_to_args`/
+`_get_multidict_value`) and never ran the test file that imports `dirty_equals` — its final patch (1432
+chars) was force-submitted only because it hit the tool-call cap (`get_status` at step 49 showed
+`tool_calls_remaining: 0`), not because it finished. `fastapi_14360` (same code area as 14303) fully timed
+out at 274s still inside LOCATE/REPRODUCE, patch_chars=0, never reaching pytest at all — the same failure
+mode as all 3 exp002 tasks. Reference-patch length tracks the size of the *real* fix, not how many
+exploratory tool calls the LOCATE phase needs, so it's a weak proxy for reachability within the 4.5 min cap.
+
+**`fastapi_14361` is the one real shim-mechanism validation, and it found a genuine bug, not an environment
+problem.** Full step trace (`results/traces/trace_fastapi_14361.json`):
+- Steps 4-14: correctly located and fixed the real issue (`_remap_definitions_and_field_mappings` in
+  `fastapi/_compat/v2.py`, missing a `"$ref" not in schema` guard) — matches the real gold patch exactly.
+- Step 16: `pytest -q tests/test_compat.py` fails to collect: `ModuleNotFoundError: No module named
+  'inline_snapshot'`.
+- Step 17: vendors the shim exactly as `swe_coder.md` instructs — `write_file inline_snapshot/__init__.py`.
+- Steps 18-19: reruns both affected test files — 10/10 and 37/37 pass.
+- Step 24: `submit_patch` → `{"patch_size": 1176, "files_changed": 2}` — correct, complete patch.
+- **Step 25 (thinking, verbatim excerpt):** "Wait, `files_changed: 2`. I also created
+  `inline_snapshot/__init__.py`. I should delete it before submitting if it's not supposed to be part of
+  the patch. The instructions say: 'If you ever created a scratch file in /workspace, delete it with
+  run_command before submitting.' ... Wait, the instructions also say [the Known-sandbox-gaps 'this is not
+  cheating' wording] ... Ho[pefully this works out]" — then runs `rm -rf inline_snapshot` anyway.
+- Step 26: `submit_patch` again → `{"patch_size": 512, "files_changed": 1}` — the shim is now stripped from
+  the final submitted patch, which would almost certainly re-trigger the exact `ModuleNotFoundError` the
+  agent had already fixed once the grader reruns `tests/test_compat.py`.
+
+This is a real, reproducible prompt-wording gap, not a one-off: the agent read both rules, noticed the
+tension, and the "cleanup" framing won. **Fix applied** to `submission/prompts/swe_coder.md`: the Hard-rules
+scratch-file line now has an explicit carve-out ("a vendored package from Known sandbox gaps below is not a
+scratch file... never delete it"), and the Known-sandbox-gaps paragraph now ends with an explicit
+keep-it-in-the-patch instruction naming `submit_patch` and `files_changed` directly, so the agent doesn't
+have to resolve the ambiguity itself. Not yet re-validated on a real kernel run.
+
+**Practical upshot:** the shim logic itself is sound — when an agent actually reaches it, it vendors and
+verifies correctly. The bug was entirely in how the prompt framed "do you keep this file," and that's now
+fixed in `swe_coder.md`. Separately, the reachability problem from exp002 is only one-third solved: picking
+tasks by reference-patch size got one task to a clean VERIFY cycle but left two still timing out or
+exhausting budget without ever reaching the shim-triggering test — step count in LOCATE/REPRODUCE, not the
+eventual fix size, is still the real constraint. The next useful check is re-running `fastapi_14361` (or a
+similarly-reachable task) against the patched prompt to confirm the shim now survives into the final patch.
