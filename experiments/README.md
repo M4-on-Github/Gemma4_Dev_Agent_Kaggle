@@ -900,17 +900,28 @@ reached.**
   `inline_snapshot`/`dirty_equals`, and never called `submit_patch`. Only `fastapi_13920` reached
   `edit_file` (5 edits) before being cut off; its final `patch_chars=0` suggests the edits were never
   harvested into a patch before the timeout killed the run.
-- **New finding, found while reading the traces, unrelated to the shim test itself:
-  `total_cached_tokens: 0` in every single step of all 3 traces**, despite 290k-380k total prompt tokens
-  per task. In a growing-context agent loop with zero vLLM prefix-cache hits, every turn reprocesses the
-  entire context from scratch — a plausible root cause for all 3 tasks burning the full 4.5 minutes without
-  reaching VERIFY. Not yet root-caused: could be vLLM prefix caching genuinely not enabled/working in this
-  harness, something about the per-turn prompt defeating the cache (e.g. an unstable prefix), or simply an
-  unpopulated/unwired metric in this trace format (i.e. caching could be working and the field just isn't
-  reporting it) — see `plan.md` §10.1/§10.2 Q11.
+- **`total_cached_tokens: 0` in every single step of all 3 traces, investigated and downgraded to a
+  likely non-issue.** Initial read: zero vLLM prefix-cache hits despite 290k-380k total prompt tokens per
+  task looked like a plausible reason all 3 tasks burned the full 4.5 minutes. Closer look at the raw
+  per-step data changed that conclusion: each trace step's own `prompt_tokens` (not a running total) stays
+  in the 5k-15k range throughout, periodically reset by `EventsCompactionConfig(compaction_interval=15)`;
+  cross-checking `elapsed_s` deltas against these per-step token counts shows ordinary 2-28s step latency
+  tracking how much new content that turn read or wrote, not a quadratic blowup from reprocessing an
+  ever-growing uncached context. Two of the three runs each paid a one-time ~30-38s cost exactly at a
+  compaction event (a real but bounded overhead, not a sign of missing caching). Separately,
+  `google.adk.agents.context_cache_config.ContextCacheConfig` (set in cell 10 with
+  `min_tokens=2048, ttl_seconds=1800, cache_intervals=10`) turns out to be ADK's wrapper around **Vertex
+  AI/Gemini's explicit context-caching API** (`cachedContents`, confirmed via `adk.dev/context/caching`
+  docs) — a GCP-specific feature with no defined meaning against a local vLLM OpenAI-compatible endpoint.
+  `total_cached_tokens: 0` is almost certainly just that field never getting wired up for this backend, not
+  evidence that caching (vLLM's own automatic prefix caching, on by default in vLLM's V1 engine) is broken.
+  Downgraded in `plan.md` accordingly; not worth further investigation unless a future run shows genuine
+  quadratic slowdown.
 
 **Practical upshot:** the image-drift risk is now closed (fork before every real push). The shim-fix
-validation and the zero-cache question are both still open; the latter should be investigated first, since
-if caching really is broken, fixing it might be what lets agent runs reach VERIFY at all within the 4.5 min
-budget — re-running exp002-style tests before that is fixed would likely reproduce the same timeout
-regardless of the shim's correctness.
+validation is still open, and the real lever is step count, not caching: all 3 tasks needed 39-43 tool
+calls to approach VERIFY on genuinely hard FastAPI typing bugs, more than 4.5 min at ~6s/step allows. Next
+attempt should either pick an easier/shallower known-affected task (shorter LOCATE phase, so pytest
+collection and the `ModuleNotFoundError` are reached well inside budget) or do one throwaway diagnostic
+push with a temporarily raised `max_time_minutes` (never the real submission's `eval_config.yaml`) purely
+to confirm the shim fires and resolves a task end-to-end.
