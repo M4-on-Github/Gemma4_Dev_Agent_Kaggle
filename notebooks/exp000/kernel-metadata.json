@@ -8,6 +8,7 @@
   "enable_gpu": false,
   "enable_tpu": false,
   "enable_internet": false,
+  "docker_image_pinning_type": "original",
   "dataset_sources": [
     "metric/gemma-4-developer-agent-wheelhouse"
   ],
