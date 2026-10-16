@@ -861,3 +861,56 @@ faithfully reimplement as a stub, and the shadowing bug is about wheel-resolutio
    patch-generation behavior (teach it: on `ModuleNotFoundError` for a narrow test-only dependency, vendor
    a minimal faithful reimplementation as a new top-level package rather than giving up) — not yet wired
    into the submission's prompting/behavior; that's a separate decision from this research finding.
+
+## 1k. `RUN_AGENT=True` real-harness test (exp001/exp002) — 2026-10-16
+
+§1j's vendoring technique (point 3 above) was since wired into `submission/prompts/swe_coder.md`'s "Known
+sandbox gaps" section. Validating it requires `RUN_AGENT=True` against the real agent harness — a
+gold-control sweep (`RUN_AGENT=False`) never invokes the agent or the submission prompt at all, so it
+cannot test this. Also fixed two real packaging bugs found while preparing the test push: `swe_coder.md`
+said "do not try to pip install", tripping `tools/submission_rules.py`'s `FORBIDDEN_TEXT_PATTERNS` ban on
+the literal phrase (reworded to "vendor the fix yourself, never fetch or install it"); and three vendored
+`dirty_equals` `__repr__` methods used f-strings with literal `{...}` braces, which collide with ADK's
+instruction-template placeholder scan (rewritten as plain string concatenation). Both would have silently
+broken packing or produced confusing warnings had a real submission push hit them first.
+
+**exp001 (`rainm4/gemma4-exp001-shim-check`, fresh kernel id, 3 target tasks: `fastapi_11355`,
+`fastapi_12942`, `fastapi_13920`): failed outright**, before the agent ever ran. Landed on Python 3.13
+despite `docker_image_pinning_type: original`; 9/41 wheelhouse wheels (cp312-only) failed to install, then
+the image's own `vllm==0.19.1` crashed on startup with `ImportError: vllm/_C.abi3.so: undefined symbol
+_ZN3c1013MessageLoggerC1EPKciib` (a torch/CUDA ABI mismatch). This independently confirms discussion/749505:
+`docker_image_pinning_type: original` does nothing for a kernel with no prior push history — it pins to
+whatever image resolves *right now*, not to the wheelhouse's cp312 build target.
+
+**exp002 (`notebooks/exp002_fork_shim_check`, pushed as a new version onto a real user-performed fork of
+the organizers' Getting Started kernel, same 3 target tasks): environment fixed, test goal still not
+reached.**
+- All 41/41 wheelhouse wheels installed cleanly (`"Wheelhouse installation complete."`); vLLM server
+  started with no ABI error (`vLLM server started on http://127.0.0.1:8000/v1 (tp=4)`). **Forking the real
+  kernel — which carries forward an explicit `docker_image: gcr.io/kaggle-private-byod/python@sha256:...`
+  field, a stronger guarantee than `docker_image_pinning_type: original` — is the confirmed fix** for the
+  image-drift risk. Never push a real submission from a fresh kernel id; always fork first.
+- But the actual thing this experiment was built to test — does the vendored inline_snapshot/dirty_equals
+  shim fire and recover a passing patch — **was never exercised**. All 3 tasks: `resolved=False`, durations
+  279.2s / 273.6s / 274.1s, each stopped almost exactly at the `max_time_minutes: 4.5` wall-clock cap
+  (`submission/eval_config.yaml`), not the 45-call tool budget (only 25-39/45 calls used). Per the full
+  traces (`results/traces/trace_fastapi_*.json`, downloaded via `kaggle kernels output`), all 3 agents spent
+  the entire budget stuck in LOCATE/REPRODUCE on genuinely hard FastAPI typing-annotation bugs, never
+  collected pytest against the real test file, never saw the `ModuleNotFoundError` for
+  `inline_snapshot`/`dirty_equals`, and never called `submit_patch`. Only `fastapi_13920` reached
+  `edit_file` (5 edits) before being cut off; its final `patch_chars=0` suggests the edits were never
+  harvested into a patch before the timeout killed the run.
+- **New finding, found while reading the traces, unrelated to the shim test itself:
+  `total_cached_tokens: 0` in every single step of all 3 traces**, despite 290k-380k total prompt tokens
+  per task. In a growing-context agent loop with zero vLLM prefix-cache hits, every turn reprocesses the
+  entire context from scratch — a plausible root cause for all 3 tasks burning the full 4.5 minutes without
+  reaching VERIFY. Not yet root-caused: could be vLLM prefix caching genuinely not enabled/working in this
+  harness, something about the per-turn prompt defeating the cache (e.g. an unstable prefix), or simply an
+  unpopulated/unwired metric in this trace format (i.e. caching could be working and the field just isn't
+  reporting it) — see `plan.md` §10.1/§10.2 Q11.
+
+**Practical upshot:** the image-drift risk is now closed (fork before every real push). The shim-fix
+validation and the zero-cache question are both still open; the latter should be investigated first, since
+if caching really is broken, fixing it might be what lets agent runs reach VERIFY at all within the 4.5 min
+budget — re-running exp002-style tests before that is fixed would likely reproduce the same timeout
+regardless of the shim's correctness.
