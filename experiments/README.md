@@ -985,3 +985,25 @@ tasks by reference-patch size got one task to a clean VERIFY cycle but left two 
 exhausting budget without ever reaching the shim-triggering test — step count in LOCATE/REPRODUCE, not the
 eventual fix size, is still the real constraint. The next useful check is re-running `fastapi_14361` (or a
 similarly-reachable task) against the patched prompt to confirm the shim now survives into the final patch.
+
+## 1m. Shim-fix re-validation (exp004) — 2026-10-16
+
+Rebuilt `dist/submission.zip` from the patched `submission/` tree (`tools/pack_submission.py`; new sha256
+`33eed6f5d49e2b73f6b488f637ea5c86f2d5d1da5cbf42bd7f819ddb3cd9098c`, confirming the prompt content actually
+changed) and pushed a new notebook (`notebooks/exp004_shim_fix_check/`, same forked kernel
+`rainm4/getting-started-gemma-4-developer-agent`, version 3) re-targeting only `fastapi_14361` — the one
+task from exp003 that reliably reaches VERIFY inside budget and is the task whose agent previously deleted
+its own vendored shim.
+
+Result: the agent followed the identical path as exp003 up through vendoring the shim (hit
+`ModuleNotFoundError: No module named 'inline_snapshot'` on `tests/test_schema_ref_pydantic_v2.py`, wrote
+`inline_snapshot/__init__.py`, reran that file and `tests/test_pydantic_v1_v2_mixed.py` — 2/2 and 26/26
+passed) — but this time called `submit_patch` exactly once (`patch_size: 1176, files_changed: 2`), with no
+`rm -rf` and no resubmission. Its own trace shows it explicitly reasoning the shim belongs in the patch:
+"The files changed are `fastapi/_compat/v2.py` and `inline_snapshot/__init__.py`. This is correct." The
+kernel log confirms `resolved=True, exit_code=0, patch_chars=1175, tool_calls=22, duration=194.2s` — the
+same task that failed grading under the unpatched prompt (exp003: `resolved=False, exit_code=2,
+patch_chars=511`) now passes end to end.
+
+**Conclusion:** the scratch-file-vs-vendored-shim prompt fix is validated on a real kernel run. The shim
+mechanism, once an agent reaches it, now survives correctly into the final submitted patch.
