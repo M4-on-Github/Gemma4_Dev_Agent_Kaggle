@@ -1007,3 +1007,41 @@ patch_chars=511`) now passes end to end.
 
 **Conclusion:** the scratch-file-vs-vendored-shim prompt fix is validated on a real kernel run. The shim
 mechanism, once an agent reaches it, now survives correctly into the final submitted patch.
+
+## 1n. Scaled shim-fix check across the remaining cohort (exp005) — 2026-10-17
+
+Batched the remaining 20 of the 25 known-affected tasks (the 25-task `inline_snapshot`/`dirty_equals`
+cohort from `runs/EXP-000-push6/runs/EXP-000-gold-control/gold_control.jsonl`, minus the 5 already covered
+across exp002/exp003/exp004: `fastapi_11355`, `fastapi_12942`, `fastapi_14361`, `fastapi_14360`,
+`fastapi_14303`) into a single kernel session (`notebooks/exp005_shim_fix_batch20/`, same forked kernel,
+version 4) against the already-validated patched prompt. Setup cost 454.6s; total session wall time
+5941.3s (~99 min) for setup + 20 tasks.
+
+**Result: 1/20 resolved.** But the headline number obscures the real finding — of the 20 tasks, only **2**
+ever actually reached the `inline_snapshot`/`dirty_equals` `ModuleNotFoundError` at all (checked by
+searching every step's observation across all 20 traces for that exact error, and for any `write_file` /
+`rm` call touching the shim path):
+
+- `fastapi_14485`: hit the error on `tests/test_annotated.py`, vendored both `inline_snapshot` and
+  `dirty_equals` shims, reran pytest to confirm, then ran out of the 45-call budget one step later with no
+  explicit `submit_patch` call — the harness's forced-submission-at-cap path (same mechanism seen in
+  exp003's `fastapi_14303`) used whatever was in `/workspace`, **shim files included, undeleted**.
+  `resolved=True, exit_code=0, patch_chars=3451`.
+- `fastapi_14356`: also hit the error (on `tests/test_query.py`), vendored both shims correctly and never
+  deleted them, but the agent's actual library fix (a multidict/`ImmutableMultiDict` handling change in
+  `fastapi/dependencies/utils.py`'s `request_params_to_args`) was logically wrong — pytest ran and failed on
+  a real assertion, not a collection error. `resolved=False, exit_code=1, patch_chars=3426`. This is an
+  incorrect-fix case, unrelated to the shim.
+
+The other 18 tasks never wrote a shim file and never saw the `ModuleNotFoundError` in any step — they spent
+their full budget (20-45 tool calls, 238-281s each) on LOCATE/REPRODUCE/EDIT for the task's real bug and
+either ran out of time, ran out of calls, or finished with an unverified/wrong patch, without ever reaching
+the point where the missing test dependency would even matter.
+
+**Conclusion:** the shim-deletion bug (1l/1m) is fixed and clean in this larger sample too — 2/2 tasks that
+reached it kept the shim through to submission, including through the forced-submission-at-cap path, with
+zero regressions. But it is rarely the limiting factor: 18/20 tasks never got far enough to need it at all.
+**The dominant open problem across the known-affected cohort — and most likely across the full hidden set —
+is step budget in LOCATE/REPRODUCE/EDIT, not the shim.** Any further investment should target reducing
+tool-call/time cost per task (tighter LOCATE heuristics, fewer exploratory reads, earlier pytest checks)
+rather than further shim-prompt tuning.
