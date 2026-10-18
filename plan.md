@@ -34,9 +34,8 @@ further or whether E-STOP-class fixes are needed first* (§6.0).
 |---|---|---|---|
 | Oct 17 | Our first scored submission (v1 baseline) | 4 | internal |
 | Oct 25 | LoRA go/no-go gate | 12 | internal |
-| **Nov 2** | Possible entry/merger deadline per one X post | 20 | **[M] — verify on Kaggle before Oct 20; treat Nov 2 as binding until disproven** |
 | **Nov 12 23:59** | Paper track deadline | 30 | [V] |
-| Nov 25 | Main-track entry + team merger deadline | 43 | [V] (but see Nov 2 row) |
+| Nov 25 | Main-track entry + team merger deadline | 43 | **[V] confirmed 2026-10-17 directly from the live Kaggle rules page** — the Nov 2 rumor (one X post, [M]) is **disproven**: entry and team-merger deadlines are both Nov 25 |
 | Nov 30 | Internal freeze; last "risky" submission | 48 | internal |
 | **Dec 1 23:59** | Last submission we allow ourselves (≥ 24 h margin) | 49 | internal |
 | **Dec 2 23:59** | Final submission deadline | 50 | [V] |
@@ -286,7 +285,7 @@ decision (adopt / reject / rerun), follow-ups
 Index table in `experiments/README.md`; the current best config is tagged in git (`v1`, `v2`, …) and its zip SHA256 recorded next to each LB submission.
 
 ### 5.7 GPU quota budgeting
-Unknown exact quota (Q — record it). Planning assumption: ~30 L4×4 hours/week [I]. Allocation: 60% experiments (≈ 5 dev-48 runs), 20% held-out/gates, 20% LoRA canary/training-side checks. If quota is tighter, shrink to smoke-8 for screening and dev-48 only for finalists.
+**Confirmed (2026-10-17, read from the notebook editor's Session options panel): 30 L4×4 hours/week, resets weekly. 10:04 used as of this check (E0 v1's crashed run + v2's in-progress run + exp002–008), ~19:56 remaining this week.** Allocation: 60% experiments (≈ 5 dev-48 runs), 20% held-out/gates, 20% LoRA canary/training-side checks. If quota is tighter, shrink to smoke-8 for screening and dev-48 only for finalists.
 
 ### 5.8 Using the 1 submission/day LB slot
 - Submit **every day** something useful: a candidate config or a calibration probe (e.g., same config twice to measure LB noise once).
@@ -327,11 +326,208 @@ Two consequences for ordering:
    doesn't know when to stop looking," a get_status-based fix is still on the table, just not as the next
    thing to try). The next lever to pull is a **structural, non-arithmetic forced transition** — see E-STOP.
 
+### 6.0.1 Related work (added 2026-10-17, in response to a challenge to ground E-STOP against published SOTA)
+
+Three papers bear directly on this, beyond Agentless/AutoCodeRover already cited in E-STOP(a'):
+
+- **Cuadron et al., "The Danger of Overthinking: Examining the Reasoning-Action Dilemma in Agentic Tasks"
+  (arXiv 2502.08235)** is the closest published match to what exp005/exp006–008 found. It analyzes 4,018
+  agent trajectories **on SWE-bench Verified specifically** and names three failure modes: **analysis
+  paralysis** (the agent's attention drifts into long internal planning with little environment progress —
+  this is exp005's "18/20 never finish LOCATE/REPRODUCE/EDIT," now with an academic name and an independent
+  large-sample confirmation that it's a known, common failure mode, not an artifact of our harness or shim
+  cohort); **rogue actions** (firing multiple actions per step when errors appear, breaking sequential tool
+  protocols — relevant to our malformed-call rate, E2/E3); and **premature disengagement** (the agent decides
+  it's done from its own internal prediction rather than environment feedback — the opposite failure, relevant
+  to E10's submit-policy question). Their finding that higher "overthinking score" trajectories correlate with
+  lower resolve rate, and that *selecting the lower-overthinking-score sample from several rollouts* recovers
+  ~30% better performance at 43% lower cost, is independent support for E2/E3's thinking-budget axis (less
+  internal deliberation, not more, helps) and suggests a **best-of-N / overthinking-score reranking** approach
+  as a candidate E-STOP variant if (a') and (b) both fail — not yet added to the backlog, flagged here for
+  later.
+- **Chen et al., "LocAgent: Graph-Guided LLM Agents for Code Localization" (arXiv 2503.09089, ACL 2025)**
+  reports a fine-tuned Qwen2.5-Coder-32B-Instruct (same size class as our model) using graph-based tools for
+  localization reaches 92.7% file-level accuracy and a **12% Pass@10 resolve-rate lift on SWE-Bench-Lite**
+  purely from the localization method. This is independent, size-matched evidence for E5 (graph tools) and
+  reinforces E-STOP(a')'s choice to route LOCATE through `get_code_neighbors`/`search_similar_code`/
+  `get_code_subgraph` rather than open-ended grep.
+- **"Budget-Aware Tool-Use Enables Effective Agent Scaling" (BATS, arXiv 2511.17006)** confirms the general
+  principle behind exp006–008 (a bigger or better-tracked budget alone doesn't help without a mechanism that
+  acts on it) but does it by injecting a live, harness-generated "remaining budget" block into the agent's
+  context at every tool-call step, rather than asking the model to self-report. This is the code-level
+  mechanism we assumed was unavailable (`experiments/README.md` Q2: declarative-only harness, no templating
+  hook into tool-output text). **Worth a cheap re-check**: confirm in `eval_config.yaml`/harness source whether
+  tool-output text can be templated with a harness-computed value at all before ruling this out again — if
+  it's genuinely impossible, E-STOP(a')/(b) stand as the best available substitutes; if it turns out to be
+  possible, it outranks both, since BATS is closer to removing the decision from the model than either.
+
+### 6.0.2 Research sweep, 2026-10-18 — production-harness grounding + cross-check against E0 traces
+
+Triggered by: before drafting the E-STOP(a') prompt diff, checked both the academic SWE-bench-localization
+literature (beyond §6.0.1's three papers) and how production agent harnesses (Claude Code, Devin, Cursor,
+Windsurf) actually handle "when does the agent stop searching." Cross-checked every claim against E0's own
+trace data where possible, not taken on faith. Documenting all sources found, including ones that turned out
+tangential, so the search isn't silently re-done later.
+
+**Direct empirical cross-check (no new GPU spend, reused E0 traces):** parsed all 48
+`runs/E0-dev48-baseline/runs/E0-dev48-baseline/official/traces/*.json` files for tool-call names. Result:
+**0/48 tasks ever called `get_code_neighbors`, `search_similar_code`, or `get_code_subgraph`** — 861
+`run_command` calls and 563 `read_file` calls, zero graph-tool calls. This confirms the current prompt's
+framing (`submission/prompts/swe_coder.md` line 100: "Graph tools... are optional: use them only if two grep
+queries found nothing") is dead code in practice: grep via `run_command` effectively always "succeeds" (exit
+0, some output) long before any two-failed-greps threshold is reached, so the fallback branch never fires.
+This is now the primary evidence for redesigning E-STOP(a')'s LOCATE as graph-tools-**first**, not
+grep-first-with-structured-fallback.
+
+**Academic sources (new since §6.0.1):**
+- **PatchPilot (Li et al., ICML 2025, arXiv 2502.02747)** frames the exact tradeoff our whole E-STOP line
+  rests on: "agent-based planning" (flexible, high-ceiling, costly, unstable) vs. "rule-based planning" (fixed
+  workflow, efficient, stable, can underperform if the workflow is wrong). Five fixed stages — reproduction →
+  localization → generation → validation → refinement — reach competitive SWE-bench numbers at <$1/instance
+  with higher stability than open-source agentic baselines. Independent, recent (ICML) validation that a fixed
+  staged workflow is a legitimate design point, not a fallback for a weak model — directly supports E-STOP(a')'s
+  approach and roughly matches our existing Protocol's phase structure already.
+- **SweRank (arXiv 2505.07849)** and **SWE-Search (ICLR 2025)** both bound search architecturally rather than
+  through model self-restraint: SweRank via a two-stage retrieve-then-rerank model, SWE-Search via MCTS capped
+  at 3 expansions/node. Same family of evidence as Agentless/AutoCodeRover/LocAgent (§6.0.1): bound through
+  structure, not instruction.
+- **"Model or Harness? An Interaction-Centric Taxonomy for Localizing Agent Failures" (arXiv 2607.28802, 2026)**
+  supplies an attribution rule directly applicable to E0: a failure is harness-attributable, not model-
+  attributable, when a more-capable model under the *same* harness conditions would not have been expected to
+  avoid it. An open-ended search loop with no forcing function is a harness design choice, not a capability
+  gap — i.e. this gives a principled reason E-STOP (a harness/prompt fix) is the correct lever for the
+  54%-stuck-in-LOCATE finding, rather than "wait for a bigger/better model."
+  **This same framing is the governing logic for the LoRA-gate restructuring in §6.2 below**: per this paper's
+  rule, a *harness* gap (unbounded loop) should be fixed at the harness/prompt level first, and *then* a
+  trained-adapter experiment is judged against whatever the harness-fixed baseline already achieves — not a
+  reason to defer LoRA on the calendar, but a reason to keep the LOCATE-adapter idea (§6.2) scoped to the same
+  narrow behavior E-STOP(a') targets, rather than a general capability upgrade.
+- **SWE-Bench Pro (arXiv 2509.16941)** independently tracks a "Stuck in Loop" failure category with real
+  cross-model variance (reports Claude Sonnet 4 markedly higher than Opus 4.1) — confirms this is a named,
+  recognized failure class industry-wide, not an artifact specific to our harness, cohort, or model choice.
+- **Fail-Fast/RestartSmart (arXiv 2608.03222) and EarlyEval (arXiv 2609.02783)** train a small external
+  monitor (0.6B in FailFast's case) to predict trajectory failure from an early prefix and trigger a restart;
+  reported +5.2pp resolution (66.6%→71.8%) at a 25%-false-positive operating point on SWE-bench-Verified, on a
+  different model stack than ours. Not pursued now — it needs a second trained model served alongside the
+  policy, which the current harness (`discover_declared_models()` enforces exactly one base checkpoint,
+  §1/4.1 finding) doesn't straightforwardly support — but flagged as a cheaper alternative to SWE-PRM
+  (§6.2's "future-work" note) if the harness's single-model constraint is ever relaxed: a classifier is much
+  smaller and cheaper to train than a second LLM-based process reward model.
+
+**Industry/production sources (new):**
+- **Claude Code** itself: confirmed (an Anthropic engineer stated this directly) that it uses no RAG/vector
+  index — pure grep-based search. Its only bounding mechanism is the built-in **Explore subagent**: read-only,
+  tool-scoped (no edit tools available to it), used as the *primary* exploration mechanism, not a fallback
+  tried only after softer instructions fail. This is the production analogue of our **E-STOP(b)** (tool-scoped
+  LOCATE-only sub-agent via `agent_tool`) — but deployed as a first-line design choice, which is evidence
+  against treating (b) as contingent purely on (a') underperforming (see the revised note under §6.1's E-STOP
+  row below).
+- **Devin 2.0 "Devin Search"**: a separate agentic search tool with a tiered depth (default vs. opt-in "Deep
+  Mode" for harder queries) — another production pattern for bounding exploration by tier rather than open
+  iteration.
+- **Cursor**: reported (third-party, not an official Cursor engineering post) two-stage embedding search →
+  LLM reranker — bounds by top-k retrieval, structurally identical to what `search_similar_code(k=10)` already
+  gives us if used as the default entry point instead of a fallback.
+- **Windsurf**: shipped a dedicated retrieval model ("SWE-grep") rather than relying on agentic grep loops —
+  another vote for replacing the open loop with a retrieval call as step one.
+- **Community tooling** (Semble, grepai, LSP-routing hooks, a widely-shared HackerNoon post "Claude Code was
+  burning tokens until I put a gate in front of it"): converging, third-party-sourced consensus that grep-first
+  agentic search is recognized in production as token/time-wasteful, and the common fixes are either semantic
+  search tools (maps to our `search_similar_code`) or hard pre-call gates blocking unbounded greps (maps to
+  making LOCATE a fixed-step pipeline with no grep loop, rather than softening the existing cap). Treat the
+  specific numeric claims from these sources (token-savings percentages) as vendor/author-reported, not
+  independently verified.
+
+**Net effect on the plan:**
+1. E-STOP(a')'s LOCATE redesign changes from "grep-first, graph-tools-as-structured-fallback" to
+   **graph-tools-first** (`search_similar_code` as step one, not gated behind two failed greps) — the E0 trace
+   evidence above shows the fallback framing produces zero usage, not occasional usage.
+2. E-STOP(b) (tool-scoped sub-agent) is no longer framed as strictly contingent on (a') falling short of the
+   80% bar — see the updated note in §6.1's backlog table.
+3. LoRA (§6.2) is restructured from a date gate to an evidence gate — see §6.2 below; the new LOCATE-adapter
+   candidate experiment is a direct, data-cheap application of the LocAgent/PatchPilot findings (fine-tune the
+   narrow localization behavior specifically, not general patch-writing capability).
+4. Resolve-rate expectations for E-STOP(a') should be read separately from `phase_reached` movement: LocAgent's
+   headline numbers (92.7%/+12%) come from a *fine-tuned* model; PatchPilot's fixed-workflow numbers (prompt/
+   rule-based, no training) are the closer analogue to what prompt-only E-STOP(a') can realistically achieve.
+
+**Free sanity check, run 2026-10-18 (no GPU/TPU spend):** before committing to the LOCATE-adapter training
+pipeline (§6.2), checked whether `search_similar_code` would actually surface the gold-patch file as a
+top-10 hit if called with the raw issue text as the query. Reading `embedding_utils.embed()` and
+`retrieval_utils.get_similar_nodes()` directly surfaced a prior fact worth recording on its own: **any
+free-text (multi-word) query never reaches the real precomputed-embedding path at all** — `embed()` only
+resolves a near-exact *symbol-name* match (suffix match against known node names), and any query containing
+whitespace is routed straight to the lexical keyword-matching fallback (token-overlap scoring against node
+names/text, documented in the tool's own docstring as "falls back to lexical keyword matching if no symbol
+matches"). So for the way E-STOP(a') actually intends to call it (`search_similar_code(issue text)`), the
+tool's behavior *is* that lexical fallback, not semantic search — there is no separate "real" embedding
+behavior being approximated.
+This repo checkout also has no local `data/graphs`/`data/embeddings` (those are populated only inside the
+Kaggle kernel from the competition's mounted dataset), so the literal tool call can't be exercised here
+regardless — confirming the lexical path was the only one worth testing offline anyway.
+Ran that exact lexical-scoring algorithm (ported verbatim from `retrieval_utils.py`) against real extracted
+source (from `data/local/snapshots/*.tgz`, non-test/non-docs `.py` files parsed into function/class nodes via
+`ast`) for a 19-task sample stratified across the 4 repos with local snapshots (fastapi/rich/requests/httpx —
+same universe as dev-48), querying with each task's `problem_statement` and checking whether any of the
+gold-patch's changed files appeared in the top-10 results. **Result: 11/19 (57.9%) top-10 hits** —
+fastapi 3/6, requests 4/6, rich 3/6, httpx 1/1. Script and full per-task results:
+`scripts/` not yet committed (ran from scratchpad; rerun-able — see note below).
+Reading: 58% is a meaningful, non-trivial hit rate for a pure keyword-overlap heuristic with no training and
+no real embeddings, which (a) supports graph-tools-first in E-STOP(a') — `search_similar_code` called on raw
+issue text is doing *something* useful roughly 3 times in 5, strictly better than doing nothing, even before
+any LOCATE-adapter training; (b) sets a concrete, non-trivial bar for the LOCATE-adapter idea in §6.2 to beat
+— training only pays off if it pushes meaningfully past ~58% top-10 (e.g. via better-chosen tokens, symbol
+extraction from the issue text first per E-STOP(a')'s L1 step, or a trained reranker), not if it merely
+matches what free lexical matching already gets for ~40% of tasks (fastapi/rich sit lower than
+requests/httpx, plausibly because larger repos have more token-collision noise — worth rechecking with a
+larger sample before trusting the per-repo breakdown). Caveats: n=19 is a quick stratified sample, not the
+full 129; "file-level hit" is a looser bar than "exact function/line," so this likely overstates how directly
+useful a bare `search_similar_code` call would be without the L3 `get_code_neighbors`/L4 `get_code_subgraph`
+narrowing steps that follow it in the E-STOP(a') chain; and querying with the raw multi-paragraph issue text
+(rather than an L1-extracted identifier) may be noisier than the chain's actual intended usage — rerunning
+with L1-style extracted identifiers as the query is a natural follow-up before trusting this number further.
+
+**Follow-up run, full N=129, both caveats addressed (2026-10-18):** reran the identical lexical-scorer port
+against the full local universe (all 129 tasks with a snapshot, not the n=19 stratified sample), and added a
+second query variant — an L1-style extracted-identifier query (backtick-quoted spans, dotted.paths,
+snake_case/CamelCase tokens pulled from the issue text, since E-STOP(a')'s actual L1 step isn't written into
+`submission/prompts/swe_coder.md` yet, so there was nothing to port verbatim; this is a reasonable proxy, not
+the literal future prompt). Results:
+- **Raw issue-text query, full N (replicates the first pass at full sample size): 76/129 (58.9%)** —
+  fastapi 35/67 (52.2%), requests 10/13 (76.9%), rich 30/48 (62.5%), httpx 1/1 (100%). Closely matches the
+  n=19 estimate (57.9%), so the first-pass number was not a small-sample artifact.
+- **L1-style extracted-identifier query, full N: 84/129 (65.1%)** — fastapi 45/67 (67.2%), requests 10/13
+  (76.9%), rich 28/48 (58.3%), httpx 1/1 (100%).
+Reading: identifier extraction buys +6.2pp overall (58.9%→65.1%), driven almost entirely by fastapi
+(+15pp, 52.2%→67.2%); requests is identical (query construction doesn't matter when the raw text already
+contains the right tokens); rich is slightly *worse* (-4.2pp) — plausibly because rich issues lean more on
+prose description of visual/rendering behavior than on code-identifier mentions, so stripping prose loses
+signal extraction doesn't replace. Net: query construction is a real, non-trivial lever (not noise), but a
+modest one — it does not come close to closing the gap to LocAgent's 92.7% (that number is from a *fine-tuned*
+model per the correction already on record above), and confirms the §6.2 LOCATE-adapter bar should be read as
+"beat ~65%, not ~59%." This also means E-STOP(a')'s L1 step, when written, should extract identifiers before
+querying `search_similar_code` rather than passing the raw issue text — a free, no-training win consistent
+with the graph-tools-first redesign already adopted above. Script and full per-task results (both variants):
+`scripts/` not yet committed (ran from scratchpad; rerun-able — see note above).
+
+**E-STOP(a') prompt diff written, 2026-10-18 (not yet run):** `submission/prompts/swe_coder.md`'s LOCATE step
+(`# Protocol`, step 1) is rewritten from "grep-first, graph tools optional only after two failed greps" to the
+fixed 4-call sequence this section and §6.0.2 argue for: (a) no-tool-call identifier extraction from the issue
+text (backtick spans, dotted.paths, snake_case/CamelCase — the same heuristic validated above at 65.1%, not
+the raw issue paragraph), (b) `search_similar_code(identifiers)`, (c) `get_code_neighbors` on the top hit, (d)
+`get_code_subgraph` on the candidate list, (e) one `read_file` on the settled-on location — with a single
+`git grep` fallback allowed only if (b) returns nothing, then a mandatory move to REPRODUCE/EDIT either way (no
+open-ended loop). REPRODUCE/EDIT/VERIFY/SUBMIT and the budget-ledger section are untouched from the E0
+baseline (this stays a one-variable change, LOCATE only, per the backlog's "one variable at a time" rule).
+Diff is staged (`git diff --cached -- submission/prompts/swe_coder.md`), not yet run on dev-48 — next step is
+the E0 baseline run finishing first (so E-STOP(a')'s dev-48 result has an E0 number to compare `phase_reached`
+against, per the "done" criteria below), then this prompt runs as E-STOP(a')'s single dev-48 run.
+
 ### 6.1 Experiment backlog (one variable at a time; priority order; cost in dev-48 runs ≈ 3–4 GPU-h each)
 | ID | Variable | Hypothesis | Measure | Cost |
 |---|---|---|---|---|
 | **E0** | **Representative baseline**: current prompt (post shim-fix, pre-ledger-experiments — i.e. roll back the exp006–008 ledger-wording churn, keep the exp001–005 shim fix) on **dev-48** (stratified, unbiased), not the shim cohort | Establishes the real resolve-rate baseline and, critically, the `phase_reached` / `time_cap_hit` vs `calls_cap_hit` distribution across a representative sample — tells us whether exp005's "18/20 never finish LOCATE/REPRODUCE/EDIT" generalizes or was partly an artifact of the shim cohort being unusually hard | resolve % (± Wilson CI), empty %, phase_reached histogram, time_cap_hit % vs calls_cap_hit % | 1 run, highest priority — blocks the Oct 17 LB slot decision and informs whether E-STOP is even needed |
-| **E-STOP** | Structural forced phase transition that does **not** depend on the model doing arithmetic or complying with self-report instructions: (a) cheapest version — shrink the LOCATE+REPRODUCE guide-cap from 16 to ~8–10 calls and add 1–2 worked-example transcripts in the prompt showing a transition to `edit_file` by call ~8–10, no ledger-wording changes; (b) if (a) doesn't move `phase_reached`, escalate to an architectural split: a LOCATE-only sub-agent (via `agent_tool`) that is declaratively given *only* `read_file`/`run_command`/graph tools and a short budget, hands a terse hypothesis back to the root `swe_coder`, which only then gets `edit_file`/`write_file`/`submit_patch` — making "stop exploring" a tool-availability fact, not a request the model has to honor | (a) is cheap and should be tried first; (b) revisits the E9 same-model-delegation regression (12/18→6/18) but changes *why* it might work this time — tool-scoping forces the transition structurally, where the E9 regression was attributed to context/continuity loss across a redundant re-reasoning hop, not to tool availability | phase_reached ≥ EDIT %, resolve, wall; compare against E0 baseline | (a) 1 run; (b) only if (a) fails, 1–2 runs |
+| **E-STOP** | Structural forced phase transition that does **not** depend on the model doing arithmetic or complying with self-report instructions. **(a) dropped 2026-10-17** (shrink-cap + worked-example-transcripts): same category as the already-3×-failed exp006–008 ledger-wording fixes — still prompting the model to self-regulate an open-ended loop, just with a demonstration instead of an instruction. Not adopted; not run. **(a') promoted in its place**, grounded directly in published SOTA rather than a novel guess: Agentless (arXiv 2407.01489) solves this not by prompting an agent to stop searching, but by **not using an open-ended agentic loop for localization at all** — a fixed, non-agentic hierarchical pipeline (file → related-element → edit-location) that runs once and hands off a structured artifact to a separate repair stage. AutoCodeRover (arXiv 2404.05427) stays agentic but bounds each turn with AST-query APIs and SBFL hints instead of raw grep, so the search space shrinks every step instead of being wandered. (a') replicates this at the prompt level, no new infra: replace the open-ended "grep until you feel done" LOCATE phase with a **fixed, small, ordered sequence** using the graph tools already declared in the harness (currently demoted per E5) — e.g. `search_similar_code(issue text)` → `get_code_neighbors(top hit)` → `get_code_subgraph(candidates)` → one `read_file` on the selected location → mandatory transition to EDIT, with no open-ended grep loop interleaved. The stopping decision is removed from the model's hands by making LOCATE a bounded procedure with a fixed step count, not a free-form search the model must judge the end of. **(b)** unchanged — if (a') doesn't move `phase_reached`, escalate to the architectural split: a LOCATE-only sub-agent (via `agent_tool`) declaratively given *only* `read_file`/`run_command`/graph tools and a short budget, which hands a terse hypothesis back to the root `swe_coder` (only then given `edit_file`/`write_file`/`submit_patch`) — this is Agentless's localize/repair separation enforced at the harness level via tool-scoping, making "stop exploring" a tool-availability fact rather than a request | (a') costs nothing new to test (prompt-only, reuses already-declared graph tools) and is the direct harness-level analogue of a technique with a published SWE-bench score, not an untested guess; (b) revisits the E9 same-model-delegation regression (12/18→6/18) but changes *why* it might work this time — tool-scoping forces the transition structurally, where the E9 regression was attributed to context/continuity loss across a redundant re-reasoning hop, not to tool availability | phase_reached ≥ EDIT %, resolve, wall; compare against E0 baseline | (a') 1 run; (b) only if (a') fails, 1–2 runs |
 | E1 | Prompt protocol: phased + ledger vs. flat sample prompt | Phased protocol cuts empty-patch and spin rates by > 50% without hurting resolves | empty %, spin %, resolve | 2 runs |
 | E3 | Thinking-off + strict tool-arg rules | **Promoted ahead of E2/E4**: exp005's two time-cap-hit examples (`fastapi_14360` at 274s against a 270s/4.5min cap) suggest wall-clock, not call count, is the binding constraint for a meaningful share of tasks — if so, cutting per-call latency (less thinking) buys more usable calls within the same wall-clock budget more directly than any LOCATE-cap mechanism. Strict rules alone get malformed ≈ 1.4% [M], freeing time for more calls | malformed %, wall, time_cap_hit %, resolve | 1 run |
 | E2 | Thinking: off / budget 128 / 256 / 1024 (`thinking_budget` binding per Q3) | Thinking-on reduces malformed (24→2%) and repeats (50→9%) [M] but costs 65–71% of time [M]; a small budget keeps most of the benefit — read jointly with E3 and E0's time_cap_hit rate, not in isolation | malformed %, wall, resolve | 4 runs |
@@ -344,17 +540,18 @@ Two consequences for ordering:
 | E8 | Skills: `pytest-triage/SKILL.md` and `edit-anchoring/SKILL.md` on vs off | Skills reduce failed edit_file calls | failed edit %, resolve | 1 run (if skills load without `run_skill_script`) |
 | E9 | Sub-agent `analyzer` (localization only, via agent_tool) on vs off, **same model** | Expected negative or neutral [M] on its own terms (redundant re-reasoning hop, context/continuity loss); superseded in intent by E-STOP(b), which tests a *tool-scoped* sub-agent rather than a same-capability one — run E9 only if E-STOP(b) is inconclusive and a cheap negative-control data point is still wanted | resolve, wall | 1 run |
 
-**Revised order: E0 → E-STOP(a) → E3 → E6 → E1 → E2 → E5 → E4 → E10 → E7 → E11 → E8 → [E-STOP(b) / E9]**.
+**Revised order: E0 → E-STOP(a') → E-STOP(b)/E9 (if escalation triggers, see "done" criteria below) → E3 → E6 → E1 → E2 → E5 → E4 → E10 → E7 → E11 → E8**. Moved 2026-10-18: §6.0.1/§6.0.2 already argue E-STOP(b) is a first-line candidate, not contingent on (a') failing, and §1's E-STOP(a') "done" criteria explicitly name E-STOP(b) as the escalation path when phase_reached barely moves — the old list order (E8 before E-STOP(b)/E9) never reflected that; the prose was ahead of the queue.
 "Done" criteria to move past each of the first three (the ones that matter for the Oct 25 gate):
 - **E0 done** when we have a resolve-rate point estimate + Wilson CI on dev-48 and a `phase_reached` /
   time-cap-vs-calls-cap breakdown. This number is what tells us whether to spend the Oct 17 LB slot now or
-  wait one more day for E-STOP(a)'s result — **send back to drawing board** only if the harness itself looks
+  wait one more day for E-STOP(a')'s result — **send back to drawing board** only if the harness itself looks
   broken (e.g. near-zero empty-patch-free resolves even on tasks that clearly reach VERIFY), not if resolve
   rate is merely low (low-but-nonzero is expected and is a reason to keep iterating, not a reason to stop).
-- **E-STOP(a) done** when ≥ 80% of dev-48 tasks reach `phase_reached ∈ {EDIT, VERIFY, SUBMIT}` (vs whatever
+- **E-STOP(a') done** when ≥ 80% of dev-48 tasks reach `phase_reached ∈ {EDIT, VERIFY, SUBMIT}` (vs whatever
   E0 measures as the baseline) without a net resolve-rate regression — **adopt** at that bar; **escalate to
   E-STOP(b)** if phase_reached barely moves (e.g. < 10pp improvement), since that would mean the problem isn't
-  "LOCATE budget is 2 calls too generous," it's that the model doesn't stop regardless of the cap's size.
+  "LOCATE is unbounded," it's that a fixed-step pipeline still can't force the transition and the stronger
+  tool-scoping lever is needed.
 - **E3 done** when wall-clock time_cap_hit rate drops materially (e.g. ≥ 30% relative) at no malformed-rate
   cost — **adopt**; if time_cap_hit doesn't move, that's evidence time-cap hits are driven by call volume
   (slow convergence to a hypothesis) rather than per-call latency, which redirects weight back toward E-STOP
@@ -375,28 +572,99 @@ a read-only analyzer `AgentTool`. This is a **backlog idea gated behind G-LoRA b
 same-model delegation test is still the cheap thing to run first (§6.1), and a two-adapter architecture only makes
 sense once a single adapter has cleared the canary (step 1 below) and shown it moves behavior at all.
 
-**Gate G-LoRA (Oct 25)** — go only if **all** hold:
-1. Canary passes (Q4): adapter trained to shift logprobs on a fixed prompt shows the shift on the scorer stack (patched vLLM, L4 notebook). If deltas are ~0 → adapters are zeroed → **no-go**, redirect effort to prompts + paper.
-2. KV-cache check: with the adapter loaded, the harness runs 8 tasks without hangs (LoRA shrinks KV to ~7.6k tokens in some reports [M]); rank ≤ 32, exactly 1 adapter [M].
-3. Prompt-only baseline is stable (two consecutive LB submissions without budget/crash failures).
+**Gate restructured 2026-10-18 — evidence gate, not a calendar gate.** Previously written as "Gate G-LoRA
+(Oct 25)," which tied *starting* LoRA work to a date and to E-STOP(a') first failing. Per explicit user
+direction: "we do have time for lora, it should not be gated so long as we are making educated
+guesses/experiments/changes — we should not throw things at the wall." The distinction that resolves this:
+**when training work starts** and **when a trained artifact is trusted enough to ship** are two different
+questions. The date (Oct 25) is dropped. Strict sequencing after E-STOP(a')/prompt-only work is dropped. What
+stays, because it's about correctness risk, not about pacing:
+- Any specific LoRA idea must be **evidence-grounded** — tied to a concrete, already-observed gap (a failure
+  mode in E0/E-STOP traces, a published data recipe at our size class, a free sanity check that confirms the
+  mechanism before spending TPU budget) — not a speculative "let's just try fine-tuning." The LOCATE-adapter
+  idea below is the first one that clears this bar and can start now, in parallel, on the separate TPU v5e-8
+  quota (§1/4.1 — doesn't compete with the L4×4 eval quota dev-48/held-out-24 runs use).
+- The three correctness conditions below are **shipping gates**, unchanged in substance, just no longer tied
+  to a date — they must still all pass before any trained adapter is used in a real LB submission, however
+  early training starts:
+  1. Canary passes (Q4): adapter trained to shift logprobs on a fixed prompt shows the shift on the scorer stack (patched vLLM, L4 notebook). If deltas are ~0 → adapters are zeroed → **no-go**, redirect effort to prompts + paper.
+  2. KV-cache check: with the adapter loaded, the harness runs 8 tasks without hangs (LoRA shrinks KV to ~7.6k tokens in some reports [M]); rank ≤ 32, exactly 1 adapter [M].
+  3. Prompt-only baseline is stable (two consecutive LB submissions without budget/crash failures) — this one
+     is about *not shipping an adapter on top of an unstable baseline*, not about waiting for prompt-only work
+     to finish; it can be satisfied by the v1 baseline already submitted (§6.0/EXP-001) plus one more clean
+     submission, in parallel with adapter training.
 
-If go:
-- **Data**: rejection sampling on dev-48 + public SWE-style trajectories converted to harness tool format (public & free only). Keep only trajectories that resolved **and** had 0 malformed / 0 identical calls; ~200–500 trajectories target. Optionally RFT-style: multiple rollouts per task at T=1.0, keep successes.
+**Candidate experiment — LOCATE-adapter from gold-patch-derived targets (added 2026-10-18, evidence-grounded,
+startable now):** every one of the 129 public tasks ships its gold/reference patch (`task.get('patch')`,
+already used for EXP-000 gold-control sweeps per `experiments/README.md`) — this gives the correct
+file/function/line for all 129 tasks **without running a single rollout**, sidestepping the cost of rejection
+sampling against our 22.9% base resolve rate (EXP-001). Proposed pipeline:
+1. **Free sanity check first, no GPU/TPU spend**: for a sample of gold patches, check whether
+   `search_similar_code(query=<issue text or extracted identifier>, k=10)` already surfaces the gold-patch
+   file/node in its top-k. If yes for most tasks, this directly validates the premise of E-STOP(a')'s
+   graph-tools-first LOCATE redesign (§6.0.2) *and* tells us the adapter's job is narrow (rerank/select, not
+   learn code structure from scratch) before committing to a training pipeline. If no, that's equally useful
+   signal — it would mean `search_similar_code`'s lexical-fallback path (confirmed in `graph.py`'s docstring)
+   isn't matching on issue-text phrasing, which changes what the adapter needs to learn.
+2. **If the sanity check is favorable**: build an SFT set of (issue text → gold file/function/line, expressed
+   as the L2–L4 tool-call sequence from E-STOP(a')'s deterministic chain) for the 129 gold patches, train a
+   narrow LOCATE-only adapter (rank 16, per the existing Training bullet below) targeting exactly the
+   compliance/procedural behavior E-STOP(a') targets at the prompt level — this is the Kimi-Dev precedent
+   below ("train narrow procedural skill non-agentically first, then adapt to agent form") applied directly,
+   and the Model-or-Harness taxonomy's framing (§6.0.2): fix the harness-level gap first, then judge the
+   adapter against the harness-fixed baseline, not the raw E0 baseline.
+3. This is deliberately **scoped to LOCATE only**, not general patch-authoring capability — narrower than the
+   SWE-Gym/R2E-Gym/SWE-agent-LM-32B full-fine-tune recipes below (which target end-to-end resolution), and
+   therefore plausibly within a few hundred gold-derived examples rather than thousands of rollout-sampled ones.
+
+If go (data/training mechanics unchanged from the original spec):
+- **Data**: rejection sampling on dev-48 + public SWE-style trajectories converted to harness tool format (public & free only), **or** the gold-patch-derived LOCATE targets above (no rollouts needed). Keep only trajectories that resolved **and** had 0 malformed / 0 identical calls; ~200–500 trajectories target for the rollout-based route. Optionally RFT-style: multiple rollouts per task at T=1.0, keep successes.
 - **Training**: TRL/PEFT or Unsloth QLoRA on the bf16 31B; rank 16, alpha 32, target attention+MLP projections, 1–2 epochs, LR 1e-4; compute: Kaggle TPU v5e-8 (~20 h/week) via `notebooks/kaggle_tpu_lora.ipynb`, or a rented 1× 80 GB GPU (Unsloth ~22 GB) — decide by cost at gate time.
 - **Adapter verification**: `adapters/<name>/{adapter_config.json, adapter_model.safetensors}`, key names match vLLM expectations (g4kit-check-peft idea), logprob canary again with the real adapter, dev-48 run, size well under 3 GiB.
 - Ship only if dev-48 Δ ≥ +4 tasks and held-out-24 does not regress.
 
-**Note added 2026-10-17 — a candidate training target, not a gate change**: the gate criteria above (canary,
-KV-cache, prompt-only stability) are unchanged. But exp006–008 (see §6.0) showed that three rounds of
-prompt-only attempts to get the model to reliably self-track budget and transition out of LOCATE/REPRODUCE
-all failed, and failed in the same way (never reaching `edit_file` at all). If E-STOP(a)'s cheap prompt-side
-fix (§6.1) also fails to move `phase_reached`, "transition to EDIT by call N reliably" becomes a concrete,
-well-specified **procedural/behavioral** training target for a LoRA — teaching a compliance habit rather than
-new task capability, which is a narrower and plausibly easier data/training problem than general SWE
-capability (candidate data: trajectories truncated/relabeled at the point a human would have switched to
-editing, rather than full successful trajectories only). This is **not** a reason to move the Oct 25 gate or
-its pass/fail criteria; it is only a note for what to train on *if* the gate passes and *if* E-STOP(a) alone
-doesn't already fix the problem for free.
+**Related work (added 2026-10-17)** — how published agentic-SWE training recipes compare to our 31B/LoRA/3 GiB
+constraint, and what validates or complicates the note above:
+
+- **Data-recipe precedent, same or adjacent size class.** SWE-Gym (Pan et al.) fine-tuned open Qwen2.5-Coder
+  7B/14B/32B on successful agent trajectories and reports a ~13.6-point SWE-bench-Verified lift; its 32B
+  checkpoint, data, and verifiers are public. R2E-Gym built 8.1K procedural executable environments (no human
+  issue text) and trained with ~3.3K kept trajectories from a Sonnet-3.5 teacher: 32B full fine-tune 20.6→34.4
+  pass@1. **SWE-agent-LM-32B** (SWE-smith synthetic bugs, RFT) reports 40.2% pass@1 — the best fully-open
+  result in this size class at time of release. **OpenHands-LM-32B** (Qwen2.5-Coder-32B base, trained only on
+  the agent's own successful rollouts) reaches 37.2%. All of these are **full fine-tunes at our model's own
+  size**, not LoRA — none report LoRA-specific numbers, so the magnitude of our adapter's effect is still an
+  open question the canary (Q4) exists to answer, but the *data recipe* (keep only clean, resolved trajectories;
+  optionally synthetic/procedural tasks over scarce human-written ones) directly matches what §6.2's "Data" bullet
+  already specifies.
+- **Kimi-Dev (arXiv 2509.23045, ICLR 2026) is the strongest direct precedent for the training-target note
+  above.** Its central claim is exactly our hypothesis, independently validated at SOTA scale: training on
+  **Agentless-style data first** (non-agentic localization + repair, RL with verifiable rewards — easier to
+  train because the task is narrower and fully supervised) induces reusable **skill priors** (localization,
+  edit, self-reflection) that transfer cheaply into agentic form with only ~5K adapted trajectories, reaching
+  48.6% pass@1 as a full agent (on par with Claude 3.5 Sonnet 241022) from a 60.4%-Verified Agentless base. This
+  is independent confirmation that "train the narrow procedural skill non-agentically, adapt to agent form
+  after" is a working recipe, not a speculative one — raises confidence in the §6.2 training-target note, and
+  suggests that *if* E-STOP(a')/(b) establish a working structural LOCATE→EDIT split, the resulting cleanly-
+  separated trajectories (not just budget-compliance-relabeled ones) are themselves good LoRA training data.
+- **SWE-PRM ("When Agents go Astray," arXiv 2509.02360, NeurIPS 2025 SEA workshop)** is the closest published
+  analogue to "course-correct a stuck agent without retraining the policy": an inference-time process reward
+  model watches the trajectory live and injects taxonomy-guided feedback when it detects redundant exploration
+  or looping, lifting SWE-bench-Verified resolution 40.0%→50.6% (+10.6pp) at ~$0.2/task added cost, with the
+  largest gains on medium/hard tasks. This is a third, more powerful alternative to E-STOP(a')/(b) — a trained
+  monitor rather than a structural prompt or tool-scoping change — but it requires training and serving a
+  second model, which is out of scope given the 3 GiB/single-base-model constraints and the Oct 25 timeline;
+  noted here as a future-work direction, not added to the backlog.
+- **Budget forcing (s1, arXiv 2501.19393)** is the most literal prior art for "force a transition instead of
+  asking for one": the technique suppresses/appends a stop delimiter to end a reasoning segment early, or
+  appends "Wait" to force continuation, giving hard external control over when a model stops "thinking" and
+  starts "answering." Directly analogous to what E-STOP is trying to achieve for "stop searching, start
+  editing" — but it requires token-level control over the generation stream (suppressing/injecting at the
+  sampler), which (per `experiments/README.md` Q2) our declarative harness does not expose. The harness's
+  existing **nudge mechanism** (`tools/analyze_traces.py` `NUDGE_MARKERS`, triggered on truncated tool-call
+  tags) is a fixed, harness-internal instance of the same idea — proof the harness *can* inject synthetic
+  continuation text under some conditions, but not evidence we can trigger it on our own threshold; worth
+  the same cheap re-check as BATS above (§6.0.1) before concluding this path is fully closed.
 
 ---
 
@@ -482,7 +750,7 @@ so either would need its own small multi-model harness outside `submission/`, ru
 | Week | Dates | Deliverables | Decision gate |
 |---|---|---|---|
 | W1 | Oct 13–19 | Join both tracks (all); Kaggle creds + downloads (A); read HARNESS_README/sample/validate source, fill Q1/Q2/Q9 (B); repo scaffold, LICENSE, .gitignore, validator+packer (C); EXP-000 gold control (A); EXP-001 baseline on dev-48 (A/B); **submit v1 Oct 17**; Q6 deadline check | **G1 (Oct 19)**: v1 scored without budget/crash failure; dev/LB gap recorded |
-| W2 | Oct 20–26 | **E0 dev-48 baseline first (added 2026-10-17, see §6.0)**, then E-STOP(a); E3, E6 (A); E1, E2 (B) if E-STOP(a) doesn't already resolve the phase_reached problem; baseline variance (2 seeds); paper outline (B); LoRA canary (C); daily LB submissions once E0 lands | **G-LoRA (Oct 25)** go/no-go (unchanged criteria, see §6.2 note); **G2 (Oct 26)**: held-out-24 on current best |
+| W2 | Oct 20–26 | **E0 dev-48 baseline first (added 2026-10-17, see §6.0)**, then E-STOP(a') (structured-LOCATE pipeline, revised 2026-10-17 — see §6.1); E3, E6 (A); E1, E2 (B) if E-STOP(a') doesn't already resolve the phase_reached problem; baseline variance (2 seeds); paper outline (B); LoRA canary (C); daily LB submissions once E0 lands | **G-LoRA (Oct 25)** go/no-go (unchanged criteria, see §6.2 note); **G2 (Oct 26)**: held-out-24 on current best |
 | W3 | Oct 27–Nov 2 | E6, E5, E10 (A/B); if LoRA go: data generation via rejection sampling (C); confirm team formed before Nov 2 (if binding) | Nov 2 entry/merger (if [M] is true) |
 | W4 | Nov 3–9 | E7, E11, E8 (A); held-out + LB confirm of final paper config; paper draft Nov 5 → figures, CSV release (B/C); LoRA training + adapter verification if go (C) | **G3 (Nov 9)**: paper numbers frozen |
 | W5 | Nov 10–16 | **Paper submit Nov 11**; E9 and remaining ablations; LoRA dev-48 eval if trained | Paper in (Nov 12) |
@@ -508,7 +776,7 @@ so either would need its own small multi-model harness outside `submission/`, ru
 | Entry/merger deadline is Nov 2 not Nov 25 | Unknown [M] | Critical | Verify by Oct 20; form team early regardless |
 | Harness/wheelhouse version changes mid-competition | Med | Med | Pin versions in notebook; rerun gold control + smoke-8 on each change |
 | Subprocess sandbox (the only backend Kaggle supports — no Docker daemon, no Bubblewrap, no user namespaces, confirmed independently by discussion/749743) silently skips `install_editable_package`/`install_test_dependencies`, so per-task test deps (inline_snapshot, dirty_equals, pytest-httpbin, ...) may be missing in **both** our gold-control measurements and the real scorer | Med–High (unconfirmed) | High (undercounts true resolve rate; agent may lose points on tasks whose gold patch would pass if the dep were present) | Vendored-shim fix for inline_snapshot/dirty_equals now wired directly into `submission/prompts/swe_coder.md` (agent creates the shim itself, not just our measurement tooling); requests/httpx import-shadowing and rich/Pygments drift remain unfixed (too deep to shim safely). **Recheck discussion/749439 and /749743 periodically** — an organizer answer confirming/denying that scoring differs from the starter notebook changes how much weight to put on gold-control numbers |
-| Kaggle's default notebook image has drifted past the wheelhouse's build target (cp312/torch 2.10) to cp313/torch 2.11 (discussion/749505); a fresh kernel created today would silently pin to the wrong image even with `docker_image_pinning_type: original`, since that only freezes whatever image exists *at first push* | **Confirmed (2026-10-16), fix confirmed (2026-10-16)** | Critical (notebook/submission fails to install at all, like discussion/749505) | **Reproduced on a brand-new kernel** (`rainm4/gemma4-exp001-shim-check`, first push): landed on Python 3.13 despite `docker_image_pinning_type: original`; 9/41 wheelhouse wheels (cp312-only: msgspec, outlines_core, xgrammar, pybase64, setproctitle, ...) failed to install, then the image's own `vllm==0.19.1` crashed on startup (`ImportError: vllm/_C.abi3.so: undefined symbol _ZN3c1013MessageLoggerC1EPKciib`, a torch/CUDA ABI mismatch) — confirms "original" pinning does nothing for a kernel with no prior push to pin to. **Fix verified**: forking the organizers' Getting Started kernel directly (`notebooks/exp002_fork_shim_check`, carries the real pinned `docker_image: gcr.io/kaggle-private-byod/python@sha256:37c64f7...` field from fork lineage, a stronger guarantee than `docker_image_pinning_type: original`) installed all 41/41 wheelhouse wheels cleanly and started the vLLM server with no ABI error. **Action before any real submission push: push from a fork of the Getting Started kernel, never a fresh kernel id.** |
+| Kaggle's default notebook image has drifted past the wheelhouse's build target (cp312/torch 2.10) to cp313/torch 2.11 (discussion/749505); a fresh kernel created today would silently pin to the wrong image even with `docker_image_pinning_type: original`, since that only freezes whatever image exists *at first push* | **Confirmed (2026-10-16), fix confirmed (2026-10-16)** | Critical (notebook/submission fails to install at all, like discussion/749505) | **Reproduced on a brand-new kernel** (`rainm4/gemma4-exp001-shim-check`, first push): landed on Python 3.13 despite `docker_image_pinning_type: original`; 9/41 wheelhouse wheels (cp312-only: msgspec, outlines_core, xgrammar, pybase64, setproctitle, ...) failed to install, then the image's own `vllm==0.19.1` crashed on startup (`ImportError: vllm/_C.abi3.so: undefined symbol _ZN3c1013MessageLoggerC1EPKciib`, a torch/CUDA ABI mismatch) — confirms "original" pinning does nothing for a kernel with no prior push to pin to. **Fix verified**: forking the organizers' Getting Started kernel directly (`notebooks/exp002_fork_shim_check`, carries the real pinned `docker_image: gcr.io/kaggle-private-byod/python@sha256:37c64f7...` field from fork lineage, a stronger guarantee than `docker_image_pinning_type: original`) installed all 41/41 wheelhouse wheels cleanly and started the vLLM server with no ABI error. **Action before any real submission push: push from a fork of the Getting Started kernel, never a fresh kernel id.** **Regression caught 2026-10-17**: E0's own `notebooks/E0/kernel-metadata.json` and the generator template `notebooks/kernel-metadata.json` (filled by `tools/build_notebook.py`) still had `docker_image_pinning_type: original` instead of the pinned `docker_image` sha — E0 v1 hit the identical `ImportError: vllm/_C.abi3.so: undefined symbol` crash with 0 tasks run. Fixed in both files (explicit `docker_image` field copied from the working exp002–008 configs); E0 v2 repushed and confirmed past server startup. The explicit `docker_image` field works even without going through Kaggle's UI fork action — it is a first-class pinning field, not solely a side effect of forking. |
 | `total_cached_tokens: 0` in every step of all 3 exp002 traces | **Investigated (2026-10-16), likely a reporting gap, not a perf bug** | Low (demoted after per-step timing analysis) | Per-step `elapsed_s` deltas (not just token sums) were checked directly against each step's own `prompt_tokens` (5-15k per call, reset periodically by `EventsCompactionConfig(compaction_interval=15)`): no quadratic blowup pattern — step latency (2-28s) tracks how much new content that turn read/wrote, not cumulative context size. `google.adk.agents.context_cache_config.ContextCacheConfig` is a Vertex AI/Gemini **explicit-caching** feature (`cachedContents` API) per `adk.dev/context/caching` — it has no defined meaning against a local vLLM OpenAI-compatible endpoint, so `total_cached_tokens: 0` most likely just means ADK's cache-usage field isn't wired up for this backend, not that caching (vLLM's own automatic prefix caching, on by default in vLLM's V1 engine) is broken. Not worth further investigation unless a future run shows genuine quadratic slowdown |
 | Real agent runs with `RUN_AGENT=True` (`exp002_fork_shim_check`, 3 known-affected tasks, 4.5 min/task budget) all hit the wall-clock cap in LOCATE/REPRODUCE before ever running pytest on the real test file — the vendored inline_snapshot/dirty_equals shim in `swe_coder.md` had still never been exercised against a real `ModuleNotFoundError` on Kaggle | **Shim exercised, found buggy, fixed and re-validated (2026-10-16)** | Closed (was High) | Followed up with `exp003_fork_shim_easy` (3 tasks picked by smallest reference-patch size as an easier-task proxy: `fastapi_14361`, `fastapi_14360`, `fastapi_14303`). Mixed result, not a clean win: `fastapi_14361` reached VERIFY cleanly inside budget (19 tool calls) — hit `ModuleNotFoundError: No module named 'inline_snapshot'`, vendored the shim exactly per `swe_coder.md`, reran both affected test files (10/10 and 37/37 passed), called `submit_patch` once correctly (1176 chars, 2 files) — **then ran `rm -rf inline_snapshot` and called `submit_patch` again (512 chars, 1 file), stripping the shim from its own final patch.** Its own step-25 reasoning (trace `results/traces/trace_fastapi_14361.json`) shows it explicitly weighing the Hard-rules scratch-file cleanup instruction against the Known-sandbox-gaps "this is not cheating" wording and resolving the ambiguity the wrong way — a real prompt-wording gap, not a one-off fluke. The other two tasks never reached a point where this could even fire: `fastapi_14303` spent its whole 45-call budget on a different, unrelated bug (multidict query-param handling in `fastapi/dependencies/utils.py`) and never ran the `dirty_equals`-importing test file before being force-submitted at the call cap; `fastapi_14360` (same code area) fully timed out (274s) still in LOCATE/REPRODUCE with patch_chars=0. So reference-patch length was a weak/partial proxy for reachability — 1 of 3 "easier" tasks actually completed a clean VERIFY cycle, the other 2 still didn't reach a test run at all. **Fix applied**: `submission/prompts/swe_coder.md` now has an explicit carve-out in the Hard-rules scratch-file line ("a vendored package from Known sandbox gaps below is not a scratch file... never delete it") and an explicit instruction at the end of the Known-sandbox-gaps paragraph to keep the vendored file in the final patch. **Re-validated (2026-10-16)**: re-ran `fastapi_14361` alone (`notebooks/exp004_shim_fix_check`, same kernel version 3) against the patched prompt — agent vendored the shim, verified tests, called `submit_patch` exactly once (1176 chars, 2 files), no deletion, explicitly reasoning "The files changed are `fastapi/_compat/v2.py` and `inline_snapshot/__init__.py`. This is correct." Kernel log: `resolved=True, exit_code=0, patch_chars=1175` — same task that failed grading under the unpatched prompt now passes. **Scaled check (2026-10-17, `exp005_shim_fix_batch20`)**: batched the remaining 20 of the 25 known-affected tasks in one kernel session (version 4). Only 1/20 resolved overall, but the real finding is reachability, not the shim: only 2 of 20 tasks ever hit the `inline_snapshot`/`dirty_equals` `ModuleNotFoundError` at all — the other 18 never got that far in LOCATE/REPRODUCE within the 4.5 min/45-call budget, the same constraint identified in exp002/exp003, now confirmed at 10x the sample size. Of the 2 that did reach it: `fastapi_14485` vendored both shims, verified via pytest, then got forced-submitted at the 45-call cap with the shim files still intact — `resolved=True`; `fastapi_14356` also vendored the shim correctly (never deleted) but failed on a genuinely incorrect real-code fix for an unrelated bug (`request_params_to_args` multidict handling) — unrelated to the shim mechanism. **Conclusion: the shim-deletion bug is fixed and 2-for-2 clean in this batch (no deletions, no regressions); it is just rarely the limiting factor — step-budget in LOCATE/REPRODUCE is the dominant open problem across the known-affected cohort.** |
 | Data leakage into public repo | Low | High (rule breach) | .gitignore + pre-commit size/path check; release only aggregates |
@@ -517,7 +785,7 @@ so either would need its own small multi-model harness outside `submission/`, ru
 | **Step budget in LOCATE/REPRODUCE/EDIT, not shim bugs or ledger self-report, is the dominant open failure mode (exp005, confirmed by exp006–008's negative result)** | **High (now the #1 open risk, added 2026-10-17)** | Critical (caps resolve rate regardless of any other fix) | E0 representative baseline + E-STOP(a)/(b) structural forced-transition experiments (§6.0/§6.1), promoted ahead of thinking-budget and compaction tuning; LoRA noted as a fallback training target (§6.2) if prompt-only fixes fail |
 
 ### 10.2 Open questions (tracked in §3.4; summary)
-LoRA zeroing status (Q4); compile-time tool registry and skill tooling (Q1); exact config schemas (Q2); `thinking_budget` enforcement (Q3); gold-patch failures (Q5); Nov 2 vs Nov 25 (Q6); compaction interval 5 vs 15 (Q7); sandbox setup time (Q8); extension/size limits (Q9); decode/prefill speed and prefix caching (Q10); actual L4×4 quota; public↔hidden gap magnitude for *our* configs; ~~whether the `swe_coder.md` scratch-file-vs-vendored-shim wording fix stops the agent from deleting its own vendored shim before `submit_patch`~~ — **answered (Q11, closed 2026-10-16): yes, re-validated on a real kernel run (`exp004_shim_fix_check`), `fastapi_14361` now resolves cleanly.**
+LoRA zeroing status (Q4); compile-time tool registry and skill tooling (Q1); exact config schemas (Q2); `thinking_budget` enforcement (Q3); gold-patch failures (Q5); Nov 2 vs Nov 25 (Q6); compaction interval 5 vs 15 (Q7); sandbox setup time (Q8); extension/size limits (Q9); decode/prefill speed and prefix caching (Q10); ~~actual L4×4 quota~~ — **answered 2026-10-17: 30 hrs/week, confirmed from the notebook editor's quota display (not exposed via the CLI).** public↔hidden gap magnitude for *our* configs; ~~whether the `swe_coder.md` scratch-file-vs-vendored-shim wording fix stops the agent from deleting its own vendored shim before `submit_patch`~~ — **answered (Q11, closed 2026-10-16): yes, re-validated on a real kernel run (`exp004_shim_fix_check`), `fastapi_14361` now resolves cleanly.**
 
 ### 10.3 References
 - Competition: https://www.kaggle.com/competitions/gemma-4-developer-agent

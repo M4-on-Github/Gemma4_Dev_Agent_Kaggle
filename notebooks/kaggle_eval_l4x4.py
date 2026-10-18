@@ -270,7 +270,7 @@ if NEED_SERVER:
     SERVER_START_S = round(time.time() - t0, 1)
     print(f'vLLM up in {SERVER_START_S}s (tp={tp}, gpus={gpu_count}) at {server.base_url}')
     target_id = getattr(server, 'effective_model_path', MODEL_DIR)
-    for alias in {declared, TARGET}:
+    for alias in {next(iter(declared)), TARGET}:
         models.register(alias, LiteLlm(model=f'openai/{target_id}', api_base=server.base_url, api_key='EMPTY'))
 else:
     print('vLLM server SKIPPED (RUN_AGENT and MEASURE_DECODE_SPEED are both False) - no GPU required.')
