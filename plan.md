@@ -143,6 +143,16 @@ Single root `LlmAgent` **`swe_coder`**. No sub-agents in v1 (same-model delegati
 sessions never compact [M]). Graph tools **declared but demoted** in v1 prompt ("use only if grep fails"); v2 ablates
 on/off (AST omits `async def`; zip hard-links can yield 0-byte graph files [M]).
 
+**Finding (2026-10-17, `data/raw/HARNESS_README.md` §3.4 "Multi-LoRA Serving")**: the single-declared-model rule
+(`validate_single_declared_model` / `discover_declared_models`, §4.5) only constrains the shared **base** checkpoint —
+every `LlmAgent` in the hierarchy (root or any `sub_agents`/`agent_tool` entry) may additionally set its own
+`adapter: <name>`, and the harness auto-discovers and serves all of them via vLLM's multi-LoRA support
+(`--lora-modules`, dynamic `max_loras`/`max_lora_rank`). This means our 12/18→6/18 same-model-delegation regression
+does not rule out a sub-agent architecture outright — it only rules out a sub-agent running the *same* weights as the
+root. A sub-agent with its own adapter (e.g. a `tool_lora`-tuned read-only analyzer feeding a `main_lora`-tuned coder)
+is architecturally supported and untested; see §6.2 for why it's still gated behind G-LoRA rather than
+promoted into the v1/E9 backlog now.
+
 ```yaml
 # submission/agent.yaml (shape to be matched against sample_submission — Q2)
 name: swe_coder
@@ -282,6 +292,15 @@ Order: E1 → E2/E3 → E4 → E6 → E5 → E10 → E7 → E11 → E8 → E9. A
 Cheap pre-screen without GPU: replay logged decision points under the changed prompt (g4kit-replay idea) and count malformed/spin deltas before spending a dev-48 run.
 
 ### 6.2 LoRA / RFT track (gated)
+**Multi-LoRA-per-sub-agent is available** (§4.1 finding, 2026-10-17): the harness serves a distinct adapter per
+`LlmAgent`/`agent_tool` as long as every agent shares the same base model (`validate_single_declared_model` only
+checks the base, not adapters). Sizing fits the 3 GiB submission cap comfortably: rank-16 ≈110–220MB/adapter (8 fit),
+rank-32 ≈220–450MB (6–8 fit), rank-64 ≈450–900MB (3–6 fit), rank-128 max ≈0.9–1.8GB (1–3 fit). The harness's own
+documented example is close to our E9 sub-agent idea: `adapter: main_lora` on the root coder, `adapter: tool_lora` on
+a read-only analyzer `AgentTool`. This is a **backlog idea gated behind G-LoRA below**, not a v1/E9 change — E9's
+same-model delegation test is still the cheap thing to run first (§6.1), and a two-adapter architecture only makes
+sense once a single adapter has cleared the canary (step 1 below) and shown it moves behavior at all.
+
 **Gate G-LoRA (Oct 25)** — go only if **all** hold:
 1. Canary passes (Q4): adapter trained to shift logprobs on a fixed prompt shows the shift on the scorer stack (patched vLLM, L4 notebook). If deltas are ~0 → adapters are zeroed → **no-go**, redirect effort to prompts + paper.
 2. KV-cache check: with the adapter loaded, the harness runs 8 tasks without hangs (LoRA shrinks KV to ~7.6k tokens in some reports [M]); rank ≤ 32, exactly 1 adapter [M].
@@ -308,6 +327,28 @@ from the same traces (E1, E7, E10, E11) — lower novelty, high relevance and ve
 
 **Best New Resource angle**: release `tools/trace_analyzer.py` + `budget_estimator.py` + per-task CSVs
 (aggregates and metrics only, no competition data) as an Apache-2.0 toolkit.
+
+### 7.1b Backlog — speculative paper-track ideas (not committed; standalone harness, not `submission/`)
+Both items below are blocked from the live competition submission by infra, not by choice (the Kaggle harness
+loads exactly one vLLM checkpoint per episode; `discover_declared_models()` enforces this — 2026-10-17 finding),
+so either would need its own small multi-model harness outside `submission/`, run only if primary-study time
+(§7.3) allows:
+- **Small-model-as-searcher ablation**: a cheap/fast model (e.g. an `e2b`-class Gemma-4 variant, if available as
+  a standalone served checkpoint outside the competition harness) does LOCATE/REPRODUCE search-and-report only
+  (terse artifact: file/function/line/hypothesis), handing off to the 31B model for EDIT/VERIFY/SUBMIT. Question:
+  does cost-adjusted resolve rate (tokens or GPU-seconds per resolved task) beat single-31B end-to-end? Ties into
+  the single-agent-vs-multi-agent finding (§4.1: same-model delegation hurt 12/18→6/18) — here the hypothesis is
+  that a *size-asymmetric* handoff (small model cheaply narrows the search space, big model does the precision
+  work) could win where same-size delegation lost due to context/continuity loss, since the division of labor
+  is more clearly asymmetric capability, not a redundant re-reasoning step.
+- **COCONUT-style latent/continuous-reasoning note**: investigated 2026-10-17 and ruled out for the live
+  submission — requires feeding the model's own hidden states back as input embeddings instead of discrete
+  tokens, which needs control of the decode loop/serving code; our declarative-only submission (prompts/agent
+  config/LoRA weight-delta only, vLLM token-in/token-out API, no `inputs_embeds` injection surface) cannot do
+  this, and a LoRA alone can't replicate it since it doesn't change the harness's input/output interface. If
+  revisited at all, it would only be as a from-scratch paper-track side experiment on a separately hosted model
+  (not the competition's patched vLLM), explicitly scoped as "not reproducible within the submission format" —
+  low priority given the primary study already has a clear novelty angle.
 
 ### 7.2 Rubric mapping (0–5 each)
 | Criterion | How we score it |
