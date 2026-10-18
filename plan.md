@@ -18,6 +18,17 @@ Kaggle competition pages once we have access (kaggle.com was unreachable from th
 
 Public LB resolution: 1 task ≈ 0.017 [V]. So a 0.12 → 0.15 move is ~2 tasks on the public half; see §5.6 on noise.
 
+**Status note, 2026-10-17 (plan originally targeted first submission today)**: we have not yet made any
+scored submission. This is a deliberate hold, not neglect: every agent-performance number collected so far
+(exp002–008) is from a small cohort hand-picked for a specific infra bug (the shim-deletion fix), not a
+representative sample, and that cohort's own result (exp005: 1/20 resolved, 18/20 never finishing
+LOCATE/REPRODUCE/EDIT) is not something we're willing to calibrate a first LB attempt against. §6.0/§6.1 adds
+**E0**, a dev-48 representative baseline, as the immediate next step before the first submission — see there
+for why. We still intend to use the Oct 17 slot once E0 lands (same day if it lands early, next day
+otherwise); the Oct 25 LoRA gate is unaffected by this slip since its prerequisites (canary, prompt-only
+stability) don't depend on E0's number, only on the decision of *whether prompt-only is worth stabilizing
+further or whether E-STOP-class fixes are needed first* (§6.0).
+
 ### 1.2 Key dates (UTC) and countdown from Oct 13
 | Date | Event | Days left | Confidence |
 |---|---|---|---|
@@ -208,6 +219,20 @@ than ours, not looser — our 4.5 min/45 calls/70 turns/150 s budget is intentio
 still fits the 12 h cap per the sanity check below; it would not "blow the cap". `tools/budget_estimator.py` must print the
 projected total (p50 and worst-case) from a cohort run before every submission; **block packing if worst case > 11.0 h**.
 
+**Caveat added 2026-10-17**: this math assumes calls and time are roughly interchangeable constraints (45
+calls *or* 4.5 min, whichever binds first, each sized off the same decode-speed estimate). exp005's real-agent
+data complicates that: of the 20 tasks run, several that never finished hit the 274s wall-clock cap, not the
+45-call cap — i.e. **time, not call count, was the binding constraint** for at least some fraction of tasks,
+which the 140-tokens/call budget math in the paragraph above doesn't obviously predict (it would predict
+calls running out first, if every call used close to its 140-token allowance). Two explanations are both
+plausible and not yet distinguished: (a) per-call latency is higher than the 25.5 tok/s + 0.6s overhead
+estimate under real thinking-token usage, so the time cap binds before 45 calls are used — in which case E3
+(thinking-off/strict-rules, promoted in §6.1) directly addresses it; or (b) the 45/4.5min pairing itself is
+miscalibrated for the actual call volume real tasks need before a hypothesis is reachable, independent of
+thinking cost. **Do not re-derive this budget math further until E0 (§6.1) reports the actual
+`time_cap_hit` vs `calls_cap_hit` split on a representative sample** — tuning either number without that
+split risks fixing the wrong constraint. E6 (budget tuning) is promoted in §6.1 partly for this reason.
+
 ### 4.5 Tooling to build in Phase 1
 - `tools/validate_submission.py`: calls the wheelhouse `validate_directory`/`compile_submission` if importable, plus our checks: extension whitelist, no `network|pip|http|mcp|subprocess` strings, declared tools ⊆ registry, `!include` targets exist, eval_config worst case ≤ 11.0 h, no sub-agent referencing an undeclared tool.
 - `tools/pack_submission.py`: `zip -X -r` with `agent.yaml` at root, **copies not hard-links** (0-byte graph-file bug [M]), prints SHA256 + size; refuses if validator fails.
@@ -272,22 +297,71 @@ Unknown exact quota (Q — record it). Planning assumption: ~30 L4×4 hours/week
 
 ## 6. Phase 3 — Research & iteration (Oct 18 → Nov 20)
 
+### 6.0 Backlog reordering, 2026-10-17 — why E0/E-STOP jump the queue
+
+Context forcing this reorder (full detail in `experiments/README.md` §1n and the exp006–008 commit): every
+real-agent number we have so far (exp002/003/004/005, and now exp006–008) comes from a **biased cohort**
+(2–25 tasks hand-picked because they hit the `inline_snapshot`/`dirty_equals` shim bug), not from dev-48. On
+that cohort, exp005 (20 tasks) found only 2/20 ever reached the shim error at all — the other 18/20 spent
+their entire budget on LOCATE/REPRODUCE/EDIT for the task's real bug and never finished. exp006–008 then
+spent three further rounds trying to fix this by making the model self-report its remaining tool-call budget
+more faithfully (`get_status` cadence: vague → fixed checkpoints → mandatory alternation). All three failed
+to achieve compliance, and — the more important result — **in none of the three did the agent call
+`edit_file` even once** on either of the 2 test tasks. That means ledger-accuracy was never the thing standing
+between the agent and a submitted patch: a perfectly-accurate self-tracking agent that still never edits
+scores the same zero as an inaccurate one. We were optimizing a proxy metric (self-report compliance) that
+doesn't correlate with the outcome that scores points (reaching `edit_file` with budget left over to verify
+and submit). This duplicates, almost exactly, the conclusion exp005 already reached on a larger sample one
+day earlier — the two findings weren't connected until this reorder.
+
+Two consequences for ordering:
+
+1. **We have no resolved-rate number on a random/representative sample of the 129 tasks at all.** Every number
+   in this plan and in `experiments/README.md` so far is either a gold-control sanity check (measures infra,
+   not agent behavior) or a run on the shim-biased cohort (measures a rare failure mode, not typical
+   performance). Before spending the Oct 17 LB slot, before deciding the E1–E11 order below still makes sense,
+   and before the Oct 25 LoRA gate, we need **E0** — the dev-48 baseline the plan always intended EXP-001 to
+   be, but which has not actually been run yet (`experiments/README.md` §3's EXP-001 row is still empty).
+2. **Stop iterating on ledger/self-report wording.** Any further self-tracking-accuracy experiment is
+   deprioritized indefinitely (not deleted — if E0/E-STOP below show the bottleneck genuinely is "the model
+   doesn't know when to stop looking," a get_status-based fix is still on the table, just not as the next
+   thing to try). The next lever to pull is a **structural, non-arithmetic forced transition** — see E-STOP.
+
 ### 6.1 Experiment backlog (one variable at a time; priority order; cost in dev-48 runs ≈ 3–4 GPU-h each)
 | ID | Variable | Hypothesis | Measure | Cost |
 |---|---|---|---|---|
+| **E0** | **Representative baseline**: current prompt (post shim-fix, pre-ledger-experiments — i.e. roll back the exp006–008 ledger-wording churn, keep the exp001–005 shim fix) on **dev-48** (stratified, unbiased), not the shim cohort | Establishes the real resolve-rate baseline and, critically, the `phase_reached` / `time_cap_hit` vs `calls_cap_hit` distribution across a representative sample — tells us whether exp005's "18/20 never finish LOCATE/REPRODUCE/EDIT" generalizes or was partly an artifact of the shim cohort being unusually hard | resolve % (± Wilson CI), empty %, phase_reached histogram, time_cap_hit % vs calls_cap_hit % | 1 run, highest priority — blocks the Oct 17 LB slot decision and informs whether E-STOP is even needed |
+| **E-STOP** | Structural forced phase transition that does **not** depend on the model doing arithmetic or complying with self-report instructions: (a) cheapest version — shrink the LOCATE+REPRODUCE guide-cap from 16 to ~8–10 calls and add 1–2 worked-example transcripts in the prompt showing a transition to `edit_file` by call ~8–10, no ledger-wording changes; (b) if (a) doesn't move `phase_reached`, escalate to an architectural split: a LOCATE-only sub-agent (via `agent_tool`) that is declaratively given *only* `read_file`/`run_command`/graph tools and a short budget, hands a terse hypothesis back to the root `swe_coder`, which only then gets `edit_file`/`write_file`/`submit_patch` — making "stop exploring" a tool-availability fact, not a request the model has to honor | (a) is cheap and should be tried first; (b) revisits the E9 same-model-delegation regression (12/18→6/18) but changes *why* it might work this time — tool-scoping forces the transition structurally, where the E9 regression was attributed to context/continuity loss across a redundant re-reasoning hop, not to tool availability | phase_reached ≥ EDIT %, resolve, wall; compare against E0 baseline | (a) 1 run; (b) only if (a) fails, 1–2 runs |
 | E1 | Prompt protocol: phased + ledger vs. flat sample prompt | Phased protocol cuts empty-patch and spin rates by > 50% without hurting resolves | empty %, spin %, resolve | 2 runs |
-| E2 | Thinking: off / budget 128 / 256 / 1024 (`thinking_budget` binding per Q3) | Thinking-on reduces malformed (24→2%) and repeats (50→9%) [M] but costs 65–71% of time [M]; a small budget keeps most of the benefit | malformed %, wall, resolve | 4 runs |
-| E3 | Thinking-off + strict tool-arg rules | Strict rules alone get malformed ≈ 1.4% [M], freeing time for more calls | malformed %, calls, resolve | 1 run |
+| E3 | Thinking-off + strict tool-arg rules | **Promoted ahead of E2/E4**: exp005's two time-cap-hit examples (`fastapi_14360` at 274s against a 270s/4.5min cap) suggest wall-clock, not call count, is the binding constraint for a meaningful share of tasks — if so, cutting per-call latency (less thinking) buys more usable calls within the same wall-clock budget more directly than any LOCATE-cap mechanism. Strict rules alone get malformed ≈ 1.4% [M], freeing time for more calls | malformed %, wall, time_cap_hit %, resolve | 1 run |
+| E2 | Thinking: off / budget 128 / 256 / 1024 (`thinking_budget` binding per Q3) | Thinking-on reduces malformed (24→2%) and repeats (50→9%) [M] but costs 65–71% of time [M]; a small budget keeps most of the benefit — read jointly with E3 and E0's time_cap_hit rate, not in isolation | malformed %, wall, resolve | 4 runs |
+| E6 | Budget tuning: calls 35/45/60, time 4/4.5/5 min, timeout 120/150/180 | **Also promoted**: E0 should report whether failing tasks are overwhelmingly hitting the *time* cap or the *calls* cap (both are logged by `tools/analyze_traces.py`, no new tooling needed) — if time-cap-bound, the 45-call/4.5-min pairing in §4.4 may itself be miscalibrated (see §4.4 note) and is worth revisiting before further prompt tuning, not after | resolve vs wall curve, time_cap_hit % vs calls_cap_hit % | 3 runs (can reuse traces by truncation analysis first) |
+| E5 | Graph tools on vs off (prompt-demoted vs declared-and-encouraged vs undeclared) | grep-based localization matches graph tools and avoids 0-byte/async gaps [M]; also a direct lever on LOCATE call cost if E0 shows LOCATE is where budget is lost | LOCATE calls, resolve | 2 runs |
 | E4 | Temperature 0.2 (scorer default, matches ours) vs 1.0 | Our default already matches the scorer; this now tests whether *raising* T buys exploration diversity at the cost of more spin/malformed | spin %, resolve | 1–2 runs |
-| E5 | Graph tools on vs off (prompt-demoted vs declared-and-encouraged vs undeclared) | grep-based localization matches graph tools and avoids 0-byte/async gaps [M] | LOCATE calls, resolve | 2 runs |
-| E6 | Budget tuning: calls 35/45/60, time 4/4.5/5 min, timeout 120/150/180 | Resolves saturate around 45 calls; extra time mostly feeds spin | resolve vs wall curve | 3 runs (can reuse traces by truncation analysis first) |
-| E7 | Compaction behavior: state-note cadence 0 / 3 / 5 turns; `read_file` range caps | State notes recover post-compaction context; fewer repeated reads | compactions, repeats after compaction, resolve | 2 runs |
-| E8 | Skills: `pytest-triage/SKILL.md` and `edit-anchoring/SKILL.md` on vs off | Skills reduce failed edit_file calls | failed edit %, resolve | 1 run (if skills load without `run_skill_script`) |
-| E9 | Sub-agent `analyzer` (localization only, via agent_tool) on vs off | Expected negative or neutral [M]; keep only if ≥ +3 tasks | resolve, wall | 1 run |
 | E10 | Submit policy: always submit at 80% budget vs only after VERIFY | Early forced submission raises resolve via partial fixes, kills empty patches | empty %, resolve | 1 run |
+| E7 | Compaction behavior: state-note cadence 0 / 3 / 5 turns; `read_file` range caps | State notes recover post-compaction context; fewer repeated reads | compactions, repeats after compaction, resolve | 2 runs |
 | E11 | `max_output_tokens` 2048 / 4096 / 6144 / 16384 (official default) | **Premise corrected**: thinking tokens are drawn from this same budget, so a *small* cap is what starves thinking and triggers overflow/nudge chains, not what avoids them — original hypothesis had this backwards. Expect overflow %% to fall, not rise, as the cap grows toward the 16384 default | overflow %, nudges | 1 run |
+| E8 | Skills: `pytest-triage/SKILL.md` and `edit-anchoring/SKILL.md` on vs off | Skills reduce failed edit_file calls | failed edit %, resolve | 1 run (if skills load without `run_skill_script`) |
+| E9 | Sub-agent `analyzer` (localization only, via agent_tool) on vs off, **same model** | Expected negative or neutral [M] on its own terms (redundant re-reasoning hop, context/continuity loss); superseded in intent by E-STOP(b), which tests a *tool-scoped* sub-agent rather than a same-capability one — run E9 only if E-STOP(b) is inconclusive and a cheap negative-control data point is still wanted | resolve, wall | 1 run |
 
-Order: E1 → E2/E3 → E4 → E6 → E5 → E10 → E7 → E11 → E8 → E9. After each adopted change, re-run the budget estimator. Every ~5 experiments, run held-out-24 to check we are not overfitting dev-48.
+**Revised order: E0 → E-STOP(a) → E3 → E6 → E1 → E2 → E5 → E4 → E10 → E7 → E11 → E8 → [E-STOP(b) / E9]**.
+"Done" criteria to move past each of the first three (the ones that matter for the Oct 25 gate):
+- **E0 done** when we have a resolve-rate point estimate + Wilson CI on dev-48 and a `phase_reached` /
+  time-cap-vs-calls-cap breakdown. This number is what tells us whether to spend the Oct 17 LB slot now or
+  wait one more day for E-STOP(a)'s result — **send back to drawing board** only if the harness itself looks
+  broken (e.g. near-zero empty-patch-free resolves even on tasks that clearly reach VERIFY), not if resolve
+  rate is merely low (low-but-nonzero is expected and is a reason to keep iterating, not a reason to stop).
+- **E-STOP(a) done** when ≥ 80% of dev-48 tasks reach `phase_reached ∈ {EDIT, VERIFY, SUBMIT}` (vs whatever
+  E0 measures as the baseline) without a net resolve-rate regression — **adopt** at that bar; **escalate to
+  E-STOP(b)** if phase_reached barely moves (e.g. < 10pp improvement), since that would mean the problem isn't
+  "LOCATE budget is 2 calls too generous," it's that the model doesn't stop regardless of the cap's size.
+- **E3 done** when wall-clock time_cap_hit rate drops materially (e.g. ≥ 30% relative) at no malformed-rate
+  cost — **adopt**; if time_cap_hit doesn't move, that's evidence time-cap hits are driven by call volume
+  (slow convergence to a hypothesis) rather than per-call latency, which redirects weight back toward E-STOP
+  and E6 over E2.
+
+After each adopted change, re-run the budget estimator. Every ~5 experiments, run held-out-24 to check we are
+not overfitting dev-48.
 
 Cheap pre-screen without GPU: replay logged decision points under the changed prompt (g4kit-replay idea) and count malformed/spin deltas before spending a dev-48 run.
 
@@ -311,6 +385,18 @@ If go:
 - **Training**: TRL/PEFT or Unsloth QLoRA on the bf16 31B; rank 16, alpha 32, target attention+MLP projections, 1–2 epochs, LR 1e-4; compute: Kaggle TPU v5e-8 (~20 h/week) via `notebooks/kaggle_tpu_lora.ipynb`, or a rented 1× 80 GB GPU (Unsloth ~22 GB) — decide by cost at gate time.
 - **Adapter verification**: `adapters/<name>/{adapter_config.json, adapter_model.safetensors}`, key names match vLLM expectations (g4kit-check-peft idea), logprob canary again with the real adapter, dev-48 run, size well under 3 GiB.
 - Ship only if dev-48 Δ ≥ +4 tasks and held-out-24 does not regress.
+
+**Note added 2026-10-17 — a candidate training target, not a gate change**: the gate criteria above (canary,
+KV-cache, prompt-only stability) are unchanged. But exp006–008 (see §6.0) showed that three rounds of
+prompt-only attempts to get the model to reliably self-track budget and transition out of LOCATE/REPRODUCE
+all failed, and failed in the same way (never reaching `edit_file` at all). If E-STOP(a)'s cheap prompt-side
+fix (§6.1) also fails to move `phase_reached`, "transition to EDIT by call N reliably" becomes a concrete,
+well-specified **procedural/behavioral** training target for a LoRA — teaching a compliance habit rather than
+new task capability, which is a narrower and plausibly easier data/training problem than general SWE
+capability (candidate data: trajectories truncated/relabeled at the point a human would have switched to
+editing, rather than full successful trajectories only). This is **not** a reason to move the Oct 25 gate or
+its pass/fail criteria; it is only a note for what to train on *if* the gate passes and *if* E-STOP(a) alone
+doesn't already fix the problem for free.
 
 ---
 
@@ -396,7 +482,7 @@ so either would need its own small multi-model harness outside `submission/`, ru
 | Week | Dates | Deliverables | Decision gate |
 |---|---|---|---|
 | W1 | Oct 13–19 | Join both tracks (all); Kaggle creds + downloads (A); read HARNESS_README/sample/validate source, fill Q1/Q2/Q9 (B); repo scaffold, LICENSE, .gitignore, validator+packer (C); EXP-000 gold control (A); EXP-001 baseline on dev-48 (A/B); **submit v1 Oct 17**; Q6 deadline check | **G1 (Oct 19)**: v1 scored without budget/crash failure; dev/LB gap recorded |
-| W2 | Oct 20–26 | Eval harness notebook + trace analyzer finalized (C); E1, E2 (B); E3, E4 (A); baseline variance (2 seeds); paper outline (B); LoRA canary (C); daily LB submissions | **G-LoRA (Oct 25)** go/no-go; **G2 (Oct 26)**: held-out-24 on current best |
+| W2 | Oct 20–26 | **E0 dev-48 baseline first (added 2026-10-17, see §6.0)**, then E-STOP(a); E3, E6 (A); E1, E2 (B) if E-STOP(a) doesn't already resolve the phase_reached problem; baseline variance (2 seeds); paper outline (B); LoRA canary (C); daily LB submissions once E0 lands | **G-LoRA (Oct 25)** go/no-go (unchanged criteria, see §6.2 note); **G2 (Oct 26)**: held-out-24 on current best |
 | W3 | Oct 27–Nov 2 | E6, E5, E10 (A/B); if LoRA go: data generation via rejection sampling (C); confirm team formed before Nov 2 (if binding) | Nov 2 entry/merger (if [M] is true) |
 | W4 | Nov 3–9 | E7, E11, E8 (A); held-out + LB confirm of final paper config; paper draft Nov 5 → figures, CSV release (B/C); LoRA training + adapter verification if go (C) | **G3 (Nov 9)**: paper numbers frozen |
 | W5 | Nov 10–16 | **Paper submit Nov 11**; E9 and remaining ablations; LoRA dev-48 eval if trained | Paper in (Nov 12) |
@@ -428,6 +514,7 @@ so either would need its own small multi-model harness outside `submission/`, ru
 | Data leakage into public repo | Low | High (rule breach) | .gitignore + pre-commit size/path check; release only aggregates |
 | `.sh`/banned strings in zip → rejection | Low | Med | Validator whitelist; fake-LLM smoke before each submission |
 | Paper reads as generated / unverifiable | Med | Med | Human-written, numbers from our CSVs, release code + seeds |
+| **Step budget in LOCATE/REPRODUCE/EDIT, not shim bugs or ledger self-report, is the dominant open failure mode (exp005, confirmed by exp006–008's negative result)** | **High (now the #1 open risk, added 2026-10-17)** | Critical (caps resolve rate regardless of any other fix) | E0 representative baseline + E-STOP(a)/(b) structural forced-transition experiments (§6.0/§6.1), promoted ahead of thinking-budget and compaction tuning; LoRA noted as a fallback training target (§6.2) if prompt-only fixes fail |
 
 ### 10.2 Open questions (tracked in §3.4; summary)
 LoRA zeroing status (Q4); compile-time tool registry and skill tooling (Q1); exact config schemas (Q2); `thinking_budget` enforcement (Q3); gold-patch failures (Q5); Nov 2 vs Nov 25 (Q6); compaction interval 5 vs 15 (Q7); sandbox setup time (Q8); extension/size limits (Q9); decode/prefill speed and prefix caching (Q10); actual L4×4 quota; public↔hidden gap magnitude for *our* configs; ~~whether the `swe_coder.md` scratch-file-vs-vendored-shim wording fix stops the agent from deleting its own vendored shim before `submit_patch`~~ — **answered (Q11, closed 2026-10-16): yes, re-validated on a real kernel run (`exp004_shim_fix_check`), `fastapi_14361` now resolves cleanly.**
