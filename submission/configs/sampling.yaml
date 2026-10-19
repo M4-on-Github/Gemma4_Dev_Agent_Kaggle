@@ -2,15 +2,19 @@
 # Allowed fields per HARNESS_README mirror: temperature, top_p, top_k, max_output_tokens, presence_penalty,
 # frequency_penalty, stop_sequences, response_mime_type, seed, thinking_config.
 #
-# EXP-003 (public-budget-shape test, 2026-10-19): max_output_tokens and thinking_budget match
-# verracodeguacas/gemma-4-agent-budget-fit-single-agent (confirmed directly from its notebook source).
-# top_k dropped: the public config doesn't set it; left out here too rather than guessing a value for it.
+# EXP-003 (public-budget-shape test, 2026-10-19): this is E0's config, restored after EXP-003's dev-48 test
+# run (notebooks/exp010_public_budget_dev48/, results in experiments/EXP-003-public-budget.md). That run's
+# pre-push review confirmed thinking_budget IS forwarded to vLLM as a real cap (harness source:
+# adk_submission/resolvers/generation.py sets extra_body["thinking_token_budget"]; server.py enables the
+# matching logits processor) -- the VERIFY(Q3) note below describing it as possibly-ignored was wrong and is
+# corrected here, not deleted, since the surrounding history is useful context.
 temperature: 0.2          # scorer default is 1.0; E4 A/Bs 0.2 vs 1.0
 top_p: 0.95
-max_output_tokens: 8192   # was 4096 (E0); vLLM refuses prompt+output above 32,768 tokens total
+top_k: 64
+max_output_tokens: 4096   # keeps prompt + output well under the 32,768 context wall; E11 tries 2048/6144
 thinking_config:
   include_thoughts: true  # false = thinking off (sent as enable_thinking=false); E2/E3 ablate this
-  thinking_budget: 4096   # was 256 (E0); VERIFY(Q3): community source reading says the harness does NOT
-                          # forward this budget to vLLM (only enable_thinking on/off), so max_output_tokens
-                          # is the real cap. Keep it anyway: harmless if ignored, binding if a harness
-                          # update enforces it.
+  thinking_budget: 256    # CORRECTED 2026-10-19: this IS forwarded to vLLM as a real generation cap (see
+                          # header note above), not merely harmless-if-ignored as VERIFY(Q3) originally
+                          # guessed. EXP-003 raised this to 4096 as part of a bundled change and did not
+                          # isolate its effect; keep at 256 (E0's scored value) until it's tested alone.
