@@ -25,8 +25,13 @@ decision: **resolve rate (22.9%) and worst case (9.00 h ≤ 11 h) both clear the
           grades a directly-uploaded `submission.zip`, not a notebook's output — the Notebook tab explicitly
           rejects E0's kernel since it produces eval results, not a submission artifact). Uploaded
           dist/submission.zip (sha256 c2bf932104e9e544254d28a0efd693c6a1d85e4b82ff0923ad4f99bfe78e4a07,
-          unchanged since v1/v2/v3 kernel runs). Status immediately after submit: "Notebook Running". LB score
-          pending — record it here once Kaggle finishes grading.
+          unchanged since v1/v2/v3 kernel runs). Status immediately after submit: "Notebook Running".
+          **LB score (2026-10-19, public half): 0.06 = 4/58 public tasks solved** (public LB covers 58 of the
+          ~120-task hidden set; 1 task ≈ 0.017; score truncates to 2 decimals). Local dev-48 → public-LB drop
+          ratio is 22.9%→6.9%, ~3.3x — see plan.md §6.0.3/experiments/README.md for the fuller interpretation
+          (this ratio is in line with precedent elsewhere in this project and in the literature, not itself
+          anomalous; the more actionable finding is an absolute gap to a known public reference config on the
+          same hidden tasks, not the drop ratio).
 follow-ups: phase_histogram = {LOCATE 26, REPRODUCE 10, VERIFY 4, EDIT 7, SUBMIT 1} — **54% of tasks (26/48)
           never leave LOCATE**, confirming exp005's step-budget bottleneck at full representative-cohort scale.
           time_cap_hit (79.2%) vastly dominates calls_cap_hit (12.5%) — the binding constraint is wall-clock,

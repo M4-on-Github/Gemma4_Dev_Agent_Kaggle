@@ -157,9 +157,10 @@ on/off (AST omits `async def`; zip hard-links can yield 0-byte graph files [M]).
 (`validate_single_declared_model` / `discover_declared_models`, §4.5) only constrains the shared **base** checkpoint —
 every `LlmAgent` in the hierarchy (root or any `sub_agents`/`agent_tool` entry) may additionally set its own
 `adapter: <name>`, and the harness auto-discovers and serves all of them via vLLM's multi-LoRA support
-(`--lora-modules`, dynamic `max_loras`/`max_lora_rank`). This means our 12/18→6/18 same-model-delegation regression
-does not rule out a sub-agent architecture outright — it only rules out a sub-agent running the *same* weights as the
-root. A sub-agent with its own adapter (e.g. a `tool_lora`-tuned read-only analyzer feeding a `main_lora`-tuned coder)
+(`--lora-modules`, dynamic `max_loras`/`max_lora_rank`). This means the 12/18→6/18 same-model-delegation
+regression cited at line 152 (`[M]`, secondhand/community-reported — E9 itself was never run in this project,
+see §6.0.3's 2026-10-18 citation correction) does not rule out a sub-agent architecture outright even if taken
+at face value — it would only rule out a sub-agent running the *same* weights as the root. A sub-agent with its own adapter (e.g. a `tool_lora`-tuned read-only analyzer feeding a `main_lora`-tuned coder)
 is architecturally supported and untested; see §6.2 for why it's still gated behind G-LoRA rather than
 promoted into the v1/E9 backlog now.
 
@@ -523,11 +524,133 @@ Diff is staged (`git diff --cached -- submission/prompts/swe_coder.md`), not yet
 the E0 baseline run finishing first (so E-STOP(a')'s dev-48 result has an E0 number to compare `phase_reached`
 against, per the "done" criteria below), then this prompt runs as E-STOP(a')'s single dev-48 run.
 
+### 6.0.3 EXP-002 smoke-8 result + delegation-vs-alternatives research, incl. a confirmation-bias check (2026-10-18)
+
+**EXP-002 (E-STOP(a') smoke-8) result: rejected, before any dev-48 spend.** The fixed-sequence LOCATE prompt
+rewrite from §6.0.2 above ran on the harness. Of smoke-8's 8 tasks only 4 passed gold control (same soundness
+filter as `experiments/README.md` Q5); of those 4, resolve was 2/4 (n too small to read against E0's 22.9%).
+The result that matters is not the resolve rate but that **the mechanism the rewrite was supposed to force
+only partially fired**: `get_code_neighbors`/`get_code_subgraph` were called zero times across all 4 traces.
+`search_similar_code` itself, however, *was* called — first in fastapi_14301 and fastapi_14448, second in
+rich_3468; only rich_3006 (the fastest-resolving task) skipped it. **Correction, 2026-10-18, after a second
+independent trace read (full detail in `experiments/EXP-002-estop-a.md`):** reading the tool *outputs*, not
+just call names, shows the chain broke after step (b) because step (b)'s output was unusable in the 3 cases
+that reached it (lexical-fallback junk at 0.22 similarity in fastapi_14448; a wrong-but-deceptively-high-
+similarity match at 0.9997 in rich_3468) or because step (b) already returned the correct answer, making the
+later steps genuinely redundant rather than skipped (fastapi_14301). This is a plausibly rational response to
+bad-or-sufficient tool output, not evidence the model ignores prompt instructions — the more likely bottleneck
+is `search_similar_code` recall/output quality against real mounted graph/embedding data, untested until the
+free CPU-only recall check below runs. Cross-checking the 4 sound tasks against E0's own dev-48 traces for the
+identical task ids shows an identical resolve/fail pattern in both runs, i.e. the prompt rewrite was a
+behavioral no-op on this sample on the resolve-rate axis, even though step (b) compliance was mostly present.
+A second, independent finding from reading the raw traces: `phase_reached` (the regex over the agent's self-
+reported `[phase=...]` ledger line, §6.1's current "done" gate) is unreliable — all 4 agents abandon the
+ledger tag within 1-3 of 19-39 turns, so the metric measures ledger-tag persistence, not real phase progress,
+which calls E0's own "54% stuck in LOCATE" headline into question too (computed with the identical regex).
+Full writeup: `experiments/EXP-002-estop-a.md`; ledger entries `experiments/README.md` §3 (EXP-002 row) and
+Q13/Q14.
+**Conclusion that follows:** the original "fixed sequence is optional advice the model ignores" framing
+overstated the evidence — compliance with step (b) was mostly present; the open question is whether
+`search_similar_code`'s recall/output quality against the real mounted data is the actual bottleneck, which
+the free CPU-only recall check (below) tests directly before any further LOCATE redesign spend.
+
+**Does the published literature support "tool-scoped sub-agent" as the fix, and is it the cheapest one?**
+Researched in two deliberate passes — an initial supporting-evidence pass, then a second pass explicitly
+tasked with finding disconfirming evidence and cheaper alternatives, per direct instruction, to check the
+first pass hadn't just gathered citations for a conclusion already reached.
+
+- *For tool-scoping*: the "grep beats semantic tools" pattern (a model defaulting to a familiar general tool
+  over a more specific declared one even under explicit instruction otherwise) is widely documented in
+  production, not specific to our model — Claude Code's own Explore sub-agent is read-only/tool-scoped and
+  used as the *first-line* exploration mechanism, not a fallback; a widely-shared practitioner account
+  describes fixing the identical pattern with a `PreToolUse` hook gate, not stronger wording. Published
+  localization architectures (Agentless arXiv 2407.01489, AutoCodeRover arXiv 2404.05427, OrcaLoca
+  arXiv 2502.00350) all bound search *structurally* — fixed pipeline or restricted API surface — never by
+  prompting an open-ended agent to restrain itself. The competition harness's own official reference
+  `sample_submission` already ships exactly this pattern as its reference design: a graph-only
+  `code_analyzer_agent` via `agent_tool`, tools restricted to `read_file`/`search_similar_code`/
+  `get_code_neighbors`/`get_code_subgraph` (no `run_command`, no `edit_file`), on a separate `tool_lora`
+  adapter — i.e. this is the harness's intended shape, not a novel guess. API-level forced tool use
+  (`tool_choice: "required"`) was checked and ruled out as a substitute: it forces *a* declared tool or one
+  *named* tool, never "one of this named subset," so it cannot reproduce restricted-toolset scoping inside a
+  single flat tool list — a separate sub-agent with its own tool list is the correct generalized mechanism,
+  not an arbitrary implementation choice among equivalents.
+- *Against treating it as risk-free*: multi-agent-system literature independently warns decomposition has a
+  real coordination cost that can erase the benefit of scoping — arXiv 2604.02460 (not independently verified
+  as a Stanford paper; it is about multi-hop reasoning, not code, and its abstract attributes the gap to
+  unaccounted compute, not a "communication bottleneck" as this doc previously stated) shows single agents
+  can match/beat multi-agent decompositions at equal compute; Silo-Bench (arXiv 2603.01045) is cited for a
+  "15-49% performance loss" figure that is **not actually in its abstract and is unverified** — its setup
+  (information distributed across agents on algorithmic tasks) also transfers only loosely to our single-
+  handoff sub-agent case; Berkeley's MAST taxonomy (arXiv 2503.13657, 1600+ traces, 7 frameworks, 14 failure
+  modes, confirmed accurate) argues most multi-agent failures need structural redesign, not superficial
+  patches, with one of its three categories being "system design" issues (corrected from "specification
+  issues," which this doc previously had wrong). **Citation-accuracy correction, 2026-10-18**: an independent
+  review (Opus 5.5, xhigh effort) also found this doc had wrongly presented the "12/18→6/18 same-model-
+  delegation regression" as "our own" result — it is in fact `[M]` (secondhand/community-reported, see line
+  ~160 below) and **E9 was never actually run in this project**. The open question EXP-003b must still
+  resolve empirically is whether *tool-scoping specifically* (not delegation in general) avoids a regression
+  like the one that `[M]` figure describes, since the cited case was same-capability delegation, not tool-
+  restricted — but this is a hypothesis to test, not an existing data point from our own backlog.
+- *Cheaper alternative, not previously considered*: tool-*description*-quality rewrites alone, no sub-agent,
+  no training. Arcade reports ~10x tool-selection-error reduction from description edits alone across 20,000+
+  evaluations; ToolScope (+8.38-38.6pp) and RAG-MCP (13.62%→43%) get similar gains from retrieval-based
+  shrinking of the visible tool list per turn. Caveat carried forward honestly: these results are typically
+  measured on registries with 10+ declared tools, and `submission/agent.yaml` only declares 9 total, so the
+  effect size may not transfer directly — this is why it's treated as a cheap, high-ROI-*if*-it-works first
+  test, not a confident prediction.
+- *Alternative checked and ruled out by harness constraints, not by preference*: Agentless-style automatic
+  context injection ahead of the agent's first LLM turn (sidestepping tool-choice compliance entirely by not
+  requiring a localization tool call at all). Re-reading `HARNESS_README.md`'s submission-format description
+  confirms this is infeasible here: submissions are YAML-only through a closed, sandboxed
+  `compile_submission` resolved against closed host registries (`ToolRegistry`/`ModelRegistry`/
+  `SkillRegistry`/`CallbackRegistry`) — no custom Python entrypoint (`agent.py`/`agent_fn`) is permitted, so
+  there is no hook point to inject retrieved context before the first turn the way Agentless's own reference
+  implementation does.
+
+**Net effect — revised order, cheapest-first:**
+**EXP-003a (tool-description rewrite in `agent.yaml`) is dropped, not just deprioritized** — it rested on a
+false premise twice over: (1) `agent.yaml`'s `tools:` field only accepts tool-name strings/`agent_tool`
+references/inline agent dicts, there is no per-tool description-override field to rewrite (confirmed against
+`HARNESS_README.md` §2.3 and the file itself — the real JSON-schema description the model sees is fixed by
+the host `ToolRegistry`, not editable from the submission); (2) the harness already auto-injects a one-line
+capability description for each graph tool into the initial prompt whenever graph/embedding data exists for
+the task's repo (`HARNESS_README.md` §5.2, "Code Intelligence Tools" block), and the corrected EXP-002 trace
+read above shows `search_similar_code` already gets called 3/4 times — so the premise that the model needs a
+better *description* to find the tool is itself unsupported; the actual gap is `search_similar_code` output
+quality/recall, which a description rewrite cannot fix.
+1. **Free CPU-only recall check** (new, replaces EXP-003a as the immediate next step): call the real
+   `search_similar_code`/`get_code_neighbors`/`get_code_subgraph` harness tool implementations (not a hand-
+   ported reimplementation) against the actual mounted graph (`data/graphs/<repo>.json`)/embedding
+   (`data/embeddings/<repo>.npz`) data for every sound task, checking recall against the gold-patch function
+   directly. No GPU spend. Must run inside a CPU-only Kaggle kernel, since this repo checkout has no local
+   `data/graphs`/`data/embeddings` — those are only populated inside a Kaggle kernel from the competition's
+   mounted dataset.
+2. **EXP-003b** (renames/absorbs E-STOP(b); the `[M]`/never-run E9 figure is no longer treated as "our own"
+   existing data point, see citation correction above): only after (1), and only if (1) shows real recall
+   problems that a tool-scoped sub-agent would plausibly fix — fix `submission/sub_agents/analyzer.yaml`
+   (strip `run_command`, which it still has, unlike the official `code_analyzer.yaml` reference) and
+   `submission/prompts/analyzer.md` (remove the "graph tools only if two greps fail" escape hatch; add
+   `{problem_description}`/`{hints?}` session-state passthrough per `agent_tool.py:227-260`/
+   `agent_runner.py:676-681`; change the output contract from `path:start-end` to dotted symbol + derived file
+   path + verbatim snippet; cap calls at ≤5, not 8) to match the harness's reference sub-agent, add a root-
+   agent instruction to call the analyzer as step 1 (delegation compliance is a parallel problem to tool-
+   scoping itself), wire `agent_tool: config_path: sub_agents/analyzer.yaml, skip_summarization: true` into
+   `submission/agent.yaml`, run a 1-task dry run to confirm sub-agent trace events are captured, then smoke-8
+   screen it — instrumented specifically to check whether the analyzer's top reported location matches the
+   gold-patch's changed files (not just aggregate resolve), so a handoff-information-loss regression is
+   visible if it happens, not masked by a flat resolve-rate number.
+3. Both the recall check and EXP-003b must use a corrected `phase_reached`/compliance signal (observed
+   tool-call family, not the self-reported ledger tag) before either one's result is trusted — the §6.1 "done"
+   criteria below are updated accordingly.
+
+Mirrored in `experiments/README.md` §1o (narrative) and Q13/Q14 (ledger).
+
 ### 6.1 Experiment backlog (one variable at a time; priority order; cost in dev-48 runs ≈ 3–4 GPU-h each)
 | ID | Variable | Hypothesis | Measure | Cost |
 |---|---|---|---|---|
 | **E0** | **Representative baseline**: current prompt (post shim-fix, pre-ledger-experiments — i.e. roll back the exp006–008 ledger-wording churn, keep the exp001–005 shim fix) on **dev-48** (stratified, unbiased), not the shim cohort | Establishes the real resolve-rate baseline and, critically, the `phase_reached` / `time_cap_hit` vs `calls_cap_hit` distribution across a representative sample — tells us whether exp005's "18/20 never finish LOCATE/REPRODUCE/EDIT" generalizes or was partly an artifact of the shim cohort being unusually hard | resolve % (± Wilson CI), empty %, phase_reached histogram, time_cap_hit % vs calls_cap_hit % | 1 run, highest priority — blocks the Oct 17 LB slot decision and informs whether E-STOP is even needed |
-| **E-STOP** | Structural forced phase transition that does **not** depend on the model doing arithmetic or complying with self-report instructions. **(a) dropped 2026-10-17** (shrink-cap + worked-example-transcripts): same category as the already-3×-failed exp006–008 ledger-wording fixes — still prompting the model to self-regulate an open-ended loop, just with a demonstration instead of an instruction. Not adopted; not run. **(a') promoted in its place**, grounded directly in published SOTA rather than a novel guess: Agentless (arXiv 2407.01489) solves this not by prompting an agent to stop searching, but by **not using an open-ended agentic loop for localization at all** — a fixed, non-agentic hierarchical pipeline (file → related-element → edit-location) that runs once and hands off a structured artifact to a separate repair stage. AutoCodeRover (arXiv 2404.05427) stays agentic but bounds each turn with AST-query APIs and SBFL hints instead of raw grep, so the search space shrinks every step instead of being wandered. (a') replicates this at the prompt level, no new infra: replace the open-ended "grep until you feel done" LOCATE phase with a **fixed, small, ordered sequence** using the graph tools already declared in the harness (currently demoted per E5) — e.g. `search_similar_code(issue text)` → `get_code_neighbors(top hit)` → `get_code_subgraph(candidates)` → one `read_file` on the selected location → mandatory transition to EDIT, with no open-ended grep loop interleaved. The stopping decision is removed from the model's hands by making LOCATE a bounded procedure with a fixed step count, not a free-form search the model must judge the end of. **(b)** unchanged — if (a') doesn't move `phase_reached`, escalate to the architectural split: a LOCATE-only sub-agent (via `agent_tool`) declaratively given *only* `read_file`/`run_command`/graph tools and a short budget, which hands a terse hypothesis back to the root `swe_coder` (only then given `edit_file`/`write_file`/`submit_patch`) — this is Agentless's localize/repair separation enforced at the harness level via tool-scoping, making "stop exploring" a tool-availability fact rather than a request | (a') costs nothing new to test (prompt-only, reuses already-declared graph tools) and is the direct harness-level analogue of a technique with a published SWE-bench score, not an untested guess; (b) revisits the E9 same-model-delegation regression (12/18→6/18) but changes *why* it might work this time — tool-scoping forces the transition structurally, where the E9 regression was attributed to context/continuity loss across a redundant re-reasoning hop, not to tool availability | phase_reached ≥ EDIT %, resolve, wall; compare against E0 baseline | (a') 1 run; (b) only if (a') fails, 1–2 runs |
+| **E-STOP** | Structural forced phase transition that does **not** depend on the model doing arithmetic or complying with self-report instructions. **(a) dropped 2026-10-17** (shrink-cap + worked-example-transcripts): same category as the already-3×-failed exp006–008 ledger-wording fixes. Not adopted; not run. **(a') REJECTED 2026-10-18 on smoke-8 (EXP-002)**: `get_code_neighbors`/`get_code_subgraph` called 0/4 times; `search_similar_code` itself *was* called 3/4 times (first in fastapi_14301/fastapi_14448, second in rich_3468 — corrected 2026-10-18, see `experiments/EXP-002-estop-a.md`), but its output was unusable (lexical-fallback junk, or a wrong-but-high-similarity match) or already sufficient in all 3 cases, so later steps weren't exercised; identical resolve/fail pattern to E0 on the same 4 tasks. The likely bottleneck is `search_similar_code` recall/output quality, not prompt-instruction non-compliance. **Superseded by: (1) a free CPU-only recall check (§6.0.3) testing the real tool against real mounted data; (2) EXP-003b**, only if (1) shows a real recall problem — the harness's own reference-design tool-scoped sub-agent (`agent_tool`, graph-tools-only, no `run_command`/`edit_file`), instrumented against handoff-information-loss risk, not just aggregate resolve. EXP-003a (tool-description rewrite) is dropped entirely — no such override field exists in `agent.yaml`, and the harness already auto-injects graph-tool descriptions into the prompt | The free recall check is free to test (CPU-only, no GPU spend) and resolves whether EXP-002's bottleneck is tool output quality before spending further LOCATE-redesign effort; EXP-003b is the harness's own documented reference shape, not a novel guess, but carries a real coordination-cost risk per multi-agent-failure literature (MAST arXiv 2503.13657, confirmed; arXiv 2604.02460 and Silo-Bench arXiv 2603.01045 citations corrected/caveated, §6.0.3) and must be checked carefully — the "12/18→6/18 same-model-delegation" figure sometimes cited here is `[M]` (secondhand) and was never run in this project, not an existing in-project data point | corrected phase/compliance signal (tool-call family observed, not self-reported ledger tag — fix `tools/analyze_traces.py` first, §6.0.3), resolve, wall; compare against E0 baseline | free recall check: 0 GPU-h (Kaggle CPU kernel only); EXP-003b only if the recall check shows a real problem, 1 smoke-8 + 1–2 dev-48 runs |
 | E1 | Prompt protocol: phased + ledger vs. flat sample prompt | Phased protocol cuts empty-patch and spin rates by > 50% without hurting resolves | empty %, spin %, resolve | 2 runs |
 | E3 | Thinking-off + strict tool-arg rules | **Promoted ahead of E2/E4**: exp005's two time-cap-hit examples (`fastapi_14360` at 274s against a 270s/4.5min cap) suggest wall-clock, not call count, is the binding constraint for a meaningful share of tasks — if so, cutting per-call latency (less thinking) buys more usable calls within the same wall-clock budget more directly than any LOCATE-cap mechanism. Strict rules alone get malformed ≈ 1.4% [M], freeing time for more calls | malformed %, wall, time_cap_hit %, resolve | 1 run |
 | E2 | Thinking: off / budget 128 / 256 / 1024 (`thinking_budget` binding per Q3) | Thinking-on reduces malformed (24→2%) and repeats (50→9%) [M] but costs 65–71% of time [M]; a small budget keeps most of the benefit — read jointly with E3 and E0's time_cap_hit rate, not in isolation | malformed %, wall, resolve | 4 runs |
@@ -540,18 +663,42 @@ against, per the "done" criteria below), then this prompt runs as E-STOP(a')'s s
 | E8 | Skills: `pytest-triage/SKILL.md` and `edit-anchoring/SKILL.md` on vs off | Skills reduce failed edit_file calls | failed edit %, resolve | 1 run (if skills load without `run_skill_script`) |
 | E9 | Sub-agent `analyzer` (localization only, via agent_tool) on vs off, **same model** | Expected negative or neutral [M] on its own terms (redundant re-reasoning hop, context/continuity loss); superseded in intent by E-STOP(b), which tests a *tool-scoped* sub-agent rather than a same-capability one — run E9 only if E-STOP(b) is inconclusive and a cheap negative-control data point is still wanted | resolve, wall | 1 run |
 
-**Revised order: E0 → E-STOP(a') → E-STOP(b)/E9 (if escalation triggers, see "done" criteria below) → E3 → E6 → E1 → E2 → E5 → E4 → E10 → E7 → E11 → E8**. Moved 2026-10-18: §6.0.1/§6.0.2 already argue E-STOP(b) is a first-line candidate, not contingent on (a') failing, and §1's E-STOP(a') "done" criteria explicitly name E-STOP(b) as the escalation path when phase_reached barely moves — the old list order (E8 before E-STOP(b)/E9) never reflected that; the prose was ahead of the queue.
+**Revised order (2026-10-18, post-EXP-002, re-revised 2026-10-18 post-recall-check): E0 → E3 → E6 → E1 → E2 →
+E5 → E4 → E10 → E7 → E11 → E8**. E-STOP(a') is removed from the queue (rejected on smoke-8, see §6.0.3 and its
+updated row above). **EXP-003b is now dropped from the queue entirely, not deferred** — see the recall-check
+result immediately below; EXP-003a (tool-description rewrite) stays dropped for the same §6.0.3 reason.
 "Done" criteria to move past each of the first three (the ones that matter for the Oct 25 gate):
 - **E0 done** when we have a resolve-rate point estimate + Wilson CI on dev-48 and a `phase_reached` /
   time-cap-vs-calls-cap breakdown. This number is what tells us whether to spend the Oct 17 LB slot now or
   wait one more day for E-STOP(a')'s result — **send back to drawing board** only if the harness itself looks
   broken (e.g. near-zero empty-patch-free resolves even on tasks that clearly reach VERIFY), not if resolve
   rate is merely low (low-but-nonzero is expected and is a reason to keep iterating, not a reason to stop).
-- **E-STOP(a') done** when ≥ 80% of dev-48 tasks reach `phase_reached ∈ {EDIT, VERIFY, SUBMIT}` (vs whatever
-  E0 measures as the baseline) without a net resolve-rate regression — **adopt** at that bar; **escalate to
-  E-STOP(b)** if phase_reached barely moves (e.g. < 10pp improvement), since that would mean the problem isn't
-  "LOCATE is unbounded," it's that a fixed-step pipeline still can't force the transition and the stronger
-  tool-scoping lever is needed.
+  Caveat added 2026-10-18 (EXP-002/Q13): the `phase_reached` histogram this criterion partly rests on is
+  measured with the same ledger-tag regex shown unreliable on smoke-8 — read E0's phase breakdown with that
+  caveat until `tools/analyze_traces.py` is fixed to derive phase from tool-call family instead.
+- **Free CPU-only recall check: DONE, 2026-10-18 — EXP-003b skipped, not escalated to.** Both halves ran: a
+  local `git grep` lexical baseline (113 scored tasks, recall@1/3/5/10 = 24.8%/35.4%/37.2%/41.6%) and the
+  Kaggle CPU-only kernel (`rainm4/gemma4-recall-check`, COMPLETE, 0 GPU-h) replaying the real
+  `search_similar_code`/`get_code_neighbors` against actual mounted graph/embedding data on the identical
+  113-task set. **The real tool loses to the free grep baseline at every k** (single-identifier arm
+  14.2/19.5/21.2/24.8%, joined-top-3 arm 16.8/23.9/28.3/34.5%; `get_code_neighbors` chain hit rate 16.5%).
+  Per the criterion as written, this is the "materially poor, EXP-002 pattern generalizes" branch — but the
+  measured root causes make EXP-003b specifically the wrong next step rather than the right one: (a) only
+  62.7% of gold symbols exist as graph nodes at all (`gold_in_graph_rate`), a hard recall ceiling no sub-agent
+  wrapper can rank its way around; (b) embedding-space anisotropy is real and repo-wide (mean pairwise cosine
+  0.72–0.93 depending on repo/snapshot), not an n=1 EXP-002 fluke. A tool-scoped `analyzer` sub-agent calling
+  these same two tools inherits both limitations unchanged — it cannot find a node that isn't in the graph or
+  rank better in a space that doesn't discriminate. **Decision: do not build EXP-003b.** If LOCATE quality is
+  revisited later, the candidates are fixing the underlying tools (graph-construction coverage gap, embedding
+  quality) or a lexical-first LOCATE step (grep for candidates, graph only for neighbor expansion once
+  seeded) — not a sub-agent wrapper. Full writeup: `experiments/recall_check/README.md`,
+  `experiments/EXP-002-estop-a.md` follow-up #3.
+  **Correction, 2026-10-19 (independent review):** the 62.7%/anisotropy figures above have real measurement
+  bugs (query-extraction regex, `src.`-prefix node-name mismatch — see recall_check/README.md's 2026-10-19
+  correction) and should not be cited at face value. The decision to drop EXP-003b still stands, on firmer
+  footing: real E0 dev-48 traces show the actual bottleneck is post-LOCATE (wall-clock-bound touch→edit→
+  resolved drop-off), not LOCATE recall quality — a tool-scoped sub-agent would narrow a step that usually
+  isn't where tasks are lost, regardless of the exact recall numbers once the bugs are fixed.
 - **E3 done** when wall-clock time_cap_hit rate drops materially (e.g. ≥ 30% relative) at no malformed-rate
   cost — **adopt**; if time_cap_hit doesn't move, that's evidence time-cap hits are driven by call volume
   (slow convergence to a hypothesis) rather than per-call latency, which redirects weight back toward E-STOP
@@ -691,7 +838,8 @@ so either would need its own small multi-model harness outside `submission/`, ru
   a standalone served checkpoint outside the competition harness) does LOCATE/REPRODUCE search-and-report only
   (terse artifact: file/function/line/hypothesis), handing off to the 31B model for EDIT/VERIFY/SUBMIT. Question:
   does cost-adjusted resolve rate (tokens or GPU-seconds per resolved task) beat single-31B end-to-end? Ties into
-  the single-agent-vs-multi-agent finding (§4.1: same-model delegation hurt 12/18→6/18) — here the hypothesis is
+  the single-agent-vs-multi-agent finding (§4.1: same-model delegation hurt 12/18→6/18, `[M]`/secondhand, never
+  run in this project — see §6.0.3's 2026-10-18 citation correction) — here the hypothesis is
   that a *size-asymmetric* handoff (small model cheaply narrows the search space, big model does the precision
   work) could win where same-size delegation lost due to context/continuity loss, since the division of labor
   is more clearly asymmetric capability, not a redundant re-reasoning step.

@@ -34,32 +34,85 @@ results: kernel COMPLETE (v1, 2026-10-18). Gold control (RUN_GOLD_CONTROL, refer
         plan.md §6.1 "done" criterion (phase_reached ∈ {EDIT,VERIFY,SUBMIT} ≥ 80%) is not a trustworthy metric
         as currently instrumented and needs a harness-side signal (e.g. last tool-call family used, or a
         get_status-derived phase) instead of a self-reported bracket tag, before it can gate any decision.
-        **The actual mechanism the LOCATE rewrite was supposed to force never fired: `get_code_neighbors` and
-        `get_code_subgraph` were called zero times across all 4 traces**, and `search_similar_code` itself was
-        skipped entirely in the one task (rich_3006) that resolved fastest. In every trace the model instead
-        fell straight back into `run_command`-heavy exploration (grep/cat-style) + `read_file` loops — the same
-        shape of behavior E-STOP(a') was designed to replace. The prompt rewrite changed the LOCATE *text*,
-        not the agent's actual tool-call choices: a fixed sequence written as instructions is optional advice
-        the model is free to ignore, not a structural constraint.
+        **`get_code_neighbors`/`get_code_subgraph` were called zero times across all 4 traces** — step (b),
+        `search_similar_code`, WAS followed: it was the first call in fastapi_14301 and fastapi_14448 and the
+        second call in rich_3468; only rich_3006 (the fastest-resolving task) skipped it. **Correction,
+        2026-10-18, after a second independent trace read (see `experiments/README.md` §1o):** this session's
+        first pass mischaracterized this as the model "falling straight back into `run_command`-heavy
+        exploration" / ignoring the sequence as "optional advice" — that overstates the evidence. Reading the
+        tool *outputs*, not just the tool *names called*, the chain instead broke after step (b) because step
+        (b)'s output was unusable in all 3 cases that reached it: fastapi_14448's lexical-fallback query
+        returned junk (`scripts.notify_translations.PartialGitHubEvent`, similarity 0.22); rich_3468's
+        exact-symbol query for `rich.console.Console.print` returned the wrong node at a deceptively high
+        similarity (`tests.test_table.render_tables`, 0.9997); fastapi_14301 is the inverse case — it got the
+        correct answer directly from (b), making the later `get_code_neighbors`/`get_code_subgraph` steps
+        genuinely redundant, not skipped out of non-compliance. Abandoning the chain after bad-or-already-
+        sufficient step-(b) output is a plausibly *rational* response to what the tool actually returned, not
+        evidence the model disregards prompt instructions. **This means the compliance-failure framing below
+        is not well-supported; the more likely bottleneck is `search_similar_code` output quality/recall**
+        (lexical-fallback junk, or high-similarity-but-wrong exact-symbol matches) — not tested yet against the
+        real mounted graph/embedding data (the 58–65% recall figure in `plan.md` §6.0.2 is from a hand-ported
+        scoring script, not the real tool). `get_code_neighbors`/`get_code_subgraph` genuinely never fired in
+        any of the 4 traces either way, so that half of the original finding stands.
 decision: **Do not proceed to the full dev-48 run on this prompt-only implementation of E-STOP(a') — the
-        n=4 smoke screen already shows the intervention isn't reaching its own mechanism** (0/4 traces touch
-        get_code_neighbors/get_code_subgraph), so a dev-48 run would mostly be re-measuring E0's grep-driven
-        behavior under a relabeled LOCATE section, not testing the hypothesis. Before spending a dev-48 run on
-        any LOCATE redesign, first address: (a) the phase_reached instrumentation (recompute it from tool-call
-        family / get_status calls, not the self-reported ledger tag) so later "done" criteria checks are
-        trustworthy, and (b) actual enforcement of the fixed call sequence — e.g. temporarily restricting which
-        tool names are offered during an explicit LOCATE sub-turn budget, or a harness-side check that fails
-        LOCATE after N calls if get_code_neighbors/get_code_subgraph haven't been called — rather than relying
-        on prompt text alone. The resolve rate itself (2/4 = 50%, n too small to read as a regression or an
-        improvement over E0's 22.9%) is not the limiting signal here; the compliance failure is.
+        n=4 smoke screen doesn't exercise the chain's later steps often enough to say anything about them, and
+        reading the trace outputs (not just call counts) suggests the limiting factor is more likely
+        `search_similar_code` recall quality than prompt-instruction non-compliance (see correction above).**
+        Before spending a dev-48 run on any LOCATE redesign, first run a **free, CPU-only check (no GPU spend)**
+        that calls the real `search_similar_code`/`get_code_neighbors`/`get_code_subgraph` against the actual
+        mounted graph/embedding data for every sound task, checking recall against the gold-patch function
+        directly — not a hand-ported scoring script — before deciding whether a graph-tools-first LOCATE
+        redesign (prompt-only or sub-agent) is even premised correctly. Also still needed regardless of that
+        result: (a) fix the phase_reached instrumentation (recompute from tool-call family/get_status calls,
+        not the self-reported ledger tag) so later "done" criteria checks are trustworthy. The resolve rate
+        itself (2/4 = 50%, n too small to read as a regression or an improvement over E0's 22.9%) remains
+        uninformative either way.
 follow-ups:
   1. Fix phase_reached instrumentation in tools/analyze_traces.py (or in the harness trace schema) to derive
      phase from observed tool-call family/order, not the agent's self-reported bracket line — re-run this
      check against E0's existing dev-48 traces too, since "54% stuck in LOCATE" may shrink or grow once
      measured correctly.
-  2. Re-design E-STOP(a') (call it E-STOP(a'')) with an actual enforcement mechanism for the fixed LOCATE
-     sequence rather than prompt instructions alone, then re-screen on smoke-8 before any dev-48 spend.
-  3. gold control failed 4/8 on smoke-8 (same ~50% unsound rate pattern worth tracking per cohort — note in
-     experiments/cohorts/README.md if this recurs on dev-48 gold reruns).
-  4. E0's Kaggle leaderboard score is still pending (submitted 2026-10-18); record it in EXP-001-baseline.md
+  2. Run the free CPU-only recall check (real `search_similar_code`/`get_code_neighbors`/`get_code_subgraph`
+     against real mounted graph/embedding data, gold-patch-function recall) before any further LOCATE redesign
+     work — this is the direct follow-up to the 2026-10-18 correction above, and should happen before EXP-003b
+     is built, since a graph-only sub-agent is handicapped by design if the underlying tools don't recall well.
+     **Done, 2026-10-18 (see experiments/recall_check/README.md), both halves.** Local-first half: AST-diff
+     gold extraction (129/129 tasks, 0 parse errors) and a `git grep` lexical baseline (24.8%/35.4%/37.2%/41.6%
+     recall@1/3/5/10 on 113 scorable tasks). Kaggle CPU-only kernel half (`notebooks/exp_recall_check/`,
+     kernel `rainm4/gemma4-recall-check`, COMPLETE, 0 GPU-h): replayed the real `search_similar_code`/
+     `get_code_neighbors` against the actual mounted graph/embedding data on the identical 113-task set.
+     **Result: the real tool loses to the free grep baseline at every k** — single-identifier arm
+     14.2%/19.5%/21.2%/24.8%, joined-top-3 arm 16.8%/23.9%/28.3%/34.5%, both below grep's 24.8%/35.4%/37.2%/
+     41.6%; `get_code_neighbors` chain hit rate only 16.5%. Two measured root causes: (a) only 62.7% of gold
+     symbols exist as graph nodes at all (`gold_in_graph_rate`/`gold_has_embedding_rate`), a hard ceiling no
+     ranking strategy can fix; (b) embedding-space anisotropy is real and repo-wide, not n=1 noise — mean
+     pairwise cosine 0.72–0.85 (fastapi), 0.82–0.88 (requests), 0.87–0.93 (rich, confirming rich_3468's
+     0.9991–0.9997 trace finding generalizes). The 3-trace cross-check against EXP-002's own traced queries
+     lines up with both the local grep baseline and this full-dataset Kaggle result (fastapi_14301
+     grep/lexical-fallback both rank gold 1st; fastapi_14448 both miss; rich_3468's tied grep ranking echoes
+     the cosine near-constant-similarity problem). **This is real evidence against building EXP-003b as-is —
+     a sub-agent wrapper inherits the same ~37% node-coverage ceiling and anisotropic embedding space; it
+     would not fix either cause.**
+  3. **Superseded, 2026-10-18 — do not build EXP-003b on the current graph tools.** (2)'s Kaggle result shows
+     `search_similar_code`/`get_code_neighbors` losing to a free grep baseline at every k, with two measured
+     root causes (62.7% gold-node coverage ceiling; real repo-wide embedding anisotropy) that a sub-agent
+     wrapper around the same tools would inherit unchanged. Before any further LOCATE redesign spend, the open
+     question is whether to (a) fix the underlying tools (graph coverage gap, embedding quality) or (b) use a
+     lexical-first LOCATE step (grep for candidates, graph only for neighbor expansion once seeded) — not
+     whether to wrap them in a sub-agent. `plan.md` §6.0.3/§6.0.4's sub-agent design fixes (root-agent
+     delegation compliance, session-state passthrough, output contract, per-call budget cap, dry-run trace
+     verification) remain relevant if a sub-agent is ever built on improved tools, just not now.
+     **Correction, 2026-10-19 (independent review):** the 62.7%/anisotropy numbers above have real measurement
+     bugs (query-extraction regex returning `github.com` as "the identifier" for most tasks; a `src.`-prefix
+     node-name mismatch deflating requests/httpx coverage) — see `experiments/recall_check/README.md`'s
+     2026-10-19 correction for detail. The **decision to drop EXP-003b still stands**, but on firmer footing
+     than those two numbers: reading real E0 dev-48 traces directly shows the actual bottleneck is
+     **post-LOCATE** (a touch→edit→resolved drop-off that's wall-clock-bound, not LOCATE-quality-bound) — a
+     tool-scoped sub-agent would spend budget narrowing a step that usually isn't where tasks are being lost,
+     independent of exactly how good `search_similar_code`'s recall turns out to be once the bugs are fixed.
+  4. gold control failed 4/8 on smoke-8 (same ~50% unsound rate pattern worth tracking per cohort — note in
+     experiments/cohorts/README.md if this recurs on dev-48 gold reruns). Also noted independently: smoke-8
+     yields only 4 gradeable tasks per run; a cohort drawn from tasks already known to pass gold control would
+     give 8 real data points at the same cost — worth switching to for future screening runs.
+  5. E0's Kaggle leaderboard score is still pending (submitted 2026-10-18); record it in EXP-001-baseline.md
      once grading completes.
