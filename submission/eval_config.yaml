@@ -1,12 +1,16 @@
 # Per-task budgets (plan.md §4.4). The scorer reads exactly these four keys under `evaluation:`;
 # a missing key means NO limit, and the harness default (60 min/task) would blow the 12 h run budget.
-# VERIFY(Q2): confirm key names and the `evaluation:` nesting against data/raw/sample_submission/eval_config.yaml.
-# Worst case per plan: 120 tasks x (4.5 + 1.0 min setup) = 11.0 h <= 11.0 h gate (tools/estimate_budget.py).
+#
+# EXP-003 (public-budget-shape test, 2026-10-19): matches verracodeguacas/gemma-4-agent-budget-fit-single-agent
+# (confirmed by pulling its notebook source directly, not secondhand) exactly, single variable isolated from
+# E0's prompt. Worst case 120 x (8 + 1.0 min setup) = 18.0 h > the 11.0 h packing gate (tools/validate_submission.py)
+# -- this config can only be packed with pack_submission.py --skip-budget-gate, an UNOFFICIAL TEST BUILD for the
+# dev-48 GPU run only. The public author's own notebook claims a real scored run finished under 12 h despite the
+# 8-minute cap (most tasks finish well before hitting it); do not revisit the gate itself until EXP-003's dev-48
+# run gives us real measured wall-times to justify a formula change, one way or the other.
 evaluation:
-  max_time_minutes: 4.5   # hard cap on the agent loop (asyncio timeout); edits on disk are still graded
-  max_tool_calls: 45      # get_status and submit_patch are free and do not count
-  max_turns: 70
-  timeout_seconds: 300    # VERIFY(Q2): per community source reading this ALSO caps the Phase-2 grading pytest
-                          # run, so we keep the harness default instead of plan's 150 s. The agent-side
-                          # command timeout is min(timeout_seconds, remaining task time), so 300 costs nothing;
-                          # the prompt wraps pytest in `timeout 90` to bound it anyway.
+  max_time_minutes: 8     # was 4.5 (E0); hard cap on the agent loop (asyncio timeout); edits on disk still graded
+  max_tool_calls: 28      # was 45 (E0); get_status and submit_patch are free and do not count
+  max_turns: 80           # was 70 (E0)
+  timeout_seconds: 240    # was 300 (E0); per the public notebook, locally this needs ~100s for requests' test
+                          # files, so 240 keeps headroom; the prompt still wraps pytest in `timeout 90`.

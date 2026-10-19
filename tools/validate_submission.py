@@ -599,7 +599,7 @@ def worst_case_hours(max_time_minutes: float, *, tasks: int = R.EXPECTED_HIDDEN_
     return tasks * (max_time_minutes + setup_minutes) / 60.0
 
 
-def check_eval_config(root: Path, report: Report) -> None:
+def check_eval_config(root: Path, report: Report, *, skip_budget_gate: bool = False) -> None:
     path = root / "eval_config.yaml"
     if not path.is_file():
         report.error("no eval_config.yaml: the harness default of 60 min/task would exceed the 12 h run budget")
@@ -626,7 +626,12 @@ def check_eval_config(root: Path, report: Report) -> None:
         msg = (f"worst case {R.EXPECTED_HIDDEN_TASKS} x ({minutes} + {R.ASSUMED_SETUP_MINUTES} setup) min = "
                f"{hours:.2f} h (gate {R.PACK_GATE_HOURS} h, limit {R.RUN_BUDGET_HOURS} h)")
         if hours > R.PACK_GATE_HOURS + 1e-9:
-            report.error("eval_config.yaml: " + msg + " -> EXCEEDS the packing gate")
+            if skip_budget_gate:
+                report.warn("eval_config.yaml: " + msg + " -> EXCEEDS the packing gate "
+                            "(demoted to a warning: --skip-budget-gate, UNOFFICIAL TEST BUILD ONLY, "
+                            "do not upload this zip to the leaderboard)")
+            else:
+                report.error("eval_config.yaml: " + msg + " -> EXCEEDS the packing gate")
         else:
             report.note("eval_config.yaml: " + msg)
     for key in ("max_tool_calls", "max_turns"):
@@ -671,7 +676,8 @@ def check_official(root: Path, report: Report) -> None:
 
 # ----------------------------------------------------------------------------- entry points
 
-def validate_dir(root: Path, *, strict_tree: bool = True, official: bool = False) -> Report:
+def validate_dir(root: Path, *, strict_tree: bool = True, official: bool = False,
+                  skip_budget_gate: bool = False) -> Report:
     report = Report()
     root = root.resolve()
     if not root.is_dir():
@@ -688,7 +694,7 @@ def validate_dir(root: Path, *, strict_tree: bool = True, official: bool = False
     check_agents(tree, report)
     for skill_dir in sorted(tree.skill_dirs):
         check_skill(root, skill_dir, report)
-    check_eval_config(root, report)
+    check_eval_config(root, report, skip_budget_gate=skip_budget_gate)
     reachable = tree.reachable_files()
     for p in sorted(reachable):
         if p.suffix.lower() in (".md", ".txt", ".yaml", ".yml", ".py"):
@@ -706,7 +712,7 @@ def validate_dir(root: Path, *, strict_tree: bool = True, official: bool = False
     return report
 
 
-def validate_zip(zip_path: Path, *, official: bool = False) -> Report:
+def validate_zip(zip_path: Path, *, official: bool = False, skip_budget_gate: bool = False) -> Report:
     report = Report()
     if not zip_path.is_file():
         report.error(f"archive not found: {zip_path}")
@@ -734,7 +740,7 @@ def validate_zip(zip_path: Path, *, official: bool = False) -> Report:
             return report
         with tempfile.TemporaryDirectory() as td:
             zf.extractall(td)
-            inner = validate_dir(Path(td), strict_tree=True, official=official)
+            inner = validate_dir(Path(td), strict_tree=True, official=official, skip_budget_gate=skip_budget_gate)
     report.extend(inner)
     report.note(f"archive {zip_path.name}: {len(names)} members, {zip_path.stat().st_size / 1024:.1f} KiB")
     return report

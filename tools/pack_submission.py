@@ -86,7 +86,8 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def pack(src: Path, out: Path, *, allow_warnings: bool = False, official: bool = False) -> int:
+def pack(src: Path, out: Path, *, allow_warnings: bool = False, official: bool = False,
+         skip_budget_gate: bool = False) -> int:
     with tempfile.TemporaryDirectory() as td:
         build = Path(td) / "build"
         build.mkdir()
@@ -104,7 +105,10 @@ def pack(src: Path, out: Path, *, allow_warnings: bool = False, official: bool =
                 print(f"  - {hit}")
             return 1
         print("[2/5] validating build tree (strict)")
-        report = V.validate_dir(build, strict_tree=True, official=official)
+        if skip_budget_gate:
+            print("      --skip-budget-gate set: the 11h worst-case packing gate is demoted to a warning. "
+                  "UNOFFICIAL TEST BUILD ONLY -- do not upload this zip to the leaderboard.")
+        report = V.validate_dir(build, strict_tree=True, official=official, skip_budget_gate=skip_budget_gate)
         print(report.render())
         if not report.ok:
             print("PACKING REFUSED: validation errors")
@@ -115,7 +119,7 @@ def pack(src: Path, out: Path, *, allow_warnings: bool = False, official: bool =
         print(f"[3/5] writing {out}")
         write_zip(build, out)
     print("[4/5] re-validating the archive")
-    zreport = V.validate_zip(out, official=False)
+    zreport = V.validate_zip(out, official=False, skip_budget_gate=skip_budget_gate)
     if not zreport.ok:
         print(zreport.render())
         print("PACKING REFUSED: archive invalid")
@@ -141,8 +145,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path, default=root / "dist" / "submission.zip")
     ap.add_argument("--allow-warnings", action="store_true")
     ap.add_argument("--official", action="store_true", help="also run the harness validator if importable")
+    ap.add_argument("--skip-budget-gate", action="store_true",
+                     help="demote the 11h worst-case packing gate to a warning (implies --allow-warnings). "
+                          "UNOFFICIAL TEST BUILD ONLY -- for dev-48/smoke GPU test runs, never for an LB upload.")
     args = ap.parse_args(argv)
-    return pack(args.src.resolve(), args.out.resolve(), allow_warnings=args.allow_warnings, official=args.official)
+    return pack(args.src.resolve(), args.out.resolve(),
+                allow_warnings=args.allow_warnings or args.skip_budget_gate,
+                official=args.official, skip_budget_gate=args.skip_budget_gate)
 
 
 if __name__ == "__main__":
