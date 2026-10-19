@@ -1,6 +1,7 @@
 # --- competition data: never redistribute (rules §2.4b) ---
 data/
 runs/
+runs_download/
 wheelhouse/
 *.tgz
 *.npz

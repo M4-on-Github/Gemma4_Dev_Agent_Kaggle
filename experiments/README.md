@@ -1169,3 +1169,35 @@ gold-patch files, not just aggregate resolve rate. Both steps need the corrected
 Follow-ups this section raises: fix `tools/analyze_traces.py`'s `phase_reached` instrumentation (Q13) before
 trusting it as a gate again; switch future screening runs to a cohort of tasks already known to pass gold
 control (8 gradeable data points at the cost of today's smoke-8, which only yields 4).
+
+## 1p. EXP-004: zero-GPU re-grade isolates a shim-gap artifact in EXP-003's measured loss — 2026-10-19
+
+Full writeup: `experiments/EXP-004-regrade-shim.md`. Follow-up to EXP-003-public-budget's dev-48 result
+(9/48 resolved vs. E0's 11/48). Re-graded (not re-ran) both runs' own already-captured final patches with
+`inline_snapshot`/`dirty_equals` (`tools/compat_shims/*`) present in the sandbox, gated per task on whether
+that task's extracted test files import them — zero GPU cost, CPU-only Kaggle kernel
+(`rainm4/gemma4-exp004-regrade-shim`), no model/agent loop.
+
+A real bug surfaced and was fixed before trusting any number: v1 of `tools/regrade_patches.py` pre-seeded the
+shim files into `/workspace` *before* applying the agent's own patch, so any patch that had itself vendored
+the same file (exactly the case under study) failed `git apply` outright (`already exists in working
+directory`), producing false `resolved=False` rows. Fixed in v2 by skipping pre-seeding a shim file the
+stored patch's own diff already adds (`_patch_adds_file`), rerun on the same kernel id, confirmed zero apply
+errors across all 96 regraded rows.
+
+Clean v2 result: **E0 regrade 11/48 (22.9%), exactly matching E0's original scored result with zero flips**
+(no E0 task needed the shim that it didn't already have — this doubles as the methodology's own sanity
+check). **EXP-003 regrade 12/48 (25.0%), up from EXP-003's original scored 9/48 (18.75%)**, via 3 tasks
+flipping False→True (fastapi_14459, fastapi_14360, fastapi_14297) once the sandbox gap stopped consuming the
+agent's remaining budget before resubmission. Of EXP-003-public-budget.md's 5 originally-contested "E0 won,
+EXP-003 lost" tasks, 4 (fastapi_13207, fastapi_14873, fastapi_13537, rich_3676) hold up as genuine losses —
+rich_3676 in particular confirms that doc's own finding that it was cut off at exactly the new 28-call cap —
+but fastapi_14297 (previously unexplained: "stopped earlier, at 26, for a different reason not yet
+investigated") is now explained as the shim artifact.
+
+Net: EXP-003-public-budget.md's "flat-to-slightly-worse" verdict rested partly on this artifact. Once
+equalized, EXP-003's config is a hair *above* E0 (25.0% vs. 22.9%, n=48, well inside overlapping Wilson CIs,
+not a basis for adoption) rather than below it. The call-count cut's real, mechanistic cost (rich_3676) still
+stands, but the broader "5 lost tasks" framing over-attributed to it; the honest picture after this
+correction is closer to parity than the original write-up suggested. Any future budget-shape experiment
+should re-grade its own patches with this same shim-equalization step before comparing resolve rates to E0.

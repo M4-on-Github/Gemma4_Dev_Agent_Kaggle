@@ -157,3 +157,13 @@ follow-ups:
      since vLLM likely falls back to Gemma's own generation_config.json default (unverified); the "16384->
      8192" figure above is the public notebook's OWN before/after, not E0's -- E0 used 4096, worth rereading
      so nobody mistakes 16384 for something this project ever ran.
+  6. **Correction, 2026-10-19 (EXP-004-regrade-shim, see `experiments/EXP-004-regrade-shim.md`):** the
+     9/48 vs. 11/48 comparison above rested partly on a grading-sandbox artifact, not purely on the
+     45->28 call-count cut. A zero-GPU re-grade of both runs' own already-captured patches with the
+     inline_snapshot/dirty_equals gap equalized found EXP-003 actually at 12/48 = 25.0% (E0 unchanged at
+     11/48 = 22.9%, zero flips -- E0 was never affected by this artifact). Of the 5 "lost" tasks listed
+     above, fastapi_14297 (the one flagged here as stopping at 26 calls "for a different reason not yet
+     investigated") is the shim artifact, not a real loss; fastapi_13207, fastapi_13537, fastapi_14873 and
+     rich_3676 hold up as genuine losses, rich_3676 confirming the 28-call-cap mechanism already described
+     above. Read the decision above as directionally still correct on the call-count cut's real cost, but
+     the magnitude ("5 lost tasks") was overstated by this one artifact-driven case.
