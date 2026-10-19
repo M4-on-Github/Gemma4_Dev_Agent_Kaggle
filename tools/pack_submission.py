@@ -29,6 +29,29 @@ import validate_submission as V  # noqa: E402
 
 _ZIP_DATE = (2026, 1, 1, 0, 0, 0)
 
+# Prompt variants rejected by an experiment but left reachable in git history: packing one into a
+# submission zip without noticing would silently re-score a config we already decided against.
+# Each entry is (unique substring, experiment id, reason) — see experiments/<id>.md for the decision.
+_REJECTED_PROMPT_MARKERS: list[tuple[str, str, str]] = [
+    (
+        "search_similar_code with that identifier query",
+        "EXP-002-estop-a",
+        "graph-tools-first LOCATE (E-STOP(a')): decision was 'do not proceed', "
+        "superseded by the recall-check finding that these tools lose to a grep baseline at every k",
+    ),
+]
+
+
+def check_rejected_prompts(build: Path) -> list[str]:
+    hits = []
+    for path in sorted(build.rglob("*.md")):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for marker, exp_id, reason in _REJECTED_PROMPT_MARKERS:
+            if marker in text:
+                rel = path.relative_to(build)
+                hits.append(f"{rel}: matches rejected variant from {exp_id} ({reason})")
+    return hits
+
 
 def build_tree(src: Path, build: Path) -> list[Path]:
     tree = V.load_agent_tree(src)
@@ -74,6 +97,12 @@ def pack(src: Path, out: Path, *, allow_warnings: bool = False, official: bool =
             print(f"ERROR: {exc}")
             return 1
         print(f"      {len(files)} reachable files")
+        rejected = check_rejected_prompts(build)
+        if rejected:
+            print("PACKING REFUSED: build tree contains an experimentally-rejected prompt variant:")
+            for hit in rejected:
+                print(f"  - {hit}")
+            return 1
         print("[2/5] validating build tree (strict)")
         report = V.validate_dir(build, strict_tree=True, official=official)
         print(report.render())
