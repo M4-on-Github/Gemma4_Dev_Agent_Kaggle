@@ -168,6 +168,9 @@ mechanism. E11 must measure the nudge/unclosed-tag rate, not just overflow.
 | Mean setup_s | | `aggregates.json: setup_s_used` | |
 | Baseline run-to-run variance (same config, 2 seeds, dev-48) | | EXP-001a/b | |
 | Weekly GPU quota | | | |
+| Max concurrency @ 32k ctx, per model (31B/12B/e4b/e2b) | 8.74 / 19.97 / 45.63 / 67.18 | `experiments/EXP-006-vllm-concurrency-probe.md` | 2026-10-20 |
+| Idle KV-cache fraction @ 32k, 1 agent (31B/12B/e4b/e2b) | 88.6% / 95.0% / 97.8% / 98.5% | `experiments/EXP-006-vllm-concurrency-probe.md` | 2026-10-20 |
+| Burst speedup @ N=4 (31B/12B/e4b/e2b) | 3.60x / 3.54x / 3.47x / 3.21x | `experiments/EXP-006-vllm-concurrency-probe.md` | 2026-10-20 |
 
 ## 3. Experiment index (one row per `EXP-NNN-<slug>.md`)
 
@@ -176,6 +179,7 @@ mechanism. E11 must measure the nudge/unclosed-tag rate, not just overflow.
 | EXP-000 | | gold control (no model) | all 129 | | — | — | — | — | | — | |
 | EXP-001 | | baseline v1 (phased prompt, thinking 256, T 0.2, 4.5 min/45 calls) | smoke-8 → dev-48 | | | | | | | | |
 | EXP-002 | 2026-10-18 | E-STOP(a') prompt-only LOCATE rewrite (fixed 4-call sequence, graph-tools-first) | smoke-8 (4/8 sound) | 2/4 (50%) | 25% | — | — | — | 4.55 min | — | reject-pending-recheck: step (b) `search_similar_code` WAS called 3/4 (corrected 2026-10-18, see §1o); `get_code_neighbors`/`get_code_subgraph` still 0/4; likely a recall-quality issue, not compliance — see `experiments/EXP-002-estop-a.md` |
+| EXP-006 | 2026-10-20 | n/a — vLLM boot-time KV-cache concurrency probe across all 4 allowed model sizes, no task/agent run | n/a (no tasks; 4 model variants) | n/a | n/a | n/a | n/a | n/a | 22.6 min total (all 4 models) | n/a | **adopt (proceed)** — max_concurrency_32k(31B)=8.74≥4, speedup_n4=3.60≥2.0; decision rule says proceed to EXP-007 ParallelAgent probe. See `experiments/EXP-006-vllm-concurrency-probe.md` |
 
 Log template (`experiments/EXP-NNN-<slug>.md`):
 
