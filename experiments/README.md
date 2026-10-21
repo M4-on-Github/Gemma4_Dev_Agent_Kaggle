@@ -166,7 +166,13 @@ mechanism. E11 must measure the nudge/unclosed-tag rate, not just overflow.
 | vLLM server start on L4×4 | | `summary.json: server_start_s` | |
 | Decode tok/s (probe) | | `summary.json: decode_probe` | |
 | Mean setup_s | | `aggregates.json: setup_s_used` | |
-| Baseline run-to-run variance (same config, 2 seeds, dev-48) | | EXP-001a/b | |
+| Baseline run-to-run variance (same config, 2 seeds, dev-48) | **still not run**; upper bound from two *different* configs: solved-set concordance 6/14 = **42.9%**, 8 discordant pairs, McNemar p = 0.73 | `experiments/EXP-009-lb-variance-and-trace-forensics.md` (Part A5) | 2026-10-21 |
+| **Public-LB run-to-run variance / minimum detectable effect** | +3 tasks (0.06 -> 0.12) between near-identical bundles; Fisher p = 0.53; identical runs differ by >= 3 tasks 42% of the time. **MDE ~4 tasks (~0.07)** | `experiments/EXP-009-lb-variance-and-trace-forensics.md` (Part A4), `submissions.md` #1 vs #3 | 2026-10-21 |
+| Best estimate of our true public rate (pooled #1+#3) | **11/116 = 9.5%** (not 12%) | `experiments/EXP-009-lb-variance-and-trace-forensics.md` (Part A4) | 2026-10-21 |
+| Agent wall-clock split, dev-48 (read/search : edit : exec : overhead) | E0 **73.7% : 11.7% : 8.5% : 6.1%**; EXP-003 70.5% : 14.1% : 4.0% : 11.4% | `experiments/EXP-009/forensics-*.txt` | 2026-10-21 |
+| Cost of reading via `sed`/`cat`/`head` vs `read_file` | **11.40 s vs 2.74 s** median per call (4.2x); `sed`/`cat`/`head` alone = 27% of all agent wall-clock | `experiments/EXP-009/forensics-E0-dev48.txt` | 2026-10-21 |
+| Median first-edit turn, by outcome (E0) | resolved **18**, patch-but-failed **18**, empty-patch **43**; 13/48 tasks never edit at all | `experiments/EXP-009/forensics-E0-dev48.txt` | 2026-10-21 |
+| Conversion once any patch exists (E0) | **11/29 = 37.9%** resolved | `experiments/EXP-009/forensics-E0-dev48.txt` | 2026-10-21 |
 | Weekly GPU quota | | | |
 | Max concurrency @ 32k ctx, per model (31B/12B/e4b/e2b) | 8.74 / 19.97 / 45.63 / 67.18 | `experiments/EXP-006-vllm-concurrency-probe.md` | 2026-10-20 |
 | Idle KV-cache fraction @ 32k, 1 agent (31B/12B/e4b/e2b) | 88.6% / 95.0% / 97.8% / 98.5% | `experiments/EXP-006-vllm-concurrency-probe.md` | 2026-10-20 |
@@ -181,6 +187,8 @@ mechanism. E11 must measure the nudge/unclosed-tag rate, not just overflow.
 | EXP-002 | 2026-10-18 | E-STOP(a') prompt-only LOCATE rewrite (fixed 4-call sequence, graph-tools-first) | smoke-8 (4/8 sound) | 2/4 (50%) | 25% | — | — | — | 4.55 min | — | reject-pending-recheck: step (b) `search_similar_code` WAS called 3/4 (corrected 2026-10-18, see §1o); `get_code_neighbors`/`get_code_subgraph` still 0/4; likely a recall-quality issue, not compliance — see `experiments/EXP-002-estop-a.md` |
 | EXP-006 | 2026-10-20 | n/a — vLLM boot-time KV-cache concurrency probe across all 4 allowed model sizes, no task/agent run | n/a (no tasks; 4 model variants) | n/a | n/a | n/a | n/a | n/a | 22.6 min total (all 4 models) | n/a | **adopt (proceed)** — max_concurrency_32k(31B)=8.74≥4, speedup_n4=3.60≥2.0; decision rule says proceed to EXP-007 ParallelAgent probe. See `experiments/EXP-006-vllm-concurrency-probe.md` |
 | EXP-007 | 2026-10-20 | n/a — ADK `ParallelAgent` concurrency probe on 31B only (synthetic analyzer_A/analyzer_B agents, fake-relay stage 0 + real-vLLM stage 1), no task/agent run | n/a (no tasks; synthetic 2-branch agent tree) | n/a | n/a | n/a | n/a | n/a | 12.8 min total | n/a | **H1 PASS, H3 significant** — real concurrency confirmed (max_in_flight=2, wall_ratio=0.206) but a sync tool call stalls the sibling branch by ~78% (h3_projected_stall_frac=0.780, max_lag_s=0.961s); proceed to EXP-008 only after making swegemma's sync tools async. See `experiments/EXP-007-adk-parallel-probe.md` |
+| EXP-009 | 2026-10-21 | n/a — zero-GPU retrospective analysis (no variable changed): LB-variance test of submissions #1 vs #3 + bundle provenance audit + wall-clock/trace forensics on E0 and EXP-003 | dev-48 (reused E0 + EXP-003 traces) and the 58-task public LB half | n/a (analysis) | n/a | n/a | n/a | n/a | n/a (0.0 GPU-h) | n/a | **H1 rejected, H2 adopted** — the 0.06 -> 0.12 "doubling" is noise (Fisher p = 0.53; identical runs reproduce a 3-task gap 42% of the time); public-LB MDE raised to ~4 tasks (~0.07); primary outcome metrics switched to empty-patch rate and median first-edit turn; paired McNemar now required on every A/B. Key finding: 73.7% of wall-clock goes to reading code, and the split between scoring and not scoring is the **turn of the first edit** (18 vs 43), not the time budget. See `experiments/EXP-009-lb-variance-and-trace-forensics.md` |
+| EXP-010 | 2026-10-21 | **prompt-only, 1 line**: first-edit tripwire -- `calls >= 25` with `edits=0` forces the next call to be `edit_file` (N=25 chosen from a threshold sweep over E0 + EXP-003 traces) | **none -- submitted straight to the public LB, no dev-48 run (quota)** | pending | pending (39.6% at E0, target <15%) | n/a | n/a | n/a | n/a (caps unchanged) | **10.00 h** worst case, gate-clean | **pending** -- pre-registered: the LB *cannot* adopt or reject this (MDE ~4 tasks vs ~+1 expected); only a score <= ~0.03 reads as a possible regression. Real decision waits for a dev-48 run on empty-patch rate + median first-edit turn. See `experiments/EXP-010-first-edit-tripwire.md` |
 
 Log template (`experiments/EXP-NNN-<slug>.md`):
 
@@ -206,8 +214,9 @@ may be copied into `experiments/EXP-NNN/`.
 |---|---|---|---|---|---|---|---|
 | | v1 | | | | | | first submission target Oct 17 |
 
-Rules reminders: never submit a config that has not run on dev-48 with projected worst case ≤ 11 h; ignore LB
-moves < 0.035 (2 tasks); last submission ≤ Dec 1 23:00 UTC.
+Rules reminders: never submit a config that has not run on dev-48 with projected worst case ≤ 11 h; **ignore LB
+moves < ~0.07 (4 tasks) — measured 2026-10-21, EXP-009; the old 0.035 threshold was an underestimate and a
++3-task move (0.06 → 0.12) turned out to be pure noise**; last submission ≤ Dec 1 23:00 UTC.
 
 ---
 

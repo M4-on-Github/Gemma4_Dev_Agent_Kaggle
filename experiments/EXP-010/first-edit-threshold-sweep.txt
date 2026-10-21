@@ -1,0 +1,34 @@
+========================================================================
+E0  first-edit TURN distribution
+cohort               n    min   p25   p50   p75   p90   max  never
+resolved            11      7    10    18    22    29    30  0
+patch-but-failed    18      6    12    18    26    35    41  0
+empty-patch         19     27    40    43    46    48    50  13
+
+  tripwire N -> resolved tasks whose 1st edit is LATER than N (would be forced early) | empty-patch tasks it fires on
+    N=12   disturbed 7/11 resolved   fires on 19/19 empty-patch
+    N=14   disturbed 6/11 resolved   fires on 19/19 empty-patch
+    N=16   disturbed 6/11 resolved   fires on 19/19 empty-patch
+    N=18   disturbed 5/11 resolved   fires on 19/19 empty-patch
+    N=20   disturbed 4/11 resolved   fires on 19/19 empty-patch
+    N=22   disturbed 2/11 resolved   fires on 19/19 empty-patch
+    N=25   disturbed 2/11 resolved   fires on 19/19 empty-patch
+    N=28   disturbed 2/11 resolved   fires on 18/19 empty-patch
+    N=30   disturbed 0/11 resolved   fires on 18/19 empty-patch
+========================================================================
+EXP-003  first-edit TURN distribution
+cohort               n    min   p25   p50   p75   p90   max  never
+resolved             9      6    12    14    17    19    25  0
+patch-but-failed    23      5    10    17    20    25    28  0
+empty-patch         16     18    29    32    33    33    34  8
+
+  tripwire N -> resolved tasks whose 1st edit is LATER than N (would be forced early) | empty-patch tasks it fires on
+    N=12   disturbed 5/9 resolved   fires on 16/16 empty-patch
+    N=14   disturbed 4/9 resolved   fires on 16/16 empty-patch
+    N=16   disturbed 4/9 resolved   fires on 16/16 empty-patch
+    N=18   disturbed 1/9 resolved   fires on 15/16 empty-patch
+    N=20   disturbed 1/9 resolved   fires on 15/16 empty-patch
+    N=22   disturbed 1/9 resolved   fires on 15/16 empty-patch
+    N=25   disturbed 0/9 resolved   fires on 14/16 empty-patch
+    N=28   disturbed 0/9 resolved   fires on 14/16 empty-patch
+    N=30   disturbed 0/9 resolved   fires on 13/16 empty-patch

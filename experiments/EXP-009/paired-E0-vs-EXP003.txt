@@ -1,0 +1,12 @@
+# paired comparison over 48 shared tasks
+A = runs\E0-dev48-baseline\runs\E0-dev48-baseline
+B = runs\exp003_public_budget_dev48\runs\EXP-003-public-budget-dev48
+
+both resolved : 6
+A only        : 5  fastapi_13207 fastapi_13537 fastapi_14297 fastapi_14873 rich_3676
+B only        : 3  fastapi_15589 fastapi_5624 fastapi_9753
+neither       : 34
+
+A total 11/48   B total 9/48
+discordant pairs: 8   exact McNemar two-sided p = 0.7266
+concordance of the solved set: 6/14 = 42.9% of tasks solved by either run were solved by BOTH

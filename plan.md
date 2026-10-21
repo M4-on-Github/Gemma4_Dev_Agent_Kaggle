@@ -164,6 +164,11 @@ at face value — it would only rule out a sub-agent running the *same* weights 
 is architecturally supported and untested; see §6.2 for why it's still gated behind G-LoRA rather than
 promoted into the v1/E9 backlog now.
 
+**Note (2026-10-20):** by the same reading, "one `LlmAgent`, one LLM request in flight at a time" is our current
+design choice, not a harness constraint — `SequentialAgent`/`ParallelAgent` roots compile through the real
+`compile_submission()` path (exercised by EXP-007). Whether a parallel tree is worth adopting is an
+evidence-gated question tracked in §6.3, not settled here.
+
 ```yaml
 # submission/agent.yaml (shape to be matched against sample_submission — Q2)
 name: swe_coder
@@ -273,9 +278,36 @@ Aggregates: resolve rate (± Wilson 95% CI), empty-patch rate, timeout rate, ove
 Apply each task's gold patch + run test_patch through the harness. Tasks that fail are removed from cohorts and counted (public sandbox fails some gold patches [M]). Rerun gold control whenever the harness/wheelhouse version changes.
 
 ### 5.5 Noise handling
-- With N=48 and p≈0.25, the 95% CI is roughly ±12 pts; a single-run difference of < 3 tasks on dev-48 is **not** evidence. Decision rule: adopt a change only if (a) dev-48 Δ ≥ +3 tasks **and** process metrics (malformed, spin, overflow, wall) do not regress, or (b) the change is a pure robustness fix with neutral resolve rate.
-- Run the baseline config twice (two seeds / two sessions) early to measure run-to-run variance; record it in `experiments/README.md` and use it as the minimum detectable effect.
-- Public LB: ±1 task = ±0.017; do not react to single-day LB moves < 0.035.
+
+**Both noise floors were measured on 2026-10-21 (EXP-009) and both are larger than this section originally
+assumed. The numbers below replace the estimates.**
+
+- **Public LB: the minimum detectable effect is ~4 tasks (~0.07), not 2 tasks (0.035).** Submissions #1 and
+  #3 were near-identical configs -- the only live delta was `max_time_minutes` 4.5 -> 4.0, which was expected
+  to *cost* ~0.4 tasks -- and they scored 0.06 = 4/58 and 0.12 = 7/58. Fisher exact two-sided p = 0.53; at
+  the pooled rate (11/116 = 9.5%) two **identical** runs differ by >= 3 tasks 42% of the time and by >= 4
+  tasks 26% of the time. A doubling of the public score was pure variance. Treat the daily slot as a
+  pass/fail budget-and-transfer check, not a measurement instrument -- the public half is only 58 of ~120
+  tasks and the private half decides the final standing. Check any move with
+  `python tools/run_forensics.py lb <k1> <n1> <k2> <n2>` before reacting to it.
+- **dev-48 per-task outcomes churn by more than half between runs.** E0 vs EXP-003 over the same cohort: 14
+  distinct tasks solved by either run, only **6 solved by both** (42.9% concordance of the solved set), 8
+  discordant pairs, exact McNemar two-sided p = 0.73. Marginal resolve rates alone are therefore **not
+  admissible evidence**; always report the paired 2x2 and exact McNemar
+  (`python tools/run_forensics.py compare <runA> <runB>`).
+- **Resolve rate is the wrong primary outcome at n = 48.** At p ~= 0.23 its sd is ~2.9 tasks, so the
+  "delta >= +3 tasks" rule below is barely 1 sigma. Score experiments primarily on high-prevalence process
+  metrics that have tight CIs and large expected effects: **empty-patch rate** (39.6% at E0, target < 15%)
+  and **median first-edit turn** (18 for tasks that produce a patch vs 43 for tasks that do not -- target
+  < 20 for every cohort). Resolve rate stays as a secondary, confirmatory metric.
+- **Adoption rule** (unchanged in form, now explicitly secondary to the process metrics): adopt a change only
+  if (a) dev-48 delta >= +3 tasks **and** process metrics (malformed, spin, overflow, wall) do not regress,
+  or (b) the change is a pure robustness fix with neutral resolve rate -- **and**, in either case, the paired
+  table does not show the whole marginal gain coming from discordant churn.
+- **Still open:** the 42.9% concordance is measured across two *different* configs, so it bounds config
+  effect from above and pure run-to-run noise from below. A same-config number still needs either two
+  dev-48 runs of one config (EXP-001a/b, never run) or a free re-analysis of EXP-000's gold-control reruns
+  (EXP-009 follow-up 5).
 
 ### 5.6 Experiment log format (`experiments/EXP-NNN-<slug>.md`)
 ```
@@ -667,6 +699,10 @@ Mirrored in `experiments/README.md` §1o (narrative) and Q13/Q14 (ledger).
 E5 → E4 → E10 → E7 → E11 → E8**. E-STOP(a') is removed from the queue (rejected on smoke-8, see §6.0.3 and its
 updated row above). **EXP-003b is now dropped from the queue entirely, not deferred** — see the recall-check
 result immediately below; EXP-003a (tool-description rewrite) stays dropped for the same §6.0.3 reason.
+**Not in this order (added 2026-10-20):** EXP-008 (`SequentialAgent[ParallelAgent[analyzer_A, analyzer_B],
+swe_coder]` vs E0 on dev-48) is a candidate in the separate concurrency track (§6.3) and is **blocked**, not
+queued — EXP-007 showed swegemma's synchronous tools stall sibling branches, and the prerequisite fix is
+not yet scoped.
 "Done" criteria to move past each of the first three (the ones that matter for the Oct 25 gate):
 - **E0 done** when we have a resolve-rate point estimate + Wilson CI on dev-48 and a `phase_reached` /
   time-cap-vs-calls-cap breakdown. This number is what tells us whether to spend the Oct 17 LB slot now or
@@ -813,6 +849,120 @@ constraint, and what validates or complicates the note above:
   continuation text under some conditions, but not evidence we can trigger it on our own threshold; worth
   the same cheap re-check as BATS above (§6.0.1) before concluding this path is fully closed.
 
+### 6.3 Concurrency / ParallelAgent track (gated) — added 2026-10-20
+
+**Status: evidence-gated, not buildable yet.** Same gate philosophy as §6.2's 2026-10-18 restructuring: no
+date gate. What decides the next step is verified evidence, and the current evidence says a prerequisite is
+missing. This is a separate track rather than a §6.1 row because every §6.1 experiment changes one setting of
+the single-`LlmAgent` `swe_coder` architecture (§4.1). This track asks a different question: whether the
+one-LLM-request-at-a-time pattern itself leaves usable capacity on the table. As noted in §4.1, that pattern
+is our design choice. The harness's single-model rule (§1.3) constrains only the shared base checkpoint, not
+the agent-tree shape.
+
+**Hypothesis chain and evidence so far (both runs read-only; no agent run on real tasks, no submission change):**
+1. *Idle serving capacity exists and is schedulable* — **EXP-006, CONFIRMED** (`experiments/EXP-006-vllm-concurrency-probe.md`,
+   22.6 min L4×4, all 4 allowed model sizes booted with the harness-faithful `VllmConfig`). Boot-time
+   `max_concurrency_32k` = 8.74 / 19.97 / 45.63 / 67.18 (31B / 12B / e4B / e2B). Even on 31B, the worst case
+   and our current model, **88.6% of usable KV-cache capacity sits idle** when only one request is in flight. A
+   synthetic HTTP burst showed this capacity can actually be scheduled, so it is not only a KV-cache
+   bookkeeping number: `speedup_n4` = 3.21x–3.60x and `speedup_n16` = 9.05x–9.85x across the 4 models. The
+   pre-registered rule (`max_concurrency_32k(31B) ≥ 4` AND `speedup_n4 ≥ 2.0`) held (8.74, 3.60x), so EXP-007
+   was built.
+2. *ADK's own `ParallelAgent` turns that capacity into concurrent agent LLM calls* — **EXP-007 H1, CONFIRMED on
+   real 31B** (`experiments/EXP-007-adk-parallel-probe.md`, 12.8 min L4×4). The probe used synthetic read-only
+   `analyzer_a`/`analyzer_b` agents built through the real `compile_submission()` path, N=2 branches.
+   `relay_max_in_flight = 2` for the parallel arm vs 1 for a sequential control doing the same work, and
+   `wall_ratio_parallel_over_control = 0.206` (pass bar ≤ 0.75). The branches overlap on the wire, not just in
+   ADK's internal bookkeeping.
+3. *A long synchronous tool call in one branch does not stall the sibling* — **EXP-007 H3, FALSIFIED: the stall
+   is real and large.** In one branch, a ~1 s `slow_sync_tool` (plain `time.sleep`) made the parallel arm ~78%
+   slower (1.997 s vs 1.122 s; `h3_projected_stall_frac = 0.780`, pass bar ≤ 0.10). An independent
+   event-loop-lag monitor recorded `max_lag_s = 0.961 s`, against ~0.001–0.002 s in every other real-vLLM
+   arm. That lag is almost exactly the length of the sleep, so the asyncio loop itself was blocked and the
+   sibling branch's in-flight LLM request was starved with it. Root cause:
+   `FunctionTool._invoke_callable` (`data/src/google_adk/google/adk/tools/function_tool.py:223-238`) calls
+   sync tool functions directly on the event loop, with no thread pool. **Every swegemma tool `swe_coder`
+   uses is that kind of plain sync function** (e.g. `run_command` is a `def`, not `async def`, at
+   `data/src/swegemma/swegemma/tools/execution.py:20-21`). Real `pytest`/shell calls run for seconds to tens of
+   seconds, far longer than the probe's 1 s stand-in.
+4. *Not tested:* EXP-007 H2 (sync `FunctionTool` vs `AgentTool` multi-call dispatch within one turn) was
+   deliberately not run. It has low relevance here: 0 of 3,278 E0 tool-call steps carry more than one function
+   call. EXP-007 H4 (is `RunConfig.max_llm_calls` shared across branches or per branch?) is
+   **inconclusive**. The `max_llm_calls=1` arm errored, but both hypotheses predict that failure; a
+   `max_llm_calls=2` arm would separate them. Neither result gates this track.
+
+**Decision (EXP-007's pre-registered rule, now resolved): H1 PASS + H3 cost significant → do NOT build
+EXP-008 yet.** EXP-008 is the already-named candidate from EXP-007's follow-ups:
+`SequentialAgent[ParallelAgent[analyzer_A, analyzer_B], swe_coder]` vs E0 on dev-48. If it were built on
+today's sync tools, event-loop stalls on real tasks would likely eat most of the measured concurrency
+benefit. Per the rule, the next step is to make swegemma's sync tools async (or otherwise stop them blocking
+the loop) first, and only then attempt a real parallel-agent architecture.
+
+**The prerequisite is unscoped and not in any backlog. Two open questions must be answered before it can
+be scoped:**
+- *Can a submission reach it at all?* The tools live in the host-side swegemma package, resolved through the
+  closed host `ToolRegistry`. Submissions are declarative-only (§1.3: no Python entry point, no custom tools;
+  §6.0.3 found the same closed-registry limit for tool descriptions). So "wrap `run_command` et al. in
+  `asyncio.to_thread`" (EXP-007 follow-up 2) may not be a change we can ship. It may only be reachable as an
+  upstream swegemma/adk change, which is outside our control. Confirm this against `HARNESS_README.md` and
+  the `adk_submission` registry source before treating it as buildable.
+- *Does the H3 stall actually hit EXP-008's shape?* In
+  `SequentialAgent[ParallelAgent[A, B], swe_coder]`, the long `run_command`/`pytest` calls belong to
+  `swe_coder`, which runs alone after the parallel stage, so they have no sibling to stall. The stall matters
+  only for whatever the *analyzer* branches call. If those branches use only read-only tools, as in the
+  harness's reference `code_analyzer` (`read_file` + graph tools, no `run_command`; §6.0.3), the
+  multi-second blocking calls H3 models may never happen inside the parallel stage. Those read-only tools are
+  still sync, though, and their real per-call latency is unmeasured. **A free first check (no GPU):** pull the
+  per-call latency distribution of `read_file`/graph-tool calls from E0's existing traces (per-step
+  `elapsed_s`, see §10.1). If those calls are consistently short compared with an LLM call, the prerequisite
+  may shrink to "restrict analyzer tools" rather than "async-ize swegemma". That would refine the
+  pre-registered decision, not reverse it, and would still need confirmation by re-running EXP-007's
+  sync-block arm with the real tools.
+
+**What else must hold before EXP-008 is worth GPU time (beyond the prerequisite):**
+- *Where the analyzers point.* EXP-008's front end is a LOCATE-style analyzer stage. §6.1's 2026-10-19
+  correction (EXP-003b decision) found from real E0 dev-48 traces that the bottleneck is **post-LOCATE**
+  (wall-clock-bound touch→edit→resolved drop-off), not LOCATE quality. Parallel analyzers make a LOCATE stage
+  *cheaper in wall time* than sequential analyzers would. Compared with E0, though, that stage is still
+  *extra* wall time, plus a handoff, and it carries the coordination-cost risks §6.0.3 lists (MAST
+  arXiv 2503.13657). EXP-008's design should say which measured E0 failure it targets before it is run.
+- *Branch safety.* Only read-only branches are candidates. All agents share one `/workspace` and
+  `submit_patch` diffs the whole workspace, so parallel *coding* branches were ruled out before EXP-007 was
+  designed.
+- *Scope of the evidence so far.* The evidence covers N=2 and 31B only, with synthetic agents making one tool
+  call each. Nothing yet speaks to resolve rate, LB score, or the 12 h budget. Adoption would follow the usual
+  §5.5 rule (dev-48 Δ ≥ +3 tasks with no regression in wall/process metrics), plus the estimator's worst-case
+  ≤ 11.0 h gate (§4.4).
+- *Budget accounting.* Resolve H4 (`max_llm_calls=2` arm, CPU-only Stage 0 is enough) only if EXP-008's
+  budget design turns out to depend on whether branches share one budget.
+- *The idle capacity buys throughput, not latency -- added 2026-10-21 (EXP-009).* EXP-006's 88.6% idle KV at
+  31B is **not** a lever on any bottleneck EXP-009 actually found. The binding costs are sequential *within*
+  one agent turn: 73.7% of E0's wall-clock goes to reading code (`sed`/`cat`/`head` alone is 27% of the whole
+  run, at 11.40 s median per call), and the tasks that score nothing are **not** short of turns -- they spend
+  38 turns, as many as the winners, and simply never commit to an edit. Running more requests in parallel
+  cannot shorten a turn that is blocked on its own tool call, so this track can do nothing for the
+  empty-patch rate or the first-edit turn. It pays off **only** for the best-of-N variant parked below, where
+  the spare capacity runs N whole independent attempts instead of speeding one up. Recorded here so the idea
+  is not re-derived later as a latency fix.
+
+**Exit criteria, in order:** (1) the two open questions above are answered and the prerequisite is scoped
+as a concrete change; (2) EXP-007's `parallel-sync-block` arm, re-run with the real tools the analyzer
+branches would use, meets the original H3 bar (`h3_projected_stall_frac ≤ 0.10`, `max_lag_s` near the
+~0.001–0.002 s baseline) on real 31B; (3) only then does EXP-008 enter §6.1, as a smoke-8 screen before any
+dev-48 spend. GPU spent on this track to date: ~35 min L4×4 (EXP-006 22.6 min + EXP-007 12.8 min).
+
+**Candidate variant, flagged 2026-10-20, not yet scoped — revisit later:** EXP-008 as named uses
+`ParallelAgent` branches with *different roles* (analyzer_A/analyzer_B feeding `swe_coder`), which inherits
+both the H3 sync-tool-stall risk above and the multi-role handoff/coordination-cost risk §6.0.3 flags
+(MAST arXiv 2503.13657). A simpler variant that reuses the same proven concurrency mechanism (EXP-007 H1)
+without either risk: run **N identical copies of the single `swe_coder` agent concurrently on the same
+task** (self-consistency / best-of-N), rather than splitting work across differently-purposed sub-agents.
+Each copy's own tool calls only stall itself, not a differently-purposed sibling, so H3 matters less here
+than for EXP-008's analyzer split. The open problem this variant has instead: **no selection mechanism**.
+We don't have `test_patch` at inference time, so "pick the best of N patches" needs a cheap proxy (e.g.
+majority-vote on touched file/function, or preferring whichever candidate's own repro script passed) —
+not designed yet. Not scoped as an experiment; parking here so it isn't lost before someone picks it up.
+
 ---
 
 ## 7. Phase 4 — Paper track (Oct 20 → Nov 12)
@@ -917,7 +1067,8 @@ so either would need its own small multi-model harness outside `submission/`, ru
 | Context overflow (HTTP 400) → empty patch, lost submit_patch | High | High | `max_output_tokens` 4096, output truncation in commands, line-range reads, submit immediately after edits, state notes |
 | LoRA adapters silently zeroed / KV shrink hangs | High [M] | Med (wasted effort) | Canary gate Oct 25; no adapter by default; rank ≤ 32, 1 adapter |
 | Public↔hidden gap (34.5% vs 6.9% in one report) | High | High | Held-out split, LB confirmation of every adopted change, repo-agnostic prompts, requests/httpx oversampling |
-| LB noise misleads decisions | High | Med | 3-task rule on dev-48, ignore LB moves < 0.035, same-config repeat submission once |
+| LB noise misleads decisions | **Confirmed and quantified (2026-10-21, EXP-009)** | Med | **Measured, not assumed**: the same-config repeat submission was finally run (#1 vs #3) and moved +3 tasks (0.06 -> 0.12) on a config change that was expected to *cost* 0.4 -- Fisher p = 0.53, and identical runs reproduce a 3-task gap 42% of the time. Public-LB MDE is **~4 tasks (~0.07)**, not 0.035. dev-48 solved-set concordance between runs is only 42.9%, so marginal rates are inadmissible without the paired McNemar table. Mitigation now: process metrics (empty-patch rate, first-edit turn) as primary outcomes, `tools/run_forensics.py compare` on every A/B, and the LB slot demoted to a budget-and-transfer check. See 5.5 and `experiments/EXP-009-lb-variance-and-trace-forensics.md` |
+| Auto-discovered-but-unattached skills: `adk_submission/discovery.py:598` `rglob("SKILL.md")` scans the **whole** submission tree and registers every skill it finds, but `resolvers/tools.py:150` (`if not config.skills: return None`) attaches none of them unless `agent.yaml` declares a `skills:` key -- discovery is not attachment | **Confirmed (2026-10-21, EXP-009 Part A2)** | Med (silent no-op today, silent wrong-skill attachment later) | Currently double-harmless but actively misleading: the `skills/edit-anchoring/SKILL.md` added before submission #3 **never reached the zip at all** (`tools/pack_submission.py` ships only the 4-file closure reachable from `agent.yaml`; verified against `dist/exp005_e0_4min_safe.zip`) and would not have attached even if it had. It was still briefly mistaken for a live change while diagnosing the 0.12 score. The trap fires the day we add a `skills:` key -- `resolve_skills` matches on directory basename (with `_` -> `-` normalisation), not on path, so every stray `SKILL.md` anywhere under `submission/` becomes eligible at once. Mitigation: before adding a `skills:` key, run `find submission -name SKILL.md` and delete or move every one not intended to load; and never log a skill as a shipped change without checking `agent.yaml` for the key |
 | Undeclared tool / malformed calls crash tasks | Med | Med | Strict arg rules, declared-tool whitelist in validator, no shell-like tool examples |
 | Graph files 0 bytes / async gaps | Med | Low | Graph tools demoted or off (E5) |
 | L4×4 quota too small | Med | Med | smoke-8 screening, replay pre-screen, chunked sessions; record quota in W1 |

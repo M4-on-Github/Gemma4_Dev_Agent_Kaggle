@@ -1,0 +1,34 @@
+==============================================================================
+E0 (4.5min/45c)
+  tasks with >=1 edit call: 35/48   of those resolved: 11 (31.4%)
+
+  first-edit       n  resolved      rate  n_edits median
+  1-10             7         3     42.9%  1
+  11-18            8         3     37.5%  4
+  19-25            7         3     42.9%  10
+  26+             13         2     15.4%  2
+  first edit <=25 : 22 tasks, 9 resolved (40.9%)
+  first edit  >25 : 13 tasks, 2 resolved (15.4%)
+==============================================================================
+EXP-003 (8min/28c)
+  tasks with >=1 edit call: 40/48   of those resolved: 9 (22.5%)
+
+  first-edit       n  resolved      rate  n_edits median
+  1-10             7         1     14.3%  3
+  11-18           18         7     38.9%  2
+  19-25            7         1     14.3%  2
+  26+              8         0      0.0%  1
+  first edit <=25 : 32 tasks, 9 resolved (28.1%)
+  first edit  >25 : 8 tasks, 0 resolved (0.0%)
+==============================================================================
+POOLED ACROSS BOTH RUNS (n=96 task-runs)
+  first-edit       n  resolved      rate
+  1-10            14         4     28.6%
+  11-18           26        10     38.5%
+  19-25           14         4     28.6%
+  26+             21         2      9.5%
+
+  edited by turn 25 : 54 tasks, 18 resolved (33.3%)
+  edited after 25   : 21 tasks, 2 resolved (9.5%)
+
+  Fisher exact (early-vs-late x resolved-vs-not): p = 0.0438

@@ -1,0 +1,32 @@
+# budget forensics: runs\exp003_public_budget_dev48\runs\EXP-003-public-budget-dev48
+tasks=48  total agent wall=260.3 min
+
+## where the wall-clock goes, by tool
+tool              calls  total_min   share  median_s    p90_s
+run_command         651      132.4  50.9%      5.98    30.05
+read_file           412       62.3  23.9%      2.88    24.76
+edit_file           137       34.5  13.2%      8.15    32.16
+<no-tool>           139       13.4   5.2%      1.75     8.92
+submit_patch         45        8.8   3.4%      1.50    23.16
+get_status           31        6.5   2.5%      5.06    20.27
+write_file            7        2.3   0.9%     15.18    31.07
+get_code_neighbors      2        0.2   0.1%      6.12     2.07
+
+## run_command composition (by program invoked)
+program           calls  total_min  share_of_rc  median_s
+grep/rg             322       51.4       38.9%      4.47
+sed/cat/head        188       67.2       50.8%     13.02
+python               65        7.5        5.6%      2.80
+pytest               36        2.9        2.2%      2.25
+find/ls              30        2.5        1.9%      2.81
+other                 5        0.3        0.2%      2.03
+git                   5        0.5        0.4%      7.74
+
+## outcome cohorts
+cohort               n   turns  s/turn  max_prompt_tok  first_edit  n_edits
+resolved             9    26.0    7.79          14,922        14.0      2.0
+patch-but-failed    23    32.0   10.92          15,192        17.0      2.0
+empty-patch         16    33.0   12.13          14,690        32.5      0.5
+
+tasks that never called edit_file or write_file: 8/48
+  fastapi_11355 fastapi_14873 fastapi_15280 rich_3063 rich_3180 rich_3468 rich_3480 rich_3934

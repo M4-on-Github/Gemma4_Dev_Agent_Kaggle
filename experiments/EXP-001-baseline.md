@@ -38,3 +38,31 @@ follow-ups: phase_histogram = {LOCATE 26, REPRODUCE 10, VERIFY 4, EDIT 7, SUBMIT
           not tool-call count, which should steer E6's budget sweep toward the time-minutes axis over calls.
           This makes E-STOP(a') (forced LOCATE→REPRODUCE→EDIT transition) the clear next priority per plan §6.0/6.1,
           ahead of E3 and the rest of the backlog. Run a second seed/session to measure variance (plan §5.5).
+
+          **CORRECTION, 2026-10-21 (EXP-009, from this run's own traces).** Two claims above need qualifying:
+
+          1. *"the binding constraint is wall-clock ... which should steer E6's budget sweep toward the
+             time-minutes axis"* — **the cap-hit counts are right but the inference does not follow.** Buying
+             more time does not buy more work: EXP-003 nearly doubled the cap (4.5 → 8 min) and got *fewer*
+             turns per task (resolved 26.0 vs this run's 35.0), because its bundled generation changes made
+             each turn 1.4–1.8x slower. Empty-patch rate barely moved (39.6% → 33.3%). More decisively, the
+             tasks hitting the time cap here are **not** starved of turns: the 19 empty-patch tasks spend
+             38.0 turns against the winners' 35.0 and the same ~15k context, and only 1 of the 19 reached the
+             45-call cap. They spend a full budget and commit to nothing. The real split is the **turn of the
+             first edit** — 18 for tasks that produce a patch, 43 for tasks that produce nothing (replicated
+             independently on EXP-003: 14–17 vs 32.5). So this is a commitment problem, not a time-budget
+             problem, and the budget sweep is the wrong next move on the time axis too.
+
+          2. *"Run a second seed/session to measure variance"* — still **not done** on dev-48, and it matters
+             more than assumed. The cross-config proxy (this run vs EXP-003, same cohort) shows only 6 of the
+             14 distinct tasks either run solved were solved by both: **42.9% concordance**, 8 discordant
+             pairs, exact McNemar p = 0.73. At that churn rate this run's headline 22.9% (11/48) is not a
+             stable per-task result, and the ±12-pt CI quoted above understates how much the *identity* of
+             the solved tasks moves. Marginal resolve rates from this run should not be compared to another
+             run's without the paired table (`python tools/run_forensics.py compare <runA> <runB>`).
+
+          Also from this run's traces: **73.7% of agent wall-clock goes to reading code** (`sed`/`cat`/`head`
+          alone is 27% of the whole run at 11.40 s median per call, vs `read_file`'s 2.74 s for the same job),
+          only 11.7% to editing, and 13/48 tasks never call `edit_file`/`write_file` at all. Among the 29
+          tasks that do produce a patch, 11 resolve (**37.9%**). Full analysis and the per-tool tables:
+          `experiments/EXP-009-lb-variance-and-trace-forensics.md`, evidence in `experiments/EXP-009/`.
