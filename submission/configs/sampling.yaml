@@ -16,6 +16,13 @@ temperature: 1.0          # EXP-016 2026-10-22: 0.2 -> 1.0. This was E4's planne
 top_p: 0.95
 top_k: 64
 max_output_tokens: 4096   # keeps prompt + output well under the 32,768 context wall; E11 tries 2048/6144
+                          # EXP-018 2026-10-22: THAT PREMISE IS RETRACTED (experiments/EXP-018-config-provenance-
+                          # audit.md). experiments/README.md already records that a LOWER cap makes mid-tool-call
+                          # truncation MORE likely, not less; the harness default is 16384 and it recommends
+                          # thinking_budget 4096 WITH max_output_tokens 16384. The context wall also does not reach
+                          # us: peak prompt_tokens is 16,991 = 51.9% of 32,768 and zero tasks cross the trip
+                          # threshold, even simulated at 8192 (EXP-016 section 2e). Value nonetheless LEFT AT 4096
+                          # for submission #5 pending a dev-48 run (a larger cap risks longer steps, hence time).
 thinking_config:
   include_thoughts: true  # false = thinking off (sent as enable_thinking=false); E2/E3 ablate this
   thinking_budget: 256    # CORRECTED 2026-10-19: this IS forwarded to vLLM as a real generation cap (see

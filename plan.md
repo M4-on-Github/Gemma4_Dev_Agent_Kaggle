@@ -210,6 +210,15 @@ thinking_config:
 - 12 h / 120 tasks = **6.0 min/task all-in**. Subtract setup (Q8, assume 1.0 min) → **5.0 min agent wall max average**. Add 15% safety → target **average ≤ 4.3 min**, hard cap 4.5 min.
 - Decode 25.5 tok/s [M] → 4.5 min ≈ 270 s ≈ **6,900 output tokens per task total**, minus ~0.6 s × 45 calls ≈ 27 s overhead → ~6,200 tokens. With 45 calls that is **~140 output tokens per call including thinking**. Consequence: `thinking_budget` ≥ 512 at every step is unaffordable (45 × 512 = 23k tokens ≈ 15 min). Either thinking small (128–256) or thinking only on a few turns. This is Experiment E2's core question.
 - Prefill is not free: a 14k-token prompt every call for 45 calls = 630k prefill tokens; prefix caching should make this cheap but must be measured (Q10).
+- **Correction added 2026-10-22 (`experiments/EXP-018-config-provenance-audit.md`; the original bullets above are kept as written):**
+  `thinking_budget: 256`, `max_tool_calls: 45` and the 4.5-min cap are **one decision, not four** - all fall out of the single
+  6,900-token calculation above (256 ~ 6,900/45; 45 ~ 6,900/140; 4.5 from the 15% margin), done before any measurement.
+  The calculation treats a **cap as if it were spent on every call**; a cap the model rarely reaches costs nothing, and the 256
+  cap is a hard ceiling that binds on every step. It is also internally inconsistent: 45 calls x 256 thinking tokens = 11,520
+  tokens against ~6,900 available at 4.5 min (~6,120 at the current 4.0), so the caps could never all bind and time had to win
+  (measured: the time cap ends 79.2% = 38/48 of E0's tasks). Counter-evidence: EXP-003 raised the budget to 4096 and the run took
+  fewer turns at nearly double the time (s/turn 7.79-12.13), so the budget does get spent when offered; 512-1024 is untested
+  (EXP-014). `max_output_tokens: 4096` rests on a premise `experiments/README.md` already retracted. No value was changed.
 
 ```yaml
 # submission/eval_config.yaml — field names per sample (Q2) [M]

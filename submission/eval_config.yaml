@@ -18,6 +18,19 @@
 # 28-call cap directly cost at least one resolve (rich_3676, stopped at exactly 28 calls) that E0's 45-call
 # budget allowed to finish -- do not readopt max_tool_calls: 28 without first isolating it from the other
 # bundled changes (see that doc's decision section).
+#
+# EXP-018 provenance audit (2026-10-22, zero GPU; experiments/EXP-018-config-provenance-audit.md). Comments only:
+# NO value in this file was changed for submission #5.
+#  - max_time_minutes 4.0 is a post-timeout safety flinch (EXP-005, after submission #2 timed out), not a
+#    measurement. EXP-016 section 3 then reversed the premise it protected: projected ACTUAL time is 4.0 ~= 7.9 h,
+#    4.5 = 8.61 h (measured; E0 survived), 5.0 = 9.40 h, 6.0 = 10.99 h, 7.0 = 12.57 h (past the 12 h hard limit),
+#    against a calibrated operational ceiling of ~10.5 h. So 4.0 sits ~2.5 h below our own ceiling and pays
+#    resolves for margin we do not need (self-priced above at ~0.4 of E0's public tasks).
+#  - DELIBERATELY LEFT AT 4.0 for submission #5: raising it adds timeout risk, and a timeout scores zero (see
+#    submission #2). Raising it toward 4.5-5.0 is queued for the EXP-014 / EXP-018 follow-up, once dev-48
+#    quota exists. Do not change it without that run.
+#  - max_tool_calls 45 is non-binding on E0's dev-48 (median 32 calls, 1 of 48 tasks at the cap), so it costs
+#    nothing to keep; lowering it to 28 DOES cost resolves (EXP-003: the 28-call-capped cohort resolved 0 of 20).
 evaluation:
   max_time_minutes: 4.0   # hard cap on the agent loop (asyncio timeout); edits on disk are still graded. E0 was 4.5.
   max_tool_calls: 45      # get_status and submit_patch are free and do not count

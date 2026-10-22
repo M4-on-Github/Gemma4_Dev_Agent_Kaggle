@@ -34,10 +34,13 @@ submit even when the local check is red, and `git checkout --` any test path tha
 - `thinking_budget: 256`, `max_output_tokens: 4096` — these *cost* wall-clock per step. At 79.2% time
   saturation they trade steps for depth, and EXP-003 saw s/turn rise to 7.79-12.13 under similar settings.
   Held for EXP-014, after prompt surgery has created headroom.
-- The `inline_snapshot` / `dirty_equals` vendoring block (~6 KB, 55% of the prompt). It is load-bearing for up
+- The `inline_snapshot` / `dirty_equals` vendoring block (3,508 B, 31% of the prompt). It is load-bearing for up
   to 35 of 129 tasks (their census: 71 solvable, 106 with env repair) and is one of the few places we may be
   ahead of other teams. Moving it into an on-demand `skills/` entry is the right fix and is **not** being
   attempted under time pressure. Logged as follow-up.
+  [Correction 2026-10-22: this bullet originally read "~6 KB, 55% of the prompt". That figure was wrong: it was
+  written from memory, not measured. Measured, the block is 3,508 B and 31% of the 11,228 B prompt. Corrected
+  by `EXP-018-config-provenance-audit.md` section 4. Section 4 of this document is unchanged.]
 
 Net prompt size 11,175 → 11,226 B. It did **not** shrink; the win here is runtime calls, not prompt bytes.
 
