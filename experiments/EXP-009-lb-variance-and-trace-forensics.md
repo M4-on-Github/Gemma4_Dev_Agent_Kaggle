@@ -419,6 +419,56 @@ times, and **0** `read_file` calls ever target a `/tmp` path.
 the same 48 task ids appear in both runs under different budgets, so they are optimistic. The AUCs are
 descriptive and unaffected.
 
+### C6. Follow-up 7 answered: the tar-cache leak does NOT reach our agent runs
+
+Pure code reading, no GPU. The question C3 left open was whether the `sp_base` leak could have
+contaminated the dev-48 *agent* runs the way it contaminated the gold controls. It cannot.
+
+**Only `gold_control.py` varies the pool per task** (lines 183-184, inside the task loop) -- which is why
+it is also the only caller that needs `_clear_sitepackages_tar_cache()`. Every other entry point binds one
+pool for a whole invocation: `tools/regrade_patches.py:141` passes a single required `--wheels`, and
+otherwise `container_setup.resolve_wheels_dir` picks one directory from a fixed candidate list. One pool per
+run means `sp_base` is built once from that pool and reused correctly -- the same way official Kaggle
+grading behaves, which is the case the cache was designed for.
+
+**EXP-004 confirms it from the data side.** The shims are injected into `/workspace` by monkeypatching
+`verification.extract_snapshot` (`regrade_patches.py:57-61`), **not** through the wheels pool, so the
+re-grade never varied `wheels_dir` at all. And the re-grade reproduced E0 with **0 flips in 48 tasks** -- a
+clean negative control. A stale base tar would have produced scattered unexplained flips; instead the only
+3 flips were the 3 the shim hypothesis predicted.
+
+**Two corrections to C3's own description, both from reading the harness rather than trusting its comments:**
+
+1. The base/large threshold is **20 MB** (`_LARGE_WHEEL_THRESHOLD_BYTES = 20 * 1024 * 1024`), not the 16 MB
+   that `_inspect_wheels_dir`'s docstring and the inline comments at the injection site claim ("base
+   wheels (<16MB)", "large wheels (>=16MB)"). Those comments are wrong. C3 did not state a threshold, so
+   nothing above needs changing -- this is noted so the next person reading `container_setup` does not
+   trust the comment.
+2. The version-blind cache key is **only** a problem for the base bucket. Large wheels are cached under
+   `sp_whl_{pkg_norm}`, keyed by package name with no version, so in principle two pools with different
+   versions of the same >=20 MB package would collide. In practice exactly 4 wheels in the local pools
+   exceed 20 MB -- `vllm`, `bitsandbytes`, `flashinfer_cubin`, `xgrammar` -- and all 4 are serving-stack,
+   never task dependencies. Real, but inert.
+
+**A nondeterminism worry ruled out.** Both `pygments-2.20.0` and `pygments-2.21.0` sit in the same raw pool
+(`data/local/wheels/` and `wheels_merged/`), and the file list comes from an unordered `os.listdir`, so
+selection looked like it might depend on filesystem order. It does not: `_deduplicate_wheels` takes the
+**highest** version per normalized name and returns a name-sorted list, and `_WHEEL_INDEX_CACHE` is keyed by
+`str(wheels_dir.resolve())`. Both are correct.
+
+**But that tightens C3's pygments conclusion.** Because dedup always takes the highest version, the
+`pygments=="==2.20.0"` entry in `tools/curate_wheels.py:81` **cannot bind on a raw pool** -- 2.21.0 is
+present and wins. The pin only takes effect under `--curate-wheels`, which links a per-task pool
+"honouring the task's pins and keeping only what it declares". That is also the one code path that clears
+the tar cache. So "pin applied" and "cache cleared" are not two independent settings, they are the **same
+switch**, and `rich_3782`/`rich_4070`/`rich_4079` flipping between the `all` and `final` dirs remains
+**config, not noise** -- C3's conclusion stands, though for a sharper reason than it stated: those dirs
+differ in whether curation ran at all, not merely in a version number.
+
+**Practical rule for future runs:** a run that varies the pool per task must pass `--curate-wheels`, and
+one that does not vary it does not need to. There is no configuration in which the leak silently bites an
+agent run that holds its pool fixed.
+
 ## results (summary)
 
 | finding | status |
@@ -501,7 +551,9 @@ follow-ups:
      calibrates every A/B this project will run.
   6. **DONE (commit `e983d0c`).** `experiments/README.md` §3's index table now carries rows for
      EXP-000/001/003/004/005.
-  7. **NEW, free, no GPU (from Part C3):** check whether the dev-48 *agent* runs share one wheel pool across
-     tasks. If they do they are safe, exactly as official grading is; if any varied the pool per task
-     without `--curate-wheels`, its per-task grades carry the same tar-cache leak. This is a code-reading
-     question about `container_setup`/`gold_control.py`, not a run.
+  7. **DONE, no GPU -- see Part C6. The agent runs are clean.** `gold_control.py` is the only caller that
+     varies the pool per task; every other entry point binds one pool per invocation, so `sp_base` is built
+     once from that pool and reused correctly. EXP-004's 0-flips-in-48 re-grade of E0 is an independent
+     negative control. Part C6 also corrects two details of C3 (the threshold is 20 MB, not 16 MB; the
+     version-blind `sp_whl_*` key is real but inert) and tightens the pygments finding: the pin binds only
+     under `--curate-wheels`, which is the same switch that clears the cache.
