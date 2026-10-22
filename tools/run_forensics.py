@@ -38,11 +38,29 @@ from pathlib import Path
 
 EDIT_TOOLS = ("edit_file", "write_file")
 
-# Classify a run_command invocation by the program it runs. Order matters: pytest before python.
+# Classify a run_command invocation by the program it runs. ORDER MATTERS, in two ways:
+#
+#   1. `heredoc-write` must stay first. The system prompt tells the agent to write scratch repro
+#      scripts as `cat > /tmp/repro.py <<EOF ...`, which starts with `cat` and would otherwise be
+#      counted as a *read* by the `shell-read` rule. Before 2026-10-21 it was, and 410 of 441
+#      "sed/cat/head" calls across E0 + EXP-003 were in fact heredoc writes -- which inverted the
+#      headline of the run forensics. See Part C1 of
+#      experiments/EXP-009-lb-variance-and-trace-forensics.md.
+#   2. `pytest` must stay after `heredoc-write` (and before `python`). The pattern is deliberately
+#      unanchored so `python -m pytest` matches, but that also means a heredoc whose script *body*
+#      mentions pytest would be scored as a test run. That was 7 further calls.
+#
+# Known limitation, measured and accepted: the `python` pattern is anchored at the start of the
+# command, so a wrapped invocation such as `timeout 5 python /tmp/repro.py` falls through to
+# "other". That is 1 call in ~1,500 across both dev-48 runs, so it is left alone rather than
+# regenerating the evidence files; do not rely on these labels for exact invocation counts.
+# A command is labelled by the FIRST pattern it matches, not by every program it runs, so a
+# compound command (`cat > f <<EOF ... && python f`) is attributed wholly to the heredoc write.
 CMD_CLASSES = (
+    ("heredoc-write", r"<<|^\s*sed\s+-i\b|^\s*(cat|tee)\b[^>]*>"),
     ("pytest", r"pytest"),
     ("grep/rg", r"^\s*(grep|rg|egrep|git\s+grep)\b"),
-    ("sed/cat/head", r"^\s*(sed|awk|cat|head|tail|wc)\b"),
+    ("shell-read", r"^\s*(sed|awk|cat|head|tail|wc)\b"),
     ("python", r"^\s*python"),
     ("find/ls", r"^\s*(find|ls|tree)\b"),
     ("git", r"^\s*git\b"),

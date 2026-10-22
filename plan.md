@@ -937,8 +937,10 @@ be scoped:**
   budget design turns out to depend on whether branches share one budget.
 - *The idle capacity buys throughput, not latency -- added 2026-10-21 (EXP-009).* EXP-006's 88.6% idle KV at
   31B is **not** a lever on any bottleneck EXP-009 actually found. The binding costs are sequential *within*
-  one agent turn: 73.7% of E0's wall-clock goes to reading code (`sed`/`cat`/`head` alone is 27% of the whole
-  run, at 11.40 s median per call), and the tasks that score nothing are **not** short of turns -- they spend
+  one agent turn: 46.2% of E0's wall-clock goes to reading and searching, and a further **27.3% to
+  generating scratch repro scripts token-by-token** (53.4 min, the largest single line item; corrected
+  2026-10-21 -- see EXP-009 Part C1, which withdraws an earlier "73.7% reading" figure), and the tasks that
+  score nothing are **not** short of turns -- they spend
   38 turns, as many as the winners, and simply never commit to an edit. Running more requests in parallel
   cannot shorten a turn that is blocked on its own tool call, so this track can do nothing for the
   empty-patch rate or the first-edit turn. It pays off **only** for the best-of-N variant parked below, where

@@ -14,11 +14,12 @@ submit_patch         17        1.4   0.7%      2.13     8.04
 ## run_command composition (by program invoked)
 program           calls  total_min  share_of_rc  median_s
 grep/rg             418       39.1       34.6%      4.34
-sed/cat/head        253       52.7       46.6%     11.40
+heredoc-write       248       53.4       47.2%     11.61
 python               94       11.8       10.4%      8.41
-pytest               48        4.8        4.3%      3.16
+pytest               42        3.0        2.6%      2.84
 find/ls              28        2.2        1.9%      3.13
 git                  16        2.0        1.7%      5.61
+shell-read           11        1.2        1.1%      6.57
 other                 4        0.5        0.4%      6.94
 
 ## outcome cohorts

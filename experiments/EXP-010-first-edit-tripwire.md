@@ -182,7 +182,7 @@ actually obeyed, except Case C.
 | case | empty-patch rate | resolve rate | what it means | next move |
 |---|---|---|---|---|
 | **C -- rule ignored** (check first) | unchanged ~39.6% | unchanged | `first_edit > 25` still in the traces. Says **nothing** about the hypothesis -- it is a prompt-adherence failure. Real possibility: the agent already ignores "LOCATE at most 10 calls" | Go structural, not prose: harness continuation nudges (`agent_runner.py:784`, `max_nudges = 3`) or a `remaining_time_seconds` injection (`context.py:460`) |
-| **A -- works** | 39.6% -> < 15% | up ~+1 to +2 (likely inside noise) | Commitment was a real bottleneck and forced edits convert | Adopt; proceed to EXP-011 (read-path) |
+| **A -- works** | 39.6% -> < 15% | up ~+1 to +2 (likely inside noise) | Commitment was a real bottleneck and forced edits convert | Adopt; proceed to EXP-011 (repro cost -- see EXP-009 Part C2) |
 | **B -- converts but does not score** (**most likely**, per the confound check above) | 39.6% -> < 15% | **flat** | **The most valuable outcome.** Commitment is fixable but patch *quality* is the wall -- the agent does not know where the bug is, it was not merely hesitant | Retire the commitment line of work; pivot to localisation quality (graph tools, better search, EXP-011) |
 | **D -- winners break** | drops | **down** | Forced early editing damages tasks that would have resolved. The 2 disturbed E0 winners (`first_edit` 29, 30) are the canary | Retry at N=30 (0/11 disturbed, still fires on 18/19) |
 | **E -- nothing moves** | flat | flat | Rule obeyed but cohort boundaries unchanged -- contradicts the trace data | Suspect measurement error; re-examine cohort definitions |
@@ -192,12 +192,15 @@ expected to separate A from B.** The empty-patch rate and the first-edit-turn di
 distinguish them, which is exactly why EXP-009 moved those to primary.
 
 follow-ups:
-  1. **Reserved as EXP-011, deliberately NOT bundled here:** route code reading from `sed`/`cat`/`head` to
-     `read_file`. EXP-009 Part B2 measured `sed`/`cat`/`head` at 253 calls / 52.7 min / **27% of all agent
-     wall-clock**, at 11.40 s median per call against `read_file`'s 2.74 s for the same job (4.2x). Kept
-     separate because it has an unvalidated failure mode of its own -- `read_file` is capped at 150 lines /
-     10k chars, so a 400-line read becomes 3 calls instead of 1, which could *raise* turn count -- and
-     EXP-003 is the cautionary case for stacking six changes into one unmeasurable bundle.
+  1. **Reserved as EXP-011, deliberately NOT bundled here.** ~~Route code reading from `sed`/`cat`/`head`
+     to `read_file`.~~ **Retired 2026-10-21**: that bucket turned out to be 93% heredoc *writes*, so only 31
+     genuine shell reads exist across both runs and rerouting them saves ~2.8 s per task (EXP-009 Part C1).
+     EXP-011 is **reframed** to target what the corrected forensics actually found: **27.3% of wall-clock
+     goes to generating scratch repro scripts** (53.4 min in E0, 11.61 s median per heredoc, 5.2 per task)
+     against **1.5% spent running the repository's own test suite**. The lever is preferring `pytest -k` on
+     the shipped failing test over hand-writing a reproduction, plus a size cap. Still kept separate from
+     this experiment -- EXP-003 is the cautionary case for stacking changes into one unmeasurable bundle.
+     Full design in EXP-009 Part C2.
   2. When the dev-48 run happens, also check whether the 2 disturbed E0 winners (`first_edit` 29 and 30)
      survived. If forced-early editing breaks previously-resolved tasks, N=30 is the fallback (0/11
      disturbed, still fires on 18/19).

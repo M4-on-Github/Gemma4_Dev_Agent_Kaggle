@@ -140,29 +140,57 @@ is worth +/-3 easily.
 `python tools/run_forensics.py forensics runs/E0-dev48-baseline/runs/E0-dev48-baseline` -- E0, 48 tasks,
 195.5 min of agent wall-clock, time attributed to the tool called in each turn.
 
-### B1. 74% of the budget is spent reading code; 12% editing
+### B1. Where the budget actually goes: reading 26%, WRITING SCRATCH REPRO SCRIPTS 27%, editing 12%
+
+> **Corrected 2026-10-21 -- see Part C1.** The first version of this section reported "73.7% reading"
+> because the command classifier counted `cat > /tmp/repro.py <<EOF` as a read. It is a write, and it turns
+> out to be the single largest line item in the run. The per-call timings below were always right; only the
+> labels were wrong.
 
 | activity | E0 | share | EXP-003 | share |
 |---|---|---|---|---|
-| reading/searching (`grep`+`sed/cat/head`+`find`+`read_file`) | 144.0 min | **73.7%** | 183.4 min | **70.5%** |
+| **writing scratch repro scripts** (`run_command` heredoc) | **53.4 min** | **27.3%** | **63.4 min** | **24.4%** |
+| reading (`read_file` + genuine `sed`/`cat`/`head` reads) | 51.2 min | 26.2% | 66.3 min | 25.5% |
+| searching (`grep`/`rg`) | 39.1 min | 20.0% | 51.4 min | 19.7% |
 | editing (`edit_file`+`write_file`) | 22.9 min | **11.7%** | 36.8 min | 14.1% |
-| executing/verifying (`python`+`pytest`) | 16.6 min | 8.5% | 10.4 min | 4.0% |
-| overhead (`get_status`, `submit_patch`, `git`, no-tool) | 12.0 min | 6.1% | 29.7 min | 11.4% |
+| **running the test suite** (`pytest`) | **3.0 min** | **1.5%** | **2.7 min** | **1.0%** |
+| other `python` (running a script it wrote) | 11.8 min | 6.0% | 7.5 min | 2.9% |
+| `find`/`ls`/`git`/other | 4.7 min | 2.4% | 3.3 min | 1.3% |
+| harness overhead (`get_status`, `submit_patch`, no-tool) | 9.5 min | 4.9% | 28.9 min | 11.1% |
 
-Exploration:edit **call** ratio is 8:1 (1,424 read/search calls vs 179 edit calls).
+Reading plus searching is **46.2%** of E0 and 45.2% of EXP-003, not the 73.7%/70.5% first reported. The
+headline number is the new top row: the agent spends **more time hand-writing reproduction scripts than it
+spends reading the repository**, and roughly **18x more time writing reproductions than running the tests
+that ship with the task** (53.4 min vs 3.0 min).
 
-### B2. The agent reads code through its slowest available path
+### B2. The expensive path is WRITING repro scripts, not reading code
 
-| how it reads | calls | median s/call |
-|---|---|---|
-| `read_file` (the purpose-built tool, capped at 150 lines / 10k chars) | 563 | **2.74 s** |
-| `run_command` with `sed`/`cat`/`head`/`awk` | 253 | **11.40 s** |
-| `run_command` with `grep`/`rg` | 418 | 4.34 s |
+> **Rewritten 2026-10-21 -- see Part C1.** The original B2 claimed the agent "reads through its slowest
+> available path" and proposed routing shell reads to `read_file` as EXP-011. That conclusion was an
+> artifact of the classifier bug and is withdrawn.
 
-`sed/cat/head` is the single most expensive activity in the whole run: 253 calls, 52.7 min, **27% of all
-agent wall-clock**, at 4.2x the per-call cost of `read_file`. Replicated in EXP-003 (188 calls, 67.2 min,
-13.02 s median). `pytest` is almost free by comparison (48 calls, 4.8 min, 2.2% of run_command time) -- the
-cost is in reading, not in testing.
+| `run_command` program (E0) | calls | median s/call | total |
+|---|---|---|---|
+| **heredoc write** (`cat > /tmp/repro.py <<EOF`) | **248** | **11.61 s** | **53.4 min** |
+| `grep`/`rg` | 418 | 4.34 s | 39.1 min |
+| `python` (running a script it wrote) | 94 | 8.41 s | 11.8 min |
+| `pytest` | 42 | 2.84 s | 3.0 min |
+| genuine `sed`/`cat`/`head` reads | **11** | 6.57 s | 1.2 min |
+| `read_file` (not a `run_command`; shown for comparison) | 563 | 2.74 s | 50.0 min |
+
+The 11.61 s median for a heredoc is **not** I/O. It is the time to *generate the whole script as tool-call
+arguments, token by token*. At 248 calls across 48 tasks that is 5.2 repro writes per task, and the shipped
+prompt explicitly asks for them (`prompts/swe_coder.md` line 102: "REPRODUCE (at most 6 calls). Write
+/tmp/repro.py via a run_command heredoc..."). The agent is complying with the call cap; the cap just does
+not price generation.
+
+Genuine shell reading is a rounding error: **11 of E0's 253** originally-labelled `sed`/`cat`/`head` calls,
+and 31 of 441 pooled across both runs. Verified twice independently.
+
+Crucially, **winners reproduce too** -- the resolved cohort spends 22.6% of its wall-clock on heredoc writes
+against the empty-patch cohort's 38.1% (pooled: 24.1% vs 32.7%). So reproduction is not dead weight to be
+deleted; failing tasks simply do more of it. The lever is making it *cheaper*, which is the reframed EXP-011
+in Part C2.
 
 ### B3. The metric that separates scoring from not scoring is the turn of the FIRST edit
 
@@ -202,6 +230,195 @@ step throughput**, and the untested 8192 config is likely worse than E0, not bet
 
 ---
 
+## Part C -- corrections and a second round of analysis (2026-10-21, later)
+
+Four follow-up analyses were run after the sections above were written. Two of them changed conclusions
+already recorded here, so they are documented as corrections rather than additions.
+
+### C1. CORRECTION: the command classifier was counting heredoc writes as reads
+
+`tools/run_forensics.py` classified `run_command` calls with this table, checked in order:
+
+```python
+("pytest",       r"pytest"),                              # unanchored
+("grep/rg",      r"^\s*(grep|rg|egrep|git\s+grep)\b"),
+("sed/cat/head", r"^\s*(sed|awk|cat|head|tail|wc)\b"),
+```
+
+Two bugs. First, the agent writes scratch files as `cat > /tmp/repro.py <<EOF`, which starts with `cat` and
+so landed in `sed/cat/head` -- the bucket the analysis treated as *reading*. Second, `pytest` is unanchored
+and checked first, so any heredoc whose script *body* mentioned pytest was scored as a test run.
+
+Measured impact, pooled over E0 + EXP-003 (441 calls in that bucket):
+
+| | calls | share |
+|---|---|---|
+| write-like (`<<` heredoc, `sed -i`, or `cat`/`tee` with a redirect) | **410** | **93.0%** |
+| genuine reads (`sed -n`, `cat f.py`, `head`, `tail`) | 31 | 7.0% |
+| heredocs additionally mislabelled as `pytest` | 7 | -- |
+
+Example of what was being counted as a read:
+
+```
+cat > /tmp/repro.py <<EOF
+from __future__ import annotations
+from fastapi import FastAPI
+...
+```
+
+Fixed in `tools/run_forensics.py` by adding a `heredoc-write` class **first** in the table (so it wins over
+both `cat` and a pytest-mentioning body) and renaming the read bucket to `shell-read`. The evidence files in
+`experiments/EXP-009/` were regenerated; B1, B2 and the summary table above are corrected. Downstream
+corrections were applied to `EXP-001-baseline.md`, `plan.md` 6.3, this README's section 2, and EXP-010's
+follow-up 1.
+
+**Process note worth keeping.** Every number in the original B1/B2 was arithmetically correct. The error was
+entirely in a label, in a 7-line regex table written to support the analysis, and it survived because the
+conclusion it produced ("the agent reads inefficiently") was plausible. The check that caught it was asking
+a *different* question of the same data -- "does heavy shell-reading predict failure?" -- which forced an
+inspection of what was actually in the bucket. Plausible-and-wrong is the expensive failure mode here;
+nothing in the statistics would ever have flagged it.
+
+### C2. EXP-011 retired as conceived, and reframed
+
+**Retired:** "route code reading from `sed`/`cat`/`head` to `read_file`." There are 31 genuine shell reads
+across 96 task-runs. At the measured 6.57 s vs 2.74 s per call, rerouting all of them saves about **2.8 s
+per task** out of a 240 s budget. Not worth a submission slot.
+
+**Reframed -- EXP-011 is now about the cost of reproduction.** The target is the 27.3% of wall-clock spent
+generating repro scripts (53.4 min in E0, 63.4 min in EXP-003), against 1.5% spent running the repository's
+own test suite. Three sub-levers, in order of expected value:
+
+1. **Prefer the existing failing test over a hand-written repro.** These are SWE-bench-style tasks: a test
+   patch ships with the task and the issue usually names the behaviour under test. `pytest` costs 2.84 s
+   median; a heredoc costs 11.61 s and the agent does 5.2 of them per task. Instruct it to try
+   `pytest -k <keyword>` on the existing suite *before* writing anything.
+2. **Cap repro size.** The observed scripts open with `from __future__ import annotations` and rebuild a
+   full app. A "15 lines maximum" instruction attacks the generation cost directly, since cost here is
+   token count.
+3. **Write it once.** 5.2 heredoc writes per task means the agent is rewriting the repro repeatedly. One
+   explicit "you have already written a repro; edit it with `sed -i` or move on" rule may be enough.
+
+Expected effect, conservatively: if heredoc writes fall from 5.2 to ~2 per task, that returns roughly
+3.2 x 11.61 s = **37 s per task**, about **15% of the 240 s budget**, to searching and editing. Unlike the
+EXP-010 tripwire this does not force a behaviour change -- it makes an existing behaviour cheaper -- so the
+downside is bounded by whatever reproduction is actually worth. Note the constraint from B2 that winners
+reproduce too: do **not** test "stop reproducing", test "reproduce more cheaply".
+
+### C3. Harness grading is itself flaky, and the mechanism is identified
+
+Analysis of all 19 `runs/EXP-000-*/gold_control.jsonl` files (373 records, 129 distinct tasks, grade field
+`resolved`):
+
+| | tasks |
+|---|---|
+| unanimous PASS across every dir it appears in | 98 |
+| unanimous FAIL | 18 |
+| **MIXED -- same task, same gold patch, different outcome** | **13 (10.1%)** |
+
+10.1% is an **upper bound**, because the 19 dirs are not repeats of one configuration -- they differ in
+wheel pins and `--curate-wheels` settings. Decomposing:
+
+- 3 of the 13 (`rich_3782`, `rich_4070`, `rich_4079`) flip between the `all` and `final` dirs, which is the
+  deliberate `pygments==2.20.0` default pin. **Config, not noise** -- and this is the 108/129 vs 111/129
+  discrepancy in this README.
+- Excluding the outlier dir `probe2` (14 of its 15 tasks fail, 9 with `ModuleNotFoundError`) drops the mixed
+  rate to **5.4%**; excluding `negctl` too (which the `--negative-control` flag suggests *should* fail)
+  gives **4.7%**.
+- The cleanest same-config comparison is `probe2` vs `v2`: 9 shared task ids, **identical recorded curation
+  dicts**, and all 9 disagree (probe2 FAIL, v2 PASS). `v2` vs `v3` disagree on 0 of 15.
+
+**Mechanism, documented in our own code.** `tools/gold_control.py:32-46` describes
+`container_setup._build_unpacked_wheels_tar` caching to `{tempdir}/swegemma_sp_cache_v8/{cache_name}.tar`
+under the literal name `sp_base`, returning early whenever that file exists. The tar is therefore built from
+whichever pool the *first* task used and reused for every later task regardless of its own `wheels_dir`, and
+it outlives the process. The docstring's own example is `fastapi_13920` passing alone but failing with
+`ModuleNotFoundError: typing_inspection` when a requests task ran first -- which is exactly `probe2`'s
+dominant failure (`typing_inspection` x7). `_clear_sitepackages_tar_cache()` is called **only** under
+`if args.curate_wheels:` (line 168), so any run without that flag is fully exposed.
+
+**Consequences:**
+
+1. A floor of a few percent of per-task outcome churn is **environmental, not the agent's sampling**. It
+   does not explain the E0-vs-EXP-003 42.9% concordance (far too small), but it means that concordance is
+   an upper bound on *agent* churn with a non-zero environmental component underneath.
+2. **Open question to check before the next local comparison:** do the dev-48 *agent* runs share one wheel
+   pool across tasks? If they do, they are safe, exactly as official grading is. If any run varied the pool
+   per task without `--curate-wheels`, its per-task grades may carry the same leak. This is a code-reading
+   question, no GPU required.
+3. The 18 unanimous-FAIL tasks are stable across all dirs, so the EXP-000 exclusion list is sound.
+
+### C4. No same-config agent repeat exists anywhere in the repo
+
+Checked while setting up C3: only **three** directories under `runs/` contain `task_results.jsonl` at all --
+`E0-dev48-baseline`, `exp002_estop_a_smoke8` (8 tasks) and `exp003_public_budget_dev48`. The 19 EXP-000 dirs
+are gold-patch controls, not agent runs.
+
+So the 42.9% cross-config concordance in A5 has **nothing beneath it**: there is no measurement of what two
+runs of the *same* config do to the same task. Every noise statement in this document and in `plan.md` 5.5
+rests on a cross-config number used as a proxy. Getting the real one requires re-running E0 on dev-48 and
+costs GPU quota, which is why it keeps being deferred -- but it is the single highest-value quota purchase
+available, because it calibrates every A/B comparison the project will ever run.
+
+### C5. What happens BEFORE the first edit: volume separates winners from losers, composition does not
+
+This is the analysis that bears most directly on EXP-010 (submitted as #4 and currently awaiting a score).
+Define a task's **prefix** as every turn before the first turn containing `edit_file`/`write_file`; if the
+task never edits, the whole trace is the prefix. 96 run-task pairs (E0 + EXP-003), cohorts: resolved n=20,
+patch-but-failed (PBF) n=41, empty-patch n=35.
+
+**Prefix length, median (min-max):**
+
+| cohort | n | tool-bearing turns | seconds | share of call cap | share of time cap |
+|---|---|---|---|---|---|
+| resolved | 20 | **12** (3-27) | **108.0** (18-230) | 0.350 | 0.282 |
+| patch-but-failed | 41 | 14 (2-38) | 140.5 (18-385) | 0.356 | 0.404 |
+| empty-patch | 35 | **30** (13-47) | **267.7** (69-476) | **0.867** | **0.901** |
+
+The separation is large and one-directional. As AUC, P(resolved prefix > empty-patch prefix) = 0.069 on
+turns, 0.027 on seconds, 0.067 on tool calls -- i.e. **P(empty-patch > resolved) = 0.93 to 0.97**. It holds
+*within* each run, so it is not an artifact of pooling two budgets: E0 17 vs 38 turns, EXP-003 13 vs 30.5.
+
+**Composition, by contrast, separates nothing.** Every ratio tested came back at chance:
+
+| metric | resolved vs empty-patch | reading |
+|---|---|---|
+| grep:read ratio | AUC 0.488 (0.533 heredoc-excluded) | no signal |
+| reproduced before first edit | 20/20 vs 32/35, Fisher **p = 0.293** | no signal |
+| distinct files touched (median) | 2 vs 3, AUC 0.668 | weak at best |
+
+So the agent that solves the task is not searching *differently* -- it is reaching its first edit in a third
+of the time. That is exactly the premise EXP-010's tripwire is built on, which is reassuring, but:
+
+> **Direction is NOT identified, and this is the key caveat for reading submission #4.** 25 of 35
+> empty-patch runs hit the session timeout and 12 of 35 hit the tool cap (against **0 of 20** resolved runs
+> hitting either). A long prefix is therefore partly *caused* by the budget running out rather than causing
+> the failure. "Investigating too long prevents the edit" and "it ran out of budget before it could edit"
+> predict the same table. EXP-010 is the intervention that distinguishes them -- which is precisely why its
+> compliance check must come before its resolve rate.
+
+**Two findings that cut against doing less:**
+
+1. **All 20 resolved runs reproduced before their first edit** (20/20, strict test: a real `python`/`pytest`
+   invocation outside a heredoc body). Reproduce-first is also the *only* composition metric that separates
+   resolved from PBF (AUC 0.622; 20/20 vs 31/41; p = 0.064 vs not-resolved). Combined with B2's cohort
+   split, this is the second independent reason the reframed EXP-011 must make reproduction **cheaper, not
+   optional**.
+2. The empty-patch cohort splits **21 never edited at all / 14 edited but shipped an empty final patch**,
+   with near-identical prefixes (31 turns / 269 s vs 32 turns / 257 s). The tripwire only addresses the
+   first group.
+
+**Third independent confirmation of the C1 bug.** This analysis was run against the *unfixed* classifier and
+hit the same artifact from a different direction: of 351 commands whose label disagreed with a strict
+invocation test, **350 contained a heredoc**, and 195 of the empty-patch cohort's 213 `sed/cat/head` calls
+were heredoc writes. The label-based reproduce rate reads 26/96 (27.1%) against the strict test's **83/96
+(86.5%)** -- the bug was understating reproduction by a factor of three. `/tmp/repro.py` alone appears 546
+times, and **0** `read_file` calls ever target a `/tmp` path.
+
+*Caveat carried from the source analysis:* the Fisher p-values treat 96 run-task pairs as independent, but
+the same 48 task ids appear in both runs under different budgets, so they are optimistic. The AUCs are
+descriptive and unaffected.
+
 ## results (summary)
 
 | finding | status |
@@ -213,9 +430,12 @@ step throughput**, and the untested 8192 config is likely worse than E0, not bet
 | Per-task outcome stability, same cohort, two runs | **42.9% concordance** of the solved set (6/14) |
 | Harness run-level budget | **does not exist**; global overrun is fatal, never partially credited |
 | Auto-discovered-but-undeclared skills | **never packed** (packer ships only `agent.yaml`'s 4-file closure); and even if packed, discovered by `rglob` but **not attached** without a `skills:` key |
-| Share of agent wall-clock spent reading code | **73.7%** (E0), 70.5% (EXP-003) |
+| Share of wall-clock WRITING scratch repro scripts | **27.3%** (E0), 24.4% (EXP-003) -- largest single item |
+| Share spent reading + searching | **46.2%** (E0), 45.2% (EXP-003) -- corrected down from 73.7%, see Part C1 |
 | Share spent editing | **11.7%** (E0), 14.1% (EXP-003) |
-| `sed`/`cat`/`head` vs `read_file` per-call cost | **11.40 s vs 2.74 s** (4.2x), 27% of total wall-clock |
+| Share spent running the test suite | **1.5%** (E0), 1.0% (EXP-003) |
+| Genuine shell reads (`sed`/`cat`/`head`) | **11 of 253** (E0); 31 of 441 pooled -- a rounding error |
+| Gold-control disagreement across EXP-000 dirs | **13/129 = 10.1%** upper bound; mechanism is a harness tar-cache leak, see Part C3 |
 | First-edit turn, scoring vs empty | **18 vs 43** (E0); 14-17 vs 32.5 (EXP-003) |
 | Tasks that never edit a file | **13/48** (E0), 8/48 (EXP-003) |
 | Conversion once a patch exists | **11/29 = 37.9%** |
@@ -234,12 +454,22 @@ all adopted into plan.md:
    marginal rates alone are not admissible evidence. (plan.md §5.5)
 
 follow-ups:
-  1. **Proposed next experiment (NOT started, needs go-ahead): EXP-010, "commit to an edit early".**
-     Prompt-only, single-variable-in-spirit change to `submission/prompts/swe_coder.md`, targeting B2+B3:
-     (a) route code reading to `read_file` and forbid `sed`/`cat`/`head` for reading file contents
-     (reclaims up to ~27% of wall-clock at 4.2x cheaper per call);
-     (b) a hard first-edit deadline -- make the first `edit_file` call by ~turn 15, and if the bug is not
+  1. **DONE -- shipped as EXP-010, "commit to an edit early" (submission #4, 2026-10-21).**
+     Prompt-only change to `submission/prompts/swe_coder.md`, targeting B3:
+     a hard first-edit deadline -- make the first `edit_file` call by ~turn 15, and if the bug is not
      located by then, edit the best candidate anyway.
+     ~~(a) route code reading to `read_file` and forbid `sed`/`cat`/`head` for reading file contents
+     (reclaims up to ~27% of wall-clock at 4.2x cheaper per call)~~ -- this half was split out as EXP-011
+     rather than bundled, and has since been **retired entirely**: the ~27% was heredoc *writes*, not reads
+     (Part C1), and only 31 genuine shell reads exist across both runs, so rerouting them saves ~2.8 s per
+     task. The splitting decision is what kept a measurement artifact out of a submission. EXP-011 is
+     reframed onto the real 27% in Part C2.
+     Part C5 adds the strongest support yet for the tripwire's premise -- resolved runs reach their first
+     edit at a median 12 tool-bearing turns / 108 s against empty-patch's 30 / 268 s, P(empty > resolved)
+     = 0.93-0.97, holding within each run -- **and** the reason the premise is not yet proven: 0 of 20
+     resolved runs hit the time or call cap, while 25 of 35 empty-patch runs timed out, so budget
+     exhaustion and over-investigation predict the same table. Check EXP-010's *compliance* before its
+     resolve rate.
      Pre-registered primary metrics: empty-patch rate (39.6% -> <15%) and median first-edit turn for the
      empty-patch cohort (43 -> <20). Secondary: resolve rate, reported with the paired table.
      Expected effect: **revised to +1 to +2 dev-48 tasks** (originally estimated +3.6). The 37.9%
@@ -260,8 +490,18 @@ follow-ups:
   4. **Idle GPU buys throughput, not latency** -- EXP-006's 88.6% idle KV at 31B cannot make a sequential
      turn faster, so it cannot help B2/B3. It only pays off for the best-of-N variant parked in plan.md §6.3.
      Recorded there so the idea is not re-derived as a latency fix.
-  5. Re-run `tools/run_forensics.py compare` across EXP-000's gold-control reruns to get a **same-config**
-     churn number (this analysis's 42.9% concordance is across two *different* configs, so it is an upper
-     bound on config effect and a lower bound on pure noise). Free, no GPU.
-  6. `experiments/README.md` §3's index table is still missing rows for EXP-000/001/003/004/005 even though
-     detailed log sections exist. Carried over, still not fixed.
+  5. **DONE, but it does not answer the question it was written for -- see Parts C3 and C4.** The 19
+     `EXP-000-*` directories are **gold-patch controls, not agent runs**, so they cannot yield agent churn
+     at all; only 3 directories under `runs/` contain `task_results.jsonl`, and no two of them share a
+     config. What the analysis did produce is a different and useful number: **13/129 = 10.1%** of tasks
+     disagree with themselves across dirs on the *gold patch* (5.4% excluding the `probe2` outlier), caused
+     by a harness tar-cache keyed by a constant that leaks one task's dependencies into the next. So the
+     42.9% concordance still has **no same-config baseline beneath it**, and getting one requires re-running
+     E0 on dev-48 at GPU cost. That re-run is now the highest-value quota purchase on the list, because it
+     calibrates every A/B this project will run.
+  6. **DONE (commit `e983d0c`).** `experiments/README.md` §3's index table now carries rows for
+     EXP-000/001/003/004/005.
+  7. **NEW, free, no GPU (from Part C3):** check whether the dev-48 *agent* runs share one wheel pool across
+     tasks. If they do they are safe, exactly as official grading is; if any varied the pool per task
+     without `--curate-wheels`, its per-task grades carry the same tar-cache leak. This is a code-reading
+     question about `container_setup`/`gold_control.py`, not a run.

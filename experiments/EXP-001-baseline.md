@@ -61,8 +61,11 @@ follow-ups: phase_histogram = {LOCATE 26, REPRODUCE 10, VERIFY 4, EDIT 7, SUBMIT
              the solved tasks moves. Marginal resolve rates from this run should not be compared to another
              run's without the paired table (`python tools/run_forensics.py compare <runA> <runB>`).
 
-          Also from this run's traces: **73.7% of agent wall-clock goes to reading code** (`sed`/`cat`/`head`
-          alone is 27% of the whole run at 11.40 s median per call, vs `read_file`'s 2.74 s for the same job),
-          only 11.7% to editing, and 13/48 tasks never call `edit_file`/`write_file` at all. Among the 29
+          Also from this run's traces: reading and searching take **46.2%** of agent wall-clock, **writing
+          scratch repro scripts takes 27.3%** (53.4 min -- the largest single line item), only 11.7% goes to
+          editing, and running the repository's own test suite takes just **1.5%**. 13/48 tasks never call
+          `edit_file`/`write_file` at all. (An earlier version of this paragraph said "73.7% goes to reading
+          code", with `sed`/`cat`/`head` at 27%; that was a classifier bug which counted
+          `cat > /tmp/repro.py <<EOF` as a read -- corrected 2026-10-21, see EXP-009 Part C1.) Among the 29
           tasks that do produce a patch, 11 resolve (**37.9%**). Full analysis and the per-tool tables:
           `experiments/EXP-009-lb-variance-and-trace-forensics.md`, evidence in `experiments/EXP-009/`.

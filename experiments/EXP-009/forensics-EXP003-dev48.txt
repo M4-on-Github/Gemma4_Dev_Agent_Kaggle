@@ -15,10 +15,11 @@ get_code_neighbors      2        0.2   0.1%      6.12     2.07
 ## run_command composition (by program invoked)
 program           calls  total_min  share_of_rc  median_s
 grep/rg             322       51.4       38.9%      4.47
-sed/cat/head        188       67.2       50.8%     13.02
+heredoc-write       169       63.4       47.9%     13.81
 python               65        7.5        5.6%      2.80
-pytest               36        2.9        2.2%      2.25
+pytest               35        2.7        2.0%      2.25
 find/ls              30        2.5        1.9%      2.81
+shell-read           20        4.0        3.1%      2.78
 other                 5        0.3        0.2%      2.03
 git                   5        0.5        0.4%      7.74
 
