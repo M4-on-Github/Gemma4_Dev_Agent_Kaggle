@@ -180,6 +180,8 @@ consequences:
 
 ## 5. Decision
 
+**Queued, not started.** The three steps below are recorded as the live backlog in `plan.md` §6.1a as **EXP-013 / EXP-014 / EXP-015**, ahead of the whole §6.1 E-series; the gate problem step 3 runs into is noted in `plan.md` §5.8.
+
 **Stop running single-variable experiments from 8 tasks below a published baseline.** At a ~4-task LB MDE
 and one submission a day, climbing 6 -> 14 by isolated increments is not reachable in the time left; and
 the private half (~62 tasks) decides the final standing, so sitting at the 25th percentile forecloses any

@@ -323,6 +323,16 @@ Index table in `experiments/README.md`; the current best config is tagged in git
 ### 5.8 Using the 1 submission/day LB slot
 - Submit **every day** something useful: a candidate config or a calibration probe (e.g., same config twice to measure LB noise once).
 - Never submit a config that has not run on dev-48 with projected worst case ≤ 11 h.
+  - **Note added 2026-10-22 (EXP-012):** this gate is now identified as the binding constraint on our score.
+    It is what pins us at 4.0 min/task while the public 0.24 config runs 7 min and knowingly ships a 14 h
+    *nominal* worst case against the 12 h cap. The rule was adopted after submission #2 (8 min, ~18 h worst
+    case) died of Notebook Timeout, and the lesson drawn — "never exceed the gate" — over-corrected; "8 is
+    too much, 7 is affordable" was the better reading. **The formula is the actual defect**: `per-task cap
+    × 120` is the worst case only if every task runs to its cap, and EXP-003's median at an 8-min cap was
+    5.71 min, so it overstates by ~30%. **TODO: re-derive the gate on projected *actual* time** (observed
+    median × 120 + setup, with a stated margin) instead of on the cap. Until that is done, EXP-015 needs an
+    explicit recorded override rather than a silent one — a timeout still scores **zero**, never partial
+    credit.
 - Keep a `submissions.md` log: date, git tag, zip SHA256, dev-48 score, LB score, scoring wall time (from the kawchar85 tracker's observed time), notes.
 
 ---
@@ -695,6 +705,10 @@ Mirrored in `experiments/README.md` §1o (narrative) and Q13/Q14 (ledger).
 | E8 | Skills: `pytest-triage/SKILL.md` and `edit-anchoring/SKILL.md` on vs off | Skills reduce failed edit_file calls | failed edit %, resolve | 1 run (if skills load without `run_skill_script`) |
 | E9 | Sub-agent `analyzer` (localization only, via agent_tool) on vs off, **same model** | Expected negative or neutral [M] on its own terms (redundant re-reasoning hop, context/continuity loss); superseded in intent by E-STOP(b), which tests a *tool-scoped* sub-agent rather than a same-capability one — run E9 only if E-STOP(b) is inconclusive and a cheap negative-control data point is still wanted | resolve, wall | 1 run |
 
+**Superseded 2026-10-22 by §6.1a below — EXP-013 → EXP-014 → EXP-015 come first, and the E-series order below
+resumes only after them. Several E-rows are also partly pre-answered by the published 0.24 config: E5 by its
+graph-tool ban, E11 and E2 by its 6144/4096 settings, E6 by its 7 min / 28 calls pairing.**
+
 **Revised order (2026-10-18, post-EXP-002, re-revised 2026-10-18 post-recall-check): E0 → E3 → E6 → E1 → E2 →
 E5 → E4 → E10 → E7 → E11 → E8**. E-STOP(a') is removed from the queue (rejected on smoke-8, see §6.0.3 and its
 updated row above). **EXP-003b is now dropped from the queue entirely, not deferred** — see the recall-check
@@ -744,6 +758,47 @@ After each adopted change, re-run the budget estimator. Every ~5 experiments, ru
 not overfitting dev-48.
 
 Cheap pre-screen without GPU: replay logged decision points under the changed prompt (g4kit-replay idea) and count malformed/spin deltas before spending a dev-48 run.
+
+### 6.1a TODO — adopt-the-ceiling-config track (added 2026-10-22 from EXP-012; takes precedence over the §6.1 order above)
+
+**Not yet started. Nothing in this subsection has been implemented or run — it is the queue, not a record.**
+
+Why this jumps the whole §6.1 queue: `experiments/EXP-012-competitive-position.md` establishes that our
+0.10 = 6/58 sits at ~the 25th percentile of 3,467 teams (median 8 tasks, mode 10, ceiling 14), and that the
+0.24 ceiling config is a **public notebook running the same model and the same nine tools as ours**. The gap
+to the top is statistically real (our pooled 17/174 vs their 14/58, Fisher p = 0.0125, and 24.1% is outside
+our 95% CI of 6.2–15.1%); the gap to the median is **not** (p = 0.4629, inside the CI). So the whole measured
+gap is budget + prompt, and single-variable experiments run 8 tasks below a published baseline cannot close
+it at a ~4-task LB MDE with one submission a day.
+
+| ID | Step | Variable(s) | Cost | Measure | Status |
+|---|---|---|---|---|---|
+| **EXP-013** | **Prompt surgery — do this first** | `prompts/swe_coder.md` only: (1) delete the mandated REPRODUCE heredoc (lines 14 and 102), replace with a one-shot `python -c` rule; (2) add explicit search/read batching (independent greps combined into one `run_command`; `sed` with explicit line ranges, ≤ 3 regions per call); (3) move the first-edit deadline from call 25 to ~12–15; (4) drop the 3 graph tools from the prompt **and** from `agent.yaml`; (5) add the parallel-implementations rule (sync/async, `Client`/`AsyncClient`, typing overloads, `__all__` re-exports) | **0 GPU-h to author**; 1 dev-48 run (~3–4 GPU-h) to verify. *Reduces* per-task time, so it strictly improves timeout safety | **compliance first** (does it stop writing repro files at all?), then empty-patch rate (39.6% at E0) and median first-edit turn (43 for empty-patch at E0). Not the LB on its own — MDE | **TODO** |
+| **EXP-014** | Thinking + output budgets | `thinking_budget` 256 → 4096 and `max_output_tokens` 4096 → 6144, **nothing else**. EXP-003 bundled both with a 45→28 call-cap cut that demonstrably cost `rich_3676`, so neither has ever been tested cleanly | 1 dev-48 run | resolve %, overflow %, s/turn (EXP-003's s/turn rose to 7.79–12.13 under similar settings — watch for the same) | **TODO**, after EXP-013 |
+| **EXP-015** | Per-task time | `max_time_minutes` 4.0 → 6.0, then → 7.0 if 6.0 scores. **Requires an explicit, recorded override of §5.8's 11 h worst-case gate** (see the note added there 2026-10-22). Largest single knob gap, and also the one that lost submission #2 | 1 dev-48 run per level + LB slots | projected *actual* 12 h time (not cap × 120), resolve % | **TODO** — the gate override is a decision to be taken explicitly, not a default |
+
+Sequencing rationale: EXP-013 is free to author, carries **no** timeout risk (it removes work rather than
+adding it), and buys back the 27.3% of wall-clock our own forensics measured going into heredoc repro files
+— which is what makes EXP-015's time increase cheaper than it was for submission #2.
+
+Honest expectation for all three together: **+4 to +8 LB tasks (0.17–0.24)**, i.e. the modal-to-ceiling band,
+not past it. 39 teams already sit at 13–14 tasks on near-identical configs, so matching the published config
+buys a seat in a crowded tie that the private half will reshuffle by a few tasks either way. Treat it as a
+floor to build from, not a result — what could go past it is what those notebooks lack: the measured
+wall-clock breakdown, the calibrated MDE, the confirmed gold-control flakiness mechanism, and EXP-009 Part
+C5's finding that reproduction correlates with *winning* (20/20 resolved runs reproduced before their first
+edit). Note the last two are compatible rather than contradictory: the 0.24 prompt bans the repro *file*
+while keeping one `python -c`, i.e. cheap reproduction — exactly where EXP-009 Part C2 landed independently.
+
+**Deliberately NOT adopted from the 0.24 config:** its `pytest -k <keyword>` rule. We run whole test files
+on purpose, because §1h of `experiments/README.md` established that grading runs whole files and one broken
+test anywhere in the file fails the task. Their rule is faster; ours is safer. A genuine open question, not
+a copy-this item.
+
+**Carried over, still open (unchanged by EXP-012):** the dev-48 run for EXP-010 (compliance, then
+empty-patch rate and first-edit turn) and the E0 dev-48 re-run that would finally give us a same-config
+repeat baseline (EXP-009 Part C4 — still the highest-value single quota purchase, since every A/B so far has
+had no same-config noise floor beneath it). EXP-013 can be folded into that same run if quota is tight.
 
 ### 6.2 LoRA / RFT track (gated)
 **Multi-LoRA-per-sub-agent is available** (§4.1 finding, 2026-10-17): the harness serves a distinct adapter per
