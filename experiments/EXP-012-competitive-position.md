@@ -159,6 +159,17 @@ file, while ours deliberately runs the whole file because "grading runs the full
 anywhere in it fails the task". Our reasoning is sound and theirs is faster. This is a genuine open
 question, not a copy-this item.
 
+**Mechanism confirmed 2026-10-22, and it is not what it looks like.** `harness/verification.py:297` returns
+`False` on **any** failure or error in the JUnit XML, *before* it checks the required nodes at all, and the
+grader chooses the test files itself (`task.test_files`, else extracted from the test patch). So the agent's
+own `pytest` command never reaches grading — it is purely the agent's private feedback loop. That makes
+`-k` a pure speed-vs-visibility trade with no grading risk either way, and it gives our whole-file rule an
+actual mechanism rather than a guess: an agent running `-k` cannot see collateral damage it caused to
+sibling tests in the same file, which is exactly what line 297 fails the task for. It also means this
+question **cannot** be settled by re-grading stored patches, since grading is deterministic in the patch and
+the grader's own file selection — only the agent's trajectory changes, so it needs a GPU run (folded into
+EXP-013).
+
 ## 4. The local-to-LB gap is explained by task difficulty, not by a bug on our side
 
 Our dev-48 resolve rate is 22.9% (11/48); our LB rate is 9.8% pooled (17/174). A 2.3x drop invites the

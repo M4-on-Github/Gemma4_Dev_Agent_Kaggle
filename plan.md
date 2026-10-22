@@ -333,6 +333,17 @@ Index table in `experiments/README.md`; the current best config is tagged in git
     median × 120 + setup, with a stated margin) instead of on the cap. Until that is done, EXP-015 needs an
     explicit recorded override rather than a silent one — a timeout still scores **zero**, never partial
     credit.
+  - **Measured 2026-10-22 (from E0 and EXP-003 `task_results.jsonl` + traces):** the two phases the
+    `cap × 120` formula leaves out are container setup at **3.3 s/task** (median) and grading at
+    **14.0 s/task** (mean; 5.8 s median, one 204.6 s outlier) — neither inside the agent cap, together
+    **~35 min over 120 tasks**. Use these when re-deriving the gate. Related measurement, recorded so it
+    is not re-derived: grading is only **5.4%** of a dev-48 run's wall-clock (E0 11.2 min of 206.7;
+    agent 93.4%, setup 1.2%), and `evaluate.py:316 -> :372` runs it inline per task with the vLLM server
+    up, so the GPU is held but idle for it. **Splitting the agent run and the validator into separate
+    notebooks was considered and dropped 2026-10-22**: 5.4% does not pay for the plumbing or the risk of
+    the two grading paths diverging, and the only thing re-grading can actually vary — the *environment*
+    a fixed patch is graded in — is already covered at 0 GPU-h by `tools/regrade_patches.py` (EXP-004) and
+    `tools/gold_control.py`.
 - Keep a `submissions.md` log: date, git tag, zip SHA256, dev-48 score, LB score, scoring wall time (from the kawchar85 tracker's observed time), notes.
 
 ---
