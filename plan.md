@@ -333,6 +333,21 @@ Index table in `experiments/README.md`; the current best config is tagged in git
     median × 120 + setup, with a stated margin) instead of on the cap. Until that is done, EXP-015 needs an
     explicit recorded override rather than a silent one — a timeout still scores **zero**, never partial
     credit.
+  - **TODO DONE, and it reverses the note above (2026-10-22, EXP-016 §3). The formula is NOT the defect at
+    the cap we actually run.** Re-derived from per-task `task_wall_s`: at E0's 4.5-min cap **79.2% of tasks
+    (38/48) run to the cap**, mean 258.3 s, so `cap × 120` = 9.00 h against a projected actual of 8.61 h
+    — **96% of the formula, i.e. accurate to 4%**. The ~30% slack is real only at an 8-min cap (EXP-003:
+    25% of tasks at cap), where the 28-call cap binds first. Projected actual by cap: **5.0 min → 9.40 h;
+    6.0 min → 10.99 h (exactly on the gate); 7.0 min → 12.57 h, past the 12 h hard limit; 8.0 min →
+    14.15 h.** Calibration: submission #2 projected **11.34 h** on actual time and still died of Notebook
+    Timeout, because fixed notebook overhead (wheel installs, vLLM start, model load) sits outside
+    `task_wall_s` and is unmeasured. **Operational gate: ~10.5 h projected actual, which means
+    `max_time_minutes` cannot exceed ~5.0 while `max_tool_calls` stays at 45.** The earlier reading that
+    "8 is too much, 7 is affordable" was wrong: 7 min projects over the hard limit. **EXP-015 is dead as
+    specified** — the top teams' 7–8 min is not a time budget but a safety net behind a 28-call cap that
+    binds first; copying their time cap without their call cap times out, and copying their call cap costs
+    resolves (EXP-003's 28-call cohort resolved 0/20). The only remaining lever on the binding constraint is
+    making tasks *cheaper*, i.e. prompt surgery — see EXP-016 §4 and EXP-017.
   - **Measured 2026-10-22 (from E0 and EXP-003 `task_results.jsonl` + traces):** the two phases the
     `cap × 120` formula leaves out are container setup at **3.3 s/task** (median) and grading at
     **14.0 s/task** (mean; 5.8 s median, one 204.6 s outlier) — neither inside the agent cap, together
@@ -772,7 +787,25 @@ Cheap pre-screen without GPU: replay logged decision points under the changed pr
 
 ### 6.1a TODO — adopt-the-ceiling-config track (added 2026-10-22 from EXP-012; takes precedence over the §6.1 order above)
 
-**Not yet started. Nothing in this subsection has been implemented or run — it is the queue, not a record.**
+**SUPERSEDED 2026-10-22 by EXP-016/EXP-017. Read `experiments/EXP-016-top-team-audit.md` before using this
+table — three of its premises are wrong and one of its three experiments is dead.**
+
+- **EXP-013 (prompt surgery): executed**, as items 1–4 of submission #5. See `EXP-017-submission5-temp-and-prompt.md`.
+  Item 5 (parallel-implementations rule) was not included; item 4's graph-tool removal was taken in full.
+- **EXP-014 (thinking + output budgets): still TODO, and now better motivated but *worse* positioned.** The
+  32,768 context trap does not reach us (EXP-016 §2e: peak prompt 16,991 tokens = 51.9% of the window, zero
+  tasks near the threshold even at `max_output_tokens: 8192`), so there is no overflow risk. But both knobs
+  *cost wall-clock per step*, and EXP-016 §4 shows time is the binding constraint on 79.2% of tasks — so at
+  the current cap they trade steps for depth. Run only after prompt surgery has been shown to create headroom.
+- **EXP-015 (per-task time): DEAD as specified.** EXP-016 §3 re-derived the gate on projected actual time:
+  6.0 min → 10.99 h, **7.0 min → 12.57 h, past the 12 h hard limit**. The top teams' 7–8 min is a safety net
+  behind a 28-call cap that binds first, not a time budget. We cannot copy it while running 45 calls, and we
+  cannot copy their 28 calls either (EXP-003's 28-call cohort resolved 0/20).
+- **The premise that our standing is 0.10 / 25th percentile is wrong**: the LB shows best-of, so our row reads
+  **0.12 = 7/58, rank 2322 of 3470, ~33rd percentile**. And the "LB 0.24" notebook this table cites belongs to
+  a team at **0.18**. The claimed capability gap does not survive matched denominators (exact McNemar p = 1.0).
+
+The original queue text follows, kept for history rather than deleted.
 
 Why this jumps the whole §6.1 queue: `experiments/EXP-012-competitive-position.md` establishes that our
 0.10 = 6/58 sits at ~the 25th percentile of 3,467 teams (median 8 tasks, mode 10, ceiling 14), and that the

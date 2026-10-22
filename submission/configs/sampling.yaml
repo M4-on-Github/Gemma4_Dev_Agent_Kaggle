@@ -8,7 +8,11 @@
 # adk_submission/resolvers/generation.py sets extra_body["thinking_token_budget"]; server.py enables the
 # matching logits processor) -- the VERIFY(Q3) note below describing it as possibly-ignored was wrong and is
 # corrected here, not deleted, since the surrounding history is useful context.
-temperature: 0.2          # scorer default is 1.0; E4 A/Bs 0.2 vs 1.0
+temperature: 1.0          # EXP-016 2026-10-22: 0.2 -> 1.0. This was E4's planned A/B, never run. 1.0 is the
+                          # harness scorer default, and it is the ONLY difference between the rank-3 team's
+                          # published v19 (LB 0.18) and v24 (LB 0.24) bundles -- top_p/top_k below already
+                          # match theirs exactly, so temperature was our last sampling deviation from the
+                          # 0.24 config. Costs no wall-clock: it changes sampling, not any budget cap.
 top_p: 0.95
 top_k: 64
 max_output_tokens: 4096   # keeps prompt + output well under the 32,768 context wall; E11 tries 2048/6144

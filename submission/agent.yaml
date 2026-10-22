@@ -14,7 +14,8 @@ tools:
   - write_file
   - get_status
   - submit_patch
-  # Graph tools are declared but demoted in the prompt ("only if grep fails"); E5 ablates them off.
-  - get_code_neighbors
-  - search_similar_code
-  - get_code_subgraph
+  # EXP-016 2026-10-22: the 3 graph tools are REMOVED (this is E5's ablation, taken on external evidence).
+  # The rank-3 (LB 0.24) and rank-19 (LB 0.22) published bundles both declare exactly these 6 tools and no
+  # graph tools; the rank-3 team's own local runs put their graph-tool versions below their 6-tool ones.
+  # Our own prompt had already demoted them to "only if two greps found nothing", so they cost prompt
+  # budget on every step while being reachable on almost no task.

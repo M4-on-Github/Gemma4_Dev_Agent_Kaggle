@@ -5,6 +5,28 @@ type: zero-GPU analysis (leaderboard pull + published-config comparison). No var
 inputs: full public leaderboard (3,467 teams, pulled 2026-10-22 14:34 UTC); three public notebooks
         downloaded and **read only, never executed**; our own `submission/` tree at commit `47e53b0`.
 
+## CORRECTED 2026-10-22 by EXP-016 — read this first
+
+Three premises below are wrong. The analysis method stands; these inputs do not.
+
+1. **Our standing is `0.12` = 7/58, rank 2322 of 3470, ~33rd percentile** — not 0.10 = 6 tasks at the 25th
+   percentile. The leaderboard shows each team's **best** submission, and submission #2 scored 0.12; #4's
+   0.10 never replaced it. Our row is team `RainM4` / user `rainm4`. Every percentile, "teams strictly
+   ahead" and "tasks behind" figure in this document is computed off the wrong leaderboard row.
+2. **The notebook this document is built on is not a 0.24 config.** `honghanhhh/gemma-4-baseline-lb-0-24`
+   belongs to a team at **0.18, rank 232** (verified by joining `TeamMemberUserNames`); `hitarthjain0`'s
+   "What Took LB 0.12 to 0.24" is also 0.18, rank 320. None of the four actual 0.24 teams published a voted
+   notebook. The sentence "the 0.24 ceiling config is a public notebook running the same model and the same
+   nine tools as ours" is false as written.
+3. **The capability gap asserted here is not statistically established.** The Fisher p = 0.0125 below
+   compares our pooled 17/174 against their 14/58 on *different denominators*: their local rate is measured
+   only on gold-solvable tasks, and 20 of our dev-48 tasks are `gold_fails` in their census. On matched
+   denominators it is Fisher p = 0.0717 unpaired, and on the 21 tasks both agents actually ran it is ours
+   7/21 vs theirs 8/21, **exact McNemar p = 1.0000**.
+
+Also superseded: this document's recommendation to raise per-task time. EXP-016 §3 shows 7.0 min projects to
+12.57 h, past the 12 h hard limit. See `EXP-016-top-team-audit.md` and `EXP-017-submission5-temp-and-prompt.md`.
+
 ## why this exists
 
 Submission #4 scored **0.10**. The pre-registered reading said that outcome would be uninformative about
