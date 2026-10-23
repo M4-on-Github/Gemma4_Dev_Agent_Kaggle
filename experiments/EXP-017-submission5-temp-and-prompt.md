@@ -97,3 +97,44 @@ that touches runtime (#4) removes work. No change here can lengthen a task. The 
 (the agent performing worse), which costs a score but not the run.
 
 Accepted knowingly, and recorded here rather than silently.
+
+---
+
+## 6. Outcome (added 2026-10-23, after grading)
+
+**Score: 0.13 = 8/58.** Section 4's readings are **not revised** -- this section records what happened
+against them, which is the point of pre-registering.
+
+The relevant row of the section 4 table is **0.10 - 0.15: "Inside noise. The modal outcome, and
+uninformative."** That is what we got, and the stated next action ("Do not iterate on the LB. Spend the next
+quota on the E0 dev-48 **repeat baseline**") stands unchanged.
+
+| quantity | value |
+|---|---|
+| score / tasks | 0.13 = 8/58 |
+| vs previous best (7/58) | +1 task, Fisher exact **p = 1.0000** |
+| pre-committed threshold | k >= 10 (0.17) -- **not crossed** |
+| likelihood of k=8 under no-effect (5.67/58) | 0.0933 |
+| likelihood of k=8 under their v19 (11/58) | 0.0871 |
+| **likelihood ratio no-effect : v19** | **1.07 : 1** |
+| likelihood ratio no-effect : v24 (14/58) | 4.21 : 1 |
+
+A likelihood ratio of 1.07 : 1 means this submission carries **essentially zero evidential weight** between
+"the four changes did nothing" and "they work as well as the rank-3 team's v19". The only hypothesis it bears
+on is v24-level capability, which it disfavours ~4 : 1.
+
+**The dispersion test is the finding worth keeping.** Four scored submissions on the identical 58 public tasks
+now read **4, 7, 6, 8** (mean 6.25, sd 1.71). Pooled p = 25/232 = 0.1078; observed between-run variance
+**2.92** against a binomial expectation of **5.58**; dispersion X2 = 1.57 on 3 df, **p = 0.67**. The spread
+between four *different configurations* is smaller than coin-flip noise predicts for four reruns of *one*
+configuration. **There is no evidence that any of our four variants differs from any other.** This is section
+3's "no single-variable test is resolvable at this MDE" confirmed the hard way, and it is the direct argument
+for buying the repeat baseline before spending another slot.
+
+**What the slot did buy, both minor but real:** a score returned at all, which is the **fourth** confirmation
+of the ~10 h budget path; and at 8 tasks we sit far above the pre-registered `<= 0.08` regression line, so
+temperature 1.0, the 6-tool set and the prompt surgery are **behaviourally safe**. Deleting the repro-file
+phase that EXP-009 Part C priced at 27.3% of wall-clock cost nothing measurable -- mild evidence it was never
+load-bearing.
+
+Kaggle submission ref **57539741**, accepted 2026-10-22 22:25:34 UTC, graded 2026-10-23.
