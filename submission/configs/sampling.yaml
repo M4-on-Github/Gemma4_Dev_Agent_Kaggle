@@ -15,7 +15,12 @@ temperature: 1.0          # EXP-016 2026-10-22: 0.2 -> 1.0. This was E4's planne
                           # 0.24 config. Costs no wall-clock: it changes sampling, not any budget cap.
 top_p: 0.95
 top_k: 64
-max_output_tokens: 4096   # keeps prompt + output well under the 32,768 context wall; E11 tries 2048/6144
+max_output_tokens: 8192   # EXP-020 2026-10-23: 4096 -> 8192, the ENABLING CONDITION for thinking_budget
+                          # 4096, not a second variable. Measured: 0 of 1,753 E0 turns exceed 4096 today,
+                          # so this is inert on its own; but 13 of 1,424 EXP-003 turns (0.91%, ~0.27/task)
+                          # DO exceed it once thinking is raised, i.e. ~1 task in 4 would take a clipped
+                          # turn. Peak observed prompt is 16,991 tokens = 51.9% of the 32,768 window
+                          # (EXP-016 section 4), so 8192 output stays clear of the context wall.
                           # EXP-018 2026-10-22: THAT PREMISE IS RETRACTED (experiments/EXP-018-config-provenance-
                           # audit.md). experiments/README.md already records that a LOWER cap makes mid-tool-call
                           # truncation MORE likely, not less; the harness default is 16384 and it recommends
@@ -25,7 +30,7 @@ max_output_tokens: 4096   # keeps prompt + output well under the 32,768 context 
                           # for submission #5 pending a dev-48 run (a larger cap risks longer steps, hence time).
 thinking_config:
   include_thoughts: true  # false = thinking off (sent as enable_thinking=false); E2/E3 ablate this
-  thinking_budget: 256    # CORRECTED 2026-10-19: this IS forwarded to vLLM as a real generation cap (see
+  thinking_budget: 4096   # CORRECTED 2026-10-19: this IS forwarded to vLLM as a real generation cap (see
                           # header note above), not merely harmless-if-ignored as VERIFY(Q3) originally
                           # guessed. EXP-003 raised this to 4096 as part of a bundled change and did not
                           # isolate its effect; keep at 256 (E0's scored value) until it's tested alone.

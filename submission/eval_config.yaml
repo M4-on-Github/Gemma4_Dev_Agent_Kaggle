@@ -32,7 +32,12 @@
 #  - max_tool_calls 45 is non-binding on E0's dev-48 (median 32 calls, 1 of 48 tasks at the cap), so it costs
 #    nothing to keep; lowering it to 28 DOES cost resolves (EXP-003: the 28-call-capped cohort resolved 0 of 20).
 evaluation:
-  max_time_minutes: 4.0   # hard cap on the agent loop (asyncio timeout); edits on disk are still graded. E0 was 4.5.
+  max_time_minutes: 4.5   # EXP-020 2026-10-23: 4.0 -> 4.5, RESTORING E0's own measured cap (which ran
+                          # 8.61 h end-to-end and survived). Required because the thinking swing adds
+                          # +4.53 s/turn; holding 4.0 would starve it. 4.5 is also the MAXIMUM the packer
+                          # gate allows: worst case = 120 x (cap + 1.0 setup) min, so 4.5 -> exactly
+                          # 11.00 h (passes, the gate test is strictly greater-than) and 5.0 -> 12.00 h
+                          # (hard error). EXP-018 priced the 4.0 flinch at ~0.4 LB tasks.
   max_tool_calls: 45      # get_status and submit_patch are free and do not count
   max_turns: 70
   timeout_seconds: 300    # VERIFY(Q2): per community source reading this ALSO caps the Phase-2 grading pytest
