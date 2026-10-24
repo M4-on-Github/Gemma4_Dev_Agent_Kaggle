@@ -38,8 +38,9 @@ evaluation:
                           # gate allows: worst case = 120 x (cap + 1.0 setup) min, so 4.5 -> exactly
                           # 11.00 h (passes, the gate test is strictly greater-than) and 5.0 -> 12.00 h
                           # (hard error). EXP-018 priced the 4.0 flinch at ~0.4 LB tasks.
-  max_tool_calls: 45      # get_status and submit_patch are free and do not count
-  max_turns: 70
+  max_tool_calls: 64      # EXP-021 2026-10-24: 45 -> 64. Calls do not bind (E0 median 32, 1/48 at cap) while TIME does (79.2% time-capped), so this is time-neutral by construction: the cap formula is cap-only. Frees the call-capped tail.
+  # (prior comment) 45 # get_status and submit_patch are free and do not count
+  max_turns: 96           # EXP-021: 70 -> 96, kept above max_tool_calls so turns never bind before calls
   timeout_seconds: 300    # VERIFY(Q2): per community source reading this ALSO caps the Phase-2 grading pytest
                           # run, so we keep the harness default instead of plan's 150 s. The agent-side
                           # command timeout is min(timeout_seconds, remaining task time), so 300 costs nothing;
