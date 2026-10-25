@@ -1,0 +1,240 @@
+
+====================================================================================================
+A. TASK-LEVEL OVERLAP of the two existing dev-48 runs (E0 vs EXP-003), field `resolved` in task_results.jsonl
+====================================================================================================
+tasks in both runs: 48   E0 resolved 11   EXP-003 resolved 9   union 14
+
+                    EXP-003 resolved   EXP-003 not
+  E0 resolved              6               5
+  E0 not                   3              34
+
+both resolved (6):   ['fastapi_14301', 'fastapi_14463', 'requests_6644', 'rich_3006', 'rich_3067', 'rich_3905']
+E0 only (5):        ['fastapi_13207', 'fastapi_13537', 'fastapi_14297', 'fastapi_14873', 'rich_3676']
+EXP-003 only (3):    ['fastapi_15589', 'fastapi_5624', 'fastapi_9753']
+neither (34):        ['fastapi_11355', 'fastapi_13786', 'fastapi_14262', 'fastapi_14360', 'fastapi_14448', 'fastapi_14459', 'fastapi_14512', 'fastapi_14583', 'fastapi_14605', 'fastapi_14609', 'fastapi_14953', 'fastapi_14962', 'fastapi_14964', 'fastapi_15030', 'fastapi_15280', 'fastapi_15661', 'fastapi_15800', 'httpx_3672', 'requests_7205', 'requests_7309', 'requests_7315', 'requests_7427', 'rich_3061', 'rich_3063', 'rich_3105', 'rich_3180', 'rich_3468', 'rich_3480', 'rich_3521', 'rich_3934', 'rich_3935', 'rich_3953', 'rich_4070', 'rich_4075']
+
+expected 'both' if the runs were independent (hypergeometric mean): 2.062   observed 6
+P(overlap >= 6) one-sided hypergeometric : 0.002275
+Fisher exact two-sided (tools/run_forensics)  : 0.002275
+exact McNemar on the discordant pairs 5:3 (marginal symmetry, a different question): 0.7266
+odds ratio 13.60   Woolf 95% CI 2.55 - 72.53
+inter-run correlation phi (= across-run ICC of the 0/1 outcome) 0.500   task-bootstrap 95% CI 0.161 - 0.783   (n boot 4000)
+
+repeat rates: P(also solved in EXP-003 | solved in E0) = 6/11 = 0.545;  P(also solved in E0 | solved in EXP-003) = 6/9 = 0.667
+P(solved in EXP-003 | NOT solved in E0) = 3/37 = 0.081   Jaccard 0.429
+capture-recapture (treat the runs as two 'captures' of the solvable set): Lincoln-Petersen 16.5, Chapman 16.1 +/- 4.2 (95%, normal). Assumes equal catchability, so it is a LOWER bound when tasks differ.
+
+per repo (from the instance_id prefix; E0 / EXP-003 / union resolved of tasks):
+  fastapi    tasks 26   E0  6   EXP-003  5   union  9
+  httpx      tasks  1   E0  0   EXP-003  0   union  0
+  requests   tasks  5   E0  1   EXP-003  1   union  1
+  rich       tasks 16   E0  4   EXP-003  3   union  4
+
+====================================================================================================
+B. WHAT THE 2x2 TABLE CAN AND CANNOT SEPARATE: a deterministic core (pi) vs continuous heterogeneity
+====================================================================================================
+independent runs (2 parameters, p1=0.229, p2=0.188): logL -49.001;  saturated (3 df): logL -43.828
+likelihood-ratio G2 = 10.346 on 1 df, P = 0.0013   -> 'the runs are independent' is rejected
+
+profile over the core fraction pi (tasks that resolve with probability 1 in BOTH runs); the periphery is independent with run-specific rates:
+  cell probs: both = pi + (1-pi) q1 q2 ; E0-only = (1-pi) q1 (1-q2) ; EXP3-only = (1-pi)(1-q1) q2 ; neither = (1-pi)(1-q1)(1-q2)
+   pi     core tasks   best q1   best q2   logL      G2 vs saturated   inside 95% profile?
+  0.000     0         0.230     0.190    -49.002     10.348          no
+  0.021     1         0.185     0.140    -47.120      6.585          no
+  0.042     2         0.150     0.105    -45.588      3.519          yes
+  0.062     3         0.140     0.095    -44.620      1.585          yes
+  0.083     4         0.135     0.085    -44.089      0.522          yes
+  0.104     5         0.130     0.085    -43.859      0.063          yes
+  0.125     6         0.125     0.080    -43.846      0.036          yes
+
+consistent core sizes (profile 95%): 2 to 6 of 48 tasks. The table cannot say whether the 'core' is a
+sharp set of tasks or the upper tail of a smooth difficulty distribution: both give the same four cell probabilities.
+A THIRD run (the C4 repeat of one configuration) is what separates them, because it measures within-config luck.
+
+====================================================================================================
+C. THE SIX-SUBMISSION DISPERSION TEST, re-done against the right null
+====================================================================================================
+scores [4, 7, 6, 8, 8, 7]: mean 6.667, sample variance 2.267, pooled p 40/348 = 0.11494
+binomial expectation n p q = 5.900; X2 = 1.921 on 5 df; P(X2 <= observed) = 0.140 (low tail)
+
+The six runs score the SAME 58 tasks. Conditional on that fixed task set the count is Poisson-binomial, whose variance is
+sum p_i(1-p_i) = n mu (1-mu) (1 - rho), strictly BELOW the binomial n mu (1-mu) whenever tasks differ in difficulty.
+So 'variance below binomial' is what ordinary difficulty heterogeneity predicts; it is not evidence of a deterministic core.
+
+simulation: draw one 58-vector of task probabilities p_i ~ Beta(mean 0.1149, ICC rho), then six independent runs, s2 = sample variance of the six counts (20000 reps each).
+  rho     E[s2]    P(s2 <= 2.267)   P(s2 >= 5.9)
+  0.000   5.888      0.156            0.403
+  0.250   4.429      0.252            0.235
+  0.400   3.554      0.362            0.139
+  0.500   2.940      0.471            0.078
+  0.600   2.334      0.603            0.034
+  0.750   1.477      0.830            0.004
+
+moment-matching the 'core + iid periphery' model to the six LB scores (mean 6.667, s2 2.267): c always-solved tasks, the other 58-c
+solve independently with prob q per run, so mean = c + (58-c) q and variance = (58-c) q (1-q). Post-hoc, two moments, one free parameter:
+   c    q       mean    variance   (observed variance 2.267)
+   0  0.1149   6.667    5.900
+   1  0.0994   6.667    5.103
+   2  0.0833   6.667    4.278
+   3  0.0667   6.667    3.422
+   4  0.0494   6.667    2.535
+   5  0.0314   6.667    1.614
+   6  0.0128   6.667    0.658
+   7  -0.0065   6.667   -0.336
+  -> variance 2.267 is matched at c of roughly 4 to 5: about two thirds of a typical run's resolves would be 'core', one third lottery.
+     This is the same split as the dev-48 overlap (6/11 and 6/9 repeat), obtained from independent data, and it is a consistency check only:
+     the LB variance cannot distinguish a sharp core from smooth heterogeneity (section C simulation above).
+
+reading: at rho ~ the dev-48 inter-run correlation the observed 2.267 is an unremarkable draw. The 'low tail' (P=0.14) came from
+comparing against a homogeneous binomial, which is the wrong null for a fixed task set.
+
+====================================================================================================
+D. LEADERBOARD POWER for a single new draw (task set fixed, theta = expected count on these 58 tasks)
+====================================================================================================
+baseline family: mean of our six scored draws = 6.667 tasks. Hypothesised theta for the EXT-19 replica:
+  rho = across-run task ICC. Columns are P(k >= t) for a single graded run.
+
+  rho = 0.30
+  hypothesis              theta   sd     P(>=8)  P(>=9)  P(>=10) P(>=11) P(>=12) P(>=13)
+  H0 no transfer           6.67  2.04   0.330    0.181    0.085    0.034    0.012    0.004 
+  H-low                    8.50  2.27   0.662    0.489    0.321    0.186    0.095    0.043 
+  H1 field mode (0.18)    10.40  2.45   0.885    0.779    0.636    0.474    0.319    0.193 
+  H2 face value (0.22)    12.80  2.65   0.981    0.952    0.896    0.807    0.683    0.538 
+
+  rho = 0.50
+  hypothesis              theta   sd     P(>=8)  P(>=9)  P(>=10) P(>=11) P(>=12) P(>=13)
+  H0 no transfer           6.67  1.72   0.304    0.140    0.052    0.015    0.004    0.001 
+  H-low                    8.50  1.91   0.697    0.492    0.293    0.145    0.059    0.020 
+  H1 field mode (0.18)    10.40  2.09   0.922    0.820    0.663    0.474    0.293    0.155 
+  H2 face value (0.22)    12.80  2.26   0.993    0.975    0.932    0.848    0.716    0.548 
+
+  rho = 0.65
+  hypothesis              theta   sd     P(>=8)  P(>=9)  P(>=10) P(>=11) P(>=12) P(>=13)
+  H0 no transfer           6.67  1.48   0.276    0.103    0.028    0.006    0.001    0.000 
+  H-low                    8.50  1.62   0.734    0.494    0.260    0.105    0.032    0.008 
+  H1 field mode (0.18)    10.40  1.77   0.955    0.864    0.695    0.471    0.260    0.114 
+  H2 face value (0.22)    12.80  1.87   0.998    0.991    0.965    0.895    0.759    0.561 
+
+PRE-REGISTERED READING (EXP-022 section 4.2), error rates at rho = 0.50:
+  R-A  k >= 11 (score >= 0.18):  P under H0 = 0.0154  (false-positive rate)
+                                  P under H-low (theta 8.5) = 0.145  (power)
+                                  P under H1 field mode (0.18) (theta 10.4) = 0.474  (power)
+                                  P under H2 face value (0.22) (theta 12.8) = 0.848  (power)
+  R-C  k <= 8  (score <= 0.13):  P under H0 = 0.860;  under H1 = 0.180;  under H2 = 0.025
+  R-B  k in 9..10:               P under H0 = 0.125;  under H1 = 0.347
+
+likelihood ratios P(outcome | H1) / P(outcome | H0) at rho = 0.50:
+  k <= 8     P|H0 0.8596  P|H1 0.1795  P|H2 0.0249   LR(H1:H0)    0.21   LR(H2:H0)    0.03
+  k = 9-10   P|H0 0.1250  P|H1 0.3469  P|H2 0.1267   LR(H1:H0)    2.77   LR(H2:H0)    1.01
+  k >= 11    P|H0 0.0154  P|H1 0.4736  P|H2 0.8484   LR(H1:H0)   30.82   LR(H2:H0)   55.21
+
+stated prior over theta (written before the draw): {'H0 no transfer': 0.35, 'H-low': 0.3, 'H1 field mode (0.18)': 0.25, 'H2 face value (0.22)': 0.1}  -> prior mean theta 8.76 tasks (= +2.10 vs our six-draw mean)
+prior-predictive probabilities of the graded count: P(k<=8)=0.501, P(9<=k<=10)=0.247, P(k>=11)=0.252
+posterior if k >= 11 is observed: H0 no transfer: 0.02, H-low: 0.17, H1 field mode (0.18): 0.47, H2 face value (0.22): 0.34
+posterior if k <= 8 is observed:  H0 no transfer: 0.60, H-low: 0.30, H1 field mode (0.18): 0.09, H2 face value (0.22): 0.00
+
+-- MDE of one new draw against the six-draw baseline (two-sided alpha .05, power .80) --
+  rho 0.30: sd(new draw at theta=10) 2.43, sd(one baseline draw) 2.04, SE of (new - baseline mean) 2.57, MDE = (1.96+0.84) x SE = 7.18 tasks
+  rho 0.50: sd(new draw at theta=10) 2.06, sd(one baseline draw) 1.73, SE of (new - baseline mean) 2.18, MDE = (1.96+0.84) x SE = 6.10 tasks
+  rho 0.65: sd(new draw at theta=10) 1.73, sd(one baseline draw) 1.48, SE of (new - baseline mean) 1.83, MDE = (1.96+0.84) x SE = 5.13 tasks
+  conditional (same 58 tasks, observed s2 = 2.267): SE = sqrt(s2 (1 + 1/6)) = 1.63, MDE = 2.8 x SE = 4.55 tasks; one-sided alpha .05 / power .80: 4.04 tasks
+
+====================================================================================================
+D2. WINNER'S CURSE: expected best-of-N for a team whose every submission has the same theta (rho = 0.50)
+====================================================================================================
+  columns: expected leaderboard count (max of N graded runs); then P(max >= 13), P(max >= 14)
+  theta  6.7 (0.115) | N= 6: E[max]= 8.86 P(>=13)=0.00 P(>=14)=0.00 | N=17: E[max]= 9.86 P(>=13)=0.01 P(>=14)=0.00 | N=44: E[max]=10.56 P(>=13)=0.03 P(>=14)=0.01
+  theta  8.0 (0.138) | N= 6: E[max]=10.37 P(>=13)=0.06 P(>=14)=0.01 | N=17: E[max]=11.40 P(>=13)=0.15 P(>=14)=0.04 | N=44: E[max]=12.17 P(>=13)=0.33 P(>=14)=0.10
+  theta  9.0 (0.155) | N= 6: E[max]=11.50 P(>=13)=0.21 P(>=14)=0.07 | N=17: E[max]=12.55 P(>=13)=0.48 P(>=14)=0.19 | N=44: E[max]=13.39 P(>=13)=0.81 P(>=14)=0.42
+  theta 10.0 (0.172) | N= 6: E[max]=12.63 P(>=13)=0.51 P(>=14)=0.25 | N=17: E[max]=13.69 P(>=13)=0.85 P(>=14)=0.53 | N=44: E[max]=14.57 P(>=13)=0.99 P(>=14)=0.85
+  theta 11.0 (0.190) | N= 6: E[max]=13.70 P(>=13)=0.80 P(>=14)=0.53 | N=17: E[max]=14.87 P(>=13)=0.99 P(>=14)=0.88 | N=44: E[max]=15.70 P(>=13)=1.00 P(>=14)=0.99
+  theta 12.0 (0.207) | N= 6: E[max]=14.77 P(>=13)=0.95 P(>=14)=0.81 | N=17: E[max]=15.99 P(>=13)=1.00 P(>=14)=0.99 | N=44: E[max]=16.87 P(>=13)=1.00 P(>=14)=1.00
+
+====================================================================================================
+E. dev-48 PAIRED POWER (single run per arm, exact McNemar two-sided alpha .05), arm A at E0's 11 resolves
+====================================================================================================
+  true gain (tasks of 48)   power    mean discordant pairs
+    0                        0.019     8.56
+    2                        0.052     9.01
+    3                        0.086     9.42
+    4                        0.171     9.80
+    6                        0.348    10.67
+    8                        0.585    11.62
+   10                        0.798    12.93
+  normal-approximation cross-check (paired difference of two proportions with inter-run correlation phi, n = 48, 80% power, two-sided .05):
+    resolve rate at p = .20, phi = .50: SE 0.058, MDE 0.162 = 7.8 tasks of 48
+    resolve rate at p = .20, phi = .30: SE 0.068, MDE 0.191 = 9.2 tasks of 48
+    empty-patch rate at p = .35, phi = .42: SE 0.074, MDE 0.208 = 10.0 tasks of 48
+  so the normal approximation (about 8 tasks) is optimistic against the exact-test simulation above (about 10), and the empty-patch rate is NOT a
+  lower-noise metric than the resolve rate at n = 48. A second run per arm shrinks every MDE by sqrt(2).
+
+====================================================================================================
+F. WALL-CLOCK: projection and the price of the 4.5-minute cap (existing dev-48 traces)
+====================================================================================================
+empty-patch tasks: first run 19, second run 16, both 11, only first 8, only second 5, neither 24
+  Fisher two-sided p = 5.24e-03, phi = 0.422  (comparable to the resolve outcome's inter-run phi, so empty-patch is NOT more task-determined; its only advantage as a metric is the larger event count)
+  E0 (4.5 min / 45 calls / thinking 256): non-empty patches 29, resolved among them 11 (37.9%); resolved among empty 0
+  EXP-003 (8 min / 28 calls / thinking 4096): non-empty patches 32, resolved among them 9 (28.1%); resolved among empty 0
+
+E0 (4.5 min / 45 calls / thinking 256): n=48 resolved=11 empty patch=19 (39.6%)
+  duration_s mean 258.3 median 273.8 max 282.2;  tool_calls mean 31.5 median 31.5 max 45
+  projected 120-task agent hours = 120 x mean = 8.61 h (excludes notebook start-up and model load)
+  resolved tasks 11; last edit_file/write_file elapsed (s): fastapi_13207=227, fastapi_13537=146, fastapi_14297=175, fastapi_14301=262, fastapi_14463=174, fastapi_14873=160, requests_6644=207, rich_3006=40, rich_3067=91, rich_3676=204, rich_3905=49
+  resolved tasks whose LAST edit comes after 270 s (a 4.5-min cap would have cut them): [] = 0/11
+
+EXP-003 (8 min / 28 calls / thinking 4096): n=48 resolved=9 empty patch=16 (33.3%)
+  duration_s mean 340.0 median 342.4 max 488.7;  tool_calls mean 24.3 median 27.0 max 28
+  projected 120-task agent hours = 120 x mean = 11.33 h (excludes notebook start-up and model load)
+  resolved tasks 9; last edit_file/write_file elapsed (s): fastapi_14301=165, fastapi_14463=179, fastapi_15589=414, fastapi_5624=227, fastapi_9753=203, requests_6644=141, rich_3006=56, rich_3067=81, rich_3905=61
+  resolved tasks whose LAST edit comes after 270 s (a 4.5-min cap would have cut them): ['fastapi_15589'] = 1/9
+
+====================================================================================================
+F2. THE TIME GATE vs THE MEASURED RUNTIME MODEL (inputs cited from experiments/EXP-020-today-plan.md section 2.3, not re-measured here)
+====================================================================================================
+measured inputs cited: startup 461.8 s once, setup 3.3 s/task, grading 14.0 s/task; 120 hidden tasks; hard limit 12 h
+  cap (min)   project gate 120*(cap+1.0 min)   measured-input hard bound 120*(cap+setup+grade)+startup   fits 12 h?
+     4.00      10.00 h (passes 11.0 h gate)       8.70 h                                              yes
+     4.50      11.00 h (passes 11.0 h gate)       9.70 h                                              yes
+     5.00      12.00 h (REJECTED by gate)        10.70 h                                              yes
+     5.30      12.60 h (REJECTED by gate)        11.30 h                                              yes
+     5.50      13.00 h (REJECTED by gate)        11.70 h                                              yes
+     5.65      13.30 h (REJECTED by gate)        12.00 h                                              NO
+     6.00      14.00 h (REJECTED by gate)        12.70 h                                              NO
+     8.00      18.00 h (REJECTED by gate)        16.70 h                                              NO
+  largest cap whose hard bound is <= 12.0 h: 5.65 min;  <= 11.0 h: 5.15 min (the gate's own 11.0 h line is reached at 4.5 min only because it prices setup at 60 s, 3.5x the measured 17.3 s)
+  E0 (thinking 256): pooled seconds per tool call 8.2 -> a 270 s cap buys about 33 calls; a 480 s cap about 58
+  EXP-003 (thinking 4096): pooled seconds per tool call 14.0 -> a 270 s cap buys about 19 calls; a 480 s cap about 34
+
+====================================================================================================
+G. LEADERBOARD TIERS (public CSV, read as data)
+====================================================================================================
+teams 3758   median score 0.15
+  score  tasks  teams  cumulative>=  share>=   successive ratio
+  0.24   14       4       4         0.1%   
+  0.22   13      40      44         1.2%   10.00
+  0.20   12     188     232         6.2%   4.70
+  0.18   11     511     743        19.8%   2.72
+  0.17   10     624    1367        36.4%   1.22
+  0.15    9     530    1897        50.5%   0.85
+  0.13    8     390    2287        60.9%   0.74
+  0.12    7     311    2598        69.1%   0.80
+  0.10    6     269    2867        76.3%   0.86
+  0.08    5     229    3096        82.4%   0.85
+  0.06    4     148    3244        86.3%   0.65
+  0.05    3     149    3393        90.3%   1.01
+
+POST-HOC (not pre-registered): submission count by tier. If the top is partly best-of-N selection, higher tiers should have submitted more.
+  score  teams  mean subs  median subs
+  0.24      4     15.00      17.0
+  0.22     40     14.65      14.0
+  0.20    188     11.85      12.0
+  0.18    511     10.95      10.0
+  0.17    624      8.29       7.0
+  0.15    530      5.97       5.0
+  0.13    390      5.21       4.0
+  0.12    311      4.95       3.0
+  0.10    269      4.04       3.0
+  0.08    229      3.95       3.0
+  Spearman(score, submission count) over 3758 teams = 0.556  (confounded: persistent and capable teams both submit more; it shows that selection is available, not that it explains the top)
+
+RainM4: score 0.13, listed rank 2218, strictly ahead 1897 (50.5%), tied 390
