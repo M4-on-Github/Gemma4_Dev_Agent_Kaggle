@@ -448,4 +448,61 @@ Posterior if R-A: H0 0.02, H-low 0.17, H1 0.47, H2 0.34. Posterior if R-C: H0 0.
 
 ## Appendix B. Build record
 
-*(appended after the candidate was built; see below)*
+Appended after commit `d9e86ef` (the pre-registration commit; sections 0-6 above are unchanged since then). Built 22:34 UTC on 2026-10-25.
+
+**Build steps and what happened.**
+
+1. `python -I -X utf8 tools/exp022_make_candidate.py <davis0178 notebook> experiments/EXP-022/candidate`: all four source files re-serialised with CRLF
+   matched the notebook's recorded sha256 (agent.yaml 4ccb75f2b7c1, sampling.yaml c8e6851c2b4c, eval_config.yaml e1786906d99c, system.md cf6a4581fcf7);
+   E1 and E2 applied, each matched exactly once. Prompt 3,995 B.
+2. `python -I -X utf8 tools/validate_submission.py experiments/EXP-022/candidate` returned **INVALID**: `ERROR prompts/system.md:20: prompt mentions a public
+   dev-set repo ('FastAPI'); prompts must be repo-agnostic (plan 8.2)`. This is the case section 4.2 declared in advance.
+3. **Pre-declared fallback E3 fired**: rebuilt with `--drop-fastapi-line` (deletes only the bullet "- FastAPI documentation tasks: edit the executable example
+   under `docs_src/`."). Validator: **VALID (0 errors, 1 warning)**; the warning ("literal braces" in the instruction, from the prompt's own
+   `{"status": "ok", ...}` text) is the same one the notebook's original prompt would raise. Worst case printed by the gate: 120 x (4.5 + 1.0) min = **11.00 h**
+   (gate 11.0 h, limit 12.0 h). Instruction chars **3,917**.
+4. `python -I -X utf8 tools/pack_submission.py --src experiments/EXP-022/candidate --out experiments/EXP-022/ext19_at45.zip --allow-warnings`
+   (`--allow-warnings` is needed only for the braces warning; `--skip-budget-gate` is **not** used). Repacking gave the identical hash.
+
+**Result: `experiments/EXP-022/ext19_at45.zip`** (gitignored `*.zip`; 4 members, 2.6 KiB, `agent.yaml` at the root)
+**sha256 `c409a683fdab21c5ea27ef5e892f63f4d43ff0354e35dbc56e503b1cd63a7b64`**
+
+| member | bytes (LF) | sha256 |
+|---|---:|---|
+| `agent.yaml` | 245 | `6ad913b0c0cb67d669116a4074d7b520b3a69c8d5aa960b6abe51f9850b45227` |
+| `configs/sampling.yaml` | 119 | `571a934e89911734927533f1d36cbcc7b8d493592febe63b217e911cf7ed4926` |
+| `eval_config.yaml` | 96 | `f8db9488fe7d4351ccbd9813daab0a932592f3d77234c0f808a579f4d4fc1efa` |
+| `prompts/system.md` | 3,917 | `31c809bfd23181f744872098c1c58bc2f4c7b17bb01d46fcd80ae3cb9fed9ada` |
+
+**Hazard (R9 again).** The zip hash depends on LF bytes. `experiments/EXP-022/candidate/.gitattributes` (`* text eol=lf`) makes a fresh checkout write LF files even under
+`core.autocrlf=true`; to be safe the human should upload this exact zip (sha above) rather than repack, and check `sha256sum` before uploading.
+
+**Exact diff against the notebook's bytes (what differs from the bundle that the author says scored 0.22):**
+
+```
+eval_config.yaml  : -  max_time_minutes: 8          +  max_time_minutes: 4.5          (E1, forced by the 11.0 h gate)
+prompts/system.md : -  You have 28 tool calls and 8 minutes. ...   +  You have 28 tool calls and 4.5 minutes. ...   (E2)
+prompts/system.md : -  - FastAPI documentation tasks: edit the executable example under `docs_src/`.                     (E3, validator-forced; line 20 deleted)
+```
+
+**Deviation from section 4.2's text, stated explicitly.** Section 4.2 gave the prompt as "~3,995 B after E2" because it did not know whether E3 would be needed. E3 was needed, so the
+submitted prompt is **3,917 B** (3,995 - 78). Consequences: (a) the candidate now differs from the 0.22 bundle by one more, untested, deletion (a hint about `docs_src/` that is
+repo-specific and applies to FastAPI documentation tasks; dev-48 is 54% FastAPI, so it may matter more there than on the hidden set); (b) the **pre-registered readings, priors and
+error rates are unchanged** (they were stated for "this bundle at 4.5 min" and the E3 deletion is within the declared fallback), but H1 and H2 should be read as slightly
+optimistic, because the transfer prior was set for the unedited text.
+
+**Current submission, for comparison.** Sub #7's zip has the same four members (agent.yaml 1,330 B, configs/sampling.yaml 3,374 B, eval_config.yaml 4,551 B,
+prompts/swe_coder.md 11,228 B, all LF; the extra size is comments); the candidate replaces all four. The other files under `submission/` (sub_agents, skills, adapters,
+sampling_nothink) are outside the packer's closure and were in neither zip. `submission/` itself is untouched (`git status` is clean for that path, and the committed LF
+blobs still pack to `99b750a0...3462`, re-checked at 22:34 UTC from a scratch pack of the LF tree).
+
+**Command for the human (not run by me):**
+
+```
+sha256sum experiments/EXP-022/ext19_at45.zip      # must print c409a683fdab21c5ea27ef5e892f63f4d43ff0354e35dbc56e503b1cd63a7b64
+kaggle competitions submit -c gemma-4-developer-agent -f experiments/EXP-022/ext19_at45.zip -m "v8 c409a683fdab"
+```
+
+(The repo's message template is `v<N> <sha256[:12]>`; the first 12 hex digits of this zip's sha256 are `c409a683fdab`. The Windows CLI needs
+`PYTHONIOENCODING=utf-8 PYTHONUTF8=1`. The zip lives in the worktree of this branch; copy it to `dist/` of the main checkout if preferred, and re-check the sha.)
+The slot closes at 23:59 UTC. Record the row in `submissions.md` with this document's section 4.3 as the pre-registration, and score it only against the bands there.
