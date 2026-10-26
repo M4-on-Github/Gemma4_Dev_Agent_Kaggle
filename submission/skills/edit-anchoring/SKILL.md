@@ -17,8 +17,12 @@ occurrence without allow_multiple) costs a tool call and teaches nothing — avo
    or from an earlier read before other edits changed it. Memory drifts on whitespace, quote style, and
    blank lines; the matcher's exact tier only forgives \r\n, nothing else.
 2. Include enough surrounding context (a full line above and below the change, or the full def/class
-   signature line) to make old_string unique in the file, but no more than needed — a short unique
-   anchor beats a long verbatim block that is more likely to contain a transcription slip.
+   signature line) to make old_string unique in the file, and make it LONG: 3 or more consecutive
+   whole lines, roughly 150 to 300 characters, copied verbatim from the most recent read_file.
+   MEASURED (EXP-024): 117 of 309 edit_file calls across both dev-48 runs never reached the file at
+   all, failing with "mandatory input parameters are not present: old_string" — and the anchors that
+   survived had a median of 156 chars against 44 for the lost ones. A short one-line anchor is the
+   single most common cause of a lost edit. Never answer a failed edit by shortening the anchor.
 3. If old_string could plausibly repeat (a common decorator, a short conditional, a repeated literal),
    either widen the anchor to include a neighboring unique line or pass allow_multiple=true only when
    you deliberately want every occurrence changed — never as a reflex to dodge a uniqueness error.

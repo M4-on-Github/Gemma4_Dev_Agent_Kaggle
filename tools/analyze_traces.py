@@ -15,7 +15,7 @@ Trace steps (observed format, VERIFY against a real trace): {"step_id", "source"
 Per-task output columns (summary.jsonl): task_id, repo, resolved, patch_empty, submit_patch_called, wall_s,
     setup_s, n_calls, n_turns, n_malformed, n_identical_repeats, n_undeclared_tool, overflow_400, nudges,
     compactions, phase_reached, output_tokens, prompt_tokens, thinking_tokens, timeout_hit, calls_cap_hit,
-    time_cap_hit, n_edit_fail, n_whole_file_reads, scratch_in_patch, error.
+    time_cap_hit, n_edit_fail, n_edit_arg_loss, n_whole_file_reads, scratch_in_patch, error.
 Aggregates (aggregates.json): resolve rate with Wilson 95% CI, rates of the failure modes, median/p90 wall,
     projected 12 h total = sum(wall+setup) * (120/N), worst case = 120 * (cap + setup).
 
@@ -86,6 +86,7 @@ def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
     steps = trace.get("steps") or []
     calls: list[tuple[str, dict]] = []
     n_turns = n_malformed = n_undeclared = nudges = compactions = n_edit_fail = n_whole_reads = 0
+    n_edit_arg_loss = 0
     submit_called = False
     phase = None
     last_calls: list[str] = []
@@ -134,8 +135,21 @@ def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
         obs = s.get("observation") or {}
         content = obs.get("content") if isinstance(obs, dict) else None
         if content and (s.get("tool_calls") or [{}])[-1].get("function_name") == "edit_file":
-            if '"status": "error"' in str(content) or '\\"status\\": \\"error\\"' in str(content):
+            c = str(content)
+            # The '"status": "error"' envelope misses the DOMINANT failure mode: an edit_file
+            # call whose old_string argument never arrived fails with a bare
+            # 'mandatory input parameters are not present: old_string' and NO envelope.
+            # Measured in EXP-024: 117 of 309 edit_file calls across both dev-48 runs. This
+            # detector reported 9 for E0 against 92 real losses -- a ~10x understatement, and
+            # not comparable between runs. Both forms are counted now; the arg-loss subset is
+            # tracked separately because it is the actionable one (the call never reached the
+            # file, so retrying identical arguments loops forever).
+            envelope_err = '"status": "error"' in c or '\\"status\\": \\"error\\"' in c
+            arg_loss = "mandatory input parameters are not present" in c
+            if envelope_err or arg_loss:
                 n_edit_fail += 1
+            if arg_loss:
+                n_edit_arg_loss += 1
     if phase is None:
         names = [c[0] for c in calls]
         if submit_called:
@@ -155,7 +169,8 @@ def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
         "compactions": compactions, "submit_patch_called": submit_called, "phase_reached": phase,
         "output_tokens": fm.get("total_completion_tokens"), "prompt_tokens": fm.get("total_prompt_tokens"),
         "thinking_tokens": fm.get("total_thinking_tokens"),   # not in the observed format; stays null
-        "n_edit_fail": n_edit_fail, "n_whole_file_reads": n_whole_reads,
+        "n_edit_fail": n_edit_fail, "n_edit_arg_loss": n_edit_arg_loss,
+        "n_whole_file_reads": n_whole_reads,
         "tool_histogram": dict(Counter(c[0] for c in calls)),
     }
 
@@ -200,7 +215,7 @@ def analyze_run(run_dir: Path, *, cap_minutes: float | None, max_calls: int | No
             "prompt_tokens": None, "thinking_tokens": None,
             "timeout_hit": any(m.lower() in err.lower() for m in TIMEOUT_MARKERS),
             "calls_cap_hit": None, "time_cap_hit": bool(cap and wall >= cap * 60 - 5),
-            "n_edit_fail": None, "n_whole_file_reads": None,
+            "n_edit_fail": None, "n_edit_arg_loss": None, "n_whole_file_reads": None,
             "scratch_in_patch": bool(isinstance(patch, str) and SCRATCH_RE.search(patch)),
             "submit_patch_called": None, "error": err[:200] or None, "trace": None,
         }
@@ -252,6 +267,7 @@ def aggregate(rows: list[dict], *, cap_minutes: float | None, n_hidden: int = R.
         "malformed_turn_rate": _ratio(rows, "n_malformed", "n_turns"),
         "spin_rate": _ratio(rows, "n_identical_repeats", "n_calls"),
         "edit_fail_rate": _ratio(rows, "n_edit_fail", "n_calls"),
+        "edit_arg_loss_rate": _ratio(rows, "n_edit_arg_loss", "n_calls"),
         "median_wall_s": st.median(walls) if walls else None,
         "p90_wall_s": walls[max(0, int(round(0.9 * n)) - 1)] if walls else None,
         "mean_calls": _mean(rows, "n_calls"), "mean_output_tokens": _mean(rows, "output_tokens"),
