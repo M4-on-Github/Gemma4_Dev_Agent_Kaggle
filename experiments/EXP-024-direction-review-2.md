@@ -625,3 +625,26 @@ only here.
 | ~3.9 L4×4-h for a dev-48 arm at 4.5 min / 4096 | **[A]** — extrapolated from E0's measured capped mean of 273.9 s plus ~0.25 h server start |
 | "+1 to +2 tasks" expected effect of the fix | **[Mod]** — 16.7% × 0.5 conversion × 0.281–0.379 resolve rate; the 0.5 conversion is **[A]** |
 | 30 L4×4-h/week quota | **[A]** — EXP-020 line 11; not visible from inside the repo |
+
+---
+
+## Submitted
+
+**Kaggle submission ref 57680438, accepted 2026-10-26** ("0 submissions remaining today").
+Artifact `out/submission.zip`, sha256 `dbe9248ca7b8a0f74478e4dfdad0bbe65740cb4dc39b725e67540457658488a5`,
+uploaded as `submission.zip` per the filename rule recorded in `EXP-023 §6` — accepted on the first try.
+
+The candidate was **repacked independently from `experiments/EXP-024/candidate-editfix/`** rather than
+submitted as handed over: `RESULT: VALID (0 errors, 0 warnings)`, gate line
+`worst case 120 x (4.5 + 1.0 setup) min = 11.00 h (gate 11.0 h, limit 12.0 h)`, no `--skip-budget-gate`,
+and the sha256 reproduced exactly, so the pack is deterministic. The three config files were confirmed
+**byte-identical to `submission/`** by diff; only `prompts/swe_coder.md` differs.
+
+**The central finding was verified against the raw traces before anything was submitted**, not accepted on
+the strength of the review that proposed it: 92 argument-loss calls on 14/48 tasks in E0 and 25 on 4/48 in
+EXP-003, counted directly out of `runs/*/traces/*.json`. The detector fix at `a6af225` reproduces both
+numbers through `tools/analyze_traces.py` itself.
+
+§4's pre-registered readings govern how the score is read. The expected effect is **+1 to +2 of 58, below
+the single-draw MDE**, so this slot cannot confirm the fix; the dev-48 arm powered on **loss rate** is the
+real test and still needs a GPU-quota decision.
