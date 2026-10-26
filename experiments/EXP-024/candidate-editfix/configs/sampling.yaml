@@ -1,0 +1,36 @@
+# generate_content_config for every agent (plan.md §4.3 starting values).
+# Allowed fields per HARNESS_README mirror: temperature, top_p, top_k, max_output_tokens, presence_penalty,
+# frequency_penalty, stop_sequences, response_mime_type, seed, thinking_config.
+#
+# EXP-003 (public-budget-shape test, 2026-10-19): this is E0's config, restored after EXP-003's dev-48 test
+# run (notebooks/exp010_public_budget_dev48/, results in experiments/EXP-003-public-budget.md). That run's
+# pre-push review confirmed thinking_budget IS forwarded to vLLM as a real cap (harness source:
+# adk_submission/resolvers/generation.py sets extra_body["thinking_token_budget"]; server.py enables the
+# matching logits processor) -- the VERIFY(Q3) note below describing it as possibly-ignored was wrong and is
+# corrected here, not deleted, since the surrounding history is useful context.
+temperature: 1.0          # EXP-016 2026-10-22: 0.2 -> 1.0. This was E4's planned A/B, never run. 1.0 is the
+                          # harness scorer default, and it is the ONLY difference between the rank-3 team's
+                          # published v19 (LB 0.18) and v24 (LB 0.24) bundles -- top_p/top_k below already
+                          # match theirs exactly, so temperature was our last sampling deviation from the
+                          # 0.24 config. Costs no wall-clock: it changes sampling, not any budget cap.
+top_p: 0.95
+top_k: 64
+max_output_tokens: 8192   # EXP-020 2026-10-23: 4096 -> 8192, the ENABLING CONDITION for thinking_budget
+                          # 4096, not a second variable. Measured: 0 of 1,753 E0 turns exceed 4096 today,
+                          # so this is inert on its own; but 13 of 1,424 EXP-003 turns (0.91%, ~0.27/task)
+                          # DO exceed it once thinking is raised, i.e. ~1 task in 4 would take a clipped
+                          # turn. Peak observed prompt is 16,991 tokens = 51.9% of the 32,768 window
+                          # (EXP-016 section 4), so 8192 output stays clear of the context wall.
+                          # EXP-018 2026-10-22: THAT PREMISE IS RETRACTED (experiments/EXP-018-config-provenance-
+                          # audit.md). experiments/README.md already records that a LOWER cap makes mid-tool-call
+                          # truncation MORE likely, not less; the harness default is 16384 and it recommends
+                          # thinking_budget 4096 WITH max_output_tokens 16384. The context wall also does not reach
+                          # us: peak prompt_tokens is 16,991 = 51.9% of 32,768 and zero tasks cross the trip
+                          # threshold, even simulated at 8192 (EXP-016 section 2e). Value nonetheless LEFT AT 4096
+                          # for submission #5 pending a dev-48 run (a larger cap risks longer steps, hence time).
+thinking_config:
+  include_thoughts: true  # false = thinking off (sent as enable_thinking=false); E2/E3 ablate this
+  thinking_budget: 4096   # CORRECTED 2026-10-19: this IS forwarded to vLLM as a real generation cap (see
+                          # header note above), not merely harmless-if-ignored as VERIFY(Q3) originally
+                          # guessed. EXP-003 raised this to 4096 as part of a bundled change and did not
+                          # isolate its effect; keep at 256 (E0's scored value) until it's tested alone.
