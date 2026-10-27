@@ -125,3 +125,22 @@ Both `kernel-metadata.json` files carry the explicit pinned `docker_image` sha c
 exp010 configs — **not** `docker_image_pinning_type: original`, which does nothing on a kernel with no prior
 push and already cost E0 v1 a zero-task run (`plan.md:1188`). The exact invocations and the resulting kernel
 slugs are recorded in §8 as they are run.
+
+## 8. Pushed
+
+Both kernels pushed 2026-10-26, version 1, **both RUNNING in parallel**:
+
+| arm | kernel | embedded tree (sha256 verified from the notebook's own base64) |
+|---|---|---|
+| A — baseline | `rainm4/gemma4-exp025-arma-baseline` | `99b750a02d1f2c6ccf1d1a6cb8ee61ca2095afe15579c1b37453fc32514a3462` |
+| B — fix | `rainm4/gemma4-exp025-armb-editfix` | `dbe9248ca7b8a0f74478e4dfdad0bbe65740cb4dc39b725e67540457658488a5` |
+
+Pre-push verification, done because a silent mis-build is the failure mode that costs a whole run:
+
+* each notebook's embedded `SUBMISSION_B64` was decoded and hashed, and **both match the intended tree**;
+* `EXP_ID` and all 48 cohort ids confirmed present in the built notebook source;
+* both `kernel-metadata.json` files are **byte-identical to the known-good `exp010` config apart from
+  `id`/`title`** (diffed), so the explicit pinned `docker_image` sha is carried and
+  `docker_image_pinning_type` is absent — the regression at `plan.md:1188` that gave E0 v1 a zero-task run.
+
+Expected wall time ~3.6 h each from the two prior dev-48 runs; ~7.2 L4x4-h of the 30/week quota.
