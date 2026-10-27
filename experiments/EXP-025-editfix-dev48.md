@@ -144,3 +144,110 @@ Pre-push verification, done because a silent mis-build is the failure mode that 
   `docker_image_pinning_type` is absent — the regression at `plan.md:1188` that gave E0 v1 a zero-task run.
 
 Expected wall time ~3.6 h each from the two prior dev-48 runs; ~7.2 L4x4-h of the 30/week quota.
+
+---
+
+## 9. Results, 2026-10-27. Section 4's readings applied as written.
+
+Both arms COMPLETE, 48/48 tasks each, 48 traces and 48 patches apiece. Cohort verified identical between
+arms and to `experiments/cohorts/dev-48.txt` (set equality and order). `eval_config` as run was identical
+in both: 4.5 min / 64 calls / 96 turns / timeout 300. Both at `thinking_budget: 4096`.
+
+### 9.1 Step 1, the number section 3 said to read first
+
+| arm | affected tasks | lost calls | `edit_file` calls | loss rate | per-task losses | wasted retries |
+|---|---:|---:|---:|---:|---|---:|
+| A baseline | **6 / 48** | 49 | 114 | 43.0% | 14, 11, 11, 9, 2, 2 | 43 |
+| B editfix | 9 / 48 | 35 | 81 | 43.2% | 9, 9, 8, 4, 1, 1, 1, 1, 1 | 26 |
+
+**Arm A affected = 6. This is section 4 row 1: UNDERPOWERED, and the contrast is uninterpretable either
+way.** The live risk named in section 3 is exactly what happened -- affected-task count tracked
+`thinking_budget` to EXP-003's neighbourhood (4) rather than E0's (14), and the 64-call allowance did not
+push it up. The pre-registered prediction was right and the design still lost; that is the cost of running
+the arm at the config we ship rather than at the config that shows the defect most clearly.
+
+### 9.2 Primary endpoint, reported because it was pre-registered, not because it is readable
+
+Wasted retries per task: **A 43, B 26, difference -17 (-40%)**. Nine non-zero pairs: B lower on 6, higher
+on 3, 39 tied. **Exact paired Wilcoxon W = 15.5, p = 0.4531.**
+
+Per section 4 row 1 this is **not** evidence the ladder works and **not** evidence it fails. The point
+estimate is in the predicted direction and of the predicted size; at 6 affected tasks the design had power
+0.42-0.73 and it did not resolve. Max loop length fell 14 -> 9, `n_edit_fail` 51 -> 38,
+`n_identical_repeats` 68 -> 58 -- all the same direction, none of them independent of the primary.
+
+**Decision, per section 5: keep the fix for the remaining LB slots,** on the asymmetry argument alone. The
+ladder only fires after an error that already means the call did nothing. Nothing here changes that.
+
+### 9.3 Secondaries, and one exploratory result that is NOT pre-registered
+
+| endpoint | A | B | A-only | B-only | exact McNemar |
+|---|---:|---:|---:|---:|---:|
+| resolved **[NOT an endpoint]** | 11/48 | 9/48 | 3 | 1 | 0.6250 |
+| empty patch | 19/48 | 21/48 | 4 | 6 | 0.7539 |
+| never attempted an edit | 19/48 | 20/48 | 5 | 6 | 1.0000 |
+| submit_patch called | 3/48 | 9/48 | 1 | 7 | 0.0703 |
+| **time cap hit** *(exploratory)* | 46/48 | 39/48 | 7 | 0 | **0.0156** |
+
+**The time-cap result was not pre-registered** -- section 3's secondary list does not contain it. I went
+looking for it only because of the wall-clock finding in EXP-010's correction, written the same day. With
+roughly eight comparisons on this table, p = 0.0156 does not survive multiplicity honestly, and
+`submit_patch` at 0.0703 does not either. **Recorded as a hypothesis for a future pre-registration, not as
+a result.** It is a coherent one: 7 tasks moved off the clock and 0 moved onto it, and B spent fewer calls
+everywhere (`edit_file` 114 -> 81, `read_file` 485 -> 424, `run_command` 689 -> 662).
+
+**Section 4 row 6 fired on its letter and not on its evidence.** "Arm B worse than Arm A on empty patches"
+is literally true, 21 against 19 -- but A-only 4 versus B-only 6 at McNemar p = 0.75 is noise, and the row
+named no threshold. **Rung 3 is not reverted.** The pre-registration should have said "worse by more than
+the paired MDE"; that it did not is a drafting defect in section 4, logged here rather than quietly
+resolved in whichever direction suited the result.
+
+**Arm A is also the shipping config's first dev-48 baseline**, which section 2 called out as never having
+been run end to end: **11/48 resolved (22.9%)**, empty patch 39.6%, time cap 95.8%.
+
+### 9.4 What the held-out data did to the EXP-024 findings
+
+This is what section 6 licensed the arms for: a third and fourth trace set for the detector and the
+mechanism, on data neither was derived from. Pooled over all four runs there are now **201 lost
+`edit_file` calls**.
+
+**REPLICATES, and strongly.** `old_string` present on **0 of 201** lost calls; `new_string` present on
+**200 of 201**. On the 111 surviving held-out calls both arguments are present 111/111. Anchor length:
+held-out surviving median 202 chars against a lost-call reconstruction median of 39, pooled
+**p = 7.5e-08, AUC 0.857** (still censored -- 61 of 84 held-out lost calls leaked no fragment, so the lost
+median remains a lower bound).
+
+**DOES NOT REPLICATE: `thinking_budget` as the driver of the loss rate.** EXP-024 reported 256 -> 53.5% and
+4096 -> 18.2% at Fisher p = 1.2e-10. Both new arms ran `thinking_budget: 4096`, the same as EXP-003:
+
+| run | thinking_budget | lost / `edit_file` | rate |
+|---|---:|---:|---:|
+| E0 | 256 | 92/172 | 53.5% |
+| EXP-003 | 4096 | 25/137 | **18.2%** |
+| EXP-025 Arm A | 4096 | 49/114 | **43.0%** |
+| EXP-025 Arm B | 4096 | 35/81 | **43.2%** |
+
+Three runs at an identical thinking budget give 18.2%, 43.0% and 43.2%: chi-square homogeneity **22.50 on
+2 df, p = 1.3e-05**. Each new arm differs from EXP-003 at p < 1e-3 with the budget held fixed. **The
+dose-response was confounded** -- EXP-003 differs from the new arms in prompt and in both caps -- and the
+residual 256-versus-4096 contrast (53.5% vs 32.8% pooled, p = 9.5e-06) cannot be attributed to thinking
+budget given between-run heterogeneity this large at a fixed budget. The claim is withdrawn.
+
+**WEAKENED: `write_file` as a clean control.** EXP-024 reported 0/14. Held out it is **3/30** (all three in
+Arm A; Fisher against 0/14 gives p = 0.54, so this is not a detected change, but it is no longer a clean
+zero). More important, the three losses drop **`filepath`, the FIRST argument**, not a middle one.
+
+**So the "middle argument" framing is wrong.** What holds across all four runs and both tools is: **the
+final argument survives** (200/201 `edit_file`, 3/3 `write_file`), while a **non-final** argument vanishes --
+`old_string` for `edit_file`, `filepath` for `write_file`. The comma-splitting story is also not sufficient
+on its own: **69% of the 303 surviving anchors contain a comma** (67-78% in every run), so comma content is
+ordinary in calls that land.
+
+### 9.5 Carried forward
+
+* The paper's sections 2.2 and 2.3 both need correcting before Nov 12 -- 2.3 withdrawn, 2.2 reframed from
+  "middle" to "non-final". Section 4 can now be written, as a measured null-at-this-n with a point estimate.
+* The wall-clock/time-cap hypothesis needs its own pre-registration if it is to count.
+* Still unseparated, as section 6 said it would be: the anchor-length edit and the recovery ladder shipped
+  in one prompt, and this design cannot attribute the -17 to either.
+* GPU: ~7.2 L4x4-h spent of the 30/week.
