@@ -210,3 +210,58 @@ follow-ups:
      outside the prompt, which no amount of prompt wording can guarantee.
   4. EXP-009 follow-up 5 (free, no GPU): a same-config churn number from EXP-000's gold-control reruns, to
      turn the 42.9% cross-config concordance into a true same-config noise floor.
+
+---
+
+## Correction, 2026-10-27 (EXP-025 waiting period, zero GPU)
+
+**The hypothesis section's "not starved" premise checked the wrong cap, and the deadline was sized off the
+wrong average.** Both defects are in the same two sentences, and both are now measured. Regenerate with
+`tools/exp024_stats.py` SECTION 7.
+
+**1. "Empty-patch tasks are not starved of turns (38.0 turns vs the winners' 35.0 ... only 1 of 19 hit the
+call cap)."** Both halves are true and the conclusion does not follow. The cohort that never attempts an
+edit exhausts the **time** cap:
+
+| cohort | n | time cap | call cap |
+|---|---:|---:|---:|
+| never attempted an edit | 21 | **19 / 21** | 4 / 21 |
+| resolved | 20 | **5 / 20** | 3 / 20 |
+
+Fisher exact on the time cap **p = 2.5e-05**; on the call cap **p = 1.0**. The two caps are cleanly
+dissociated and this experiment reasoned from the one with no signal. Holds within each run (E0 13/13 vs
+4/11; EXP-003 6/8 vs 1/9), which matters because the caps differ (270 s, 480 s).
+
+Why the turn count misleads: the never-attempt cohort's calls cost **1.5-2x more** than a resolver's
+(E0 10.33 vs 6.75 s/call; EXP-003 19.59 vs 9.97), with ~3x the whole-file reads. They hit the clock having
+taken *fewer* turns. Resolvers finish well inside the cap (213 s of 270 s; 227 s of 480 s) and are not
+racing it at all. "Same ~15k context" was also doing no work here — the binding quantity is wall-clock.
+
+**2. The timing check at line 78** ("at E0's measured 5.38-6.83 s/turn, call 25 falls at ~135-170 s of the
+240 s budget") used the **population-average** turn cost, averaged mostly over tasks that do not need the
+rule. Priced at each cohort's own s/call:
+
+| deadline | never-attempt cohort | resolved | cap |
+|---|---:|---:|---:|
+| call 25, E0 | **258 s (96%)** | 169 s | 270 s |
+| call 25, EXP-003 | **490 s (102%)** | 249 s | 480 s |
+| call 12, E0 | 124 s (46%) | 81 s | 270 s |
+| call 12, EXP-003 | 235 s (49%) | 120 s | 480 s |
+
+**At N=25 the tripwire is unreachable for the cohort it exists to rescue** — it fires at 96% of E0's cap and
+past the end of EXP-003's. The later tightening to call 12 was the right move; this is the quantitative
+reason, which was not the reason given at the time.
+
+**General form, since it is easy to repeat:** a budget rule that exists to catch a failing subpopulation
+must be calibrated on that subpopulation's cost, not the mean. And a rule keyed to a counter the agent
+already emits is cheap to write, but calls are not what terminates the episode.
+
+**What this does NOT establish.** Observational: these 96 task-runs predate any first-edit deadline in our
+prompt, so nothing here shows the rule would convert the cohort, and H1 remains untested — `results:` above
+is still **pending** for dev-48. Causation is not ordered either: expensive read-heavy calls may be a
+symptom of a harder localisation problem rather than a cause of the empty patch. The decision tree above is
+untouched by this correction; only its premise and its sizing are.
+
+Carried into the paper as section 5 of `paper/writeup-draft.md`, and into section 6 there as the third of
+three corrections to our own analysis — all three have the same shape, a summary statistic answering a
+question it was not measuring.
