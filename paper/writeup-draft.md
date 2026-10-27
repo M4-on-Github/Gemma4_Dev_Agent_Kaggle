@@ -1,9 +1,9 @@
-# The Argument That Never Arrives: A Silent Tool-Calling Failure in Gemma-4 Coding Agents
-
-**Status: DRAFT.** Sections 1–3 and 5–6 are complete and rest only on measurements already in hand.
-Section 4 is stubbed pending EXP-025, the two-arm paired dev-48 pre-registered at
-`experiments/EXP-025-editfix-dev48.md` and running at the time of writing. Word count target ≤ 3,000;
-current drafted body ≈ 2,150 words excluding this note.
+**Status: DRAFT.** Sections 1–3 and 5–7 are complete and rest only on measurements already in hand; every
+number in them regenerates from `tools/exp024_stats.py`. Section 4 is the only stub, pending EXP-025 (the
+two-arm paired dev-48 pre-registered at `experiments/EXP-025-editfix-dev48.md`, running at the time of
+writing); its pre-registered readings live in that file and are deliberately not restated here, so there is
+one place to change them and it is not the paper. Body is **2,716 words of the 3,000 limit**, leaving ~280
+for section 4 — if it needs more, section 5.2 is the most compressible.
 
 ---
 
@@ -19,24 +19,26 @@ sits last, lost 0 of 14 (Fisher p = 0.0028). Because the harness's error text do
 agent's own recovery rule keys on, the agent resent identical arguments 8–19 times; **84–85% of all lost
 calls are these retries**, not the initial slip. We also show why this went unnoticed through eight
 leaderboard submissions: the natural detector, an `"status": "error"` envelope check, misses this error
-entirely and under-reported it roughly tenfold. We release the corrected detector, the analysis scripts, and
-per-task metrics for every run, and we pre-register a paired test of a prompt-level mitigation.
+entirely and under-reported it roughly tenfold. Separately, we find that the *larger* share of empty
+patches comes from tasks that never attempt an edit at all, and that these exhaust the wall-clock budget
+(19 of 21, against 5 of 20 resolvers, p = 2.5 × 10⁻⁵) because their calls cost 1.5–2× more — which makes a
+deadline expressed in call index unreachable for exactly the tasks it targets. We release the corrected
+detector, the analysis scripts, and per-task metrics for every run, and we pre-register a paired test of a
+prompt-level mitigation.
 
 ## 1. Setting
 
-Every team in this competition receives an identical harness, an identical grader, an identical task
-distribution, and one permitted model (`gemma-4-31b-it-qat-w4a16-ct`, INT4, served by a patched vLLM on
-4×L4). Submissions are **declarative**: an agent manifest, prompt files, sampling and evaluation configs.
-There is no custom tool code and no custom entry point. Whatever separates a strong submission from a weak
-one is therefore located in prompt text and a handful of integers — which makes the harness's own behaviour,
-including its failure behaviour, unusually consequential and unusually shared. A defect we find is a defect
-every team has.
+Every team receives an identical harness, grader and task distribution, and one permitted model
+(`gemma-4-31b-it-qat-w4a16-ct`, INT4, served by a patched vLLM on 4×L4). Submissions are **declarative** —
+an agent manifest, prompt files, sampling and evaluation configs — with no custom tool code and no custom
+entry point. What separates a strong submission from a weak one therefore lives in prompt text and a
+handful of integers, which makes the harness's own failure behaviour unusually consequential and unusually
+shared: a defect we find is a defect every team has.
 
-Our own trajectory motivates the investigation. Eight scored submissions returned 4, blank, 7, 6, 8, 8, 7
-and 7 resolved tasks of 58, a mean of 6.7 with a standard deviation of 1.4, while we varied time caps, call
-caps, turn limits, thinking budgets, output limits and prompt length. The distribution did not move. That
-pattern — many configuration changes, no response — is what sent us to the traces rather than to another
-configuration.
+Our own trajectory motivated the investigation. Eight scored submissions returned 4, blank, 7, 6, 8, 8, 7
+and 7 resolved of 58 — mean 6.7, SD 1.4 — while we varied time caps, call caps, turn limits, thinking
+budgets, output limits and prompt length. The distribution did not move. That pattern sent us to the traces
+rather than to another configuration.
 
 ## 2. The defect
 
@@ -109,8 +111,8 @@ errors fell into the envelope in different proportions. `edit_fail_rate` was a n
 eight submissions. It was measuring something else.
 
 We think this generalises beyond our own code. A structured-envelope check is the natural way to detect
-tool failure, it is what a reasonable engineer writes first, and it silently excludes exactly those errors
-raised *before* the tool body runs — which is where argument-validation failures live. Any team
+tool failure and the first thing a reasonable engineer writes, and it silently excludes exactly those
+errors raised *before* the tool body runs — which is where argument-validation failures live. Any team
 instrumenting this harness the obvious way has the same blind spot.
 
 ## 4. Does a prompt-level mitigation work?
@@ -136,19 +138,78 @@ gap to the tasks described in §5.
 ## 5. The upstream fact this all serves, and the limit of fixing it
 
 Across both runs, **35 tasks produced an empty patch and exactly 0 of them resolved.** An empty patch is
-worth precisely as much as no attempt. Decomposing those 35:
+worth precisely as much as no attempt. Those 35 split cleanly:
 
-* **21 never attempted an edit at all.** They did not run out of resources — they used a comparable number
-  of turns to the tasks that succeeded — they simply never committed to a change. This is a *forcing
-  function* problem, not a capacity problem.
 * **14 attempted edits and had every attempt fail.** This is the population §2 describes.
+* **21 never called `edit_file` or `write_file` at all.** They explored and never committed to a change.
 
-So the defect in §2 is a real and substantial cost, and it is nonetheless the **smaller half** of the
-empty-patch problem. We state this because the honest framing of our own finding is not "we found the
-bottleneck" but "we found, measured and instrumented one of two roughly comparable bottlenecks, and the
-other one is a prompting problem we have not solved."
+The second group is the larger half, so the defect in §2 — real and substantial as it is — is **not** the
+dominant cause of empty patches. It is worth being explicit about that, because the tempting framing of
+§2 is "we found the bottleneck", and the measured answer is "we found one of two, and it is the smaller one."
 
-## 6. Limitations, and two corrections to our own analysis
+### 5.1 What the 21 actually ran out of
+
+A prior experiment of ours concluded these tasks were "not starved" of budget, because they used a
+comparable number of turns to the winners and almost none hit the **call** cap. Both observations are
+correct; the conclusion does not follow, because the binding resource is neither turns nor calls:
+
+| group | n | hit **time** cap | hit call cap | s per call | `read_file` calls | whole-file reads |
+|---|---:|---:|---:|---:|---:|---:|
+| never attempted | 21 | **19 / 21** | 4 / 21 | — | 10.5 | 1.8 |
+| all attempts failed | 14 | 7 / 14 | 9 / 14 | — | 14.1 | 1.4 |
+| resolved | 20 | **5 / 20** | 3 / 20 | — | 7.9 | 0.6 |
+
+Time-cap exhaustion against resolved tasks: Fisher exact **p = 2.5 × 10⁻⁵**. The pattern holds inside each
+run separately (E0: 13/13 of the never-attempt group against 4/11 of resolvers; EXP-003: 6/8 against 1/9),
+which matters because the two runs have different caps (270 s and 480 s). The two caps are cleanly
+dissociated: on the **call** cap the same comparison gives 4/21 against 3/20, Fisher **p = 1.0**. Note also
+which group does exhaust calls — the all-attempts-failed group, 9 of 14, which is §2's retry loop spending
+them.
+
+The mechanism is cost per call, which is also why a turn count misleads. Within each run:
+
+| run (time cap) | group | wall s | turns | **s per call** | whole-file reads |
+|---|---|---:|---:|---:|---:|
+| E0 (270 s) | never attempted | 273.8 | 32.5 | **10.33** | 2.00 |
+| E0 (270 s) | resolved | 213.2 | 38.2 | **6.75** | 0.73 |
+| EXP-003 (480 s) | never attempted | 431.2 | 28.0 | **19.59** | 1.50 |
+| EXP-003 (480 s) | resolved | 227.3 | 28.2 | **9.97** | 0.33 |
+
+The never-attempt group takes **1.5× to 2× longer per call**, reads more files and reads far more of them
+whole. It therefore reaches the clock having taken *fewer* turns — which is exactly how a turn-count
+comparison hides the exhaustion. Resolvers finish well inside the cap (213 s of 270 s; 227 s of 480 s) and
+are not racing it at all.
+
+### 5.2 Why this breaks a deadline expressed in call index
+
+The natural mitigation is a forcing function: *if you have made N calls and still have no edit, edit now.*
+We ship one. But N is a call index, and the table above shows call index is a badly calibrated proxy for
+elapsed time — **mis-calibrated worst on precisely the population the rule exists to rescue.** Priced at
+each group's own seconds-per-call:
+
+| deadline | never-attempt group reaches it at | resolved group | cap |
+|---|---:|---:|---:|
+| call 25, E0 | **258 s** | 169 s | 270 s |
+| call 25, EXP-003 | **490 s** | 249 s | 480 s |
+| call 12, E0 | 124 s | 81 s | 270 s |
+| call 12, EXP-003 | 235 s | 120 s | 480 s |
+
+A deadline at call 25 fires at 96% of E0's cap and **past the end** of EXP-003's: for the slow tail it is
+not a late deadline but an unreachable one. Our own sizing of that rule put call 25 at roughly 135–170 s by
+multiplying the **population-average** turn cost — averaged, that is, mostly over tasks that do not need
+the rule. Call 12 lands inside the cap in both runs, with room to act afterwards.
+
+The general form of the error is easy to repeat: a budget rule that exists to catch a failing
+subpopulation must be calibrated on that subpopulation's cost, not the mean. A rule keyed to a counter the
+agent already emits is cheap to write, but calls are not what terminates the episode — wall-clock is.
+
+**What this does not establish.** These 21 task-runs happened *before* any first-edit deadline existed in
+our prompt, so this is observational. We cannot claim the rule would convert them, and we cannot order the
+causation: expensive, read-heavy calls may be a symptom of a genuinely harder localisation problem rather
+than a cause of the empty patch. What is established is that the empty-patch population exhausts wall-clock
+while the resolving population does not, and that call-indexed deadlines are mis-sized for it.
+
+## 6. Limitations, and three corrections to our own analysis
 
 **The anchor-length prescription is weakly supported.** Anchors that landed had a median length of 156
 characters against 44 for lost ones (Mann-Whitney p = 7.9 × 10⁻¹⁶), but **53 of the 117 lost calls leaked no
@@ -159,13 +220,16 @@ anchors were single-line against 13% of successful ones — but it does not sett
 positional mechanism (§2.2) and the thinking-budget contrast (§2.3) do not depend on this comparison; the
 specific "150–300 characters" advice does.
 
-**Two corrections we publish because they bear on how such results should be read.** First, our two runs
+**Corrections we publish because they bear on how such results should be read.** The third is §5.1's: we
+had accepted "not starved of budget" from a turn count and a call cap, and the group was in fact exhausting
+the clock in 19 of 21 runs. First, our two runs
 share all 48 task ids, so every comparison between them is **paired**. Analysed as unpaired, a difference in
 empty-patch rate and resolve-among-producers looked like a real quality/quantity trade-off; analysed
 correctly, exact McNemar gives p = 0.73 on resolved and p = 0.58 on empty patch. The effect was noise, and we
 had begun designing around it. Second, we initially computed power on the per-call loss rate, ignoring the
 clustering documented in §2.3, and obtained a figure near 0.98 for a design whose honest power against a
-plausible effect was 0.61.
+plausible effect was 0.61. All three share a shape — a summary statistic answered a question it was not
+measuring — which is also the shape of §3.
 
 **Scope.** Single model, single harness, 96 task-runs, one cohort of 48 ids drawn from four public
 repositories. We make no claim about other models or other tool schemas, and no claim that fixing this moves
@@ -176,15 +240,15 @@ is larger than any effect we would predict here.
 
 Everything needed to reproduce or re-run the above:
 
-* **`tools/analyze_traces.py`** — per-task trace analysis with the corrected detector. Counts both
-  envelope-style failures and argument losses, and reports `n_edit_arg_loss` / `edit_arg_loss_rate`
-  separately, because the argument-loss subset is the actionable one.
-* **`tools/exp024_stats.py`** — regenerates every number in §2, §3 and §6 from the run directories,
+* **`tools/analyze_traces.py`** — per-task trace analysis with the corrected detector. Counts envelope
+  failures and argument losses, reporting `n_edit_arg_loss` separately because that subset is the
+  actionable one.
+* **`tools/exp024_stats.py`** — regenerates every number in §2, §3, §5 and §6 from the run directories,
   including the positional table, the Fisher and McNemar tests and the censoring diagnostic.
 * **`tools/export_release_csv.py`** and **`release/per_task.csv`** — per-task metrics for all 96 task-runs,
   35 columns. The exporter enforces a *positive* field allowlist, so a field added upstream is excluded
-  until reviewed rather than published by default; the traces themselves are never released, as they contain
-  repository content.
+  until reviewed rather than published by default. The traces are never released: they contain repository
+  content.
 * **Pre-registrations** for each experiment, committed before the corresponding run or submission, with
   readings fixed in advance.
 

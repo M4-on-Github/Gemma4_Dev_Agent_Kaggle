@@ -324,6 +324,94 @@ def max_stats(theta: float, rho: float, reps: int, rng: random.Random,
 # -------------------------------------------------------------------- main
 
 
+def section_budget(runs: dict) -> None:
+    """Empty-patch budget exhaustion: what the never-attempt cohort actually runs out of.
+
+    Regenerates the tables in section 5 of the paper writeup. The claim it exists to
+    support is that the binding resource for tasks that never edit is WALL-CLOCK, not
+    turns and not the call cap -- and that because their calls cost 1.5-2x more than a
+    resolver's, a deadline expressed as a call index is mis-sized worst on exactly the
+    cohort it is meant to rescue.
+
+    EXP-010 concluded this cohort was "not starved" from a turn count and the call cap.
+    Both of those observations were right; the conclusion did not follow.
+    """
+    print()
+    print("=" * 76)
+    print("SECTION 7  empty-patch budget exhaustion                     [MEASURED]")
+    print("=" * 76)
+
+    CAP = {"E0": 270.0, "E3": 480.0}          # max_time_minutes 4.5 and 8.0
+    pooled: dict[str, list[dict]] = {"never": [], "allfail": [], "resolved": []}
+
+    for name, run in runs.items():
+        sm = {key(r): r for r in run["summary"]}
+        res = {key(r): resolved(r) for r in run["tasks"]}
+        att, ok = edit_outcome(run)
+        rows = []
+        for t, s in sm.items():
+            if res.get(t):
+                g = "resolved"
+            elif s.get("patch_empty"):
+                g = "never" if not att.get(t) else "allfail"
+            else:
+                continue
+            histo = s.get("tool_histogram") or {}
+            if isinstance(histo, str):
+                histo = json.loads(histo.replace("'", '"'))
+            wall, calls, turns = s.get("wall_s"), s.get("n_calls"), s.get("n_turns")
+            rec = {
+                "task": t, "g": g, "wall": wall, "turns": turns, "calls": calls,
+                "s_per_call": (wall / calls) if (wall and calls) else None,
+                "tcap": bool(s.get("time_cap_hit")), "ccap": bool(s.get("calls_cap_hit")),
+                "reads": histo.get("read_file", 0),
+                "whole": s.get("n_whole_file_reads", 0),
+            }
+            rows.append(rec)
+            pooled[g].append(rec)
+
+        print(f"\n  --- {name}  (time cap {CAP[name]:.0f} s) ---")
+        print(f"  {'group':9s} {'n':>2s} {'time_cap':>9s} {'call_cap':>9s} "
+              f"{'wall_s':>8s} {'turns':>6s} {'s/call':>7s} {'reads':>6s} {'whole':>6s}")
+        for g in ("never", "allfail", "resolved"):
+            s_ = [r for r in rows if r["g"] == g]
+            if not s_:
+                continue
+            m = lambda k: statistics.mean([r[k] for r in s_ if r[k] is not None])
+            print(f"  {g:9s} {len(s_):2d} {sum(r['tcap'] for r in s_):4d}/{len(s_):<4d} "
+                  f"{sum(r['ccap'] for r in s_):4d}/{len(s_):<4d} "
+                  f"{m('wall'):8.1f} {m('turns'):6.1f} {m('s_per_call'):7.2f} "
+                  f"{m('reads'):6.1f} {m('whole'):6.2f}")
+
+        # A call-indexed deadline, priced at each cohort's OWN seconds-per-call.
+        print("  a call-indexed deadline, priced at each cohort's own s/call:")
+        for g in ("never", "resolved"):
+            s_ = [r for r in rows if r["g"] == g]
+            if not s_:
+                continue
+            spc = statistics.mean([r["s_per_call"] for r in s_ if r["s_per_call"] is not None])
+            for n_call in (12, 25):
+                at = n_call * spc
+                flag = "  <-- PAST THE CAP" if at > CAP[name] else ""
+                print(f"    {g:9s} s/call {spc:5.2f}  call {n_call:2d} -> {at:6.1f} s "
+                      f"of {CAP[name]:.0f} s ({at / CAP[name]:4.0%}){flag}")
+
+    nv, rs = pooled["never"], pooled["resolved"]
+    a = sum(r["tcap"] for r in nv)
+    c = sum(r["tcap"] for r in rs)
+    print(f"\n  pooled: time cap hit by never-attempt {a}/{len(nv)} "
+          f"vs resolved {c}/{len(rs)}")
+    print(f"  Fisher exact p = {fisher_exact(a, len(nv) - a, c, len(rs) - c):.4g}")
+    a2 = sum(r["ccap"] for r in nv)
+    c2 = sum(r["ccap"] for r in rs)
+    print(f"  the CALL cap, for contrast:   never-attempt {a2}/{len(nv)} "
+          f"vs resolved {c2}/{len(rs)}  "
+          f"Fisher exact p = {fisher_exact(a2, len(nv) - a2, c2, len(rs) - c2):.4g}")
+    print("  NOTE observational: these runs predate any first-edit deadline in our prompt,")
+    print("  so this cannot show the rule would convert them, and expensive read-heavy")
+    print("  calls may be a symptom of a harder localisation problem, not its cause.")
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         raise SystemExit(__doc__)
@@ -560,6 +648,8 @@ def main() -> int:
             if mcnemar_exact(b, c2) < 0.05:
                 hit += 1
         print(f"    true effect +{delta:2d} tasks/48: power {hit / 3000:.3f}")
+
+    section_budget(runs)
     return 0
 
 
