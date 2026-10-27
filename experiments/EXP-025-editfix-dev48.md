@@ -229,7 +229,9 @@ median remains a lower bound).
 
 Three runs at an identical thinking budget give 18.2%, 43.0% and 43.2%: chi-square homogeneity **22.50 on
 2 df, p = 1.3e-05**. Each new arm differs from EXP-003 at p < 1e-3 with the budget held fixed. **The
-dose-response was confounded** -- EXP-003 differs from the new arms in prompt and in both caps -- and the
+dose-response was confounded** -- EXP-003 differs from the new arms in prompt, in both caps, and
+(checked 2026-10-27, and NOT listed when this section was first written) in **sampling temperature: 0.2
+against 1.0**, plus a missing `top_k` -- and the
 residual 256-versus-4096 contrast (53.5% vs 32.8% pooled, p = 9.5e-06) cannot be attributed to thinking
 budget given between-run heterogeneity this large at a fixed budget. The claim is withdrawn.
 
@@ -242,6 +244,14 @@ final argument survives** (200/201 `edit_file`, 3/3 `write_file`), while a **non
 `old_string` for `edit_file`, `filepath` for `write_file`. The comma-splitting story is also not sufficient
 on its own: **69% of the 303 surviving anchors contain a comma** (67-78% in every run), so comma content is
 ordinary in calls that land.
+
+**Added 2026-10-27, after this section was committed: the loss mechanism is visible directly.** On **200 of
+the 201** lost calls `new_string` ends in the literal three characters `ng:` -- that is, it ends
+`...old_string:`. The argument was never terminated, so the separator and the key name were absorbed into
+`new_string`'s value, and the anchor text after the colon became the spurious argument keys that
+`edit_calls()` already reconstructs from. This is not an argument "lost in transit": it is an **unterminated
+string literal in the emitted tool call**, which is why the *final* argument always survives and a non-final
+one never does, and why `run_command` -- whose only parameter is also its last -- is structurally immune.
 
 ### 9.5 Carried forward
 
