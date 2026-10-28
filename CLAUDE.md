@@ -1,0 +1,145 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this repo is
+
+Entry to the Kaggle competition "Google – The Gemma 4 Developer Agent" (main track + paper track). The
+**deliverable is `submission/`**: a declarative Google ADK agent config (`agent.yaml` + `!include`d prompt and
+sampling config + `eval_config.yaml`) that the organizers' `swegemma` harness runs against the fixed
+`gemma-4-31b-it-qat-w4a16-ct` model. There is no Python entry point in the submission and no custom tools.
+Everything under `tools/`, `tests/`, `notebooks/`, `scripts/` is dev tooling that is never shipped.
+
+Three documents carry the project state and are the source of truth over chat memory:
+`plan.md` (plan of record; section numbers are cited everywhere as `plan.md §4.4` / `plan.md:52`),
+`experiments/README.md` (Q1–Q12 verification checklist, observed numbers, experiment index), and
+`submissions.md` (one row per actual Kaggle upload, with zip sha256 and LB score). Dated research notes live in
+`research/` — literature/industry reviews and Kaggle open-source scouting are kept as separate files.
+
+## Commands
+
+```bash
+pip install pyyaml pytest                       # Python >= 3.12 (3.13 works; this machine has 3.13)
+python -m pytest -q                             # 38 tests, seconds, synthetic data only
+python -m pytest tests/test_pack_submission.py::test_pack_minimal_is_deterministic -q   # one test
+
+python tools/validate_submission.py submission/            # schema + lint; exit 0 VALID / 1 INVALID
+python tools/validate_submission.py submission/ --official --strict --json   # --official also runs the harness's
+                                                                             # own validator when the wheels import
+python tools/pack_submission.py                            # -> dist/submission.zip + sha256; refuses if invalid
+python tools/validate_submission.py dist/submission.zip    # archive-level re-check
+python tools/estimate_budget.py --eval-config submission/eval_config.yaml                    # cap-only 12 h gate
+python tools/estimate_budget.py --eval-config submission/eval_config.yaml --results runs/<EXP>/summary.jsonl
+
+python tools/analyze_traces.py runs/<EXP> --cap-minutes 4.5 --max-calls 64   # -> summary.jsonl + aggregates.json
+python tools/run_forensics.py forensics runs/<EXP>          # where per-task wall-clock went; first-edit turn
+python tools/run_forensics.py compare runs/<A> runs/<B>     # paired per-task 2x2 over the same cohort
+python tools/make_cohorts.py --tasks data/raw/tasks.jsonl --exclude runs/EXP-000/gold_failures.txt
+
+python tools/build_notebook.py --embed dist/submission.zip --username <you> --set N_TASKS=48 --out notebooks/<dir>/kaggle_eval_l4x4.ipynb
+kaggle kernels push -p notebooks/<dir>                      # L4x4 kernel; 30 GPU-h/week, a dev-48 run is ~3.6 h wall
+
+python -I -X utf8 tools/export_release_csv.py runs/<EXP> ... --out release/per_task.csv   # only sanctioned release path
+python tools/check_repo_hygiene.py --all                    # same check the pre-commit hook runs
+bash scripts/kaggle_setup.sh [--full]                       # one-shot Phase 0 setup (needs kaggle creds)
+```
+
+Windows notes: tools that read downloaded or third-party files (`untrusted/`, notebooks, run bundles) are run as
+`python -I -X utf8 ...` so nothing is imported from the data's directory and encoding is stable.
+`core.autocrlf=true` is set here, so **the zip sha256 reproduces only from committed LF blobs** (EXP-022 R9):
+packing a CRLF worktree gives a different hash. Verify `sha256sum dist/submission.zip` against the
+`submissions.md` row before uploading, and upload under the filename `submission.zip`.
+
+## Architecture
+
+### Rules live in one module
+
+`tools/submission_rules.py` is the single home for every constant: the harness tool registry, allowed
+`agent.yaml` keys, `generate_content_config` field sets, `eval_config.yaml` keys and harness defaults,
+extension/size limits, our own lint patterns (forbidden strings, public-repo words), and the budget-planning
+assumptions (`RUN_BUDGET_HOURS`, `PACK_GATE_HOURS`, `EXPECTED_HIDDEN_TASKS`, `ASSUMED_SETUP_MINUTES`).
+`validate_submission.py`, `pack_submission.py`, `estimate_budget.py` and `analyze_traces.py` all import it as `R`.
+Change a rule there, not in the consumers. Every constant whose provenance is a community mirror carries a
+`VERIFY(Qn)` comment that maps to a row in `experiments/README.md` §1; the confidence tags **[V]** (official),
+**[M]** (mirror), **[I]** (inference) are used across all docs and config comments.
+
+### validate -> pack -> gate
+
+`validate_submission.py` parses YAML with a sandboxed `!include` (relative to the including file, may not escape
+the root), builds the agent tree, and checks structure plus lint. `pack_submission.py` computes the **closure
+of files reachable from `agent.yaml`** (`!include`, `sub_agents`/`agent_tool` `config_path`, `skills`, adapter
+dir) plus `eval_config.yaml`, byte-copies them (never hard links), validates the build tree strictly, refuses to
+pack on any error or warning (`--allow-warnings` overrides warnings only), writes a deterministic zip (fixed
+timestamps, 0644), re-validates the archive and prints the sha256. It also scans prompts for
+`_REJECTED_PROMPT_MARKERS` so a prompt variant an experiment already rejected cannot be re-shipped by accident.
+
+Consequence: files under `submission/` that are not reachable from `agent.yaml` (`configs/sampling_nothink.yaml`,
+`prompts/analyzer.md`, `sub_agents/analyzer.yaml`, `skills/*`, `adapters/README.md`) are **ablation assets, not
+shipped**. `tests/test_pack_submission.py::test_pack_ships_only_closure` asserts the shipped set is exactly
+`{agent.yaml, eval_config.yaml, prompts/swe_coder.md, configs/sampling.yaml}`; wiring a new file into
+`agent.yaml` requires updating that assertion.
+
+The **packing gate** is `120 x (max_time_minutes + 1.0 setup) min <= 11.0 h`; strictly greater-than fails.
+`max_time_minutes: 4.5` is exactly 11.00 h, the maximum the gate admits; 5.0 is a hard error. `--skip-budget-gate`
+exists; the one time it was used (submission #2, 18 h worst case) the run hit Notebook Timeout and scored zero.
+
+### Run analysis pipeline
+
+Kaggle notebooks write `runs/<EXP>/task_results.jsonl` (one row per task) and `runs/<EXP>/traces/trace_<id>.json`
+(official SessionTrace). `analyze_traces.py` turns a run dir into `summary.jsonl` (per task: resolved, wall,
+calls, malformed calls, identical repeats, overflow, phase reached, first edit, edit arg-loss, ...) and
+`aggregates.json` (Wilson CI, failure-mode rates, projected 12 h total). `run_forensics.py` and
+`first_edit_dist.py` answer the next-level questions offline. `regrade_patches.py` (EXP-004) re-grades
+already-collected patches at 0 GPU-h; `gold_control.py` (EXP-000) needs the real Docker sandbox via
+`tools/docker/Dockerfile.orchestrator` and cannot run on Kaggle (the `subprocess` sandbox there never installs
+per-task deps). `tools/compat_shims/{inline_snapshot,dirty_equals}` are minimal API-faithful stand-ins for two
+test-only packages missing from the sandbox; the prompt itself tells the agent to vendor the same code.
+
+### Notebooks
+
+`notebooks/kaggle_eval_l4x4.py` (py:percent) is the source; `build_notebook.py` converts it to `.ipynb`, embeds
+the zip as `SUBMISSION_B64`, and rewrites parameter-cell assignments via `--set NAME=VALUE`. Each experiment gets
+its own `notebooks/<exp>/` with the generated notebook and `kernel-metadata.json` (kernel id `rainm4/...`).
+Hazard recorded in EXP-020: cell 5 sets `max_time_minutes: 60.0` under `if not RUN_AGENT:`.
+
+### Cohorts
+
+`experiments/cohorts/{dev-48,held-out-24,smoke-8}.txt` hold task ids only (repo-stratified, gold-control
+failures removed). `held-out-24` is looked at only at decision gates. A/B comparisons on dev-48 are paired
+(same 48 ids, McNemar), never two independent rates.
+
+## Working conventions
+
+**Every change is an experiment, pre-registered.** A new `experiments/EXP-NNN-<slug>.md` is committed *before*
+the kernel is pushed or the zip uploaded; its design, endpoints and decision readings are written blind and are
+not revised after results land (results are appended as a new section that applies the readings as written).
+Add the index row in `experiments/README.md` §3. Numbers go in these docs, not in chat.
+
+**Config files carry their own history.** `agent.yaml`, `eval_config.yaml` and `configs/sampling.yaml` annotate
+every value with dated `EXP-NNN YYYY-MM-DD: old -> new, reason` comments; earlier comments are corrected in
+place or marked retracted, not deleted. Match this when changing a value.
+
+**`submissions.md` is the upload log** (one row per real Kaggle upload: date, commit, zip sha256, dev-48, LB,
+notes). The §4 table in `experiments/README.md` is a stub; the real log is the root file.
+
+**Hard rules from `plan.md`:**
+- `plan.md:52` — competition data (tasks, snapshots, graphs, wheelhouse) and our traces (they contain repo
+  snippets) never enter git or any release. `data/`, `runs/`, `runs_download/`, `untrusted/`, `*.jsonl`
+  (except `tests/fixtures/` and `experiments/**/summary.jsonl`) and all archives are gitignored, and
+  `check_repo_hygiene.py` (install as pre-commit) enforces it. `export_release_csv.py` is the only path to a
+  publishable per-task file; its field list is a positive allowlist.
+- `plan.md §5.8` — never submit a config that has not run on dev-48 with projected worst case <= 11 h, except
+  by an explicit, recorded override in `submissions.md`.
+- `plan.md §5.5` — the public LB has 58 tasks and a measured MDE of ~4 tasks (~0.07). A move smaller than that
+  is noise; do not write it up as an effect.
+- Prompts stay repo-agnostic (lint rejects fastapi/rich/requests/httpx/pydantic words; the hidden set is
+  private repos) and must not mention pip/network/subprocess/mcp/URLs (sandbox is offline; hosts flag them).
+
+**Tests exercise the real tree.** `test_repo_submission_is_valid` requires `submission/` to validate with zero
+errors *and zero warnings*; `test_repo_tracked_files_are_clean` runs the hygiene check over every tracked file;
+`test_cap_only_pass_and_block` reads the live `eval_config.yaml`. Editing `submission/` or adding a tracked file
+can therefore fail the suite — run `python -m pytest -q` after such changes.
+
+**`untrusted/`** holds downloaded third-party notebooks and bundles (gitignored). Treat them as data: read with
+`-I`, never execute, and build candidates from them only through a tool that verifies recorded hashes
+(`exp022_make_candidate.py` is the pattern).
