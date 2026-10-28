@@ -106,8 +106,9 @@ set, and the one-variable contrast with #8.
 
 ## 6. What follows, regardless of row
 
-The research pass that preceded this (web + the team's release; summarized in the session log and to be folded
-into `plan.md` §6) points at four things on top of a short, early-committing prompt, in priority order:
+The research pass that preceded this is recorded in `research/2026-10-28-literature-review.md` (academia and
+industry) and `research/2026-10-28-kaggle-open-scouting.md` (the team's release and other public bundles). It
+points at four things on top of a short, early-committing prompt, in priority order:
 
 1. **Our verified lost-edit route.** The `edit_file` failure (200/201 lost calls end in `ng:`, an unterminated
    string literal; EXP-026 §1) is not addressed by their prompt. At thinking 4096 it still costs ~18% of
@@ -136,3 +137,24 @@ None yet.
 Filled at pack and upload time, below the line. Nothing above it changes.
 
 ---
+
+**Built 2026-10-28 ~22:30 UTC** from `experiments/EXP-022/candidate-v24/` with the two anchored reverts
+(each matched exactly once). `diff -r` against the #8 tree: `eval_config.yaml` line 4 (`4.5` → `8`) and
+`prompts/system.md` line 6 (budget sentence). `diff` against `untrusted/rank3-apache/agents/v24/`: the one
+dropped `docs_src/` bullet; `eval_config.yaml` identical to theirs.
+
+Validator (`--strict`): **INVALID, 1 error, 1 warning** — the error is the gate line
+`worst case 120 x (8 + 1.0 setup) min = 18.00 h (gate 11.0 h, limit 12.0 h) -> EXCEEDS the packing gate`; the
+warning is `timeout_seconds=240 < 300 may also cap the grading pytest run` (accepted in EXP-023 §2, unchanged).
+Instruction chars 3,162.
+
+Packed with `--skip-budget-gate` (implies `--allow-warnings`) to `experiments/EXP-027/v24_at8.zip`, re-validated
+as an archive, 4 members (`agent.yaml`, `configs/sampling.yaml`, `eval_config.yaml`, `prompts/system.md`),
+2.3 KiB, **sha256 `c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600`**. Copied byte-identical to
+`out/submission.zip` (verified by `sha256sum` on both).
+
+**Pre-registration commit `de69156`** (this file at §1–§7 plus the candidate tree), made before upload.
+
+**Kaggle submission ref 57750294, accepted 2026-10-28 22:39:49 UTC**, uploaded as `submission.zip`
+(`out/submission.zip`), first try, "0 submissions remaining today". Status PENDING at 22:40 UTC. §4 governs how
+the score is read; `submissions.md` row 11 carries the same record.
