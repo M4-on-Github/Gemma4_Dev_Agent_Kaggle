@@ -1,0 +1,49 @@
+{
+  "env": {
+    "CLAUDE_CODE_FORK_SUBAGENT": "0",
+    "PYTHONIOENCODING": "utf-8"
+  },
+  "disableBundledSkills": true,
+  "skillOverrides": {
+    "experimental-design": "off",
+    "research-lookup": "off",
+    "scientific-critical-thinking": "off",
+    "scientific-slides": "off",
+    "scientific-writing": "off",
+    "statistical-analysis": "off",
+    "statistical-power": "off"
+  },
+  "enabledPlugins": {
+    "agent-skills@addy-agent-skills": false,
+    "academic-research-skills@academic-research-skills": false,
+    "ralph-loop@claude-plugins-official": false
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_submit.py\""
+          },
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_push.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/scripts/build_index.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
