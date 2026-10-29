@@ -136,3 +136,24 @@ None yet.
 Filled below the line at build and push time. Nothing above it changes.
 
 ---
+
+**Pre-registration commit `ae7b045`** (this file through §7, `recovery-section.md`, `candidate-RH/`, both
+notebook directories), made before either push.
+
+**Built 2026-10-29 ~02:10 UTC** with `tools/build_notebook.py` (`--embed`, `--set EXP_ID`, `--set
+RUN_GOLD_CONTROL=False`, `--set TASK_IDS=<48 ids as a JSON list>`, `--set N_TASKS=48`, `--out`). Pre-push
+verification, as EXP-025 §8: each notebook's `SUBMISSION_B64` decoded and hashed — **R = `c22069db…`, RH =
+`248dd8eb…`, both match**; `EXP_ID` literal, `RUN_GOLD_CONTROL = False` and all **48/48** dev-48 ids present in
+each source; both `kernel-metadata.json` differ from `exp025_armA` in `id`/`title` only (checked with
+`diff --strip-trailing-cr`), so the explicit pinned `docker_image` sha is carried.
+
+**Pushed 2026-10-29 02:21:44 UTC, version 1 each, both RUNNING at 02:22 UTC:**
+
+| arm | kernel | embedded tree sha256 |
+|---|---|---|
+| R — #11 as shipped | `rainm4/gemma4-exp028-armr` | `c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600` |
+| RH — R + recovery section | `rainm4/gemma4-exp028-armrh` | `248dd8eb3afecb3cfc7f21af9853442c2f4244e91247b575cd4ad6f8b97c43da` |
+
+Expected wall ~4 h each (48 × ~280 s + startup); results expected from ~06:30 UTC. Download to
+`runs/EXP-028-armR/` and `runs/EXP-028-armRH/`, then the §6 analysis commands. Submission #11 (ref 57750294) was
+still PENDING at push time; §4's time-profile rows are read against it once both exist.
