@@ -18,12 +18,12 @@ user-invocable: false
 | `knowledge/submissions/S-NNN.md` | Upload proposals; NNN is the `submissions.md` row the upload becomes | research-lead |
 | `knowledge/submissions/S-NNN-result.md` | Upload outcome | submitter |
 | `approvals/S-NNN.txt` | Approval: SHA-256 of the exact file to upload | the user only |
-| `experiments/EXP-NNN-<slug>.md` | Pre-registration and results, one file per experiment | experimenter |
-| `experiments/EXP-NNN/` | Candidate trees, derived text artifacts, `summary.jsonl` | experimenter |
+| `experiments/EXP-NNN-<slug>.md` | Pre-registration and results, one file per experiment (dev-48 arms, smoke-8 screens, zero-GPU analyses, uploads) | experimenter; screener for L0-L2 |
+| `experiments/EXP-NNN/` | Candidate trees, derived text artifacts, `summary.jsonl` | experimenter; screener |
 | `experiments/EXP-NNN/critic.md` | Review | critic |
-| `experiments/README.md` §3 | Hand-written experiment index row per EXP | experimenter |
+| `experiments/README.md` §3 | Hand-written experiment index row per EXP | experimenter; screener |
 | `submissions.md` | Upload log, one row per real upload | experimenter (pending row and score) |
-| `notebooks/<expNNN_dir>/` | Built notebook and kernel metadata | experimenter |
+| `notebooks/<expNNN_dir>/` | Built notebook and kernel metadata | experimenter; screener |
 | `submission/`, `tools/`, `tests/` | Shipping tree and dev tooling | experimenter |
 | `research/lit/lit-<id>.md` | Paper and industry-source notes | lit-scout |
 | `research/kaggle/digests/YYYY-MM-DD.md` | Dated digests | kaggle-scout |

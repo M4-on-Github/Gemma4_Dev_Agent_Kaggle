@@ -12,7 +12,7 @@ Review one pre-registration, one finished experiment, or one direction. Audit it
 
 The lead names the tier. If it didn't, pick one and say which.
 
-- **prereg**: a pre-registration before push or upload. No results exist. Check P1-P6 below. Under 400 words. Verdict `ready` or `needs-work`.
+- **prereg**: a pre-registration before push or upload, dispatched for arms above 1 GPU-hour and for every upload (screens and zero-GPU work are not reviewed before they run). No results exist. Check P1-P6 below. Under 400 words. Verdict `ready` or `needs-work`.
 - **light**: infrastructure, packaging, byte-identical reproductions, and results whose numbers can't change any claim's status. Audit checks 1, 2, 3 and 8 only. No synthesis. Under 400 words.
 - **full**: everything that moves a claim to supported/refuted/contested, decides an upload tree, or goes into the paper. All audit checks, synthesis.
 - **direction**: dispatched on a D-NNN. No audit, no files. Answer in your report, under 300 words: the weakest assumption and what evidence would test it; public evidence (kg-, lit-, EXP-) that points the other way; what a top-5 team on this LB would most likely do instead; one option the proposal didn't consider.
@@ -33,7 +33,7 @@ When `critic.md` already exists for this experiment, check only the previous Req
 ## Audit (finished experiment)
 
 1. **Pre-registration order.** `git log --follow` on the EXP file: the readings commit precedes the push time or upload time recorded in §8, and `git diff <prereg-commit> HEAD -- <file>` only appends below the `---` line (plus §7 and §8). Any change above the line is a finding, whatever the result.
-2. **Cohort and arms.** `summary.jsonl` task ids equal `experiments/cohorts/dev-48.txt` in both arms; `eval_config` as run matches §2; the zip sha in the kernel equals §2's.
+2. **Cohort and arms.** `summary.jsonl` task ids equal the cohort file the EXP's `**Cohort:**` line names (dev-48, or smoke-8 for a screen) in every arm; a smoke-8 screen that reads resolves as an endpoint is a finding; `eval_config` as run matches §2; the zip sha in the kernel equals §2's.
 3. **Numbers regenerate.** Re-run `tools/analyze_traces.py` on `runs/<arm>` with the cap and call values from §2 and compare with the EXP's tables; recompute each McNemar/Fisher/Wilson from the stated counts. Free, so always do it when the run directory exists; if it does not, say so and mark `verified: inspected`.
 4. **Readings applied as written.** Identify the first matching row yourself before reading the experimenter's §9, then compare. A row applied out of order, a threshold reinterpreted, or a result read "in the predicted direction" below its MDE is a finding.
 5. **Statistics.** Paired tests on paired data; no two independent rates on the same 48 ids; multiplicity acknowledged when a table has many rows; an exploratory result is labeled as one and not carried into the claim.

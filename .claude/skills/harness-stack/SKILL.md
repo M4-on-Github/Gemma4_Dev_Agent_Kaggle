@@ -28,10 +28,10 @@ user-invocable: false
 
 ## Kaggle kernels
 
-- `python tools/build_notebook.py --embed <zip> --username rainm4 --set N_TASKS=48 --out notebooks/<expNNN_dir>/kaggle_eval_l4x4.ipynb` builds from `notebooks/kaggle_eval_l4x4.py` (py:percent). `--set` rewrites parameter-cell assignments. Hazard (EXP-020): cell 5 sets `max_time_minutes: 60.0` under `if not RUN_AGENT:`.
+- `python tools/build_notebook.py --embed <zip> --username rainm4 --cohort experiments/cohorts/<cohort>.txt --out notebooks/<expNNN_dir>/kaggle_eval_l4x4.ipynb` builds from `notebooks/kaggle_eval_l4x4.py` (py:percent). `--set` rewrites parameter-cell assignments. Hazard (EXP-020): cell 5 sets `max_time_minutes: 60.0` under `if not RUN_AGENT:`.
 - `kernel-metadata.json`: copy from the last working arm (`notebooks/exp025_armA`, `exp028_armR`) changing only `id` and `title`; keep `enable_gpu`, `machine_shape: NvidiaL4`, the pinned `docker_image` sha (`plan.md:1188`), `dataset_sources` (wheelhouse), `competition_sources`, `model_sources`. `enable_internet: false`.
-- `kaggle kernels push -p notebooks/<expNNN_dir>` (the push guard needs the committed EXP file); `kaggle kernels status rainm4/<slug>`; `kaggle kernels output rainm4/<slug> -p runs/<EXP>-<arm>/`.
-- Quota 30 L4x4 GPU-h per week. Measured: dev-48 at 4.5 min / thinking 4096 ~3.9 h; at 8 min / 28 calls ~4-7 h (EXP-028, both arms completed within the kernel limit; exact wall in EXP-028 §9 once analyzed). smoke-8 ~0.8 h. vLLM start ~0.25 h.
+- `kaggle kernels push -p notebooks/<expNNN_dir>` (the push guard needs the committed EXP file, with a `**Cohort:**` line matching the notebook's `TASK_IDS`, and `RUN_AGENT = True` outside exp000); `kaggle kernels status rainm4/<slug>`; `kaggle kernels output rainm4/<slug> -p runs/<EXP>-<arm>/`.
+- Quota 30 L4x4 GPU-h per week; no CLI query exists, the lead keeps a ledger in `knowledge/plan.md` from kernel wall-clock. UNVERIFIED (2026-11-03, web sources disagree): whether L4x4 hours count 1x against the 30, and the reset day (Saturday 00:00 UTC per one source). Settle it by reading the quota counter in the notebook sidebar before and after a run, then replace this line. Measured: dev-48 at 4.5 min / thinking 4096 ~3.9 h; at 8 min / 28 calls ~4-7 h (EXP-028, both arms completed within the kernel limit; exact wall in EXP-028 §9 once analyzed). smoke-8 ~0.8 h. vLLM start ~0.25 h.
 - Kernel outputs: `task_results.jsonl` (one row per task) and `traces/trace_<id>.json`. Both are competition data: `runs/` is gitignored.
 
 ## Run analysis

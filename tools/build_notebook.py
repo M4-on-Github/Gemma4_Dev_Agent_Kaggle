@@ -6,6 +6,7 @@ Usage:
     python tools/build_notebook.py --embed dist/submission.zip   # sets SUBMISSION_B64 in the parameter cell
     python tools/build_notebook.py --username you                # fills kernel-metadata.json
     python tools/build_notebook.py --set RUN_AGENT=False --set N_TASKS=129         --out notebooks/exp000/kaggle_eval_l4x4.ipynb            # parameter-cell overrides
+    python tools/build_notebook.py --embed dist/x.zip --cohort experiments/cohorts/smoke-8.txt --out notebooks/exp0NN_screen/kaggle_eval_l4x4.ipynb
 Then: kaggle kernels push -p notebooks/   (needs your own Kaggle credentials; never commit them)
 """
 from __future__ import annotations
@@ -85,8 +86,19 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--username", help="Kaggle username for kernel-metadata.json")
     ap.add_argument("--set", dest="overrides", action="append", default=[], metavar="NAME=VALUE",
                     help="override a parameter-cell assignment; repeatable")
+    ap.add_argument("--cohort", type=Path, metavar="COHORT_TXT",
+                    help="experiments/cohorts/<name>.txt: sets TASK_IDS to its ids and N_TASKS to their count "
+                         "(the push guard checks TASK_IDS against the cohort the EXP file declares)")
     args = ap.parse_args(argv)
     text = args.src.read_text(encoding="utf-8")
+    if args.cohort:
+        ids = [ln.strip() for ln in args.cohort.read_text(encoding="utf-8").splitlines()
+               if ln.strip() and not ln.startswith("#")]
+        if not ids:
+            print(f"ERROR: no task ids in {args.cohort}")
+            return 1
+        args.overrides = [f"TASK_IDS={json.dumps(ids)}", f"N_TASKS={len(ids)}", *args.overrides]
+        print(f"cohort {args.cohort.name}: {len(ids)} ids")
     if args.overrides:
         text = apply_overrides(text, args.overrides)
     if args.embed:

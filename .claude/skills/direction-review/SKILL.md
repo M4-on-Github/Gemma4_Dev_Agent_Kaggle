@@ -12,6 +12,8 @@ Rank open claims by expected public-LB tasks gained per unit of the two scarce r
 - Expected gain = P(success) x tasks of 58 moved on the hidden set. Write the estimate in the claim's `expected gain`, with the source of P.
 - Prefer measurements that are readable: a dev-48 process endpoint (compliance, loss rate, time profile) is readable at n = 48; a resolve-rate contrast is not (MDE ~10 of 48); a single LB draw reads only effects of >= 4 tasks.
 - Prefer zero-GPU analysis of owned data over a new arm when it answers the same question.
+- **Screen first.** Every claim climbs the ladder in the experiment-protocol skill: desk check and trace mining (0 h), smoke-8 screen (~0.8 h), dev-48 (4-7 h), upload. A dev-48 arm is dispatched only for a claim that passed its screen or whose §1 says why n = 8 cannot read the question.
+- **Review where it pays.** Critic `prereg` for anything above 1 GPU-hour or any upload; `light` afterwards for screens and zero-GPU work that move a claim; nothing for work that moves none.
 - **Adaptive tree, not a screen.** Each upload slot is chosen by the reading of the last one; thirty independent single-knob draws have no power (EXP-022 §3).
 - **Explore quota.** Of every four experiments, at least one tests an idea that is not the public frontier's design: a paper's mechanism, a parked lever re-examined with new data, a different tool route. Expected-value ranking alone always picks the safe reproduction.
 - **Nothing evaporates.** Every digest "Suggested claims" entry and every `relevance: high` paper note becomes a claim or a "Not pursued" line in `knowledge/plan.md` with the reason.
@@ -62,7 +64,11 @@ direction: D-NNN
 ---
 
 ## Next experiments (in order)
-| # | Claim | What it tests | Endpoint | Expected gain | GPU-h | Why now |
+| # | Claim | Ladder level | What it tests | Endpoint | Expected gain | GPU-h | Why now |
+
+## GPU budget this week
+| Window | Spent (kernel wall, EXP §9) | Committed (running) | Remaining of 30 | Next arms costed |
+<reset day and the L4x4 rate are unverified until the user reads the sidebar counter; say so here until then>
 
 ## Next upload slot
 <tree, sha if packed, the EXP whose readings govern, what each reading does to the slot after>

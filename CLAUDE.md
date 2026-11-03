@@ -18,15 +18,16 @@ Three documents carry the project state and are the source of truth over chat me
 
 ## Research agent team (added 2026-10-29)
 
-`.claude/agents/` defines a six-agent team with hard write and command boundaries, modelled on the sibling
+`.claude/agents/` defines a seven-agent team with hard write and command boundaries, modelled on the sibling
 `Quantum_Circuits` repo and adapted to this competition's two tracks. Start it with `claude --agent research-lead`.
 
 | Agent | Writes only | Does |
 |---|---|---|
 | `research-lead` (Fable) | `knowledge/**`; Bash = git + two read-only Kaggle queries | ranks claims, dispatches, keeps the ledger, plan and briefing; never runs code |
 | `critic` (Opus) | `experiments/EXP-*/critic.md` | reviews pre-registrations before push/upload (`prereg`), finished experiments (`light`/`full`), directions |
-| `experimenter` (Opus) | `experiments/**`, `notebooks/**`, `submission/**`, `tools/**`, `tests/**`, `submissions.md` | builds, pushes, downloads, analyzes; packs candidate zips; never uploads |
-| `lit-scout`, `kaggle-scout` (Sonnet) | `research/lit/**`, `research/kaggle/**` | paper notes; CLI digests of both tracks and released bundles |
+| `screener` (Sonnet) | `experiments/**`, `notebooks/**`, `out/**`, `dist/**`; Bash = tools, kernels push/status/output, git | cheap levels of the screening ladder: desk check, zero-GPU trace mining, 8-task smoke screens (~0.8 GPU-h) |
+| `experimenter` (Opus) | `experiments/**`, `notebooks/**`, `submission/**`, `tools/**`, `tests/**`, `submissions.md` | dev-48 arms for claims that passed their screen; packs candidate zips; never uploads |
+| `lit-scout` (Sonnet), `kaggle-scout` (Haiku) | `research/lit/**`, `research/kaggle/**` | paper notes; CLI digests of both tracks and released bundles |
 | `paper-writer` (Opus) | `paper/**` | the Writeup, from critic-accepted results only |
 | `submitter` (Sonnet) | `knowledge/submissions/*-result.md`; Bash = submit, list, sha256sum, cp | uploads one approved S-NNN, once |
 
@@ -41,8 +42,12 @@ competition facts (`competition-brief`), the logbook layout (`logbook-convention
 
 Hooks in `.claude/settings.json` and agent frontmatter: `guard_paths.py` (write globs), `guard_bash.py` (command
 prefixes, no chaining), `guard_submit.py` (submit only from the submitter, with an S-NNN approval whose sha matches,
-file named `submission.zip`), `guard_push.py` (`kaggle kernels push` only when the `experiments/EXP-NNN-*.md` named by
-the notebook directory is committed and has a readings section). `tools/check_repo_hygiene.py` is installed as
+file named `submission.zip`), `guard_push.py` (a kernel push only when the `experiments/EXP-NNN-*.md` named by
+the notebook directory is committed, has a readings section, and declares the cohort whose ids the notebook's
+`TASK_IDS` carry; `RUN_AGENT = False` only from exp000). Dispatch economy (2026-11-03): every claim climbs the
+screening ladder in `experiment-protocol` (desk check, trace mining, smoke-8 ~0.8 GPU-h, dev-48 4-7 GPU-h, upload);
+critic `prereg` only above 1 GPU-h or for an upload; push and analyze are separate jobs so no agent waits on a
+kernel; the lead keeps the weekly GPU ledger in `knowledge/plan.md`. `tools/check_repo_hygiene.py` is installed as
 `.git/hooks/pre-commit`. The project settings also disable bundled skills and the plugins so agents see only the
 project skills. The record before 2026-10-29 was migrated into the ledger as `hypothesis` claims with
 `migrated-evidence` lines, pending critic backfill.

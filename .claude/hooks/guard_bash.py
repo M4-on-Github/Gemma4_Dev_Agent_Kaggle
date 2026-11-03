@@ -27,7 +27,9 @@ if re.search(r"[;&|`<>]|\$\(", command):
     print("Blocked: chaining, pipes and redirects are not allowed for this agent.", file=sys.stderr)
     sys.exit(2)
 
-if any(command == p or command.startswith(p + " ") for p in prefixes):
+# A prefix ending in "/" is a path prefix ("python tools/" admits "python tools/analyze_traces.py ..."); any other
+# prefix must end at a word boundary so "git add" cannot admit "git addx".
+if any(command == p or command.startswith(p + " ") or (p.endswith("/") and command.startswith(p)) for p in prefixes):
     sys.exit(0)
 
 print(f"Blocked: allowed commands start with: {'; '.join(prefixes)}", file=sys.stderr)
