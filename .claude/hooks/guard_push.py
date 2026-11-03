@@ -98,7 +98,7 @@ if run_agent is not True:
     block("RUN_AGENT is not True. Gold controls (RUN_AGENT = False; cell 5 then sets a 60-minute cap) run only from an exp000 directory.")
 
 # ---- the cohort the pre-registration declares
-explicit = re.findall(r"(?im)^\W*cohort\W*\s*:?\s*([a-z][a-z0-9-]*)", text)
+explicit = re.findall(r"(?im)^(?:\*\*cohort:\*\*|cohort:)\s*`?([a-z][a-z0-9-]*)", text)
 referenced = sorted(set(re.findall(r"cohorts/([a-z0-9-]+)\.txt", text)))
 if explicit:
     cohort = explicit[0]

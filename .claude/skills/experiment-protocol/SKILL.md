@@ -45,6 +45,8 @@ Cheap before expensive. Every claim climbs; a level is skipped only when §1 say
 | L3 dev-48 paired arm | 4-7 h | process endpoints at n = 48 (compliance, loss rate, time profile); resolve contrasts only above ~10 of 48 | LB effects below ~4 of 58 |
 | L4 LB upload | one slot | one draw of 58; effects of 4+ tasks | anything smaller |
 
+The push guard requires the notebook's `TASK_IDS` to equal a committed `experiments/cohorts/<name>.txt` exactly, so a non-standard task list means generating a new cohort file with `tools/make_cohorts.py`, committing it, and naming it in the `**Cohort:**` line first.
+
 A screen's §5 states the two outcomes it can produce: kill the claim, or promote it to L3 with the endpoint the dev-48 arm should carry. A claim killed at L2 is a result: §9, README §3 row, and a `light` critic review if it changes a claim's status.
 
 ## Design rules

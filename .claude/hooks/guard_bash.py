@@ -26,6 +26,9 @@ if len(prefixes) >= 2 and prefixes[0] == "--agent":
 if re.search(r"[;&|`<>]|\$\(", command):
     print("Blocked: chaining, pipes and redirects are not allowed for this agent.", file=sys.stderr)
     sys.exit(2)
+if ".." in command:
+    print("Blocked: '..' is not allowed; a path prefix such as 'python tools/' must stay inside that directory.", file=sys.stderr)
+    sys.exit(2)
 
 # A prefix ending in "/" is a path prefix ("python tools/" admits "python tools/analyze_traces.py ..."); any other
 # prefix must end at a word boundary so "git add" cannot admit "git addx".
