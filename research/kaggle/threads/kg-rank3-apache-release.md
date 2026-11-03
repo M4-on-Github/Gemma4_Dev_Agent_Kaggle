@@ -7,7 +7,7 @@ author_role: top-lb
 credibility: medium
 topics: [budget, prompt, edit-reliability, lora, noise, paper]
 first_seen: 2026-10-25
-last_checked: 2026-10-28
+last_checked: 2026-11-03
 ---
 
 Migrated 2026-10-29 from `research/2026-10-28-kaggle-open-scouting.md` (full detail there; this note is the index entry). Files are in `untrusted/rank3-apache/` (gitignored), read with `python -I -X utf8`, never executed. Licence Apache-2.0 as stated in the dataset.
@@ -25,8 +25,12 @@ The LB-0.24 configuration and its history. Their lever was the time cap: v13-v18
 
 ## Files
 - `runs.jsonl` (574 rows), `agents/v11..v25/` (15 bundles), `training/*.metrics.json`, `leaderboard.json`. SHA-256s recorded in `experiments/EXP-022/` and `experiments/EXP-023-v24-at-45.md` for the files we copied (candidate built by `tools/exp022_make_candidate.py`).
+- 2026-11-03 re-hash of v24: agent.yaml 245 B sha 6ad913b0c0cb67d669116a4074d7b520b3a69c8d5aa960b6abe51f9850b45227; eval_config.yaml 94 B sha 916cf6cb34a6cc3de39837fa72cac681599b9ac2a3ee0b893adadfd36474c531; configs/sampling.yaml 129 B sha 630056889710d27dbf17c8fde62e033b7329616b7db435987cb4607b66a7c3f6; prompts/system.md 3,240 B sha 7163e6644c452adc551a50a23f70087361415c78b7935b90a3614b5c9a94ba90.
+- v24 config: single agent (no sub_agents), name swe_agent, 6 tools (run_command, read_file, edit_file, write_file, get_status, submit_patch); sampling temperature 1.0, top_p 0.95, top_k 64, max_output_tokens 8192, thinking_budget 4096; eval timeout 240 s, max_tool_calls 28, max_time_minutes 8, max_turns 80.
 
 ## Updates
 - 2026-10-25: v24 bundle reconstructed as #8 at 4.5 min (EXP-023): 7/58.
 - 2026-10-28: v24 at 8 min uploaded as #11 (EXP-027); dev-48 arms EXP-028 pushed.
-- To check next: their paper-track writeup when published; v25's score if uploaded.
+- 2026-11-03: LB CSV (untrusted/kaggle-leaderboard-gemma-4-developer-agent-2026-11-03/, SHA-256 c4ca934bdd8852d59299bc6f015abff2d71b6fd64d41fa7d52e07341a7115a52) lists MUHAMMED IDRIS BIN YACOOB at rank 3, 0.24, 20 submissions, last 2026-11-01. Our team (RainM4) is at 0.17, rank 1720, 11 submissions, last 2026-10-28: the #11 upload.
+- 2026-11-03: the eval_config.yaml (sha 916cf6cb...) is byte-identical to the flexonafft-v10 family files; see kg-flexonafft-v10-family.
+- To check next: their paper-track writeup when published; v25's score if uploaded (still unscored on the LB).

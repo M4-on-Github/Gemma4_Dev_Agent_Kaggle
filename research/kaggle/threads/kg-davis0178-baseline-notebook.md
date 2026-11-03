@@ -7,7 +7,7 @@ author_role: top-lb
 credibility: medium
 topics: [prompt, budget, rules]
 first_seen: 2026-10-25
-last_checked: 2026-10-28
+last_checked: 2026-11-03
 ---
 
 Migrated 2026-10-29 from `research/2026-10-28-kaggle-open-scouting.md` §6 and `experiments/EXP-022-direction-review.md`.
@@ -17,9 +17,14 @@ A public notebook whose bundle scored 0.22. EXP-022 materialised it with `tools/
 
 ## Claims made (quoted numbers)
 - LB 0.22 (notebook card). No per-task data released.
+- 2026-11-03 LB CSV: DVS (davis0178) rank 23, 0.22, 14 submissions, last 2026-10-30. [V] The LB 0.22 matches the card.
 
 ## Possible claims for us
 - None beyond what kg-rank3-apache-release covers better with a stated licence.
 
+## Files
+- kernel-metadata (2026-10 pull): id davis0178/gemma-4-agent-baseline, enable_internet false, enable_gpu false, competition_sources gemma-4-developer-agent. Licence still unchecked.
+
 ## Updates
 - 2026-10-25: not uploaded; superseded by the rank-3 bundle (EXP-023 §1).
+- 2026-11-03: LB row confirmed (rank 23, 0.22). Same 0.22 public score as the flexonafft-v10 family (see kg-flexonafft-v10-family); the family's configs differ from this notebook's and were not compared byte-for-byte here.
