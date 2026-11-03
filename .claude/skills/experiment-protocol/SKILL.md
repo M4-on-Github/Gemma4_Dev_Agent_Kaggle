@@ -42,12 +42,14 @@ Cheap before expensive. Every claim climbs; a level is skipped only when §1 say
 | L0 desk check | 0 | whether `knowledge/claims.md`, an EXP §9 or a run already on disk answers it | anything new |
 | L1 zero-GPU trace mining over `runs/` (`analyze_traces`, `run_forensics`, `regrade_patches`, `first_edit_dist`) | 0 | event rates and mechanisms at n = 48+ per existing arm | effects of a config that never ran |
 | L2 smoke-8 screen (`experiments/cohorts/smoke-8.txt`, 8 ids, a strict subset of dev-48) | ~0.8 h | near-deterministic questions: a knob is enforced (a bound, not a mean: EXP-020 §4), a cap or limit is breached, a route breaks, a behavior shows in all 8 or in 0 of 8; per-task pairing against the existing dev-48 baselines is free | resolves (6 of 8 must flip the same way for p < 0.05, EXP-020 §3), any effect inside noise |
-| L3 dev-48 paired arm | 4-7 h | process endpoints at n = 48 (compliance, loss rate, time profile); resolve contrasts only above ~10 of 48 | LB effects below ~4 of 58 |
-| L4 LB upload | one slot | one draw of 58; effects of 4+ tasks | anything smaller |
+| L3 LB upload | one slot, 0 GPU-h | one draw of 58; effects of 4+ tasks; whether a tree completes within 12 h on the hidden set | anything smaller than ~4 tasks |
+| L4 dev-48 paired arm (rare; user-approved) | 4-7 h | process endpoints at n = 48 (compliance, loss rate, time profile); resolve contrasts only above ~10 of 48 | LB effects below ~4 of 58 |
+
+The order is deliberate (user decision 2026-11-03): the GPU quota is the scarce resource and the daily upload is free in GPU terms, so an idea that survives its screen goes to the LB next. A dev-48 arm is bought only when a process endpoint that neither n = 8 nor one LB draw can read decides something worth a slot, above all the per-task time profile of a tree that will be uploaded above the 4.5 min gate with a change that could lengthen tasks (an upload over 12 h scores zero; `plan.md` §5.8 and its 2026-10-22 note).
 
 The push guard requires the notebook's `TASK_IDS` to equal a committed `experiments/cohorts/<name>.txt` exactly, so a non-standard task list means generating a new cohort file with `tools/make_cohorts.py`, committing it, and naming it in the `**Cohort:**` line first.
 
-A screen's §5 states the two outcomes it can produce: kill the claim, or promote it to L3 with the endpoint the dev-48 arm should carry. A claim killed at L2 is a result: §9, README §3 row, and a `light` critic review if it changes a claim's status.
+A screen's §5 states the two outcomes it can produce: kill the claim, or promote it, naming the next rung (an upload, or in the rare case a dev-48 arm with the endpoint it should carry). A claim killed at L2 is a result: §9, README §3 row, and a `light` critic review if it changes a claim's status.
 
 ## Design rules
 

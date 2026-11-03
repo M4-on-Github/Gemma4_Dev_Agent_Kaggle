@@ -40,8 +40,13 @@ User: "for this project dev as well I want a claude research agentic system work
 
 Applied as the `.claude/` agents, skills and hooks, the `knowledge/` ledger seeded from the existing record (C-001 to C-018, D-001 to D-003, S-001 to S-011), and the paper track as a first-class direction (D-003).
 
+## 2026-11-03: Develop lean; dev-48 very sparingly
+User: "since we cant use much gpu, we develop our solution to the competition in lean using the screener to test certain assumptions out if needed and the experimenter only when needed. we need to use that very very sparingly."
+
+Applied: the ladder order is desk check, trace mining, smoke-8 screen (~0.8 GPU-h), LB upload (0 GPU-h), and only then a dev-48 arm (4-7 GPU-h), each dev-48 arm approved by the user with the question n = 8 and one LB draw cannot read. Default week: screens and uploads, at most one dev-48 arm or pair, the last 5 hours never committed. The one sanctioned dev-48 use is the time profile of a tree bound for an upload above 4.5 min with a change that could lengthen tasks.
+
 ## Predictions
 
 | Decision | User's one-line prediction | Pre-registered prediction | Actual |
 |---|---|---|---|
-| #11 (EXP-027, v24 at 8 min) | not asked | k ~ 10 of 58, band 6-14 | pending |
+| #11 (EXP-027, v24 at 8 min) | not asked | k ~ 10 of 58, band 6-14 | 0.17 = 10 of 58 (graded by 2026-11-03; EXP-027 §4 row 3) |
