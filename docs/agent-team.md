@@ -305,6 +305,7 @@ whatever it re-reads. The rules that keep that overhead on decisions that deserv
   by it. A spawn is for work that writes outside `knowledge/` or needs a tool the lead lacks.
 - The loop runs on events, not a timer.
 - Haiku for routine digests; a larger model per dispatch only for a close read.
+- Every agent's context is capped at a 200k-token auto-compact window (`modelSettings` in `.claude/settings.json`, per model id), so a long job compacts early instead of carrying a 400k context into every call; the EXP `## Status` line and the committed logbook are what a compacted agent resumes from.
 
 ## 9. Budgets the lead keeps
 
