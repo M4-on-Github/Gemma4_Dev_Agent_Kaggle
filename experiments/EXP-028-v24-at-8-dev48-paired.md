@@ -129,7 +129,22 @@ Analysis: `tools/analyze_traces.py runs/EXP-028-arm{R,RH} --cap-minutes 8 --max-
 
 ## 7. Defects in this pre-registration, logged after the fact
 
-None yet.
+Logged 2026-11-03 at analysis time; nothing in sections 3-5 is changed by these.
+
+- **D1, primary metric vs the section text.** Endpoint B credits compliance only when the *next* call after the
+  first loss is `run_command`, but the inserted section tells the model to copy the text "from your last
+  `read_file`", so a read-then-heredoc sequence (the instructed path when the model has no fresh read) scores as
+  non-compliant. 3 of the 6 RH first-loss tasks went `read_file` next. Row 4 is applied as written; the
+  per-task sequences are recorded in section 9 so a later reader can see the gap.
+- **D2, row order.** Row 2 (compliance >= 60%, row 7 clean) precedes row 5 (compliance >= 60% with >= 2
+  failed heredocs), so under first-match row 5 could only fire when row 7 also fired. Moot here (compliance 0%).
+  There is no row 6.
+- **D3, which call count.** Section 3 A and T4 say "end at 28 tool calls" without naming the count. The harness
+  `tool_calls` field in `task_results.jsonl` and `analyze_traces.py` `calls_cap_hit` (trace calls, free tools
+  excluded) differ by one task on Arm R (17 vs 18). Section 9 uses the analyzer value and reports both.
+- **D4, artifact path.** The hygiene check and `.gitignore` admit only files named exactly `summary.jsonl`
+  under `experiments/`, so the summaries are stored as `experiments/EXP-028/armR/summary.jsonl` and
+  `experiments/EXP-028/armRH/summary.jsonl`, not `<arm>-summary.jsonl`.
 
 ## 8. Built and pushed
 
@@ -157,3 +172,118 @@ each source; both `kernel-metadata.json` differ from `exp025_armA` in `id`/`titl
 Expected wall ~4 h each (48 × ~280 s + startup); results expected from ~06:30 UTC. Download to
 `runs/EXP-028-armR/` and `runs/EXP-028-armRH/`, then the §6 analysis commands. Submission #11 (ref 57750294) was
 still PENDING at push time; §4's time-profile rows are read against it once both exist.
+
+**Downloaded and analyzed 2026-11-03 ~21:10 UTC** (both kernels COMPLETE). `kaggle kernels output` nests the
+bundle as `runs/<EXP>/runs/<EXP>/` plus a `.zip`; the inner directory was moved up so each run dir holds
+`task_results.jsonl` (48 rows each) and `traces/` (48 traces each). No archive needed extracting.
+
+## Status
+
+Analyzed; section 9 below. No kernel running. Next: slot #12 upload per EXP-029 with the tree section 9 names.
+
+---
+
+## 9. Results and readings applied, 2026-11-03. Section 4 applied as written.
+
+Commands (all `python -I -X utf8`): `tools/analyze_traces.py runs/EXP-028-arm{R,RH} --cap-minutes 8
+--max-calls 28`; `tools/run_forensics.py forensics` on each; `tools/run_forensics.py compare runs/EXP-028-armR
+runs/EXP-028-armRH`; `tools/estimate_budget.py --eval-config experiments/EXP-027/candidate-v24-at-8/eval_config.yaml
+--results runs/EXP-028-armR/summary.jsonl`; the EXP-026 section 1 lost-call pass as a scratch script that reads the
+traces as data and imports `run_forensics.fisher_exact_2x2` / `mcnemar_exact` / `collect_forensics`. Kernel log
+timestamps (`gemma4-exp028-arm*.log`, seconds since kernel start) give server start, per-task spacing and the
+kernel wall. Summaries: `experiments/EXP-028/armR/summary.jsonl`, `experiments/EXP-028/armRH/summary.jsonl`.
+
+### 9.1 Time profile (endpoint A; Arm R governs)
+
+| | Arm R | Arm RH |
+|---|---:|---:|
+| mean `wall_s` (48 tasks) | 297.4 s | 296.7 s |
+| median / p90 (analyzer) | 302.8 s / 483.3 s | 268.7 s / 485.2 s |
+| max wall | 489.9 s | **751.9 s** (`rich_3480`, 272 s past the 480 s cap) |
+| ending within 20 s of 480 s (wall >= 460 s) | 6/48 = 12.5% | 10/48 = 20.8% |
+| `time_cap_hit` (analyzer, wall >= 475 s) | 12.5% | 20.8% |
+| ending at 28 calls: analyzer `calls_cap_hit` | **18/48 = 37.5%, 0 resolved** | 17/48 = 35.4%, 2 resolved |
+| ending at 28 calls: harness `tool_calls` >= 28 | 17/48, 0 resolved | 17/48, 2 resolved |
+| harness errors | 6 session timeout (8.0 min), 4 turns budget (80) | 7 session timeout, 1 turns budget |
+| per-task `setup_s` mean | 0.05 s | 0.05 s |
+| per-task time outside `wall_s` (log task-loop span minus summed agent walls, / 48) | 0.35 s | 0.35 s |
+| compactions | 0 | 0 |
+| prompt-token peak (any turn) | 22,019 | 23,247 |
+| vLLM server start (`summary.json`) | 396.5 s | 341.9 s |
+| analyzer `projected_12h_total_h` (walls + setup, x 120/48) | 9.92 h | 9.89 h |
+| **projected hidden hours** = analyzer projection + server start + residual per-task overhead x 120 | **9.92 + 0.11 + 0.01 = 10.04 h** | 9.89 + 0.09 + 0.01 = 10.00 h |
+
+Grading time sits inside `duration_s` in this notebook (the grading sandbox is created ~3.5 s before each
+`[k/48]` log line and `agent=` equals the spacing), so no separate grading term is added. Using the full pre-loop
+time (kernel start to vLLM up, 521 s) instead of server start gives 10.07 h; the row is the same either way.
+
+`estimate_budget.py --results` on Arm R reports per-task mean 5.66 min, projected mean 11.32 h, p50 12.22 h,
+VERDICT BLOCK. It takes max(measured wall, decode-model estimate) per task, so it is a different model from the
+section 3 formula (measured mean); recorded, not used for the reading.
+
+**T rows.** **T2 fires**: projected 10.04 h is inside 9.5-10.5. 8 min stands with no margin; nothing that
+lengthens turns (thinking, output tokens) is added without re-measuring. **T4 also fires** (an independent
+condition): 37.5% of Arm R tasks end at 28 calls (>= 25%) and none of them resolve (harness count 17/48, also 0
+resolved). The call cap binds; `max_tool_calls` 40 (their v25) is the next single-variable arm, before any prompt
+change. Not in any row but relevant to the T2 caveat: one RH task ran 751.9 s against an 8-min cap, so the session
+timeout is not a hard per-task bound, and the projection does not model such overruns.
+
+### 9.2 Recovery route (endpoints B and C)
+
+| | Arm R | Arm RH |
+|---|---:|---:|
+| lost calls (`mandatory input parameters are not present`), all tools | 67 (58 `edit_file`, 9 `write_file`) | 17 (10 `edit_file`, 7 `write_file`) |
+| analyzer `n_edit_arg_loss` sum | 58 | 10 |
+| **first-loss events** (tasks with >= 1 lost call) | **8** | **6** |
+| **compliance: next call after the first loss is `run_command`** | **0/8** | **0/6** |
+| next call after the first loss | 7 `edit_file`, 1 `write_file` | 3 `read_file`, 2 `write_file`, 1 `edit_file` |
+| Fisher two-sided, first-loss compliance R vs RH | p = 1.0000 | |
+| repeat-loss rate (lost after a task's first / all lost) | 59/67 = 88.1% | 11/17 = 64.7% |
+| next edit-tool call after a loss is itself lost | 50/55 | 11/12 |
+| identical `edit_file`/`write_file` resends of a lost call | 44 | 11 |
+| `edit_file` calls after the first loss (the section says zero) | 71, in 7 of 8 tasks | 13, in 4 of 6 tasks |
+| heredoc `run_command` calls, all / non-zero exit | 43 / 2 | 135 / 36 |
+| template heredocs (`assert s.count(old)`), calls / non-zero / tasks | 0 / 0 / 0 | 10 / 2 / 3 |
+| heredocs after a first loss / non-zero | 2 / 0 | 13 / 3 |
+| empty patch | 6/48 | 5/48 (discordant 4 R-only, 3 RH-only; exact McNemar p = 1.0000) |
+| `submit_patch` called | 42/48 | 40/48 |
+| never called `edit_file` or `write_file` (forensics) | 4/48 | 3/48 |
+| first-edit turn, median (forensics per task) | 14 (n = 44) | 13 (n = 45) |
+
+RH first-loss tasks, calls after the loss: `fastapi_13207` read, read, run, read (first heredoc 9 calls later, 3
+`edit_file` after); `fastapi_14262` read, run (heredoc at 9, 0 `edit_file`); `fastapi_14297` write, run (no
+heredoc, 1 `edit_file`); `fastapi_14605` 7 losses, then 8 template heredocs and 8 `edit_file`; `fastapi_15030`
+read, read, run (heredoc at 5, 1 `edit_file`); `fastapi_15661` 6 `write_file` losses, heredoc at 6, 0 `edit_file`.
+
+Heredoc wrong-span or wrong-file harm was **not read** (it needs a per-heredoc diff against the intended target);
+only exit codes were counted. It matters only to row 5, which cannot fire here.
+
+**Rows, in order.** Row 1: R has 8 first-loss events (>= 4), does not fire. Row 2: RH compliance 0% (< 60%), no.
+Row 3: not 25-60%, no. **Row 4 fires: compliance 0/6 < 25%. A prompt rule does not reach the next call on this
+prompt either. R is the tree for #12; the route is dropped from the LB lineage.** Row 7 (additive): empty patch 6
+vs 5, McNemar p = 1.0, does not fire. Row 8 (additive): neither kernel blank or crashed, does not fire.
+
+**The prediction did not hold** on the pre-registered metric: the section did not move the next call after a
+first loss (0/6, against 0/8 without it). What the secondaries show, recorded without changing the reading: RH had
+a quarter of the lost calls (17 vs 67) and three times the heredoc edits (135 vs 43), so the section changed how
+edits were made from the start of a task rather than after a loss; the post-loss loop was shorter (identical
+resends 44 vs 11, `edit_file` after the first loss 71 vs 13), but these are not paired-tested here and 26 of the
+67 R losses come from one task (`fastapi_14262`). D1 in section 7 notes why the next-call metric undercounts the
+read-then-heredoc path the section instructs. None of this licenses a claim; it is input for the paper and for
+any later wording or placement test.
+
+### 9.3 Resolves (reported, not an endpoint)
+
+R 9/48 (Wilson 10-32%), RH 10/48 (12-34%). Paired: both 8, R only 1 (`fastapi_9753`), RH only 2 (`fastapi_5624`,
+`rich_3180`), neither 37; exact McNemar p = 1.0000.
+
+### 9.4 Decision for slot #12
+
+**Tree: R** (= submission #11, `experiments/EXP-027/candidate-v24-at-8/`, zip sha256
+`c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600`), by recovery row 4. **Cap: 8 min / 28 calls**
+(T2; T1 did not fire, so no move to 6.0 min). Next GPU arm named by T4: `max_tool_calls` 28 -> 40, one variable.
+
+### 9.5 Kernel wall-clock for the GPU ledger
+
+From the kernel logs (time of the last log entry, seconds since kernel start): **Arm R 14,832 s = 4.12 h; Arm RH
+14,716 s = 4.09 h; total 8.21 L4x4-h.** Queue time before kernel start is not in the log.
