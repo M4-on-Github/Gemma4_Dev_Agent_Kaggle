@@ -20,6 +20,8 @@ Three documents carry the project state and are the source of truth over chat me
 
 `.claude/agents/` defines a seven-agent team with hard write and command boundaries, modelled on the sibling
 `Quantum_Circuits` repo and adapted to this competition's two tracks. Start it with `claude --agent research-lead`.
+The design, with diagrams of the components, the loop, the screening ladder, the lifecycles and the guards, is
+`docs/agent-team.md`; keep it in step with any change to agents, skills or hooks.
 
 | Agent | Writes only | Does |
 |---|---|---|

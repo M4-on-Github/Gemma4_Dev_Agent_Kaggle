@@ -27,6 +27,10 @@ tests/                      pytest suite for the tools (synthetic data only)
 notebooks/                  Kaggle L4x4 notebook (py:percent source + generated .ipynb + kernel-metadata.json)
 scripts/kaggle_setup.sh     one-shot Phase 0 setup on your machine (kaggle CLI, downloads, venv, checks)
 experiments/                Q1–Q12 checklist, experiment logs, cohorts (ids only), submissions log
+knowledge/, research/       the research team's ledger (claims, directions, plan, briefing, upload proposals)
+                            and its scouting notes; INDEX.md files are generated
+.claude/                    the agent team: agents, skills, guard hooks (design in docs/agent-team.md)
+docs/agent-team.md          how the agent team works: components, loop, screening ladder, enforcement (Mermaid)
 paper/                      paper-track outline, figures, released CSVs
 data/, runs/                gitignored: competition data and raw run output (never commit; redistribution rule)
 ```
