@@ -14,6 +14,6 @@ took between 21.5 h and 5 days, the longest seen).
 Commit: de69156. Upload sha256: c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600.
 
 Reading, applied as pre-registered in EXP-027 §4: **row 3 (k = 9-10)** fires. Adopt the v24-at-8 tree as the baseline
-tree; every later arm is paired against it. Not a time effect: a one-draw +1 to +2 over the 0.13-0.17 range of
-rows 6-7 and 10 is inside the ~4-task MDE. The 8-minute cap completed within the scoring budget on the hidden set
+tree; every later arm is paired against it. Not a time effect: a one-draw +2 over our previous best of 0.13 (uploads #5 and #6), or
++3 over #8 (the same bundle at 4.5 min, 7/58), is inside the ~4-task MDE. The 8-minute cap completed within the scoring budget on the hidden set
 (row 1, blank, did not fire), which answers the budget question submission #11 was uploaded to ask.
