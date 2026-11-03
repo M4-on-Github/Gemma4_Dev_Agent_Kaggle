@@ -1,7 +1,7 @@
 ---
 id: plan
 updated: 2026-10-29
-direction: D-002, D-003
+direction: D-002, D-003; D-004 proposed
 ---
 
 ## Next experiments (in order)
@@ -14,6 +14,7 @@ direction: D-002, D-003
 | 4 | C-007 | `max_tool_calls` 28 -> 40 on the chosen tree, paired with it | calls-cap incidence, empty patch, time profile | <= 2 tasks, unreadable on LB; readable on dev-48 process endpoints | ~0.8 screen, then ~4-7 | only if EXP-028 T4 fires; L2 screen first (does the 40-call tree breach the 8-min cap on smoke-8?) |
 | 5 | C-008 | Cap arm (7 / 9 min) from the measured mean | time profile vs ceiling | safety margin or more finishing time | ~4-7 | only after T1-T3 are known |
 | 6 | C-004, C-005 | Paper section 4 from the accepted EXP-028 result | n/a | paper deliverable | 0 | Nov 5 draft |
+| 7 | C-014, C-004 (D-004) | Screen A1-A3: `SequentialAgent[locator, editor]` built from the v24 prompt split by role, on smoke-8, paired against EXP-028 Arm R on the same 8 ids | runs end to end 8/8; added wall per task; edit arg-loss rate per call (Fisher) | decides whether the team direction lives | ~0.8 | needs the user's approval of D-004 and EXP-028 Arm R downloaded for the pairing |
 
 ## GPU budget this week
 

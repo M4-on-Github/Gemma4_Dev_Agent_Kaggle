@@ -45,6 +45,11 @@ User: "since we cant use much gpu, we develop our solution to the competition in
 
 Applied: the ladder order is desk check, trace mining, smoke-8 screen (~0.8 GPU-h), LB upload (0 GPU-h), and only then a dev-48 arm (4-7 GPU-h), each dev-48 arm approved by the user with the question n = 8 and one LB draw cannot read. Default week: screens and uploads, at most one dev-48 arm or pair, the last 5 hours never committed. The one sanctioned dev-48 use is the time profile of a tree bound for an upload above 4.5 min with a change that could lengthen tasks.
 
+## 2026-11-03: The final tree should be a sophisticated agent, possibly a team
+User: "the shipped artefact is one model in one loop with a prompt but it is not what the final should be. it should be smth sophisticated agent (possible agents team) to solve the problem." Method the user asked for: state the assumptions under which the composition achieves the goal, then test the assumptions by screening ("we can use lean to prove under assumptions that agent x does this and pass y to agent z we can accomplish xyz and then we can see if we can make that happen in screening").
+
+Applied as D-004 (proposed): an assumption chain A1-A7 with one smoke-8 screen per link, written in plain words rather than Lean; the chain is the proof obligation, the screens are the discharge. Awaiting the user's approval and the critic's direction review.
+
 ## Predictions
 
 | Decision | User's one-line prediction | Pre-registered prediction | Actual |
