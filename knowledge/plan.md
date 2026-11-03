@@ -1,6 +1,6 @@
 ---
 id: plan
-updated: 2026-10-29
+updated: 2026-11-03
 direction: D-002, D-003; D-004 proposed
 ---
 
@@ -8,9 +8,9 @@ direction: D-002, D-003; D-004 proposed
 
 | # | Claim | What it tests | Endpoint | Expected gain | GPU-h | Why now |
 |---|---|---|---|---|---|---|
-| 1 | C-003, C-008, C-007 | EXP-028 Arm R analysis: time profile, projected hours, 28-call incidence | mean/p90/frac at cap; projected hidden hours; T1-T4 | decides the cap and the next arm | 0 (run complete) | both kernels COMPLETE; nothing else can be read until this is |
-| 2 | C-005 | EXP-028 RH vs R: post-loss compliance, harm guard | Fisher on first-loss events; McNemar on empty patch | decides the #12 tree | 0 (run complete) | same download |
-| 3 | C-002 | Read #11 against EXP-027 §4 | k of 58 | adopt / fall back to 6.0 | 0 | pending since 2026-10-28 22:39 UTC |
+| 1 | C-003, C-008, C-007 | ~~EXP-028 Arm R analysis~~ done 2026-11-03 (§9): mean 297 s, 10.04 h projected, T2 + T4 fire | | | 0 | awaiting critic `light` |
+| 2 | C-005 | ~~EXP-028 RH vs R~~ done: compliance 0/8 vs 0/6, row 4, section dropped from the LB lineage | | | 0 | awaiting critic `light` (moves C-005) |
+| 3 | C-002 | ~~Read #11~~ done: 0.17 = 10/58, EXP-027 row 3, baseline tree adopted; #12 = second draw (S-012, EXP-029) | | | 0 | upload today if approved |
 | 4 | C-007 | `max_tool_calls` 28 -> 40 on the chosen tree, paired with it | calls-cap incidence, empty patch, time profile | <= 2 tasks, unreadable on LB; readable on dev-48 process endpoints | ~0.8 screen, then ~4-7 | only if EXP-028 T4 fires; L2 screen first (does the 40-call tree breach the 8-min cap on smoke-8?) |
 | 5 | C-008 | Cap arm (7 / 9 min) from the measured mean | time profile vs ceiling | safety margin or more finishing time | ~4-7 | only after T1-T3 are known |
 | 6 | C-004, C-005 | Paper section 4 from the accepted EXP-028 result | n/a | paper deliverable | 0 | Nov 5 draft |
@@ -20,20 +20,20 @@ direction: D-002, D-003; D-004 proposed
 
 | Window | Spent (kernel wall, EXP §9) | Committed (running) | Remaining of 30 | Next arms costed |
 |---|---|---|---|---|
-| unknown (reset day unverified) | EXP-028 R + RH: not yet read from §9 | none running | unknown | item 4 or 5: one dev-48 arm 4-7 h; any new claim: smoke-8 screen ~0.8 h first |
+| unknown (reset day unverified) | EXP-028 R 4.12 h + RH 4.09 h = 8.21 h (§9), run week of Oct 28 | none running | unknown; nothing spent this week so far | item 4 or 5: one dev-48 arm 4-7 h; any new claim: smoke-8 screen ~0.8 h first |
 
 Ask the user to read the sidebar quota counter once; record the figure, the reset day and whether L4x4 counts 1x in the harness-stack skill.
 
 ## Next upload slot
 
-Oct 29 UTC slot is open and will likely lapse: #12 is chosen by items 1-3 (EXP-028 §4 rows 1-8 pick R or RH; EXP-027 §4 picks the cap). Do not spend the slot on an unread tree. If #11 is still pending when EXP-028 is read and T2 or T3 holds, #12 = the EXP-028-chosen tree at 8 min with the override written in S-012.
+Nov 3 UTC slot: S-012 = tree R (the #11 zip) again, the second draw of the baseline (EXP-029 governs; critic prereg `ready`). Awaiting `approvals/S-012.txt`. Next slot after that: the EXP-029 reading decides; the candidate addition is `max_tool_calls` 40 (EXP-028 T4) after an L2 screen, with the digest's one-draw timeout of a 40/8 bundle as the risk.
 
 ## Waiting on
 
-- #11 grade (Kaggle ref 57750294, PENDING 21.5 h at 2026-10-29 20:14 UTC; longest grading seen).
-- Download of `rainm4/gemma4-exp028-armr` and `-armrh` to `runs/EXP-028-armR/`, `runs/EXP-028-armRH/`.
+- Critic `light` review of EXP-028 (moves C-003/C-008 time profile and C-005).
+- Fix in experiment-protocol step 7: summaries live at `experiments/EXP-NNN/<arm>/summary.jsonl` (hygiene accepts only that name).
 - Critic backfill of migrated claims (start with EXP-024, EXP-025, EXP-027).
-- User: prediction for #11 and approval shape for S-012.
+- User: `approvals/S-012.txt`, k-of-58 prediction for #12, D-004 approval, plan.md §5.8 rewording, GPU quota counter.
 
 ## Not pursued
 
