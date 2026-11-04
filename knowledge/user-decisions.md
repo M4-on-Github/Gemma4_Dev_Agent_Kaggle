@@ -55,3 +55,9 @@ Applied as D-004 (proposed): an assumption chain A1-A7 with one smoke-8 screen p
 | Decision | User's one-line prediction | Pre-registered prediction | Actual |
 |---|---|---|---|
 | #11 (EXP-027, v24 at 8 min) | not asked | k ~ 10 of 58, band 6-14 | 0.17 = 10 of 58 (graded by 2026-11-03; EXP-027 §4 row 3) |
+
+## 2026-11-04 03:31 UTC: S-012 approved (tree R, the #11 zip, second LB draw)
+User: "I approve", to the recommendation of 2026-11-03 (R at 8 min rather than a 7-min rebuild or no upload). The Nov 3
+slot had closed; the upload moves to the Nov 4 UTC slot with the same zip, EXP-029 readings unchanged. The approval file
+`approvals/S-012.txt` is written by the user only; the submitter is dispatched when it exists. Lead's prediction: k = 10
+of 58, band 6-14. User's prediction: not yet given.
