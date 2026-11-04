@@ -77,14 +77,33 @@ kaggle competitions submit -c gemma-4-developer-agent -f out/submission.zip -m "
 
 ## 7. Defects in this pre-registration, logged after the fact
 
-None yet.
+Logged 2026-11-04 from the critic's prereg review (`experiments/EXP-029/critic.md`, verdict `ready`, commit fdd5147). These are defects, not revisions: §4 stands as written and is applied as written when the score returns.
+
+- **(a) Row 2, case R, uses the wrong comparator.** It compares a two-draw pooled mean (<= 7.5/58) with the retired lineage's best-of-9 maximum (8/58). The like-for-like comparator is that lineage's mean, about 6.6/58 (critic P1 (a)).
+- **(b) Row 2 calls a pure-R draw "the discriminating draw for RH".** One draw per tree cannot resolve a gap below the ~4-task MDE, so no single draw discriminates R from RH (critic P1 (b)).
+- **(c) Row 3 would pool an RH draw into the R baseline** (critic Required fix 1). The "R + RH" label does not cure it: any sub-MDE effect of the section would shift the comparator by half that effect. Rule going forward: pool only byte-identical zips; an RH draw opens its own count at n = 1 and the R baseline stays at the R draws. The Serves line carries the same defect. Moot for this slot, since R shipped (§8).
+- **(d) Recommended, not blocking (critic Required fix 2):** §2 did not say which EXP-028 §9 governs if §9 landed after the approval, nor what the next slot does while #12 is pending. In fact EXP-028 §9 was committed at 6cba51b, before the approval commit cc6b679, so the pick was fixed before `approvals/S-012.txt` existed.
 
 ## 8. Built and uploaded (filled at upload time, below the line; nothing above changes)
 
 ---
 
-Tree picked by EXP-028 §9: _pending_ (R or RH; the §9 row that picked it: _pending_)
-Cap picked by EXP-028 §9 (T1-T3): _pending_ (8 min unless T1)
-Zip path and sha256: _pending_
-Pre-registration commit of this file: _pending_ (recorded in the commit that fills this section)
-Kaggle submission ref and upload time (UTC): _pending_
+Tree picked by EXP-028 §9: **R** (= submission #11, `experiments/EXP-027/candidate-v24-at-8/`), by EXP-028 §4 recovery row 4 (EXP-028 §9.4). EXP-028 §9 was committed at 6cba51b, before the approval commit cc6b679.
+Cap picked by EXP-028 §9 (T1-T3): **8 min** / 28 calls / 80 turns / `timeout_seconds` 240 (T2 fired: Arm R projects 10.04 h; T1 did not fire, so no move to 6.0 min). No new zip was built.
+Zip path and sha256: `experiments/EXP-027/v24_at8.zip`, uploaded as its byte copy `out/submission.zip`; `sha256sum` of both on 2026-11-04 = `c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600`, equal to `approvals/S-012.txt` and to submission #11. Variable vs #11: none.
+Pre-registration commit of this file: f56b226; critic prereg verdict `ready` for the R upload at fdd5147 (`experiments/EXP-029/critic.md`); approval cc6b679 (`approvals/S-012.txt`, user, 2026-11-04 03:31 UTC).
+Kaggle submission ref and upload time (UTC): **57970005**, 2026-11-04 03:51:09 UTC, status PENDING; CLI reported "0 submissions remaining today". The Nov 3 slot lapsed; this went into the Nov 4 slot.
+
+Submit command as run by the submitter (`knowledge/submissions/S-012-result.md`):
+
+```
+kaggle competitions submit -c gemma-4-developer-agent -f C:/Users/moemy/Documents/Kaggle/Gemma4_Dev_Agent_Kaggle/out/submission.zip -m "S-012 EXP-029 c22069db second LB draw of the v24-at-8 baseline tree (same zip as #11), pre-reg EXP-029 f56b226"
+```
+
+The planned message had a semicolon before "pre-reg"; the Bash guard rejected that attempt as chaining before anything ran (no upload), so the semicolon became a comma. Submitted exactly once.
+
+Defects the critic named are logged in §7 (a)-(d); none revises §4.
+
+## Status
+
+Uploaded 2026-11-04 03:51 UTC, ref 57970005, PENDING (grading has taken 6 h to 5 days). No kernel. Next action: when the lead reports a score or a blank, append §9 applying §4 as written, and fill LB in `submissions.md` row 12.
