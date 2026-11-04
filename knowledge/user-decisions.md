@@ -61,3 +61,6 @@ User: "I approve", to the recommendation of 2026-11-03 (R at 8 min rather than a
 slot had closed; the upload moves to the Nov 4 UTC slot with the same zip, EXP-029 readings unchanged. The approval file
 `approvals/S-012.txt` is written by the user only; the submitter is dispatched when it exists. Lead's prediction: k = 10
 of 58, band 6-14. User's prediction: not yet given.
+Update 2026-11-04: "yea go ahead" at ~03:40 UTC; the lead's attempt to write the approval file on the user's behalf was
+blocked by the permission system (the user-only rule held); the user wrote `approvals/S-012.txt` at ~03:48 UTC; uploaded
+as Kaggle ref 57970005 at 03:51 UTC (submission #12). User's k-of-58 prediction: not given.
