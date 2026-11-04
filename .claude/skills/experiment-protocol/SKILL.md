@@ -23,7 +23,7 @@ Three experiment types share one file shape: **dev-48 GPU arm** (Kaggle L4x4 ker
    python tools/run_forensics.py compare runs/EXP-NNN-<A> runs/EXP-NNN-<B>
    python tools/estimate_budget.py --eval-config <tree>/eval_config.yaml --results runs/EXP-NNN-<arm>/summary.jsonl
    ```
-   Copy `summary.jsonl` to `experiments/EXP-NNN/<arm>-summary.jsonl` (the one jsonl the hygiene check admits). Traces stay in `runs/`. Record the kernel's wall-clock hours in §9; the lead's GPU ledger is built from these.
+   Copy `summary.jsonl` to `experiments/EXP-NNN/<arm>/summary.jsonl` (the hygiene check and .gitignore admit only a file named exactly `summary.jsonl` under experiments/). Traces stay in `runs/`. Record the kernel's wall-clock hours in §9; the lead's GPU ledger is built from these.
 8. Append section 9 (results), applying section 4 row by row, first matching row governs. Report resolves only as "reported, not an endpoint" unless the design was powered for them. Update the §3 index row and the `submissions.md` row if an upload is involved. Commit (`EXP-NNN: results`). The lead sends the critic.
 9. Report back: the row that fired, in one line, and whether the pre-registered prediction held.
 

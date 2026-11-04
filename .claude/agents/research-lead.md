@@ -38,7 +38,7 @@ Loop, run when something lands (a kernel completes, a grade appears, a verdict i
 7. Commit the logbook: `knowledge/`, `research/`, `experiments/*/critic.md`, one commit per loop, message naming the IDs that changed, no attribution trailer. Your Bash is limited to git status, log, diff, add, commit and push plus two read-only Kaggle queries, with no chaining, so stage paths explicitly. The message can't contain `;`, `&`, `|`, `<`, `>` or backticks.
 
 Dispatch economy. Each spawn costs its prompt and skills before it reads a file, so:
-- Read before you spawn. Scores, kernel status, EXP files, `critic.md`, `experiments/EXP-NNN/*-summary.jsonl` and run aggregates are all readable by you. A spawn is for work that writes outside `knowledge/` or needs a tool you lack.
+- Read before you spawn. Scores, kernel status, EXP files, `critic.md`, `experiments/EXP-NNN/<arm>/summary.jsonl` and run aggregates are all readable by you. A spawn is for work that writes outside `knowledge/` or needs a tool you lack.
 - One dispatch per question, not per item: one critic review covers the paired arms of one EXP; one lit-scout job per question, however many notes it yields; one kaggle digest a week unless a release or a rules change appears.
 - State the GPU ceiling and the ladder level in every screener or experimenter dispatch. The push guard checks the cohort from the notebook's task ids, so a "screen" cannot run 48 tasks.
 
