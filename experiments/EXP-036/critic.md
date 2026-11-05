@@ -2,7 +2,7 @@
 id: EXP-036-critic
 exp: EXP-036
 tier: light
-verdict: needs-work
+verdict: accepted
 verified: regenerated
 date: 2026-11-05
 ---
@@ -80,3 +80,35 @@ Two consequences of my own [I]:
 1. §9.3: replace "2 of 27 and 1 of 22" with the bounded statement in the Verdict, and add the n′ 22 / 17 line as post hoc.
 2. §9.4 item 1: replace "unaffected" with "concordant in all eight gradings". Add the informative set as run (about 27) and the smoke-8 consequence.
 3. §9.4 item 2: "mostly the patch's own collection errors" is 1 of 6 in R and 1 of 5 in RH. BASE already fails collection on the others.
+
+## Re-review 2026-11-05
+**Verdict: accepted.** Row 1 (R), its RH replicate and T3 stand. The three fixes are in as written. C-021 and C-022 are supported once reworded as below. There is one erratum, which is mine and does not gate the verdict.
+
+**Erratum (mine; correct at the next touch, not gating).** My fix 3 count was wrong, and the experimenter implemented it exactly as I wrote it.
+- The patch's own collection errors are 2 of R's 6 C tasks (`fastapi_14605`, `fastapi_14609`) and 2 of RH's 5 (`fastapi_14448`, `fastapi_14609`).
+- On 14609, in both arms, the patch breaks collection of 4 graded files that collect under BASE: 5 error files under the patch against 1 under BASE. BASE's exit 2 on that task comes from a different file.
+- What needs correcting:
+  - §9.4 item 2's heading, its first bullet and the rationale in its third bullet;
+  - `own_error` in `analyze_regrade.py`, which should either use the file-set rule below or be dropped.
+- Nothing downstream uses the count, apart from the lead's record of my fix in `knowledge/plan.md`.
+- No reading changes. Counted as visible, the own errors put R at 4 to 7 of 22 and RH at 3 to 7 of 17. The post hoc table still reads T3 in both arms (R: V 4, H 15; RH: V 3, H 10). §9.3's "2 of 22 / 1 of 17" stays a valid lower bound on the classifier's V.
+
+**Item 2: which count is right.** Neither rule that compares error class names is sound.
+- The family rule clears 14609 in both arms.
+- The raw rule flags R `fastapi_15661`, where the patch and BASE fail on the same single file. It reaches 2 and 2 only by coincidence.
+- A sound rule [mine]: the patch's own error iff BASE is not exit 2, or a graded file that collects under BASE fails to collect under the patch. All 11 patch tails are under the 20000-character cap.
+- This rule would miss a patch that changes the error on an identical file set. That case does not occur here.
+
+**Checks.**
+- **Fixes 1 to 3:** made as written, with the struck text kept and dated. 6090294 touches only §9 of the EXP file; §§1 to 8 and the readings are unchanged.
+- **Regenerated:** byte-identical on all three outputs. The old aggregate fields are unchanged since c680b31. The n′ figures, 22 (V 2, H 15, C 5) and 17 (V 1, H 10, C 4, U 2), and the V range of 2 to 7 match.
+- **Item 3, the gradings:** the "eight gradings" are the six EXP-034 arms as run plus the R and RH re-grades. In each of them (48 rows), `requests_6644` resolves and the other five do not. GOLD and BASE agree with them, which makes ten gradings in all. My Q3 above and C-022's history line both list nine names under "eight"; use "ten" with the full list.
+
+**Tier.** The checklist moves a claim only on a full review.
+- Checks 4 and 5 were done in Q2 above: row 1 is the first matching row and was applied as written, and the flips are counted on the same patches and ids, with no independent rates.
+- Checks 6, 7 and 9 do not apply to a zero-GPU re-grade.
+- I treat the claim calls below as equivalent to a full review [my call]; the lead may overrule.
+
+**C-021: accepted, high confidence on dev-48.** Required rewording: "On the Kaggle subprocess grader, 15 of 48 dev-48 tasks (all fastapi) are graded without two test-only packages. The shipped v24 prompt does not vendor them, and R and RH resolve 0 of 15. With API-faithful stand-ins present, the same patches resolve 3 of 15 (R) and 5 of 15 (RH), 3 of them in both. So 3 to 5 of the v24 lineage's dev-48 failures are the grading gap, not the fix." Whether the hidden grader lacks the packages remains unknown.
+
+**C-022: accepted, high confidence as an observation; mechanism unverified.** As worded, "ceiling 43 of 48" holds only when the packages are present. Required rewording: "... grade the same with the gold patch and with no patch on the Kaggle subprocess grader in ten gradings (GOLD, BASE, the R and RH re-grades, and the six EXP-034 arms as run). So the dev-48 ceiling is 43 of 48 with the two test-only packages present, installed or vendored, and 28 as run for a tree that does not vendor (27 informative tasks plus 1 free resolve)." The 28 is my inference.
