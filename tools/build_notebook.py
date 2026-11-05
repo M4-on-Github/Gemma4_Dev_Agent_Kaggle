@@ -12,6 +12,7 @@ Then: kaggle kernels push -p notebooks/   (needs your own Kaggle credentials; ne
 from __future__ import annotations
 
 import argparse
+import ast
 import base64
 import json
 import re
@@ -45,24 +46,64 @@ def parse_percent(text: str) -> list[tuple[str, str]]:
     return out
 
 
+def check_override_value(pair: str, name: str, value: str) -> None:
+    """Refuse a --set value that is not a single-line Python literal.
+
+    EXP-030 2026-11-05: `--set EXP_ID=EXP-030-p1` was written unquoted, and the kernel died in its first cell
+    with a SyntaxError after the push. A bare name (`--set EXP_ID=p1`) would parse but raise NameError on
+    Kaggle, so the check is `ast.literal_eval`, not only `ast.parse`. Every value used so far (True/False,
+    ints, the --cohort id list, quoted strings) is a literal.
+    """
+    hint = (f"--set {pair!r}: the value is inserted verbatim as Python source and must be a literal; "
+            f"quote strings, e.g. --set {name}='\"{value}\"'")
+    if "\n" in value or "\r" in value:
+        raise SystemExit(f"--set {pair!r}: the value must be a single line")
+    try:
+        ast.parse(f"{name} = {value}")
+        ast.literal_eval(value)
+    except (SyntaxError, ValueError, TypeError, MemoryError, RecursionError) as exc:
+        raise SystemExit(f"{hint} ({type(exc).__name__}: {exc})") from None
+
+
+def check_cells_parse(text: str, names: list[str]) -> None:
+    """Every code cell that holds an overridden assignment must parse as Python after the rewrite."""
+    for kind, body in parse_percent(text):
+        if kind != "code" or "# overridden by --set" not in body:
+            continue
+        try:
+            ast.parse(body)
+        except SyntaxError as exc:
+            line = body.splitlines()[exc.lineno - 1] if exc.lineno else ""
+            culprit = next((n for n in names if line.startswith(f"{n} = ")), None)
+            who = f"--set {culprit}" if culprit else f"--set ({', '.join(names)})"
+            raise SystemExit(f"{who}: the rewritten parameter cell does not parse as Python "
+                             f"(line {exc.lineno}: {line.strip()!r}: {exc.msg})") from None
+
+
 def apply_overrides(text: str, pairs: list[str]) -> str:
     """Rewrite `NAME = ...` assignments in the parameter cell from --set NAME=VALUE.
 
     The value is inserted verbatim as Python source, so quote strings yourself
     (``--set REPO_FILTER='"Textualize/rich"'``). Fails loudly on an unknown name so a
-    typo cannot silently run an experiment with the wrong configuration.
+    typo cannot silently run an experiment with the wrong configuration, and on a value
+    that is not a Python literal or leaves the parameter cell unparseable (EXP-030).
     """
+    names: list[str] = []
     for pair in pairs:
         if "=" not in pair:
             raise SystemExit(f"--set expects NAME=VALUE, got {pair!r}")
         name, value = pair.split("=", 1)
-        name = name.strip()
+        name, value = name.strip(), value.strip()
+        check_override_value(pair, name, value)
         pattern = rf"^{re.escape(name)} = .*$"
-        replacement = f"{name} = {value.strip()}   # overridden by --set"
-        text, n = re.subn(pattern, replacement, text, count=1, flags=re.M)
+        replacement = f"{name} = {value}   # overridden by --set"
+        # a callable replacement, so backslashes in the value are not read as regex escapes
+        text, n = re.subn(pattern, lambda _m: replacement, text, count=1, flags=re.M)
         if n != 1:
             raise SystemExit(f"--set: no assignment named {name!r} in {SRC.name}")
-        print(f"set {name} = {value.strip()}")
+        names.append(name)
+        print(f"set {name} = {value}")
+    check_cells_parse(text, names)
     return text
 
 
