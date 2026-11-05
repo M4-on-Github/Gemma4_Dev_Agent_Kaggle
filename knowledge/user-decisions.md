@@ -130,3 +130,12 @@ Read by the lead as:
 - The ledger may therefore reach 1.86 + 2.0 = 3.86 GPU-h on this arm. The user named a number for this arm, not a new ceiling for other work.
 - Not approved by this message: the EXP-040 voting screen (0.30 to 0.36 GPU-h), any upload, any 31B dev-48 arm. The lead asks once about the voting screen.
 - 2.0 h is treated as a stop line, not a forecast: if the kernel's GPU time nears 2.0 h without finishing, the lead tells the user; it does not let the run continue on its own reading.
+
+## 2026-11-05 ~22:00 UTC: the voting screen EXP-040 goes ahead
+User, verbatim: "yes go ahead"
+Context: the user asked "how are we doing on the concurrent vogin E4B agents?"; the lead answered that EXP-040 was built and not run, and wrote: "To start the voting screen, I need a yes and a ceiling: 0.4 GPU-h covers the expected cost; 1.25 GPU-h covers the worst case." The ledger stood at 3.13 of 3.2 GPU-h.
+Read by the lead as:
+- The EXP-040 push is approved: the V1 voting screen, E4B, smoke-8, 16 voters, zip `e476acb6...29d8`, as pre-registered and amended (75195e5). One kernel, one version.
+- No number was given. The lead takes the smaller of the two it offered, 0.4 GPU-h, as the working figure [lead's reading]. The ledger may reach 3.13 + 0.4 = 3.53 GPU-h on this screen.
+- 0.4 h is a point at which the lead reports, not a forecast and not enforced: nothing in the kernel stops it, and cancelling is the user's from the Kaggle UI. If the kernel is still running at push + 0.4 h the lead says so and gives the worst-case end time (push + 1.22 h).
+- Not approved by this message: a dev-48 voting arm (the row 5 follow-on), the per-step second arm, the scale-up to about 100 voters, a reproduction-before-submit screen, any upload, any 31B arm, a new general ceiling.
