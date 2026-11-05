@@ -200,6 +200,8 @@ Error type counted for all 43 failed calls: E1 30, E2 4 (fastapi_13207, 14301, 1
 7. **Classification is by hand** and the b calls in particular are a mix of two sub-kinds (altered text 10 calls, and text beyond the read 6). The second sub-kind (6 calls, 2 tasks) would not be helped by "copy exactly" and points instead at read ranges that cover the whole span to be replaced.
 8. EXP-041 and EXP-042 are unchanged. The rich_4075 strings were compared in full only after the pre-registration commit, as the disclosure says.
 9. 2026-11-05: quoted harness error text, a file-content fragment and a code-level description were removed from the disclosure, 9.1, 9.2, 9.6 and 9.7 for hygiene (critic light on EXP-041, lead job); no number or reading changed.
+10. *Corrected 2026-11-05 (critic light):* region read before the first failed edit, by the test as written, is 4 of 8, not 8: fastapi_15661 and rich_3063 fail the line test, and the first failed calls of fastapi_14360 and rich_3935 carry no old string. On each task's first failed call with an old string it is 5 of 7. The file was read on 8 of 8. No reading uses this. Supersedes "8 of 8" for region read in 9.3, 9.4 row 1 and item 3.
+11. *Added 2026-11-05 (critic light, outside the readings) [V]:* swegemma 0.2.11 strips diff sections touching protected test and runner-config files, pyproject.toml among them, inside submit_patch before reporting the size: (ii) for rich_4075. Row 10 stays as applied.
 
 ### 9.8 What this study cannot show
 
