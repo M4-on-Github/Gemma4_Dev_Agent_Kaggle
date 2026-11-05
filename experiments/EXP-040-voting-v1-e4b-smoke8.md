@@ -446,3 +446,49 @@ No upload slot was used.
 - **A prompt above the threshold with no compaction.** fastapi_14448 reached a 23,720-token prompt with `compactions` 0. That is a note on the counter or on compaction timing, for the lead; it is not read here.
 - **A channel-marker leak.** One proposer reply (fastapi_14605) has a thinking-channel marker leaked into its visible text, followed by a repeat of its first candidate. `tally.candidate_letters` still found 4 distinct letters.
 - **Where the extra time went.** The proposer stage took 10 to 55 s per task; the 16-voter burst took about 1 s on 7 of 8. Most of V1's added wall over EXP-033 is the proposer [I, by stage stamps].
+
+### 9.9 Votes by voter temperature, 2026-11-05 (post-hoc, not pre-registered, no reading applied)
+
+**Why this is here.** The user asked what a re-run of the vote with every voter at 0.7 or above would give. The figures below describe this one run. They are exploratory, they change no row of section 4 or its application in 9.4, and they license nothing in section 5. The lead looked first, read-only. I recomputed every figure independently and they match the lead's.
+
+**Source.** `python -I -X utf8 experiments/EXP-040/posthoc_temperature.py`, which writes `experiments/EXP-040/posthoc_temperature.json`.
+- It uses pass 1 of each trace, segmented by `analyze_results.extract_rounds_contiguous` and scored by `tally.score_round`.
+- The winner is the tally winner. It was decided by majority on 8 of 8 tasks.
+- All 128 pass-1 votes parse.
+
+**Picks in voter order, voters 1 to 16** (temperature 0.20 + 0.08 (k - 1)):
+
+| Task | C | Picks, voter 1 to 16 | Winner | Voters against the winner |
+|---|---|---|---|---|
+| fastapi_14301 | 4 | BBBBBBBBDBBBBBBB | B | 9 |
+| fastapi_14448 | 1 | AAAAAAAAAAAAAAAA | A | none |
+| fastapi_14605 | 4 | AAAAAAAAAAAAAAAA | A | none |
+| httpx_3672 | 4 | BBBBBDBABBBBCBBA | B | 6, 8, 13, 16 |
+| requests_7205 | 4 | AAAAAAAAAAAAAAAA | A | none |
+| requests_7309 | 4 | CCCBCBCCCCCBCCCC | C | 4, 6, 12 |
+| rich_3006 | 4 | AADADDADAAAADADA | A | 3, 5, 6, 8, 13, 15 |
+| rich_3468 | 1 | AAAAAAAAAAAAAAAA | A | none |
+
+Voter 1 (0.20) picked the winner on 8 of 8.
+
+**Votes against the winner, by temperature bucket, on the 6 tasks with C = 4.** The 2 tasks with C = 1 add voters but cannot add a vote against the winner.
+
+| Bucket | Voters | Against the winner |
+|---|---|---|
+| 0.20 to 0.60 | 1 to 6 | 6 of 36 |
+| 0.68 to 1.00 | 7 to 11 | 3 of 30 |
+| 1.08 to 1.40 | 12 to 16 | 5 of 30 |
+| all | 1 to 16 | 14 of 96 |
+
+By task, the 14 votes split as fastapi_14301 1, httpx_3672 4, requests_7309 3 and rich_3006 6. In this run, the lowest bucket did not agree with the winner more than the two higher ones.
+
+**The figure that bears on the user's question.** This is a descriptive figure from one run.
+- For each task, take the fraction of the 16 voters whose pick differs from the winner:
+  - 0.0625 on fastapi_14301;
+  - 0.25 on httpx_3672;
+  - 0.1875 on requests_7309;
+  - 0.375 on rich_3006;
+  - 0 on the other 4.
+- The sum over the 8 tasks is **0.875**. That is the expected number of tasks with D true if voter 1 were one of the 16 chosen at random rather than the 0.20 voter, with the 16 votes held fixed. With a unique plurality on every task, the winner does not change when voter 1 does.
+- So, even with the anchor voter drawn at random, these votes would give D true on fewer than 1 task of 8 on average. The zero D in row 2 does not depend on voter 1 being the coldest voter.
+- This does not predict a new run with every voter at 0.7 or above. A re-run would draw new votes from the same 4 candidates, and the bucket rates above, 3 of 30 and 5 of 30, come from 10 voters on 6 tasks.

@@ -1,0 +1,165 @@
+{
+ "label": "post-hoc, not pre-registered, no reading applied; pass 1, contiguous segmentation",
+ "per_task": {
+  "fastapi_14301": {
+   "C": 4,
+   "picks": "BBBBBBBBDBBBBBBB",
+   "winner": "B",
+   "rule": "majority",
+   "P1": "B",
+   "against_winner_voters": [
+    9
+   ],
+   "frac_differs_from_winner": 0.0625
+  },
+  "fastapi_14448": {
+   "C": 1,
+   "picks": "AAAAAAAAAAAAAAAA",
+   "winner": "A",
+   "rule": "majority",
+   "P1": "A",
+   "against_winner_voters": [],
+   "frac_differs_from_winner": 0.0
+  },
+  "fastapi_14605": {
+   "C": 4,
+   "picks": "AAAAAAAAAAAAAAAA",
+   "winner": "A",
+   "rule": "majority",
+   "P1": "A",
+   "against_winner_voters": [],
+   "frac_differs_from_winner": 0.0
+  },
+  "httpx_3672": {
+   "C": 4,
+   "picks": "BBBBBDBABBBBCBBA",
+   "winner": "B",
+   "rule": "majority",
+   "P1": "B",
+   "against_winner_voters": [
+    6,
+    8,
+    13,
+    16
+   ],
+   "frac_differs_from_winner": 0.25
+  },
+  "requests_7205": {
+   "C": 4,
+   "picks": "AAAAAAAAAAAAAAAA",
+   "winner": "A",
+   "rule": "majority",
+   "P1": "A",
+   "against_winner_voters": [],
+   "frac_differs_from_winner": 0.0
+  },
+  "requests_7309": {
+   "C": 4,
+   "picks": "CCCBCBCCCCCBCCCC",
+   "winner": "C",
+   "rule": "majority",
+   "P1": "C",
+   "against_winner_voters": [
+    4,
+    6,
+    12
+   ],
+   "frac_differs_from_winner": 0.1875
+  },
+  "rich_3006": {
+   "C": 4,
+   "picks": "AADADDADAAAADADA",
+   "winner": "A",
+   "rule": "majority",
+   "P1": "A",
+   "against_winner_voters": [
+    3,
+    5,
+    6,
+    8,
+    13,
+    15
+   ],
+   "frac_differs_from_winner": 0.375
+  },
+  "rich_3468": {
+   "C": 1,
+   "picks": "AAAAAAAAAAAAAAAA",
+   "winner": "A",
+   "rule": "majority",
+   "P1": "A",
+   "against_winner_voters": [],
+   "frac_differs_from_winner": 0.0
+  }
+ },
+ "buckets": {
+  "le_0.6": {
+   "voters": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "temperatures": [
+    0.2,
+    0.28,
+    0.36,
+    0.44,
+    0.52,
+    0.6
+   ],
+   "against_winner_c_ge_2": 6,
+   "n_c_ge_2": 36,
+   "against_winner_all": 6,
+   "n_all": 48,
+   "unparsed_all": 0
+  },
+  "gt_0.6_le_1.0": {
+   "voters": [
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "temperatures": [
+    0.68,
+    0.76,
+    0.84,
+    0.92,
+    1.0
+   ],
+   "against_winner_c_ge_2": 3,
+   "n_c_ge_2": 30,
+   "against_winner_all": 3,
+   "n_all": 40,
+   "unparsed_all": 0
+  },
+  "gt_1.0": {
+   "voters": [
+    12,
+    13,
+    14,
+    15,
+    16
+   ],
+   "temperatures": [
+    1.08,
+    1.16,
+    1.24,
+    1.32,
+    1.4
+   ],
+   "against_winner_c_ge_2": 5,
+   "n_c_ge_2": 30,
+   "against_winner_all": 5,
+   "n_all": 40,
+   "unparsed_all": 0
+  }
+ },
+ "against_winner_total_c_ge_2": 14,
+ "p1_equals_winner": 8,
+ "expected_tasks_d_true_random_voter1": 0.875
+}
