@@ -57,6 +57,8 @@ user-invocable: false
   - Empty patches are graded, as base plus the test patch.
   - Template and builder: `experiments/EXP-036/`. The built `.ipynb` embeds agent patches and must stay untracked.
   - The push guard passes such a notebook only when it has no `RUN_AGENT` parameter and its metadata is CPU-only. Copy `notebooks/exp036_regrade/kernel-metadata.json` and change only `id` and `title`. EXP-036 v1 was pushed this way on 2026-11-05.
+  - Runtime, measured by EXP-036: four 48-task passes at a 20000-character tail took 0.72 h on the CPU image (Python 3.12.13, 4 CPUs), including the 75 s wheel install. The output bundle nests: move `runs/<EXP>/` up a level after `kaggle kernels output`.
+  - On this grader, 6 dev-48 tasks grade the same with the gold patch and with an empty patch: `requests_6644` always resolves, and `httpx_3672`, `requests_7205`, `requests_7309`, `requests_7315` and `requests_7427` never do. Paired comparisons are unaffected; absolute dev-48 rates are not.
 - `tools/gold_control.py` needs the Docker orchestrator and cannot run on Kaggle.
 - `python -I -X utf8 tools/exp024_stats.py` and `tools/exp022_stats.py` regenerate the paper's and the direction reviews' numbers.
 - Only `python -I -X utf8 tools/export_release_csv.py runs/<EXP> ... --out paper/release/<file>.csv` produces a publishable per-task file (positive allowlist of fields).

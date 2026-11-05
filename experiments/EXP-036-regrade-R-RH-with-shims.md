@@ -242,10 +242,157 @@ python -I -X utf8 experiments/EXP-036/analyze_regrade.py --regrade runs/EXP-036-
 - **Guard exemption.** Commit 45996cd records the user's decision of 2026-11-05 in `knowledge/user-decisions.md`. `guard_push.py` now passes a notebook that has no `RUN_AGENT` parameter when its metadata requests no GPU, no TPU, no machine shape and no model source. The committed pre-registration with a readings section is still required. The cohort check is skipped for such notebooks. `TASK_IDS` equal dev-48 anyway.
 - **Push 2026-11-05 15:13:59 UTC:** `Kernel version 1 successfully pushed.` The kernel is `rainm4/gemma4-exp036-regrade`, version 1. Its status right after the push was `KernelWorkerStatus.RUNNING`. The kernel metadata is unchanged and CPU-only.
 
+- **Downloaded 2026-11-05, after the lead reported COMPLETE (16:10 UTC).** The download went to `runs/EXP-036-regrade/`, and the nested `runs/EXP-036-regrade/` was moved up a level. Nothing from the bundle was executed. Its `tools/` copy is left unread.
+- **Kernel wall-clock:** the last log entry is at 2608.6 s, so **0.72 h of CPU and 0.0 GPU-h**.
+  - Wheel install took 75 s.
+  - Grading took 697.7 s for R, 713.4 s for RH, 475.4 s for GOLD and 547.3 s for BASE.
+
 ## Status
 
-**RUNNING since 2026-11-05 15:13:59 UTC:** `rainm4/gemma4-exp036-regrade`, version 1, CPU only, 0 GPU-h. Expected to take under 1 h (§2.4). Next, as a separate job once the lead reports it COMPLETE:
+**COMPLETE.** Kernel `rainm4/gemma4-exp036-regrade` v1 has been downloaded and analysed (§9). Nothing is running.
 
-1. Download the kernel output into `runs/EXP-036-regrade/`. The bundle nests: move the inner `runs/EXP-036-regrade/` up a level.
-2. Write and commit `experiments/EXP-036/analyze_regrade.py`, then run §6 step 4.
-3. Read `environment.json` to confirm the accelerator, then append §9 by applying §4 as written.
+---
+
+## 9. Results, 2026-11-05. Section 4's readings applied as written.
+
+**Command:**
+
+```
+python -I -X utf8 experiments/EXP-036/analyze_regrade.py --regrade runs/EXP-036-regrade --tasks data/raw/tasks.jsonl --snapshots data/local/snapshots --out experiments/EXP-036/aggregates.json --summary experiments/EXP-036/summary.jsonl --rows runs/EXP-036-regrade/rows.jsonl
+```
+
+- Every number below is from `experiments/EXP-036/aggregates.json`, apart from the kernel times in §8.
+- `experiments/EXP-036/summary.jsonl` holds, per task, the id plus booleans: gated, and resolved as run and re-graded for R and RH.
+- The per-task V / H labels stay in `runs/EXP-036-regrade/rows.jsonl`.
+
+### 9.1 Environment and row 0
+
+- **No accelerator was attached.** `environment.json` shows Python 3.12.13, no `/dev/nvidia*` nodes, no `nvidia-smi` on the path, `CUDA_VISIBLE_DEVICES` unset and 4 CPUs. The log line reads `accelerator: none (CPU only)`.
+- **All four passes ran in full:**
+  - all 41 wheels installed;
+  - every pass had 48 patch files, so the gold-patch assert passed;
+  - every pass exited 0;
+  - each pass wrote 48 rows, and each pass's ids equal dev-48.
+- **The shims went where expected.** They were copied into the workspace on 26 tasks in every pass: all 15 gated tasks and 11 non-gated ones. No gated tail still shows the missing package in any pass.
+- **Exit codes:**
+
+  | pass | 0 | 1 | 2 | -9 |
+  |---|---|---|---|---|
+  | R | 12 | 29 | 6 | 1 |
+  | RH | 15 | 26 | 6 | 1 |
+  | GOLD | 43 | 4 | 1 | — |
+  | BASE | 1 | 40 | 6 | 1 |
+
+  The one -9 is `rich_3480` in R, RH and BASE, killed after about 253-267 s. As run it was -1 in R and 124 in RH, and it was unresolved in both.
+- **Tails at the 20,000-character cap:** 6 in each of R, RH and BASE.
+
+**Row 0 does not fire:**
+- every pass has 48 rows;
+- GOLD resolves **15 of the 15** gated tasks;
+- non-gated flips: **0** in R and **0** in RH, in either direction;
+- resolved-to-unresolved flips: **0** in both arms. Every as-run resolve (R 9, RH 10) is still resolved.
+
+### 9.2 Resolves, applying rows 1 and 2
+
+| | as run, 48 | re-graded, 48 | as run, 15 gated | re-graded, 15 gated | as run, 33 non-gated | re-graded, 33 non-gated | own-blocked as run → re-graded | G (gated, unresolved → resolved) |
+|---|---|---|---|---|---|---|---|---|
+| R | 9 | **12** | 0 | 3 | 9 | 9 | 0 → 3 of 13 | **3**: `fastapi_13207`, `fastapi_14297`, `fastapi_14360` |
+| RH | 10 | **15** | 0 | 5 | 10 | 10 | 0 → 5 of 14 | **5**: the same three plus `fastapi_14459`, `fastapi_14605` |
+| GOLD | — | 43 | — | 15 | — | 28 | — | — |
+| BASE (empty patch) | — | 1 (`requests_6644`) | — | 0 | — | 1 | — | — |
+
+- **R, the primary: G = 3, so row 1 fires. The grading gap hides real fixes.** With the two packages present, the shipped v24 prompt's patches resolve 3 of the 15 gated tasks, and GOLD resolves all 3 of them. Porting the vendoring section ("Known sandbox gaps") into the v24 tree is worth its own one-variable screen. smoke-8 holds 1 gated task and cannot read this, so the rung is the lead's choice.
+- **RH, the replicate: G = 5, row 1. Replicated.** All 5 of its gated flips are on tasks GOLD resolves.
+- **No defects** under §4: there are no resolved-to-unresolved flips.
+- **Best of N for {R, RH} after the re-grade:**
+  - all 48: union 16, best 15, union minus best **1**, the same as EXP-034's as-scored 1 (union 11, best 10);
+  - gated: union 5, best 5, union minus best 0.
+
+  Union minus best is not 3 or more, so there is nothing to state against EXP-034's reading.
+
+**Against the prediction:**
+- R: predicted G = 2 (80% interval 0 to 4) and 11 of 48 re-graded. Observed G = 3 and **12**, inside the interval, one task above the point.
+- P(row 1) had been put at 0.35, and row 1 fired.
+- RH: predicted G = 2, observed **5**.
+- GOLD: predicted at least 14 of 15 gated and at least 31 of 33 non-gated. Observed 15 of 15 gated, **28 of 33** non-gated, so the non-gated part of the prediction **missed**. The cause is in §9.4.
+- Non-gated drift: predicted 0, observed 0.
+
+### 9.3 The recomputed EXP-035 table, applying rows T0 to T4
+
+RFWF after the re-grade: R n′ = 27 (EXP-034 found 30 as run, and 3 of those are now resolved); RH n′ = 22 (27 as run, 5 now resolved).
+
+**Base status.** It is known on 40 of 48 tasks: the BASE tail is complete, has no collection error, and exits 0 or 1.
+
+**Existing (b) tests among the failures:**
+
+| arm | base-pass | base-fail (excluded from V) | unknown |
+|---|---|---|---|
+| R | 7 | 4 | 0 |
+| RH | 4 | 4 | 0 |
+
+**Main table (Wilson 95% intervals for shares of n′):**
+
+| arm | n′ | C (exit 2) | V | H | U | C + U | row |
+|---|---|---|---|---|---|---|---|
+| R | 27 | 6 [0.11, 0.41] | 2 [0.02, 0.23] | 19 [0.52, 0.84] | 0 [0, 0.13] | 6 | **T3** |
+| RH | 22 | 5 [0.10, 0.43] | 1 [0.01, 0.22] | 14 [0.43, 0.80] | 2 (`u5`, one at exit -9) | 7 | **T3** |
+
+**Row checks, R:**
+- T0: n′ = 27, at least 12, and BASE has 48 rows, so T0 does not fire.
+- T1: C + U = 6, below 13.5.
+- T2: V = 2, below 9.
+- T3: H = 19, at least 2/3 × 21 = 14. **T3 fires.**
+
+**Row checks, RH:**
+- C + U = 7, below 11.
+- V = 1, below 7.3.
+- H = 14, at least 2/3 × 15 = 10. **T3, replicated.**
+
+**Reading T3: mostly hidden only.** On the right-file-wrong-fix tasks the grader can now read, the failing tests are almost all tests the test patch adds or changes. The fixes that would catch them need a model-written reproduction that fails before the fix (D-005 F3). Running the existing test file of the edited module would have exposed the wrong fix on 2 of 27 (R) and 1 of 22 (RH).
+
+**By gated status:**
+- R gated: C 4, H 6. R non-gated: C 2, V 2, H 13.
+- RH gated: C 3, H 5. RH non-gated: C 2, V 1, H 9, U 2.
+
+**Sensitivity: no line moves either arm off T3.**
+- S1: no (b) test has unknown base status, so S1 equals the main table.
+- S2: no base-failing (b) test passes under GOLD, so S2 equals the main table.
+- S3, the EXP-035 rule with C folded into U:
+  - R: V 4, H 17, U 6, row T3;
+  - RH: V 3, H 12, U 7, row T3.
+
+**Against the prediction:** R n′ about 28 with C 5, U 4, V 4 and H 15, and T3 likeliest at about 0.5. **T3 held.** Observed n′ 27, C 6, U 0, V 2, H 19.
+
+### 9.4 Things that do not fit, post hoc
+
+These lines are not pre-registered.
+
+**1. Six tasks where the grade does not depend on the patch.**
+- On `httpx_3672`, `requests_6644`, `requests_7205`, `requests_7309`, `requests_7315` and `requests_7427`, GOLD and BASE end with the same exit code, the same count line and the same failing test ids.
+  - `requests_6644` passes with an empty patch.
+  - The other five fail even with the gold patch.
+- So on the Kaggle subprocess grader, these six dev-48 tasks do not measure the patch.
+- All six EXP-034 arms show the same pattern on these tasks as run: `requests_6644` resolved, the other five unresolved. So this is not drift from the CPU kernel.
+- This is the requests (pytest-httpbin) and httpx package-shadowing classes already recorded for the Kaggle gold control in `experiments/README.md` §1 (EXP-000 push6 cause table). dev-48 removed only the Docker gold-control failures.
+- The mechanism on these six tasks was not checked here. Two of the five gold failures show the installed package's path in the tail.
+- **Consequences:**
+  - The 5-of-33 non-gated GOLD miss in §9.2 is entirely these five tasks.
+  - Excluding the six, R goes from 8 to 11 of 42 and RH from 9 to 14 of 42.
+  - Paired comparisons on dev-48 are unaffected: every arm gets the same constant on these six.
+  - Absolute dev-48 rates carry one free resolve and five that are impossible.
+- `httpx_3672` is one of R's and RH's C tasks (exit 2).
+
+**2. The C tasks are mostly the patch's own collection errors.**
+- The gated C tasks fail to collect with errors other than the missing package:
+  - R: `TypeError`, `SyntaxError` and two `ImportError`s, on `fastapi_14262`, `fastapi_14605`, `fastapi_14609` and `fastapi_15030`;
+  - RH: a `ModuleNotFoundError` for a repository submodule (`fastapi._compat.v1`, not one of the two packages) and the same `TypeError` and `ImportError` tasks.
+- They are C by §2.3 rule 1 and were not classified further.
+
+**3. The kills on `rich_3480`.** The -9 there occurs in BASE as well, so this task's test file does not finish on the 4-CPU box with these packages.
+
+### 9.5 What this licenses (from §5, unchanged)
+
+- Row 1 licenses screening a vendoring port, not shipping it.
+- The re-grade cannot say whether the hidden grader lacks these packages, and it does not price what the vendoring text costs in turns.
+- Ship decisions stay on the as-run grade.
+- No upload, tree change or GPU arm is licensed.

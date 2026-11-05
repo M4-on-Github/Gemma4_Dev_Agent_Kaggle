@@ -1,0 +1,404 @@
+{
+  "environment": {
+    "python": "3.12.13",
+    "nvidia_device_nodes": [],
+    "nvidia_smi_on_path": false,
+    "cuda_visible_devices": null,
+    "cpu_count": 4
+  },
+  "n_ids": 48,
+  "n_gated": 15,
+  "n_nongated": 33,
+  "gated_ids": [
+    "fastapi_11355",
+    "fastapi_13207",
+    "fastapi_13786",
+    "fastapi_14262",
+    "fastapi_14297",
+    "fastapi_14360",
+    "fastapi_14459",
+    "fastapi_14512",
+    "fastapi_14583",
+    "fastapi_14605",
+    "fastapi_14609",
+    "fastapi_14953",
+    "fastapi_14962",
+    "fastapi_14964",
+    "fastapi_15030"
+  ],
+  "own_blocked": {
+    "R": 13,
+    "RH": 14
+  },
+  "audit": {
+    "rows_per_pass": {
+      "R": 48,
+      "RH": 48,
+      "GOLD": 48,
+      "BASE": 48
+    },
+    "ids_equal_cohort": {
+      "R": true,
+      "RH": true,
+      "GOLD": true,
+      "BASE": true
+    },
+    "exit_codes": {
+      "R": {
+        "-9": 1,
+        "0": 12,
+        "1": 29,
+        "2": 6
+      },
+      "RH": {
+        "-9": 1,
+        "0": 15,
+        "1": 26,
+        "2": 6
+      },
+      "GOLD": {
+        "0": 43,
+        "1": 4,
+        "2": 1
+      },
+      "BASE": {
+        "-9": 1,
+        "0": 1,
+        "1": 40,
+        "2": 6
+      }
+    },
+    "exit_minus9_ids": {
+      "R": [
+        "rich_3480"
+      ],
+      "RH": [
+        "rich_3480"
+      ],
+      "GOLD": [],
+      "BASE": [
+        "rich_3480"
+      ]
+    },
+    "tails_at_cap": {
+      "R": 6,
+      "RH": 6,
+      "GOLD": 0,
+      "BASE": 6
+    },
+    "shims_dropped": {
+      "R": {
+        "gated": 15,
+        "nongated": 11
+      },
+      "RH": {
+        "gated": 15,
+        "nongated": 11
+      },
+      "GOLD": {
+        "gated": 15,
+        "nongated": 11
+      },
+      "BASE": {
+        "gated": 15,
+        "nongated": 11
+      }
+    },
+    "gated_still_missing_package": {
+      "R": [],
+      "RH": [],
+      "GOLD": [],
+      "BASE": []
+    }
+  },
+  "R": {
+    "as_run": {
+      "all48": 9,
+      "gated": 0,
+      "nongated": 9,
+      "own_blocked": 0
+    },
+    "regraded": {
+      "all48": 12,
+      "gated": 3,
+      "nongated": 9,
+      "own_blocked": 3
+    },
+    "G_gated_F_to_T": 3,
+    "F_to_T_gated_ids": [
+      "fastapi_13207",
+      "fastapi_14297",
+      "fastapi_14360"
+    ],
+    "F_to_T_nongated_ids": [],
+    "T_to_F_ids": [],
+    "F_to_T_own_blocked": 3,
+    "gated_regraded_resolves_also_gold_resolved": 3,
+    "posthoc_regraded_excluding_gold_equals_base": 11,
+    "posthoc_as_run_excluding_gold_equals_base": 8,
+    "table": {
+      "n_prime": 27,
+      "C": 6,
+      "V": 2,
+      "H": 19,
+      "U": 0,
+      "C_plus_U": 6,
+      "wilson95": {
+        "C": [
+          0.106,
+          0.408
+        ],
+        "V": [
+          0.021,
+          0.234
+        ],
+        "H": [
+          0.515,
+          0.841
+        ],
+        "U": [
+          0.0,
+          0.125
+        ],
+        "C_plus_U": [
+          0.106,
+          0.408
+        ]
+      },
+      "row": "T3",
+      "sensitivity": {
+        "s1": {
+          "counts": {
+            "C": 6,
+            "H": 19,
+            "V": 2
+          },
+          "row": "T3"
+        },
+        "s2": {
+          "counts": {
+            "C": 6,
+            "H": 19,
+            "V": 2
+          },
+          "row": "T3"
+        },
+        "s3": {
+          "counts": {
+            "H": 17,
+            "U": 6,
+            "V": 4
+          },
+          "row": "T3"
+        }
+      },
+      "gated_in_group": 10,
+      "by_gated": {
+        "true": {
+          "C": 4,
+          "H": 6
+        },
+        "false": {
+          "C": 2,
+          "H": 13,
+          "V": 2
+        }
+      },
+      "u_causes": {},
+      "exit_codes": {
+        "1": 21,
+        "2": 6
+      },
+      "b_tests_base_fail": 4,
+      "b_tests_base_unknown": 0,
+      "b_tests_base_pass": 7,
+      "tasks_with_base_unknown_b": 0
+    }
+  },
+  "RH": {
+    "as_run": {
+      "all48": 10,
+      "gated": 0,
+      "nongated": 10,
+      "own_blocked": 0
+    },
+    "regraded": {
+      "all48": 15,
+      "gated": 5,
+      "nongated": 10,
+      "own_blocked": 5
+    },
+    "G_gated_F_to_T": 5,
+    "F_to_T_gated_ids": [
+      "fastapi_13207",
+      "fastapi_14297",
+      "fastapi_14360",
+      "fastapi_14459",
+      "fastapi_14605"
+    ],
+    "F_to_T_nongated_ids": [],
+    "T_to_F_ids": [],
+    "F_to_T_own_blocked": 5,
+    "gated_regraded_resolves_also_gold_resolved": 5,
+    "posthoc_regraded_excluding_gold_equals_base": 14,
+    "posthoc_as_run_excluding_gold_equals_base": 9,
+    "table": {
+      "n_prime": 22,
+      "C": 5,
+      "V": 1,
+      "H": 14,
+      "U": 2,
+      "C_plus_U": 7,
+      "wilson95": {
+        "C": [
+          0.101,
+          0.434
+        ],
+        "V": [
+          0.008,
+          0.218
+        ],
+        "H": [
+          0.43,
+          0.803
+        ],
+        "U": [
+          0.025,
+          0.278
+        ],
+        "C_plus_U": [
+          0.164,
+          0.527
+        ]
+      },
+      "row": "T3",
+      "sensitivity": {
+        "s1": {
+          "counts": {
+            "C": 5,
+            "H": 14,
+            "U": 2,
+            "V": 1
+          },
+          "row": "T3"
+        },
+        "s2": {
+          "counts": {
+            "C": 5,
+            "H": 14,
+            "U": 2,
+            "V": 1
+          },
+          "row": "T3"
+        },
+        "s3": {
+          "counts": {
+            "H": 12,
+            "U": 7,
+            "V": 3
+          },
+          "row": "T3"
+        }
+      },
+      "gated_in_group": 8,
+      "by_gated": {
+        "true": {
+          "C": 3,
+          "H": 5
+        },
+        "false": {
+          "C": 2,
+          "H": 9,
+          "U": 2,
+          "V": 1
+        }
+      },
+      "u_causes": {
+        "u5": 1,
+        "u5_exit-9": 1
+      },
+      "exit_codes": {
+        "-9": 1,
+        "1": 16,
+        "2": 5
+      },
+      "b_tests_base_fail": 4,
+      "b_tests_base_unknown": 0,
+      "b_tests_base_pass": 4,
+      "tasks_with_base_unknown_b": 0
+    }
+  },
+  "GOLD": {
+    "all48": 43,
+    "gated": 15,
+    "nongated": 28,
+    "unresolved_ids": [
+      [
+        "httpx_3672",
+        2,
+        false
+      ],
+      [
+        "requests_7205",
+        1,
+        false
+      ],
+      [
+        "requests_7309",
+        1,
+        false
+      ],
+      [
+        "requests_7315",
+        1,
+        false
+      ],
+      [
+        "requests_7427",
+        1,
+        false
+      ]
+    ]
+  },
+  "BASE": {
+    "all48": 1,
+    "gated": 0,
+    "resolved_ids": [
+      "requests_6644"
+    ]
+  },
+  "best_of_n_R_RH_regraded": {
+    "all48": {
+      "union": 16,
+      "best": 15,
+      "union_minus_best": 1
+    },
+    "gated": {
+      "union": 5,
+      "best": 5,
+      "union_minus_best": 0
+    },
+    "exp034_all48_as_scored": {
+      "union": 11,
+      "best": 10,
+      "union_minus_best": 1
+    }
+  },
+  "posthoc_gold_equals_base_failing_ids_equal": [
+    "httpx_3672",
+    "requests_6644",
+    "requests_7205",
+    "requests_7309",
+    "requests_7315",
+    "requests_7427"
+  ],
+  "posthoc_gold_equals_base_ids": [
+    "httpx_3672",
+    "requests_6644",
+    "requests_7205",
+    "requests_7309",
+    "requests_7315",
+    "requests_7427"
+  ],
+  "base_status_known_tasks": 40
+}
