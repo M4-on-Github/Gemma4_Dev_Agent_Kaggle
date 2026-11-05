@@ -102,3 +102,8 @@ Read by the lead as: dispatch the lit review now (done, lit-scout) and write a b
 Not read as approval of any GPU spend beyond the D-004 screens already running. Zero-GPU trace mining (EXP-034,
 experimenter) was started as part of the plan's Stage 0.
 
+## 2026-11-05 ~14:12 UTC: P1 kernel canceled by accident, re-run it
+User: "I canceled the 31b experiment032 p1 by accident. do what you need."
+Read by the lead as: re-push arm P1 of EXP-032 unchanged (the screen was already approved under D-004). Not read as a
+higher GPU ceiling: the lost run (about 0.7 GPU-h) counts against the 3.2, and arm T4 stays conditional.
+
