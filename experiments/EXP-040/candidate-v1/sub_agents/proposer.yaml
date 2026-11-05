@@ -1,0 +1,13 @@
+# EXP-040 2026-11-05: read-only (no run_command, no edit tools), so the proposer cannot change the workspace; paths come from the workspace tree in the task message (EXP-032 loc_a pattern).
+# include_contents none is kept: the window starts at the task message (the first user event), so the proposer sees the issue (EXP-039 section 7 item 7).
+# output_key cands: the final text (thought parts excluded, llm_agent.py:859-863) reaches the voters and the actor through the {cands?} template.
+name: proposer
+description: Reads the repository and writes an ISSUE line and at most four lettered candidate next edits.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/proposer.md
+include_contents: none
+output_key: cands
+tools:
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling_proposer.yaml

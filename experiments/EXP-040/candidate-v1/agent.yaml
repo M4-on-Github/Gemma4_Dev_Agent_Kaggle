@@ -1,0 +1,9 @@
+# EXP-040 2026-11-05: root changes from one LlmAgent (the EXP-033 E4B single loop) to SequentialAgent[proposer, ParallelAgent[16 voters], actor] (C-023, tree V1).
+# The root carries no model, tools or instruction; every LlmAgent is in sub_agents/ and carries its own model (gemma-4-e4b-it-qat-w4a16-ct, as EXP-033).
+name: swe_agent
+agent_class: SequentialAgent
+description: Read the repository with a read-only proposer, let sixteen tool-less voters at different temperatures pick one of its lettered candidates, then tally with a fixed tie rule, apply the winner and submit with one actor.
+sub_agents:
+  - config_path: sub_agents/proposer.yaml
+  - config_path: sub_agents/vote.yaml
+  - config_path: sub_agents/actor.yaml

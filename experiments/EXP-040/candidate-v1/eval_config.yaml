@@ -1,0 +1,7 @@
+# EXP-040 2026-11-05: max_turns 80 -> 200. Every model event of every agent counts as a turn (swegemma context.py:277-299), voters included:
+# one pass is about 8 proposer + 16 voter + 10 actor turns, so 80 would end a task after two passes (EXP-040 section 2, check c). The other three values are EXP-033's.
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 28
+  max_time_minutes: 8
+  max_turns: 200

@@ -1,0 +1,17 @@
+# EXP-040 2026-11-05: voter 01 of 16, temperature 0.20 (the lowest; the tie rule gives it first claim). tools: [] and include_contents none: it sees the proposer's report and nothing else.
+# thinking_budget 0 and max_output_tokens 256: a vote is one short line; if the E4B template ignores budget 0 the reply is cut at 256 tokens and counts as no vote (EXP-039 F5).
+name: voter_01
+description: Voter 01 of 16, temperature 0.20.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/voter.md
+include_contents: none
+output_key: vote_01
+tools: []
+generate_content_config:
+  temperature: 0.20
+  top_p: 0.95
+  top_k: 64
+  max_output_tokens: 256
+  thinking_config:
+    thinking_budget: 0
+    include_thoughts: false

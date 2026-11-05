@@ -1,0 +1,10 @@
+# EXP-040 2026-11-05: proposer only. Same temperature, top_p, top_k as sampling.yaml; thinking_budget 4096 -> 1024 so a read-only turn is short (generation is most of wall, EXP-028 section 9),
+# max_output_tokens 8192 -> 4096 so the final report (kept whole in the voters' prompts) is at most about 4,100 tokens even if the model's thought text leaks into it (EXP-033: a 4,881-token completion was seen),
+# and not smaller, because a cap that truncates before the lettered list ends the vote (EXP-039 F1).
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+max_output_tokens: 4096
+thinking_config:
+  thinking_budget: 1024
+  include_thoughts: true

@@ -1,0 +1,22 @@
+# EXP-040 2026-11-05: sixteen voters in parallel; voter_01 has the lowest temperature (0.20) and voter_16 the highest (1.40), equal steps of 0.08.
+# Each voter writes one line to session state under vote_NN; the voters see the proposer's report (the {cands?} template) and nothing else.
+name: vote
+agent_class: ParallelAgent
+description: Sixteen independent tool-less voters, each with its own temperature, each writes one line PICK X to session state.
+sub_agents:
+  - config_path: sub_agents/voter_01.yaml
+  - config_path: sub_agents/voter_02.yaml
+  - config_path: sub_agents/voter_03.yaml
+  - config_path: sub_agents/voter_04.yaml
+  - config_path: sub_agents/voter_05.yaml
+  - config_path: sub_agents/voter_06.yaml
+  - config_path: sub_agents/voter_07.yaml
+  - config_path: sub_agents/voter_08.yaml
+  - config_path: sub_agents/voter_09.yaml
+  - config_path: sub_agents/voter_10.yaml
+  - config_path: sub_agents/voter_11.yaml
+  - config_path: sub_agents/voter_12.yaml
+  - config_path: sub_agents/voter_13.yaml
+  - config_path: sub_agents/voter_14.yaml
+  - config_path: sub_agents/voter_15.yaml
+  - config_path: sub_agents/voter_16.yaml
