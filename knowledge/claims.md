@@ -91,6 +91,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - sources: EXP-003 (our prompt at 8 min / 28 calls: 20 of 48 tasks ended at the call cap, 0 resolves among them; `rich_3676` stopped exactly at the cap); kg-rank3-apache §2-3 (their median 21-25 calls at 8 min; v25 raises 28 -> 40, unscored)
 - tests: EXP-028 Arm R (28-call incidence; reading T4)
 - history: 2026-10-29 migrated as hypothesis
+- history: 2026-11-05 note, status unchanged: EXP-032 arm T4 (28 -> 43 calls, same tree) is built and permitted by its pre-registration but held by the lead (knowledge/plan.md); still untested
 
 ## C-008: The packing gate `cap x 120` is accurate only for prompts that run to the cap; the right rule is measured mean x 120 + measured overhead <= ~10.5 h, which admits 8 min for the v24 prompt and forbids it for ours
 - status: hypothesis
@@ -155,6 +156,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - tests: EXP-006, EXP-007 (probes; no agent run)
 - history: 2026-10-29 migrated as hypothesis; parked
 - history: 2026-11-05 evidence added, status unchanged (no critic verdict): lit-2026-11-05-architecture-families found no source for the 12/18 -> 6/18 figure; lit-2512.08296 has every multi-agent topology at or below the single agent at equal budget (n = 20, direction only); lit-2602.03786 is mixed by model. D-005 ranks the orchestrator last and screens it only on the user's request.
+- history: 2026-11-05 evidence added, status unchanged (no critic verdict): EXP-032 arm P1 (ParallelAgent of three read-only localizers, then an editor, smoke-8 on the cap-bound ids): 21 of 24 localizer branches overspent a 5-call prompt limit, the shared 43-call budget was gone before the editor started in 7 of 8 tasks, non-empty patch 1 of 8, mean wall +72.9 s on Arm R; row e fired, parallel stage parked
 
 ## C-015: Best-of-N attempts are affordable in wall-clock (88.6% idle KV capacity) but there is no selection signal without hidden tests, so N parallel editing branches cannot pay; N read-only localizers feeding one editor is the only fitting shape
 - status: hypothesis
