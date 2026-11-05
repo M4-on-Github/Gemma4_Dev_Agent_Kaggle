@@ -73,6 +73,54 @@ def d_flag(votes, letters):
     return tally(votes, letters)["winner"] != p1
 
 
+def lead(votes, letters):
+    """The top letter's count minus the runner-up's count over the valid votes (0 on a tie, 0 with no valid vote).
+
+    Recorded, not read (EXP-040 amendment 2026-11-05): a pure function of the 16 vote texts. A unanimous task with
+    all 16 votes parseable has lead 16. Lit-scout note section 6(c): the margin-rule design change is not applied here.
+    """
+    counts = sorted(tally(votes, letters)["counts"].values(), reverse=True)
+    if not counts:
+        return 0
+    return counts[0] - (counts[1] if len(counts) > 1 else 0)
+
+
+def voter_temperature(k):
+    """Temperature of voter k (1-based) as built: 0.20 + 0.08 (k - 1), rounded to two places."""
+    return round(0.20 + 0.08 * (k - 1), 2)
+
+
+BUCKETS = ("le_0.6", "gt_0.6_le_1.0", "gt_1.0")
+
+
+def temperature_bucket(k):
+    """Voters at 0.6 or below (1-6), above 0.6 up to 1.0 (7-11), above 1.0 (12-16)."""
+    t = voter_temperature(k)
+    if t <= 0.6:
+        return BUCKETS[0]
+    if t <= 1.0:
+        return BUCKETS[1]
+    return BUCKETS[2]
+
+
+def malformed_by_bucket(vote_texts, letters):
+    """Per temperature bucket: n = voters with a recorded reply, malformed = recorded replies that give no valid vote.
+
+    A malformed reply counts in its bucket's denominator. A voter with no recorded step (text None) is in neither
+    count and is reported as absent. A reply whose letter is outside the candidate set is malformed here.
+    """
+    out = {b: {"n": 0, "malformed": 0, "absent": 0} for b in BUCKETS}
+    for i, text in enumerate(vote_texts, 1):
+        b = out[temperature_bucket(i)]
+        if text is None:
+            b["absent"] += 1
+            continue
+        b["n"] += 1
+        if parse_vote(text, letters) is None:
+            b["malformed"] += 1
+    return out
+
+
 def stated_winner(actor_text):
     """Heuristic: the letter the actor names as the winner in its first message, or None. Fidelity of the actor's own count."""
     m = _STATED.search(actor_text or "")
@@ -125,6 +173,8 @@ def score_round(rnd):
         "counts": res["counts"],
         "P1": votes[0] if votes else None,
         "D": d_flag(votes, letters),
+        "lead": lead(votes, letters),
+        "malformed_by_bucket": malformed_by_bucket(rnd["vote_texts"], letters),
         "stated_winner": stated_winner(rnd["actor_first_text"]),
     }
 
@@ -145,7 +195,17 @@ def main(argv):
         rows.append({"task": p.stem[len("trace_"):], "passes": s["passes"], **(f or {})})
         print(json.dumps(rows[-1]))
     firsts = [r for r in rows if "C" in r]
+    buckets = {b: {"n": 0, "malformed": 0, "absent": 0} for b in BUCKETS}
+    for r in firsts:
+        for b, c in r["malformed_by_bucket"].items():
+            for key in c:
+                buckets[b][key] += c[key]
     print(json.dumps({
+        "D_lead_lt_3": sum(1 for r in firsts if r["D"] is True and r["lead"] < 3),
+        "D_lead_ge_3": sum(1 for r in firsts if r["D"] is True and r["lead"] >= 3),
+        "leads": [r["lead"] for r in firsts],
+        "unanimous_all_16": sum(1 for r in firsts if r["lead"] == N_VOTERS),
+        "malformed_by_bucket": buckets,
         "tasks": len(rows),
         "C_ge_2": sum(1 for r in firsts if r["C"] >= 2),
         "D": sum(1 for r in firsts if r["D"] is True),

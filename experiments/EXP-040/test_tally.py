@@ -72,6 +72,57 @@ def test_d_definition():
     assert T.d_flag(pad([None] + ["B"] * 5), L) is None  # voter 1 invalid: undefined, reported apart
 
 
+def test_lead_tie_is_zero():
+    assert T.lead(pad(["B", "B", "A", "A", "C"]), L) == 0  # B and A tie at 2: top minus runner-up is 0
+    assert T.lead(pad(["A"] * 8 + ["B"] * 8), L) == 0
+    assert T.lead(pad([]), L) == 0  # no valid vote
+
+
+def test_lead_unanimous_all_16_is_16_and_margins():
+    assert T.lead(["B"] * 16, L) == 16
+    assert T.lead(["B"] * 15 + [None], L) == 15  # one malformed vote: the lead is over valid votes
+    assert T.lead(pad(["A"] * 9 + ["B"] * 5 + ["C"] * 2), L) == 4  # 9 - 5
+    assert T.lead(pad(["A"] * 10 + ["B"] * 4), L) == 6
+    assert T.lead(["A"] * 8 + ["B"] * 5 + ["C"] * 3, L) == 3  # lead 3 is the 'ge 3' side
+
+
+def test_lead_ignores_letters_outside_the_set():
+    assert T.lead(["E"] * 10 + ["A"] * 6, ["A", "B"]) == 6  # the E votes are not valid, A alone has 6
+
+
+def test_temperature_buckets_as_built():
+    assert [T.voter_temperature(k) for k in (1, 6, 7, 11, 12, 16)] == [0.2, 0.6, 0.68, 1.0, 1.08, 1.4]
+    assert [T.temperature_bucket(k) for k in range(1, 17)] == (
+        ["le_0.6"] * 6 + ["gt_0.6_le_1.0"] * 5 + ["gt_1.0"] * 5
+    )
+
+
+def test_malformed_vote_counts_in_its_buckets_denominator():
+    texts = ["PICK: A"] * 16
+    texts[0] = "I think A"  # voter 1, bucket le_0.6, malformed
+    texts[7] = ""  # voter 8, 0.76, an empty reply is recorded and malformed
+    texts[15] = "PICK: Z"  # voter 16, 1.40, a letter outside the set
+    r = T.malformed_by_bucket(texts, ["A", "B"])
+    assert r["le_0.6"] == {"n": 6, "malformed": 1, "absent": 0}
+    assert r["gt_0.6_le_1.0"] == {"n": 5, "malformed": 1, "absent": 0}
+    assert r["gt_1.0"] == {"n": 5, "malformed": 1, "absent": 0}
+
+
+def test_absent_voter_is_neither_counted_nor_malformed():
+    texts = ["PICK: A"] * 16
+    texts[13] = None  # voter 14, bucket gt_1.0, no recorded step
+    r = T.malformed_by_bucket(texts, ["A"])
+    assert r["gt_1.0"] == {"n": 4, "malformed": 0, "absent": 1}
+
+
+def test_score_round_carries_lead_and_buckets():
+    cands = "ISSUE: x\nA. a\nB. b"
+    steps = [_step("proposer", cands)] + [_step("voter_%02d" % i, "PICK: B") for i in range(1, 17)]
+    f = T.score_trace({"steps": steps})["first"]
+    assert f["lead"] == 16 and f["D"] is False
+    assert all(v["malformed"] == 0 for v in f["malformed_by_bucket"].values())
+
+
 def test_stated_winner():
     assert T.stated_winner("Tally: B 9, A 7. The winner is B.") == "B"
     assert T.stated_winner("Winner: C") is None  # requires the phrase 'winner is' or '='
