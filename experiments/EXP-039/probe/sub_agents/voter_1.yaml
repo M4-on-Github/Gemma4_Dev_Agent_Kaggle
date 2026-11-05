@@ -1,0 +1,8 @@
+name: voter_1
+description: Voter 1, lowest temperature, wins every tie.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/voter.md
+include_contents: none
+output_key: vote_1
+tools: []
+generate_content_config: !include ../configs/voter_1.yaml

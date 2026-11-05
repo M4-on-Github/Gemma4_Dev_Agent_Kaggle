@@ -1,0 +1,10 @@
+name: proposer
+description: Reads the repository and lists at most four lettered candidate next edits.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/proposer.md
+include_contents: none
+output_key: cands
+tools:
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling.yaml

@@ -1,0 +1,8 @@
+name: voter_3
+description: Voter 3.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/voter.md
+include_contents: none
+output_key: vote_3
+tools: []
+generate_content_config: !include ../configs/voter_3.yaml

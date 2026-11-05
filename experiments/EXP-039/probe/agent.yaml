@@ -1,0 +1,9 @@
+# EXP-039 PROBE (validator-only, never packed, never built into a notebook): Sequential[proposer, ParallelAgent[voters], actor].
+# 4 voters stand in for N; the count is not a schema question (MAX_AGENTS 500, tools/submission_rules.py:90).
+name: swe_agent
+agent_class: SequentialAgent
+description: Read, propose lettered candidates, let independent tool-less voters pick one, then tally and apply the winner.
+sub_agents:
+  - config_path: sub_agents/proposer.yaml
+  - config_path: sub_agents/vote.yaml
+  - config_path: sub_agents/actor.yaml

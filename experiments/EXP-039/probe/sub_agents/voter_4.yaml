@@ -1,0 +1,8 @@
+name: voter_4
+description: Voter 4, highest temperature.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/voter.md
+include_contents: none
+output_key: vote_4
+tools: []
+generate_content_config: !include ../configs/voter_4.yaml
