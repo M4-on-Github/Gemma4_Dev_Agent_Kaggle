@@ -57,3 +57,27 @@ A1-A3 read from one smoke-8 run by Nov 8: the tree runs, the handoff cost is bou
 
 ## Final check
 A team tree with two clean uploads at or above the baseline tree's best, its handoff cost and loss rate measured, as one of the two finals; or a documented kill with the link that failed, which is itself a paper-track result.
+
+## Addendum 2026-11-05 (lead): where the wall-clock goes, and what it does to A6 and plan.md §6.3
+The user asked on 2026-11-05 for "parallel agents ... smth that will improve the score by a lot" and whether the L4x4 is meant to be used fully. plan.md §6.3 gated the parallel track on a "free first check (no GPU)" that was never run: the real per-call latency of the tools a branch would use. Run today by the lead over the 48 traces of EXP-028 Arm R (the shipped tree), tool latency = `observation.extra.elapsed_s` minus `tool_calls[0].extra.elapsed_s`, model-turn latency = next call's `elapsed_s` minus the previous observation's. Not pre-registered and not critic-reviewed; a screener L1 should repeat it under an EXP number before anything cites it as more than [I].
+
+| What | n | median s | p90 s | max s | share of traced wall (13,826 s) |
+|---|---|---|---|---|---|
+| Model turn (generation) | 1,354 | 3.56 | 25.86 | 192.04 | 94.0% |
+| All tool calls | 1,353 | 0.02 | 0.10 | 241.02 | 2.9% |
+| `read_file` | 420 | 0.01 | 0.02 | 0.03 | 0.0% |
+| `run_command` read/search (grep, sed, cat, ls, find, git ...) | 364 | 0.02 | 0.13 | 0.72 | 0.1% |
+| `edit_file` | 175 | 0.02 | 0.02 | 0.46 | 0.0% |
+| `submit_patch` | 239 | 0.04 | 0.05 | 0.46 | 0.1% |
+| `run_command` python | 89 | 0.15 | 0.64 | 241.02 | 1.9% |
+| `run_command` pytest | 7 | 1.13 | 81.54 | 81.54 | 0.6% |
+
+Zero steps carry more than one tool call. Readings the lead draws (interpretation, [I]):
+- The run is bound by generation, one request at a time: 94% of wall is the model writing, on a server that EXP-006 measured at 88.6% idle KV capacity and 3.60x throughput at 4 concurrent requests.
+- EXP-007 H3 (a sync tool stalls the sibling branch) does not bite read-only branches: no read or search call exceeded 0.72 s against a 3.56 s median model turn. It still bites a branch that runs tests or scripts (max 81.5 s and 241 s), so those belong to a stage that runs alone.
+- 784 of 1,353 calls (58%) are reads and searches and 239 (18%) are `submit_patch`; 37.5% of tasks end at the 28-call cap with nothing resolved (EXP-028 §9). A parallel read-only stage that hands the editor a located plan would return most of the call budget and the reading time to editing. That is a named, measured target, which §6.3 required of EXP-008.
+- Therefore A6 need not wait for A1-A5. Proposed order if the user approves: screen P1 = `SequentialAgent[ParallelAgent[3 read-only localizers], editor]` first (one smoke-8, ~0.8 GPU-h, `max_tool_calls` raised in the same run since branches share the budget, EXP-007 H4), with the sequential T1 as the fallback if P1 breaks.
+- What is still excluded: parallel editors in the one shared `/workspace` (`submit_patch` diffs all of it). Whole parallel attempts in separate copies of the repo with a selector are a later desk check (can `edit_file` write outside the workspace; what selects), not part of P1.
+- Constraints unchanged: EXP-028 projects 10.04 h at the 8-min cap, so the parallel stage must replace reading time, not add to it; a blank slot under this direction stops uploads until the time profile is measured.
+- Expected impact stays as written above: of the order of the ~4-task MDE if the mechanism holds. Rank 1 is 6 to 7 tasks above our pooled baseline (17 vs 10.5 of 58); nothing in the logbook predicts that much from structure alone.
+

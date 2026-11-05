@@ -26,14 +26,15 @@ Ask the user to read the sidebar quota counter once; record the figure, the rese
 
 ## Next upload slot
 
-Nov 3 UTC slot: S-012 = tree R (the #11 zip) again, the second draw of the baseline (EXP-029 governs; critic prereg `ready`). Awaiting `approvals/S-012.txt`. Next slot after that: the EXP-029 reading decides; the candidate addition is `max_tool_calls` 40 (EXP-028 T4) after an L2 screen, with the digest's one-draw timeout of a 40/8 bundle as the risk.
+S-012 (tree R, second draw) scored 0.18 = 11/58 (ref 57970005); EXP-029 row 3: pooled baseline 21/116, about 10.5 per draw; next slot goes to the next candidate. No screened candidate exists as of 2026-11-05. Candidates in order: (a) D-004 P1, a parallel read-only locate stage feeding one editor, with `max_tool_calls` raised in the same smoke-8 (D-004 addendum 2026-11-05; needs the user's approval of D-004 and a critic `direction` review); (b) `max_tool_calls` 40 alone (EXP-028 T4) after an L2 screen. A third draw of R is the only zero-risk filler for an otherwise empty slot. Digest 2026-11-05 (rank 1 at 0.29, board sweep) pending.
 
 ## Waiting on
 
 - Critic `light` review of EXP-028 (moves C-003/C-008 time profile and C-005).
 - Fix in experiment-protocol step 7: summaries live at `experiments/EXP-NNN/<arm>/summary.jsonl` (hygiene accepts only that name).
 - Critic backfill of migrated claims (start with EXP-024, EXP-025, EXP-027).
-- User: `approvals/S-012.txt`, k-of-58 prediction for #12, D-004 approval, plan.md §5.8 rewording, GPU quota counter.
+- Experimenter: `submissions.md` row 12 and EXP-029 §9 for the 0.18 grade (not yet dispatched).
+- User: D-004 approval, plan.md §5.8 rewording, GPU quota counter.
 
 ## Not pursued
 
