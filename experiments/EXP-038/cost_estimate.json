@@ -114,5 +114,85 @@
    "min_majority_for_p_lt_0.05": 10,
    "p_at_min": 0.0386
   }
- ]
+ ],
+ "after_critic_prereg_2026_11_05": {
+  "ceiling_h": 10.5,
+  "armR_E7_restated_h": 10.069,
+  "row2_mean_wall_threshold_s": 311.3,
+  "armR_capped_outside_smoke8": "22 of 40",
+  "armR_capped_inside_smoke8": "1 of 8",
+  "critic_central_1p25_1p3_h_as_mean_wall_s": [
+   84.5,
+   88.2
+  ],
+  "prediction_arithmetic_by_E3_mean_s": {
+   "50.0": {
+    "E8_kernel_h": 0.79,
+    "E7_h": 1.79,
+    "total_clock_room_s": 261.3
+   },
+   "75.0": {
+    "E8_kernel_h": 1.124,
+    "E7_h": 2.624,
+    "total_clock_room_s": 236.3
+   },
+   "150.0": {
+    "E8_kernel_h": 2.124,
+    "E7_h": 5.124,
+    "total_clock_room_s": 161.3
+   }
+  },
+  "informative27": {
+   "rule": "dev-48 minus EXP-036 gated_ids (15) minus posthoc_gold_equals_base_ids (6)",
+   "ids": [
+    "fastapi_13537",
+    "fastapi_14301",
+    "fastapi_14448",
+    "fastapi_14463",
+    "fastapi_14873",
+    "fastapi_15280",
+    "fastapi_15589",
+    "fastapi_15661",
+    "fastapi_15800",
+    "fastapi_5624",
+    "fastapi_9753",
+    "rich_3006",
+    "rich_3061",
+    "rich_3063",
+    "rich_3067",
+    "rich_3105",
+    "rich_3180",
+    "rich_3468",
+    "rich_3480",
+    "rich_3521",
+    "rich_3676",
+    "rich_3905",
+    "rich_3934",
+    "rich_3935",
+    "rich_3953",
+    "rich_4070",
+    "rich_4075"
+   ],
+   "armR_on_27": {
+    "n": 27,
+    "mean_wall_s": 294.4,
+    "capped_either": 14,
+    "resolved": 8
+   },
+   "armR_on_other_21": {
+    "n": 21,
+    "mean_wall_s": 301.4,
+    "capped_either": 9,
+    "resolved": 1
+   },
+   "smoke8_ids_in_27": [
+    "fastapi_14301",
+    "fastapi_14448",
+    "rich_3006",
+    "rich_3468"
+   ],
+   "kernel_h_at_A_mean": 0.551,
+   "kernel_h_at_B_mean": 0.75
+  }
+ }
 }

@@ -1,7 +1,7 @@
 # EXP-038 — the shipped single loop on the E4B over dev-48, paired with EXP-028 Arm R: the small-model reference and its time profile
 
 **Date:** 2026-11-05
-**Type:** dev-48 arm, one arm, one variable (the model); point estimate 0.88-1.24 L4x4-h, conditional worst case 6.66 h (section 2.2)
+**Type:** dev-48 arm, one arm, one variable (the model); point estimate 0.88-1.24 L4x4-h, conditional worst case 6.66 h (section 2.2). *Amended 2026-11-05 after the critic prereg (143fba1): the critic's central estimate is 1.25-1.3 L4x4-h, and point A is withdrawn as a point (section 2.2).*
 **Cohort:** dev-48
 **Ladder:** L3 (dev-48). The claim passed its screen: EXP-033 (smoke-8, L2) row 3 fired. The loop functions on the E4B, 0 of 8 tasks were capped, and 6 of 8 patches were non-empty.
 **Pre-registered:** this file, the cost script and its output, the zip's recorded sha and the notebook are committed before the push. Sections 2-5 are written blind and are not revised; results are appended as a new section.
@@ -99,7 +99,22 @@ All numbers come from `python -I -X utf8 experiments/EXP-038/cost_estimate.py`, 
 | A, unscaled | smoke-8 mean 56.9 s x 48 | 2,733 s | **0.88 h** |
 | B, scaled | the same mean x Arm R's dev-48 / smoke-8 wall ratio (297.4 / 202.9 = 1.466; dev-48 is harder than smoke-8) | 4,007 s | **1.24 h** |
 
-**The point range is 0.88-1.24 h. Its upper end is above the user's "about 1 hr" by about a quarter.**
+~~**The point range is 0.88-1.24 h. Its upper end is above the user's "about 1 hr" by about a quarter.**~~
+
+*Amended 2026-11-05, after the critic prereg review (`experiments/EXP-038/critic.md`, 143fba1), fix 4. The table and the struck sentence above are kept as first written.*
+- **Point A is withdrawn as a point.** Arm R hit a cap on 22 of the 40 dev-48 ids outside smoke-8 and on 1 of the 8 inside it (`cost_estimate.json`, key `after_critic_prereg_2026_11_05`). So smoke-8 is the easy part of dev-48, and its unscaled mean does not stand for the 48. A stays in the table as a low reference only.
+- **The critic's central estimate is 1.25-1.3 GPU-h** [critic]. That equals an E4B mean task wall of 84.5-88.2 s at this kernel's 444.8 s overhead (same key). Point B (1.24 h) sits just below it. The critic's other scalings give 0.94-1.46 h, most of them 1.23-1.30 h.
+- **The critic's probabilities** [critic, bootstrap over the 8 smoke-8 pairs], with the ratio-of-means estimator weighted above the mean-of-ratios one:
+  - about 45% that the run goes above 1.34 h, which the critic gives as the room left under the 3.2 h ceiling in the lead's ledger;
+  - about 25% that it goes above 1.5 h.
+
+  | Estimator | P(> 1.34 h) | P(> 1.5 h) |
+  |---|---|---|
+  | Ratio of means | 0.35 | 0.17 |
+  | Mean of ratios | 0.67 | 0.41 |
+
+- **Scenario C** gets under 5% from the critic [critic, I]: all 8 E4B tasks ended by submit after 1 to 15 counted calls.
+- **So the cost does not meet the user's "only 1 hr".** The full-48 run is expected at about 1.25 h, with about a one-in-four chance of exceeding 1.5 h. The 27-id option is in section 2.3.
 
 **Scenario C, not a bound.** Assume the E4B hits the 28-call cap on every one of Arm R's 23 capped ids, at its measured 10.59 s per counted call (296.6 s per task), and the other 25 tasks cost the smoke-8 mean. That gives **2.41 h**.
 
@@ -114,6 +129,10 @@ The one piece of evidence against it: the one R-capped id in smoke-8 took the E4
 - Each task that runs to 28 calls instead adds 0.067 h.
 
 **Unfunded.** A re-run after a crash is not funded by this pre-registration (section 4, row 0).
+
+### 2.3 Option declined: the 27 informative ids (added 2026-11-05, after the critic prereg)
+
+The critic offered running only the 27 informative ids, about 0.75 h (dev-48 minus EXP-036's 15 gated and 6 constant ids; `cost_estimate.json` key `after_critic_prereg_2026_11_05.informative27`). The user declined it and approved the full 48 instead (section 8). Not built.
 
 ## 3. Endpoints, fixed in advance
 
@@ -136,9 +155,11 @@ Computed by:
 | E4 | Malformed calls | sum `n_malformed` / all calls including malformed | 1 call |
 | E5 | Non-empty patch rate | `patch_empty` false, of 48 | 42 of 48 |
 | E6 | First-edit turn | the median of `first_edit_turn` over all tasks that edited, and the count that never edited, from `run_forensics.collect_forensics` imported by a short analysis script (as EXP-028 did; the `forensics` CLI prints only per-outcome cohort medians). This is a turn index, not EXP-033's counted-call index | median 14, n = 44 |
-| E7 | Projected hidden-set hours at 120 tasks | `estimate_budget.py --results`; cross-check: mean task wall x 120 / 3600 + this kernel's measured overhead (log end minus the task wall sum) | 10.04 h |
+| E7 | Projected hidden-set hours at 120 tasks | ~~`estimate_budget.py --results`; cross-check: mean task wall x 120 / 3600 + this kernel's measured overhead (log end minus the task wall sum)~~ *Amended 2026-11-05 (critic fix 2):* mean `wall_s` x 120 / 3600 + this kernel's measured overhead (log end minus the task wall sum), in hours, read against about 10.5 h. `estimate_budget.py --results` is recorded under E9, not read | ~~10.04 h~~ 10.07 h restated (Arm R's 297.4 s mean and 555.5 s overhead, `cost_estimate.json`) |
 | E8 | Kernel wall, for the GPU ledger | last kernel-log entry, in hours; the Kaggle figure if one is shown | 4.12 h |
-| E9 | Recorded, not read | seconds per model turn, compactions, `n_edit_arg_loss`, `vLLM up`, decode tok/s, resolves by repo | |
+| E9 | Recorded, not read | seconds per model turn, compactions, `n_edit_arg_loss`, `vLLM up`, decode tok/s, resolves by repo; *added 2026-11-05 (critic fix 2):* `estimate_budget.py --results` | |
+
+*E7, amended 2026-11-05 after the critic prereg (143fba1), fix 2.* `estimate_budget.py --results` takes the larger of the measured wall and a decode estimate. On EXP-033 it gives a mean task of 2.91 min (5.82 h projected) against a measured 56.9 s, and 2.69 h even at `--tok-s 56.4` [critic, P3]. For a fast model it does not measure the clock, so it is recorded and not read. Row 2 reads E7 as amended in the table above.
 
 ### 3.2 Caveats on the as-run number (C-021, C-022)
 
@@ -178,6 +199,12 @@ This is a zero-GPU CPU re-grade of this arm's 48 stored patches with the stand-i
 
 Either way, the paired re-graded 2x2 against R's re-grade (12 of 48) is reported. Neither row licenses a tree change or an upload.
 
+*Fault row added 2026-11-05, after the critic prereg (143fba1), fix 4. It is applied before the two rows above; the first match governs.*
+
+| Condition | Reading |
+|---|---|
+| **F.** Fewer than 48 rows in any pass. Or, if GOLD or BASE is re-run, it grades differently from EXP-036: GOLD not 43 of 48 (15 of 15 gated, the five unresolved ids being `httpx_3672`, `requests_7205`, `requests_7309`, `requests_7315`, `requests_7427`), or BASE not 1 of 48 (`requests_6644`) (`experiments/EXP-036/aggregates.json`) | **Re-grade fault, G not read.** Report the counts and the differing ids. Fixing the tool and re-running is a new CPU dispatch (0 GPU-h) |
+
 ## 4. Pre-registered readings. Written blind. Not to be revised after the numbers land.
 
 Rows are applied in order, and the first match governs. Row T is applied in addition to the governing row. Threshold arithmetic for E2 at n = 48 (exact two-sided McNemar, `cost_estimate.json`): p < 0.05 needs a split of at least 6-0, 7-0, 8-0, 8-1, 9-1, 10-1 or 10-2 for 6 to 12 discordant pairs; with 5 or fewer discordant pairs, no split reaches it. With R at 9 of 48 and an as-run ceiling of 28, most outcomes will read as "no difference detected". That is a statement about this test's power, not evidence that the two models are equal.
@@ -187,12 +214,16 @@ Rows are applied in order, and the first match governs. Row T is applied in addi
 ### 4.1 Readings rows
 
 **Row 0. Blank or crash.**
-- **Condition:** the kernel fails before the task loop, or fewer than 44 of 48 tasks have a `task_results.jsonl` row, or 5 or more rows carry a non-empty `error`.
+- **Condition:** the kernel fails before the task loop, or fewer than 44 of 48 tasks have a `task_results.jsonl` row, ~~or 5 or more rows carry a non-empty `error`.~~
+  - *Amended 2026-11-05, after the critic prereg (143fba1), fix 1:* or 5 or more rows carry a non-empty `error` that is not a harness cap string. The cap strings are those beginning `Agent exceeded session timeout` (as run: `Agent exceeded session timeout (8.0 min)`) or `Agent exceeded turns budget` (as run: `Agent exceeded turns budget (80 turns)`). Rows with a cap string are read under E3 and row T, not here. The first-written clause fired on Arm R itself: 10 of its 48 rows carry these strings (6 session timeout, 4 turns budget; `runs/EXP-028-armR/task_results.jsonl`). So it would have read a cap-bound E4B as a crash, and row T's cap-bound branch could never have been reached.
+  - *Added 2026-11-05, before the push, with the user's 2.0 GPU-h approval (section 8):* or the kernel was cancelled under the section 8 stop rule, whatever number of rows survive. Such a run is read as truncated.
 - **Reading:** infrastructure, not the model. Say which (model input, vLLM boot, harness error, Kaggle stop) from the log and the first failing row.
 - **Next step:** report to the lead. No re-run is funded by this file. A re-run is a new dispatch and needs the user's GPU approval, because the user's condition was about 1 GPU-h. Endpoints on the rows present are reported, not read. No E4B proposal.
 
 **Row 0b. Grading anomaly.**
-- **Condition:** rows are present (not row 0), but a C-022 constant task grades against its constant (requests_6644 unresolved, or one of the five resolved), or a C-021 gated task resolves as run.
+- **Condition:** rows are present (not row 0), but a C-022 constant task grades against its constant (requests_6644 unresolved, or one of the five resolved), ~~or a C-021 gated task resolves as run.~~
+  - *Amended 2026-11-05, after the critic prereg (143fba1), fix 4:* or a C-021 gated task resolves as run and its stored patch (`runs/EXP-038-e4b-dev48/patches/<id>.patch`) does not itself create the missing module. "Creates the module" means that the patch adds a file whose path has a component named `inline_snapshot`, `inline_snapshot.py`, `dirty_equals` or `dirty_equals.py`.
+  - A gated resolve whose patch does create the module is not a grader change. It is the agent vendoring on its own: it is counted in E2 as a real flip and named in the report.
 - **Reading:** the grader differs from EXP-028's. E2 is not read until the anomaly is explained from `test_tail`.
 - **Next step:** report the ids and tails to the lead. The other endpoints are recorded. No E4B proposal until it is explained.
 
@@ -202,7 +233,8 @@ Rows are applied in order, and the first match governs. Row T is applied in addi
 - **Next step:** the small-model question becomes a prompt or format fix for the E4B (state from the traces whether edits failed, never started, or calls were malformed). This goes to the lead's ranking. C-023 is not built on this loop until a fixed loop passes this row. No E4B proposal.
 
 **Row 2. The time profile fails.**
-- **Condition:** not rows 0 to 1, and E7 is above 11.0 h.
+- **Condition:** not rows 0 to 1, and E7 is above ~~11.0 h~~ 10.5 h.
+  - *Amended 2026-11-05, after the critic prereg (143fba1), fix 2.* The threshold is the plan's rule of about 10.5 h (C-008, EXP-016 section 3), on E7 as amended in section 3.1: mean `wall_s` x 120 / 3600 plus this kernel's measured overhead. At the 444.8 s overhead seen on EXP-033, this fires at a mean task wall above 311.3 s (`cost_estimate.json`). `estimate_budget.py --results` is not read here.
 - **Reading:** the E4B at 8 min does not fit the hidden-set clock with the plan's margin. The cause will be in E3: which cap, and how many tasks.
 - **Next step:** no E4B proposal at 8 min. The lead's options are a lower-cap arm, its own pre-registration, or none. E2 is reported, not read.
 
@@ -229,6 +261,29 @@ Rows are applied in order, and the first match governs. Row T is applied in addi
   - **Next step:** any extra-stage design (C-023 voting) has no clock on those tasks. Its desk check must price it against E3's per-cap counts, not against EXP-033's 423 s.
 - **Otherwise:**
   - **Reading:** report the mean and the 10th percentile of seconds left under 480 s, over tasks not at a cap, together with seconds per model turn. These are the room an extra stage would have on this model, in seconds and turns.
+
+*Row T's room, defined in full on 2026-11-05 after the critic prereg (143fba1), fix 3. The two branches above are kept as first written, and this definition governs what they report.*
+
+**Sets.**
+- U is the set of tasks at no cap: not `calls_cap_hit`, not `time_cap_hit`, and `n_turns` below 80 (E3's caps).
+- The number excluded as capped is 48 minus the size of U. It is always reported.
+
+**Per-task room.** For each task in U, 480 s minus `wall_s`.
+- This is a lower bound: `wall_s` includes setup and grading, which are not on the session clock.
+- Report its mean and its 10th percentile, by `statistics.quantiles(x, n=10, method="inclusive")[0]`.
+
+**Total-clock room.** (10.5 h minus E7) x 3600 / 120 seconds per task. E7 is as amended in section 3.1, over all 48.
+- This is the average extra time per task that the hidden-set clock admits under the plan's 10.5 h rule.
+- Under the 10.5 h rule, 120 tasks allow 311.3 s per task on average at the 444.8 s overhead (`cost_estimate.json`).
+
+**The binding room** is the smaller of the per-task room and the total-clock room, taken once at the per-task mean and once at the per-task 10th percentile.
+
+**Also reported, over U:**
+- headroom on calls: 28 minus `n_calls`, mean and 10th percentile;
+- headroom on turns: 80 minus `n_turns`, mean and 10th percentile;
+- seconds per turn: the `wall_s` sum divided by the `n_turns` sum.
+
+**Both branches.** In the cap-bound branch the total-clock room is reported as well. Any extra-stage design is priced against the binding room, not against 480 s minus wall alone.
 
 ### 4.2 Predictions, written blind (before any E4B dev-48 trace exists)
 
@@ -259,6 +314,34 @@ Rows are applied in order, and the first match governs. Row T is applied in addi
 Row T: "otherwise" 85%.
 
 **Follow-up re-grade.** G 0 or 1 of 15, at 65%.
+
+**Prediction restated 2026-11-05, after the critic prereg (143fba1), fixes 2 to 4.** The tables above are kept as first written. No E4B dev-48 trace exists yet. The arithmetic is in `cost_estimate.json`, key `after_critic_prereg_2026_11_05.prediction_arithmetic_by_E3_mean_s`.
+
+**E3: unchanged.** Mean wall 75 s (range 50-150 s), capped 1 of 48.
+
+**E7 under the amended definition: about 2.62 h.** The range is 1.79-5.12 h, from E3's 50-150 s. The first-written 2.6 h (1.8-5 h) agrees within rounding.
+
+**E8 made consistent with E3 (critic P2): kernel wall about 1.12 h.** That is 75 s x 48 + 444.8 s.
+- The range is 0.79-2.12 h, from E3's 50-150 s.
+- The first-written 1.05 h (0.85-1.6 h) did not follow from E3 and is withdrawn.
+- The top of the range is above the user's 2.0 GPU-h (section 8). The stop rule there covers it.
+
+**The critic's figures, next to mine.** The critic's central estimate is 1.25-1.3 h, a mean of 84.5-88.2 s. It gives about 45% to more than 1.34 h and about 25% to more than 1.5 h (section 2.2).
+- My 75 s is a judgement made before the critic's bootstrap, and it is kept as my prediction.
+- For the cost decision, the critic's figures are the ones to use, because they come from a bootstrap over the 8 pairs.
+- For a bound, use the scenario C and worst-case figures of section 2.2.
+
+**Row T.** "Otherwise" is unchanged at 85%. The predicted binding room is the total-clock room:
+- about 236 s per task at a 75 s mean, and 161-261 s over E3's range;
+- against a per-task room of about 405 s at the mean.
+
+So the total clock binds, as the critic said [I].
+
+**Governing row: unchanged.**
+- Row 0 / 0b stays at 7%. The cap-string fix matters only if many tasks cap, and I predict 1 of 48.
+- Row 2 stays at 1%: at 10.5 h it needs a mean task wall above 311.3 s.
+
+**Re-grade.** Fault row F at 5%. Conditional on not F, G is 0 or 1 of 15 at 65%, as first written.
 
 ## 5. What this does and does not license
 
@@ -308,6 +391,13 @@ None yet. Known at writing time:
 4. GPU-h is the log span unless Kaggle shows a figure (section 2.2).
 5. The cost script reads only counts, and its output holds no task text.
 6. Before the push and before any run, section numbers were aligned to the usual shape: predictions became 4.2, and licenses, commands, defects and built moved up one (5 to 8). E6 now names `collect_forensics` for the overall median. No reading, threshold or prediction text changed.
+7. *Logged 2026-11-05, from the critic prereg (`experiments/EXP-038/critic.md`, 143fba1, verdict needs-work).* Four text fixes are applied as dated notes, with the first-written text struck or kept in place. The tree, zip, cohort and notebook are unchanged.
+   - Fix 1 is in row 0.
+   - Fix 2 is in the E7 row and the note below the section 3.1 table, in E9 and in row 2.
+   - Fix 3 is the room definition under row T.
+   - Fix 4 is in four places: section 2.2 (the critic's central estimate and probabilities; point A withdrawn), section 4.2 (the restated prediction, with E8 = 1.12 h), row 0b (the gated clause narrowed) and section 3.3 (re-grade fault row F).
+   - `cost_estimate.py` gained one output key, `after_critic_prereg_2026_11_05`. Every earlier key is unchanged: the re-run output was compared key by key with the committed JSON.
+8. *Logged 2026-11-05.* The ledger arithmetic elsewhere ("1.86 + 1.24 = 3.10") used point B as if it were an upper end (critic, item 1). This file never stated B as a bound, but the 1.24 h figure handed to the lead was read that way.
 
 ## 8. Built
 
@@ -315,6 +405,37 @@ Built 2026-11-05 with the section 6 commands. Committed by pathspec.
 
 **Not pushed.** The critic `prereg` review comes first: the conditional worst case is above 1 GPU-h, and this arm is the section 5.8 gate for a small-model upload. The point estimate's upper end (1.24 h) is above the user's "about 1 hr", and the lead takes that to the user before any push.
 
+**Critic fixes applied, 2026-11-05.** The critic `prereg` review (143fba1) was needs-work, with four text fixes and nothing to rebuild. They are applied as listed in section 7, item 7. The zip (`9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0`), the cohort (dev-48) and the notebook (`e58af838...`) are unchanged.
+
+**The user's GPU approval and the stop rule, 2026-11-05, before the push.**
+
+The user, verbatim (`knowledge/user-decisions.md`, 6fd7787): "2 hrs should be fine for full 48". This is read as: this run is approved at up to **2.0 GPU-h**. The user named a number for this arm, not a new ceiling for other work. The 27-id variant is declined (section 2.3).
+
+Against 2.0 h:
+- The critic's central estimate is 1.25-1.3 h, with about 25% above 1.5 h.
+- The only figure above 2.0 h in section 2.2 is scenario C (2.41 h), which the critic puts under 5%.
+- The 6.66 h conditional worst case is above it too.
+
+**Nothing in the kernel enforces 2.0 h.**
+- `notebooks/kaggle_eval_l4x4.py` has no total-wall or deadline parameter. Its task loop runs every id in the cohort in order, with no time check.
+- The only time limits are the per-task caps in `eval_config.yaml`: 8 min session timeout, 28 calls, 80 turns. The session timeout is not a hard per-task bound (harness-stack: one EXP-028 RH task ran 752 s).
+- The notebook and zip are not rebuilt to add a deadline, so the cohort and the sha stay as committed.
+
+**The rule, applied by people, not by the kernel:**
+1. The lead counts elapsed time from the push. That count includes queueing, so it runs ahead of GPU time, which is the safe side.
+2. If the kernel is not COMPLETE at 1.75 h elapsed, the lead tells the user then, and does not let the run go on past 2.0 h on its own reading.
+3. Cancelling is the user's action in the Kaggle UI. No agent here has a cancel command.
+4. A kernel cancelled there is read as **truncated under row 0** (section 4.1, the clause dated 2026-11-05 for a cancellation under this rule), whatever number of rows survive. Endpoints on any rows that survive are reported, not read, and no E4B proposal follows.
+5. A re-run needs a new GPU approval from the user.
+
+Whether a cancelled Kaggle batch kernel keeps any of its output is unverified here. The download job reports what it finds.
+
 ## Status
 
-BUILT, NOT PUSHED (2026-11-05). Awaiting the critic `prereg` review and the lead's word to the user on the 0.88-1.24 h point range.
+~~BUILT, NOT PUSHED (2026-11-05). Awaiting the critic `prereg` review and the lead's word to the user on the 0.88-1.24 h point range.~~
+
+BUILT, NOT PUSHED (2026-11-05).
+- The critic's four text fixes are applied (section 7, item 7).
+- The user has approved the full dev-48 at up to 2.0 GPU-h, with the section 8 stop rule.
+- Next: the critic re-checks the fixes. Then the push is a separate job: directory `notebooks/exp038_e4b_dev48`, kernel `rainm4/gemma4-exp038-e4b-dev48`.
+- The lead starts the 1.75 h clock at the push.

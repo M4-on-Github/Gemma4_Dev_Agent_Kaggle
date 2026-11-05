@@ -7,6 +7,8 @@ Inputs (read as data; run with `python -I -X utf8`):
   - EXP-028 Arm R dev-48 kernel log     runs/EXP-028-armR/gemma4-exp028-armr.log
   - EXP-028 Arm R dev-48 summary        experiments/EXP-028/armR/summary.jsonl
   - smoke-8 cohort ids                  experiments/cohorts/smoke-8.txt
+  - dev-48 cohort ids                   experiments/cohorts/dev-48.txt          (added 2026-11-05)
+  - EXP-036 gated and constant id lists experiments/EXP-036/aggregates.json     (added 2026-11-05)
 
 Output: experiments/EXP-038/cost_estimate.json, numbers only (no task text, no repo content).
 
@@ -30,6 +32,10 @@ R_LOG = ROOT / "runs/EXP-028-armR/gemma4-exp028-armr.log"
 R_SUM = ROOT / "experiments/EXP-028/armR/summary.jsonl"
 SMOKE8 = ROOT / "experiments/cohorts/smoke-8.txt"
 OUT = ROOT / "experiments/EXP-038/cost_estimate.json"
+# added 2026-11-05 after the critic prereg review: the 27-id option and the restated E7 / row T arithmetic
+DEV48 = ROOT / "experiments/cohorts/dev-48.txt"
+EXP036_AGG = ROOT / "experiments/EXP-036/aggregates.json"
+CEILING_H = 10.5             # plan's rule (C-008, EXP-016 section 3): measured mean x 120 + overhead <= ~10.5 h
 
 N_TASKS = 48
 TIME_CAP_S = 8 * 60          # eval_config max_time_minutes 8.0 (unchanged from Arm R)
@@ -69,6 +75,52 @@ def mcnemar_exact(b: int, c: int) -> float:
         return float("nan")
     tail = sum(math.comb(n, k) for k in range(0, min(b, c) + 1)) / 2 ** n
     return min(1.0, 2 * tail)
+
+
+def after_critic(e4b, r, smoke, e_mean, e_overhead, r_mean48, r_overhead, composition, r_capped) -> dict:
+    """Keys added 2026-11-05 after the critic prereg review (experiments/EXP-038/critic.md, fixes 2 to 4 and the
+    27-id option).  Every key above this block is unchanged and reproduces as before."""
+    agg = json.loads(EXP036_AGG.read_text(encoding="utf-8"))
+    gated, const = set(agg["gated_ids"]), set(agg["posthoc_gold_equals_base_ids"])
+    dev48 = read_ids(DEV48)
+    assert len(dev48) == N_TASKS and len(gated) == 15 and len(const) == 6
+    inf = [i for i in dev48 if i not in gated and i not in const]
+    rest = [i for i in dev48 if i not in set(inf)]
+    rb = {x["task_id"]: x for x in r}
+    capped_ids = {x["task_id"] for x in r_capped}
+
+    def r_profile(ids: list[str]) -> dict:
+        return {"n": len(ids), "mean_wall_s": round(sum(rb[i]["wall_s"] for i in ids) / len(ids), 1),
+                "capped_either": sum(i in capped_ids for i in ids), "resolved": sum(bool(rb[i]["resolved"]) for i in ids)}
+
+    def e7(mean_s: float, overhead_s: float) -> float:   # fix 2: mean wall x 120 / 3600 + measured overhead
+        return h(mean_s * HIDDEN_TASKS + overhead_s)
+
+    def kern(n: int, mean_s: float) -> float:
+        return h(n * mean_s + e_overhead)
+
+    pred = {}
+    for m in (50.0, 75.0, 150.0):                          # section 4.2 E3 mean: low, point, high
+        pred[str(m)] = {"E8_kernel_h": kern(N_TASKS, m), "E7_h": e7(m, e_overhead),
+                        "total_clock_room_s": round((CEILING_H - e7(m, e_overhead)) * 3600 / HIDDEN_TASKS, 1)}
+    return {
+        "ceiling_h": CEILING_H,
+        "armR_E7_restated_h": e7(r_mean48, r_overhead),
+        "row2_mean_wall_threshold_s": round((CEILING_H * 3600 - e_overhead) / HIDDEN_TASKS, 1),
+        "armR_capped_outside_smoke8": f"{sum(1 for i in capped_ids if i not in smoke)} of {N_TASKS - len(smoke)}",
+        "armR_capped_inside_smoke8": f"{sum(1 for i in capped_ids if i in smoke)} of {len(smoke)}",
+        "critic_central_1p25_1p3_h_as_mean_wall_s": [round((x * 3600 - e_overhead) / N_TASKS, 1) for x in (1.25, 1.3)],
+        "prediction_arithmetic_by_E3_mean_s": pred,
+        "informative27": {
+            "rule": "dev-48 minus EXP-036 gated_ids (15) minus posthoc_gold_equals_base_ids (6)",
+            "ids": inf,
+            "armR_on_27": r_profile(inf),
+            "armR_on_other_21": r_profile(rest),
+            "smoke8_ids_in_27": sorted(i for i in inf if i in smoke),
+            "kernel_h_at_A_mean": kern(len(inf), e_mean),
+            "kernel_h_at_B_mean": kern(len(inf), e_mean * composition),
+        },
+    }
 
 
 def main() -> int:
@@ -148,6 +200,8 @@ def main() -> int:
         },
         "mcnemar_exact_two_sided_thresholds": mde,
     }
+    out["after_critic_prereg_2026_11_05"] = after_critic(e4b, r, smoke, e_mean, e_overhead, r_mean48, r_overhead,
+                                                         composition, r_capped)
     OUT.write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")
     print(json.dumps(out["estimate"], indent=1))
     print(json.dumps({k: out["e4b_smoke8"][k] for k in ("overhead_s", "task_wall_mean_s", "task_wall_max_s", "capped", "s_per_counted_call")}))
