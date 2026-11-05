@@ -1,0 +1,118 @@
+{
+ "inputs": {
+  "e4b_log": "runs\\EXP-033-e4b\\gemma4-exp033-e4b.log",
+  "e4b_summary": "experiments\\EXP-033\\e4b\\summary.jsonl",
+  "r_log": "runs\\EXP-028-armR\\gemma4-exp028-armr.log",
+  "r_summary": "experiments\\EXP-028\\armR\\summary.jsonl"
+ },
+ "e4b_smoke8": {
+  "n": 8,
+  "log_end_s": 900.3,
+  "vllm_up_s": 322.9,
+  "decode_tok_s": 56.4,
+  "task_wall_sum_s": 455.5,
+  "task_wall_mean_s": 56.9,
+  "task_wall_max_s": 90.7,
+  "capped": 0,
+  "overhead_s": 444.8,
+  "counted_calls": 43,
+  "turns": 76,
+  "s_per_counted_call": 10.59,
+  "s_per_turn": 5.99,
+  "resolved": 2
+ },
+ "armR_dev48": {
+  "n": 48,
+  "log_end_s": 14832.4,
+  "vllm_up_s": 396.5,
+  "task_wall_sum_s": 14276.9,
+  "task_wall_mean_s": 297.4,
+  "smoke8_ids_mean_s": 202.9,
+  "composition_ratio": 1.466,
+  "overhead_s": 555.5,
+  "capped_either": 23,
+  "calls_cap_hit": 18,
+  "time_cap_hit": 6,
+  "largest_capped_wall_s": 489.9,
+  "capped_on_smoke8_ids": [
+   "fastapi_14605"
+  ],
+  "e4b_calls_on_those": {
+   "fastapi_14605": 15
+  },
+  "max_wall_s": 489.9,
+  "resolved": 9
+ },
+ "estimate": {
+  "A_unscaled_smoke8_mean": {
+   "tasks_s": 2733.0,
+   "kernel_s": 3177.8,
+   "kernel_h": 0.883
+  },
+  "B_scaled_by_armR_composition": {
+   "tasks_s": 4006.9,
+   "kernel_s": 4451.7,
+   "kernel_h": 1.237
+  },
+  "C_scenario_armR_capped_ids_at_28_calls": {
+   "tasks_s": 8245.3,
+   "kernel_s": 8690.1,
+   "kernel_h": 2.414
+  },
+  "worst_every_task_at_largest_capped_wall": {
+   "tasks_s": 23515.2,
+   "kernel_s": 23960.0,
+   "kernel_h": 6.656
+  },
+  "per_task_at_cap_instead_of_smoke8_mean_h": 0.12,
+  "per_task_at_28_calls_instead_of_smoke8_mean_h": 0.067,
+  "note": "log-span hours; worst case is conditional, not a hard bound (EXP-028 RH had one task at 751.9 s)"
+ },
+ "mcnemar_exact_two_sided_thresholds": [
+  {
+   "discordant": 4,
+   "min_majority_for_p_lt_0.05": null,
+   "p_at_min": null
+  },
+  {
+   "discordant": 5,
+   "min_majority_for_p_lt_0.05": null,
+   "p_at_min": null
+  },
+  {
+   "discordant": 6,
+   "min_majority_for_p_lt_0.05": 6,
+   "p_at_min": 0.0312
+  },
+  {
+   "discordant": 7,
+   "min_majority_for_p_lt_0.05": 7,
+   "p_at_min": 0.0156
+  },
+  {
+   "discordant": 8,
+   "min_majority_for_p_lt_0.05": 8,
+   "p_at_min": 0.0078
+  },
+  {
+   "discordant": 9,
+   "min_majority_for_p_lt_0.05": 8,
+   "p_at_min": 0.0391
+  },
+  {
+   "discordant": 10,
+   "min_majority_for_p_lt_0.05": 9,
+   "p_at_min": 0.0215
+  },
+  {
+   "discordant": 11,
+   "min_majority_for_p_lt_0.05": 10,
+   "p_at_min": 0.0117
+  },
+  {
+   "discordant": 12,
+   "min_majority_for_p_lt_0.05": 10,
+   "p_at_min": 0.0386
+  }
+ ]
+}
