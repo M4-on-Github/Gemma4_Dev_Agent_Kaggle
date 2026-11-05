@@ -1,7 +1,7 @@
 # EXP-040 — Voting agents V1 on the E4B, smoke-8 screen (C-023): sixteen tool-less voters at one vote point, paired against EXP-033
 
 **Date:** 2026-11-05
-**Type:** smoke-8 screen, one arm, about 0.31-0.37 L4x4-h expected (conditional worst case about 1.2 h, section 2 gives the arithmetic). **Built, not pushed**: the user has not approved this screen's GPU.
+**Type:** smoke-8 screen, one arm, about 0.31-0.37 L4x4-h expected (conditional worst case about 1.2 h, section 2 gives the arithmetic). ~~**Built, not pushed**: the user has not approved this screen's GPU.~~ **Pushed 2026-11-05 22:03 UTC** (kernel `rainm4/gemma4-exp040-v1` v1). The user approved it at about 22:00 UTC (`knowledge/user-decisions.md`). The push record is under the Status line.
 **Cohort:** smoke-8
 **Ladder:** L2. L0 is EXP-039 (expressibility, termination, vote format, bound on N, failure modes F1 to F11). L1 cannot read it: no E4B trace holds a candidate list, a vote or a multi-agent run.
 **Pre-registered:** this file, the tree, the zip's recorded sha and the notebook are committed before any push. Sections 3 to 5 are written blind and are not revised; results are appended as a new section.
@@ -198,8 +198,40 @@ Built 2026-11-05 after the pre-registration commit 3f33acd, with the section 6 c
 - Pack: `python tools/pack_submission.py --src experiments/EXP-040/candidate-v1 --out dist/EXP-040-v1.zip --skip-budget-gate --allow-warnings` gave 26 reachable files, `RESULT: VALID (0 errors, 3 warnings)` (the packing gate demoted to a warning, the `submit_patch` sub-agent warning, the 240 s timeout warning), 20 agents, `dist/EXP-040-v1.zip` 13.0 KiB. **Zip sha256 `e476acb6ee48d264503e87fe0e4b8b5673e34bff23eb5dd6a3c1b136525429d8`** (confirmed with `sha256sum`). The zip was packed from LF worktree files that equal the committed blobs, so it reproduces from commit 3f33acd. Screen build, never uploaded.
 - Notebook: `notebooks/exp040_v1/kaggle_eval_l4x4.ipynb`, parameter cell read back: `EXP_ID = "EXP-040-v1"`, `RUN_GOLD_CONTROL = False`, `RUN_AGENT = True`, `TASK_IDS` = fastapi_14301, fastapi_14448, fastapi_14605, httpx_3672, requests_7205, requests_7309, rich_3006, rich_3468 (the 8 ids of `experiments/cohorts/smoke-8.txt`), `N_TASKS = 8`, `MODEL_NAME = "gemma-4-e4b-it-qat-w4a16-ct"`; 17,788 base64 characters embedded.
 - `notebooks/exp040_v1/kernel-metadata.json`: copied from `notebooks/exp033_e4b/` with only `id` (`rainm4/gemma4-exp040-v1`) and `title` (`gemma4-exp040-v1`) changed (`diff` shows those two lines only; model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`, wheelhouse and competition sources as EXP-033).
-- **Kernel id: `rainm4/gemma4-exp040-v1`. Not pushed.** The push is a separate job after the user approves the GPU. Push command: `kaggle kernels push -p notebooks/exp040_v1`.
+- **Kernel id: `rainm4/gemma4-exp040-v1`.** ~~**Not pushed.** The push is a separate job after the user approves the GPU.~~ It was pushed 2026-11-05 22:03 UTC as v1; see the push record under Status. Push command: `kaggle kernels push -p notebooks/exp040_v1`.
 
 ## Status
 
-2026-11-05: tree built, zip `e476acb6...29d8` packed, notebook built, checks (a) to (d) run, kernel `rainm4/gemma4-exp040-v1` **not pushed**. Awaiting the user's GPU approval, then the lead's dispatch of the push.
+**RUNNING since 2026-11-05 22:03 UTC.** Kernel `rainm4/gemma4-exp040-v1` v1; the push record is below. The lead reports to the user at 22:27 UTC. The worst-case end is 23:16 UTC. Next is a separate job, once the lead reports COMPLETE:
+- `kaggle kernels output rainm4/gemma4-exp040-v1 -p runs/EXP-040-v1/`
+- un-nest the output;
+- then the section 6 analysis commands.
+
+~~2026-11-05: tree built, zip `e476acb6...29d8` packed, notebook built, checks (a) to (d) run, kernel `rainm4/gemma4-exp040-v1` **not pushed**. Awaiting the user's GPU approval, then the lead's dispatch of the push.~~
+
+### Push record, 2026-11-05
+
+**Approval.** The user approved the push on 2026-11-05 at about 22:00 UTC ("yes go ahead"). The verbatim words and the lead's reading are in `knowledge/user-decisions.md`, entry "2026-11-05 ~22:00 UTC: the voting screen EXP-040 goes ahead" (commit 5192295). The lead's working figure is 0.4 GPU-h. One kernel, one version.
+
+**Checks before the push, all passed:**
+- `sha256sum dist/EXP-040-v1.zip` gives `e476acb6ee48d264503e87fe0e4b8b5673e34bff23eb5dd6a3c1b136525429d8`, as recorded in section 8.
+- The notebook's embedded `SUBMISSION_B64` decodes to a zip with the same sha256.
+- `TASK_IDS` equals the 8 ids of `experiments/cohorts/smoke-8.txt`.
+- The parameter cell sets `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`, `MODEL_NAME = "gemma-4-e4b-it-qat-w4a16-ct"` and `N_TASKS = 8`.
+- `kernel-metadata.json` sets `is_private: true`, `enable_gpu: true`, `machine_shape: NvidiaL4`, `enable_internet: false`, and model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`.
+- **Nothing changed in the tree since the build.** The worktree is clean for `experiments/EXP-040*` and `notebooks/exp040_v1`. Since the build commit 5b0f266, `git diff --stat 5b0f266 HEAD` shows changes only to:
+  - this file (the 75195e5 amendment, an ancestor of HEAD);
+  - `experiments/EXP-040/tally.py`;
+  - `experiments/EXP-040/test_tally.py`.
+
+  `candidate-v1`, the zip and the notebook are unchanged. `test_tally.py` passes with 18 cases.
+
+**The push.**
+- Push time: **2026-11-05 22:03 UTC**, read with `date -u` (22:03:00) right after the push returned.
+- CLI output: `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp040-v1`
+- Kernel: `rainm4/gemma4-exp040-v1`, **version 1**.
+- Status, checked once right after the push: `KernelWorkerStatus.RUNNING`.
+
+**Clock times.** The kernel enforces neither of them.
+- push + 0.4 h = **2026-11-05 22:27 UTC**. This is the lead's working figure. At this time the lead reports to the user; cancelling is the user's call, from the Kaggle UI.
+- push + 1.22 h = **2026-11-05 23:16 UTC**. This is the pre-registered conditional worst case from section 2.4.
