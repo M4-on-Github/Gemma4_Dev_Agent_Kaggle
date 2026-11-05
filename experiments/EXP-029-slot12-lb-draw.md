@@ -106,4 +106,30 @@ Defects the critic named are logged in §7 (a)-(d); none revises §4.
 
 ## Status
 
-Uploaded 2026-11-04 03:51 UTC, ref 57970005, PENDING (grading has taken 6 h to 5 days). No kernel. Next action: when the lead reports a score or a blank, append §9 applying §4 as written, and fill LB in `submissions.md` row 12.
+Uploaded 2026-11-04 03:51 UTC, ref 57970005. **COMPLETE, scored 0.18 = 11/58** (read 2026-11-05). §9 appended; `submissions.md` row 12 filled. No kernel, 0 GPU-h. Nothing further runs under this file.
+
+---
+
+## 9. Results, 2026-11-05. Section 4's readings applied as written.
+
+**Observation.** `kaggle competitions submissions -c gemma-4-developer-agent` on 2026-11-05: ref 57970005, `submission.zip`, 2026-11-04 03:51:09, `SubmissionStatus.COMPLETE`, publicScore **0.18**. The board truncates to 2 dp (11/58 = 0.1897 shows as 0.18; 10/58 = 0.1724 shows as 0.17), so **k = 11 of 58**. The lead's record of the same read is `knowledge/submissions/S-012-result.md`. Wall-clock of grading: unknown (status was not polled between upload and 2026-11-05).
+
+**Tree.** R, `experiments/EXP-027/v24_at8.zip`, sha256 `c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600`, byte-identical to #11 (§8). Variable vs #11: none.
+
+**Rows applied in order.**
+
+- Row 1 (blank / Notebook Timeout): **does not fire.** The slot returned a score.
+- Row 2 (k <= 5): does not fire (k = 11).
+- **Row 3 (k = 6 to 14): fires.** Consistent with theta ~ 10. Reading as written: pool with #11 as the baseline estimate for the v24-at-8 lineage, k1 + k2 over 116. The tree was R, so the "R + RH" label does not apply, and the §7 (c) rule (pool only byte-identical zips) is met: both draws are `c22069db...`.
+  - **Pooled baseline for the v24-at-8 zip: 10 + 11 = 21 of 116 = 0.181**, Wilson 95% CI 0.122-0.261 (computed with a one-line Wilson formula in Python, z = 1.96; no repo tool covers pooled LB draws). About 10.5 tasks per draw of 58; binomial sd per draw at that rate 2.9 tasks, sd of the two-draw mean about 2.1 tasks.
+  - The one-task difference from #11 is **not an effect** (plan.md §5.5, MDE ~4 tasks; and there is no variable between the two draws).
+  - **No tree change on this alone. The next slot is the next candidate of the adaptive tree, to be pooled the same way** (byte-identical zips only; a different zip opens its own count at n = 1).
+- Row 4 (k >= 15): does not fire.
+
+**Binding note from §4, honoured.** This score does not alter the EXP-028 §9 pick and is not appended to EXP-028.
+
+**What the draw adds.** (1) A second completion of this tree at the 8-min cap on the hidden set (#11 and #12 both scored), against the EXP-028 Arm R dev-48 projection of 10.04 h; the gate override of §2 has now been exercised twice without a timeout. (2) The scored series is 4, -, 7, 6, 8, 8, 7, 7, 6, 6, 10, 11; the team best (the LB keeps it) moves from 0.17 to 0.18. (3) For the paper's LB-noise measurement: two draws of one zip, 10 and 11.
+
+**Prediction check.** The prior written in §3 was theta ~ 10/58; the draw is 11, inside one binomial sd. The pre-registered expectation held.
+
+**Not licensed (§5, unchanged):** any claim about why the score is one higher; any effect claim against #11; any resolve-rate claim at dev-48 scale.
