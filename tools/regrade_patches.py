@@ -42,6 +42,8 @@ def _load_patches(patches_dir: Path) -> dict[str, str]:
 
 
 _CURRENT_INSTANCE_ID: str | None = None
+# EXP-036 2026-11-05: which shim packages the hook copied into /workspace, per instance id (audit field).
+_SHIMS_DROPPED: dict[str, list[str]] = {}
 
 
 def _patch_adds_file(patch_text: str, rel_path: str) -> bool:
@@ -86,6 +88,7 @@ def _install_shim_hook(patches: dict[str, str]) -> None:
             )
             if probe.exit_code == 0 and probe.stdout.strip():
                 docker.copy_to(container_id, SHIM_ROOT / pkg, "/workspace/")
+                _SHIMS_DROPPED.setdefault(_CURRENT_INSTANCE_ID or "", []).append(pkg)
 
     _v.extract_snapshot = _patched_extract
 
@@ -102,6 +105,12 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0, help="grade only the first N tasks (0 = all)")
     ap.add_argument("--task-ids", default="", help="comma-separated instance_ids to grade")
     ap.add_argument("--timeout", type=int, default=300, help="per-command timeout seconds")
+    # EXP-036 2026-11-05: the scored eval grades with timeout_seconds from eval_config (240 for EXP-028 R/RH)
+    # and the HarnessLimits default verification timeout (300 s); this lets a re-grade match both.
+    ap.add_argument("--verification-timeout", type=int, default=0,
+                    help="pytest-phase timeout seconds (0 = same as --timeout)")
+    ap.add_argument("--tail-chars", type=int, default=6000,
+                    help="keep the last N characters of the grader output per row")
     ap.add_argument("--resume", action="store_true",
                     help="keep an existing regrade.jsonl and skip tasks already in it")
     args = ap.parse_args()
@@ -140,7 +149,7 @@ def main() -> int:
         sandbox="subprocess",
         wheels_dir=args.wheels,
         timeout_seconds=args.timeout,
-        verification_timeout_seconds=args.timeout,
+        verification_timeout_seconds=args.verification_timeout or args.timeout,
         max_time_minutes=60.0,
         display_mode="quiet",
     )
@@ -170,6 +179,7 @@ def main() -> int:
     for i, t in enumerate(tasks, 1):
         t0 = time.time()
         _CURRENT_INSTANCE_ID = t.instance_id
+        _SHIMS_DROPPED.pop(t.instance_id, None)
         r = asyncio.run(ev.evaluate_task(task=t, task_index=i, total_tasks=len(tasks)))
         row = {
             "instance_id": t.instance_id, "repo": t.repo, "resolved": bool(r.resolved),
@@ -177,7 +187,8 @@ def main() -> int:
             "seconds": round(time.time() - t0, 1),
             "patch_chars": len(patches.get(t.instance_id, "")),
             "error": (getattr(r, "error", "") or "")[:400],
-            "tail": (r.test_output or "")[-6000:],
+            "tail": (r.test_output or "")[-args.tail_chars:],
+            "shims_dropped": sorted(set(_SHIMS_DROPPED.get(t.instance_id, []))),
         }
         rows.append(row)
         with out_jsonl.open("a", encoding="utf-8") as fh:
