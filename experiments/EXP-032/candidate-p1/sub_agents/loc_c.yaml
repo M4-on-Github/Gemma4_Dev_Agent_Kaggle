@@ -1,0 +1,11 @@
+# EXP-032 2026-11-05: role (c) callers and configuration. read_file only; see loc_a.yaml for why include_contents stays none.
+name: loc_c
+description: Read-only localizer for callers and configuration. It finds the other modules that use the affected code and the defaults or settings that control its behaviour.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include ../prompts/loc_c.md
+include_contents: none
+output_key: plan_c
+tools:
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling_loc.yaml

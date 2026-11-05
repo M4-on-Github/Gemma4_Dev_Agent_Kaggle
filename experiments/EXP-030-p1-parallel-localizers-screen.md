@@ -121,6 +121,8 @@ python -I -X utf8 experiments/EXP-030/l1b_trace_mining.py --run runs/EXP-030-p1 
 
 1. The kernel was pushed before the coordinator's hold (critic direction review, cohort and design) reached the screener; see section 8. The cohort is smoke-8 against the critic's request for 8 cap-bound ids. 2. Known at writing time and not defects: L1a and L1b not run (section 1); the new `submit_patch`-in-sub-agent validator warning; the unreferenced `prompts/system.md`; E5's agreement measure and E2's stage ratio are defined on step timestamps, and if the trace schema stamps sub-agent steps differently from the single-loop traces the analysis will say so.
 
+3. **The push failed in the first notebook cell and ran no task (logged 2026-11-05).** The build command of section 6 passed `--set EXP_ID="EXP-030-p1"`; the shell removed the double quotes, so the parameter cell held `EXP_ID = EXP-030-p1`, which Python reads as a subtraction with a leading-zero integer and rejects: `SyntaxError: leading zeros in decimal integer literals`. The log is `runs/EXP-030-p1/gemma4-exp030-p1.log` (not in git). Zero tasks ran, zero GPU-h were spent, there is no data to read against section 4. The fix, used from EXP-032 on, is to quote string parameters so the inner quotes survive (`--set EXP_ID='"EXP-032-p1"'`) and to open the generated notebook's parameter cell and check every assignment before any push. This experiment is not re-pushed; the critic's direction review (`experiments/EXP-030/critic.md`) changed cohort, budgets and editor shape, so the design continues as EXP-032.
+
 ## 8. Built and pushed
 
 **Pre-registration commit `341a9e1`** (this file through section 7, `candidate-p1/`, `l1b_trace_mining.py`, `notebooks/exp030_p1/`). Section 4 was committed before the push and is not revised here.
@@ -133,4 +135,4 @@ Source facts checked while waiting: `submit_patch` and `get_status` are `budget_
 
 ## Status
 
-Kernel `rainm4/gemma4-exp030-p1` RUNNING (started by the push above). Next, a separate job once `kaggle kernels status rainm4/gemma4-exp030-p1` says COMPLETE: `kaggle kernels output rainm4/gemma4-exp030-p1 -p runs/EXP-030-p1/`, move the nested inner directory up, run the commands of section 6, apply section 4 as written. L1a and L1b are not run (Bash guard); `experiments/EXP-030/l1b_trace_mining.py` is untested.
+Superseded by EXP-032, no data. Kernel `rainm4/gemma4-exp030-p1` failed in its first cell (section 7 item 3), no task ran, 0 GPU-h. Nothing in section 4 was read. L1a and L1b were not run (Bash guard); `experiments/EXP-030/l1b_trace_mining.py` is untested.

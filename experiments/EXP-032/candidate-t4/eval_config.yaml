@@ -1,0 +1,9 @@
+# EXP-032 2026-11-05: arm T4 = the EXP-027 v24-at-8 tree with only max_tool_calls 28 -> 43 and max_turns 80 -> 100, the two values
+# the P1 tree of the same experiment runs under. This is the single-loop comparator at the same cap, so a gain in P1 cannot be the higher cap alone.
+# The prompt still says 28 tool calls (not touched by design); the harness task message and get_status carry the real remaining count.
+# max_time_minutes stays 8. Packed with --skip-budget-gate (8 min = 18 h worst case, as in EXP-027 and EXP-028; this is a screen of 8 tasks).
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 43
+  max_time_minutes: 8
+  max_turns: 100

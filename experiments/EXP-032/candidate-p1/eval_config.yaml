@@ -1,0 +1,12 @@
+# EXP-032 2026-11-05: identical to arm T4's eval_config (same four values), so the two arms differ only in the agent tree.
+# max_tool_calls 28 -> 43 (3 localizers x 5 calls = 15, plus the 28 the single loop had; the counter is one shared budget across all agents,
+# EXP-007 H4, so the hard guarantee for the editor is 43 minus what the localizers actually spent, and 28 only if each spends its full allowance).
+# max_turns 80 -> 100 (3 localizers x up to 6 model turns = 18 more LLM calls; keeps the turn limit from being the binding cap, since a limit
+# error raised inside a parallel branch can arrive wrapped in a TaskGroup error).
+# max_time_minutes stays 8: the localizer stage runs inside the same wall budget. Packed with --skip-budget-gate (8 min = 18 h worst case,
+# as in EXP-027 and EXP-028; this is a screen of 8 tasks).
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 43
+  max_time_minutes: 8
+  max_turns: 100

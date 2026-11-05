@@ -1,0 +1,11 @@
+# EXP-032 2026-11-05: role (b) tests and usages. read_file only; see loc_a.yaml for why include_contents stays none.
+name: loc_b
+description: Read-only localizer for the tests. It finds the existing test file for the affected feature and reports what its tests assert and which fixtures they use.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include ../prompts/loc_b.md
+include_contents: none
+output_key: plan_b
+tools:
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling_loc.yaml

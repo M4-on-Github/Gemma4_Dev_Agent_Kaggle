@@ -1,0 +1,13 @@
+# EXP-032 2026-11-05: role (a) code site. read_file only (no run_command): the three localizers execute nothing, and paths come from the
+# workspace tree in the harness task message. include_contents none is kept: contents.py lines 570-574 pick the turn start with the branch
+# filter applied first (lines 299-317, 748-763), so a sibling localizer's events cannot cut this agent's own call/response pair.
+name: loc_a
+description: Read-only localizer for the code site. It finds the function the issue says is wrong and copies its exact current text.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include ../prompts/loc_a.md
+include_contents: none
+output_key: plan_a
+tools:
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling_loc.yaml

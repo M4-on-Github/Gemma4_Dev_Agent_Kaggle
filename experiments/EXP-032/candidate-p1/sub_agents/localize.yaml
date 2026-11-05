@@ -1,0 +1,7 @@
+name: localize
+agent_class: ParallelAgent
+description: Three read-only localizers run at the same time, each reading a different part of the repository (code site, tests, callers and configuration), each writing a short report to session state.
+sub_agents:
+  - config_path: sub_agents/loc_a.yaml
+  - config_path: sub_agents/loc_b.yaml
+  - config_path: sub_agents/loc_c.yaml

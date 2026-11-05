@@ -1,0 +1,11 @@
+# cohort capbound-8: 8 task ids drawn from the 12 Arm R tasks that hit the call cap in both EXP-028 Arm R and Arm RH (EXP-030/critic.md fix 1); fastapi/fastapi=4, Textualize/rich=4
+# rule: pool = the 18 Arm R cap-bound ids, kept only if calls_cap_hit is true in EXP-028 Arm RH (12 left, 6 per repo); per repo keep the 4 whose sha256 of the file text "20261105:<id>\n" (LF-terminated, no BOM) has the smallest hex digest; seed=20261105
+# ids only, no competition data
+fastapi_14512
+fastapi_14609
+fastapi_14873
+fastapi_15280
+rich_3063
+rich_3676
+rich_4070
+rich_4075
