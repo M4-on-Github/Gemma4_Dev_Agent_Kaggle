@@ -73,6 +73,7 @@ user-invocable: false
 - Our 12.8 KB prompt at 4.5 min: 79-96% of tasks run to the cap (E0 79.2%, EXP-025 Arm A 95.8%); mean ~258-274 s; `cap x 120` is accurate to 4% for it. Fixed per-task overhead outside the cap: setup ~3.3 s median, grading ~14 s mean (EXP-016).
 - The rank-3 v24 prompt at 8 min on their dev sets: mean 275-296 s, 15-24% at cap, median 25 calls, median first edit at step 10 (`research/2026-10-28-kaggle-open-scouting.md` §3).
 - `edit_file` arg loss: 37.9% of calls across two dev-48 runs (EXP-024); 53.5% at thinking 256 vs 18.2% at 4096; the lost call's `new_string` ends in `ng:` on 200/201 (EXP-026 §1); ~90% identical-retry rate after a loss.
+- A per-agent call or read limit stated only in a prompt is not enforced: the harness has one shared call counter and no per-agent cap. The EXP-032 localizers broke their 5-call limit (§7 item 15), and the EXP-040 proposer broke its 4-read limit on 3 of 8 tasks (7, 7 and 13 reads; §9.8). Do not design on such a limit holding.
 - Grading runs whole test files; `pytest -k` is faster but a broken sibling test fails the task (`experiments/README.md` §1h).
 - The grading data was confirmed from the harness source and EXP-035 (2026-11-05).
   - **Which tests run.** pytest runs only the files that the test patch touches (`Task.test_files` = `extract_test_files_from_patch`). A failing test in any other file is therefore impossible by construction.

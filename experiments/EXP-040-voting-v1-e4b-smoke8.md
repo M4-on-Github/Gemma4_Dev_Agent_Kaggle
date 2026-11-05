@@ -365,6 +365,8 @@ The E1 to E3 rows are `tally.py`'s output.
 | 1 | C >= 2 in fewer than 6 of 8 | 6 of 8, exactly at the boundary | no |
 | 2 | D = 0 of 8 | **0 of 8**, as written and corrected | **yes, governs** |
 
+*Note under row 1, 2026-11-05 (critic light):* Row 1 is read on pass 1, as tally.main scores it. Counting httpx_3672's restart pass, whose proposer gave no candidates, C >= 2 is 5 of 8 and row 1 would govern (critic light 2026-11-05). Both rows stop V1 as specified. (Experimenter's recount over the traces agrees: 6 of 8 on pass 1, 5 of 8 on the last pass; `out/exp040_critic_check.py`, untracked.)
+
 **Row 2: kill V1 as specified.** At N = 16, the vote and voter 1 agreed on every task. C-023 stays a hypothesis, pending a prompt-diverse variant. Rows 3 to 6 are not reached. For the record:
 - A = 6 of 8, so row 3's A <= 4 is not met;
 - the mean wall of 86.5 s with 0 capped is within row 4's bounds;
@@ -432,7 +434,9 @@ No upload slot was used.
 ### 9.8 Outside the readings (recorded, not read)
 
 - **D could only be true on 6 of 8 tasks.** On the 2 tasks with one candidate, every vote must equal voter 1's, so D = 0 there by construction.
-- **The candidates were mostly one fix written several ways.** On 3 of the 6 tasks with C = 4 (fastapi_14301, requests_7309, rich_3006), the four candidates propose the same change in different words. This is the reader's judgement, not a computed endpoint. It is one plausible reason the vote never moved off voter 1's pick, and it fits the near-duplicate concern in the section 4 prediction.
+- **The candidates were one fix written several ways on 3 of the 6 four-candidate tasks.** On 3 of the 6 tasks with C = 4 (fastapi_14301, requests_7309, rich_3006), the four candidates propose the same change in different words. This is the reader's judgement, not a computed endpoint. The vote also equalled voter 1's pick on the other 3 four-candidate tasks, which were more unanimous (leads 16, 10 corrected, 16, against 14, 10, 4), so this does not explain D = 0. It fits the near-duplicate concern in the section 4 prediction.
+  - *Dated correction, 2026-11-05 (critic light).* The opening phrase and one sentence of this bullet were replaced. The earlier wording, kept here: ~~"The candidates were mostly one fix written several ways."~~ and ~~"It is one plausible reason the vote never moved off voter 1's pick, and it fits the near-duplicate concern in the section 4 prediction."~~ The earlier sentence offered the paraphrase sets as a reason for D = 0, which the other three four-candidate tasks contradict.
+- **The proposer's 4-read limit (prompt only) held on 5 of 8; requests_7205 and requests_7309 read 7 times, rich_3468 13.** (Added 2026-11-05, critic light; the experimenter's count of proposer `read_file` calls per pass over the traces agrees, and the other 5 tasks made 0 to 3 reads per pass, the 0 being httpx_3672's restart pass.)
 - **httpx_3672's restart pass.**
   - The actor ended pass 1 with text and no tool call. The trace then has a harness `continuation_nudge` event, and the whole tree re-ran.
   - The re-run proposer's prompt was 583 tokens, against 1,409 at its first call in pass 1. Its reply had no lettered candidate. This fits its `include_contents: none` window starting at the nudge, the F11 pattern again on a restart [I].
