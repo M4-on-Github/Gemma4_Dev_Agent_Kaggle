@@ -1,8 +1,9 @@
 ---
 id: EXP-032-critic
 exp: EXP-032
-tier: prereg
-verdict: needs-work
+tier: light
+verdict: accepted
+prereg_verdict: needs-work
 verified: regenerated
 date: 2026-11-05
 ---
@@ -57,3 +58,63 @@ date: 2026-11-05
    - Report unranged localizer reads by author.
    - Replace "by construction" with "by instruction".
    - E1's remark about a "detector miss" has been stale since 4657dce.
+
+## Results review 2026-11-05 (light, arm P1, 09ddb3a)
+
+**Verdict: accepted.** Row e governs as written.
+- kP = 1 on the strict reading and 4 on the attempt-inclusive one. Row e needs at most 4, so the loose reading sits exactly on the boundary and still holds.
+- kT is read against kR = 1 (item 6).
+- There are 0 defect crashes.
+
+What the run supports is narrower than row e's text:
+- a prompt-only 5-call limit was broken on 21 of 24 localizer branches;
+- the readers took 43-45 of the 43 shared calls in 7 of 8 tasks;
+- so the editor started with 0 guaranteed calls in 7 of 8, and 18 in fastapi_14609.
+
+The parallel stage's value was not tested. It is parked, not refuted. T4 did not run.
+
+**Audit**
+1. **Order: pass.**
+   - The §7 fixes went in at 40cc718 (13:27 UTC). Version 2 was pushed at about 14:15, and version 1's output was never read.
+   - `git diff 40cc718 HEAD` adds only §7 items 14-15, the §8 records, §9 and Status.
+   - The notebook is unchanged since 1118e9b.
+2. **Cohort and arm: pass.**
+   - The 8 ids equal capbound-8.
+   - The run's `agent/` equals `candidate-p1`. The embedded sha was checked at prereg.
+   - The only errors are the harness session timeout, on fastapi_14609 and rich_3063.
+3. **Numbers: pass, with two corrections that move no row.**
+   - `analyze_traces.py --out` (scratch) reproduces `p1/summary.jsonl` exactly. The kernel log spans 3,280.1 s.
+   - My own author split from the traces reproduces, per task:
+     - localizer calls a/b/c and calls before the editor;
+     - 21 of 24 branches over 5;
+     - editor guaranteed calls 0 in 7 tasks and 18 in one;
+     - first editor step at 180.3-308.0 s.
+   - kP is 1 strict and 4 loose. The loose count adds the refused gold-file attempts on fastapi_14873, rich_3676 and rich_4075, at editor index 1, 2 and 6. kR = 1 (rich_4070, call 3).
+   - Paired wall against Arm R: +72.9 s, SD 83.3, SE 29.4, +2SE 131.8, 3 tasks above +90 s.
+   - Crash strings: 0 of the class (i)-(iv) strings in traces, `task_results` and the log.
+   - Nudges: 0 `continuation_nudge` steps, counted directly, so E7 = 0 holds.
+   - **Corrections:**
+     - (a) fastapi_14609's first gold-file edit is its 9th editor call, not the 8th: 7 reads and 1 command precede it. Its global index is 34, not 33.
+     - (b) E1's peak over the other seven tasks is 16,687 (rich_4070), not 15,101. All 8 peaked above 14,336.
+8. **Hygiene: pass.**
+   - §9 names ids, counts, harness messages, our class strings and file paths. Gold file paths are paths, which my line allows; no gold text appears.
+   - `p1/summary.jsonl` holds only the timeout message, repo names and ids.
+   - The README row is clean.
+
+**Scope.** §9's paragraph on what row e does not carry is the right text to cite downstream. The lead's plan entry is accurate, except that it does not say the parallel stage was left untested.
+
+## Required fixes, results review (non-gating)
+
+```
+Experimenter, EXP-032 9 E11: "at its 8th editor call" -> "at its 9th editor call"; "25 + 8 = 33" ->
+"25 + 9 = 34".
+Experimenter, 9 E1: "and 15,101 over the other seven" -> "and 16,687 (rich_4070) over the other seven;
+every task peaked above 14,336 (14,925 to 18,556)".
+Lead, plan EXP-032 P1 entry: "the parallel stage is parked as row e says" -> "the parallel stage is
+parked as row e says, untested rather than refuted (the editor had 0 guaranteed calls in 7 of 8)".
+Lead, C-014 history: after "row e fired, parallel stage parked" add "; not evidence on delegation
+capability, since the editor had 0 guaranteed calls in 7 of 8 (critic light accepted)".
+Lead, C-023 sources: "EXP-032 P1 row e (prompt-only call limits ignored, the editor starved)" ->
+"EXP-032 P1 section 9 E6 (21 of 24 localizer branches broke a prompt-only 5-call limit; the editor had
+0 guaranteed calls in 7 of 8)".
+```
