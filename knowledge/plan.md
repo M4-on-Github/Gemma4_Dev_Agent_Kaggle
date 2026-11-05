@@ -33,9 +33,12 @@ S-012 (tree R, second draw) scored 0.18 = 11/58 (ref 57970005); EXP-029 row 3: p
 - Critic `light` review of EXP-028 (moves C-003/C-008 time profile and C-005).
 - Fix in experiment-protocol step 7: summaries live at `experiments/EXP-NNN/<arm>/summary.jsonl` (hygiene accepts only that name).
 - Critic backfill of migrated claims (start with EXP-024, EXP-025, EXP-027).
-- Experimenter: `submissions.md` row 12 and EXP-029 §9 for the 0.18 grade (not yet dispatched).
-- D-004 approved 2026-11-05 for screens only. Planned spend: EXP-030 31B parallel smoke-8 0.8 GPU-h; E2B baseline and E2B parallel under 0.8 each; E4B under 0.8 only if E2B runs cleanly; ceiling 3.2 GPU-h, no dev-48 arm. Dispatched: critic `direction` review, screener EXP-030, experimenter (row 12, EXP-029 §9, small-model names in the rules).
-- User: plan.md §5.8 rewording, GPU quota counter and reset day, today's upload decision.
+- D-004 approved 2026-11-05 for screens only, ceiling 3.2 GPU-h, no dev-48 arm, no upload. Spent so far: 0 GPU-h (EXP-030 kernel `rainm4/gemma4-exp030-p1` failed in the parameter cell on an unquoted `EXP_ID`, no task ran; superseded).
+- Critic direction review of D-004: needs-work (`experiments/EXP-030/critic.md`). Budgets are shared per task, so a parallel locate stage buys wall-clock only; the measured failure is the wrong fix in the right file, not location. Redesign: EXP-032, two arms on `capbound-8` (T4 single loop at the raised cap against P1 parallel tree at the same cap), about 1.6 GPU-h, critic `prereg` before push.
+- In progress (2026-11-05 13:00 UTC): screener pre-registering EXP-032 and building both notebooks, no push; experimenter on zero-GPU items (builder refuses unparsable `--set`, L1b trace mining, compaction detector fix, Q7 scorer compaction settings).
+- Held until the user answers: small-model screen (critic recommends one E4B single-loop screen; user's steer was biggest and smallest, E2B).
+- Done: `submissions.md` row 12 = 0.18 (11/58), EXP-029 §9, small-model names in the rules (commits 2538bc6, 1cd52f8); EXP-031 pre-registered and S-013 proposed (third baseline draw, not uploaded).
+- User: today's upload slot (S-013 or empty; closes 2026-11-05 23:59 UTC), E4B or E2B for the small-model screen, plan.md §5.8 rewording, GPU quota counter and reset day.
 
 ## Not pursued
 
