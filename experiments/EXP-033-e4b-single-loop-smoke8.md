@@ -101,12 +101,61 @@ python tools/run_forensics.py compare runs/EXP-028-armR runs/EXP-033-e4b
 
 None yet. Known at writing time: the Arm R per-task fields in section 1 were read from `summary.jsonl` and the cap column is derived from `calls_cap_hit`, `time_cap_hit` and `submit_patch_called`; the first-edit index for Arm R was not computed here (E8 computes it at analysis). `build_notebook.py` printed `kernel-metadata.json id -> rainm4/gemma4-eval-l4x4` but did not write one in the output directory; the file here is hand-written from `exp028_armR`'s with the three changes above.
 
+Found at analysis, 2026-11-05: (a) `thinking_tokens` is null in `summary.jsonl`, so the E3 budget clause could only be answered by completion tokens per step, as section 3 said it would be. (b) E8 for Arm R was not computed (the 31B comparison "later than 31B" in the predictions is therefore not checkable here). (c) The log does not show in-flight requests, so the peak of E10 is not available. (d) The kernel output bundle is nested, `runs/EXP-033-e4b/runs/EXP-033-e4b/`; section 6's `analyze_traces.py runs/EXP-033-e4b` has to be pointed at the inner directory. (e) GPU-h is derived from the log's start and end stamps, not from a Kaggle usage figure. (f) "Capped" in section 4 was defined by E6 alone; no E6 cap fired, so the row did not depend on any reading of the harness's own cap messages.
+
 ## 8. Built
 
 Built 2026-11-05 with the section 6 commands; sha in section 2; validator output in section 2. Committed by pathspec before the push. **Push not yet done at the time of this writing**; the push record and `## Status` follow below.
 
 **Push record, 2026-11-05.** Kernel `rainm4/gemma4-exp033-e4b` pushed from `notebooks/exp033_e4b` after the pre-registration commit d2c11da (zip sha256 `9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0`), reply "Kernel version 1 successfully pushed". UTC time of day not recorded (no clock command). First status check straight after: `KernelWorkerStatus.QUEUED` (the EXP-032 P1 kernel may still be running; Kaggle did not refuse the push). Not waited on.
 
+## 9. Results, 2026-11-05 (appended after the kernel finished; sections 1-6 above are unchanged)
+
+Kernel `rainm4/gemma4-exp033-e4b` COMPLETE (queued about 13:37 UTC, complete 13:53 UTC per the lead's status check). Bundle downloaded to `runs/EXP-033-e4b/` (nested one level, see 7(d)); analyzed with `python tools/analyze_traces.py <inner dir> --cap-minutes 8 --max-calls 28`, `run_forensics.py forensics` and `run_forensics.py compare runs/EXP-028-armR <inner dir>`. The 8-row summary is committed as `experiments/EXP-033/e4b/summary.jsonl`.
+
+**Kernel log.** The model input resolved (no assert failure). `vLLM up in 322.9s (tp=4, gpus=4)`. Decode probe 400 tokens in 7.09 s = 56.4 tok/s. All 8 tasks ran with an empty `err`. Kernel wall about 900 s = **about 0.25 GPU-h** (derived from the log's span, 7(e)). `RESOLVED 2/8`.
+
+**Per task** (wall s / counted calls / turns / compactions / edit failures / patch):
+
+| id | wall | calls | turns | compact. | edit fails | cap that ended it | patch | resolved | first-edit call | seconds left |
+|---|---|---|---|---|---|---|---|---|---|---|
+| requests_7309 | 27.9 | 3 | 6 | 0 | 0 | submit | non-empty | no | 3 | 452.1 |
+| requests_7205 | 89.6 | 6 | 11 | 0 | 3 | submit | **empty** | no | 4 | 390.4 |
+| fastapi_14448 | 56.8 | 4 | 7 | 0 | 0 | submit | non-empty | no | 3 | 423.2 |
+| fastapi_14301 | 31.3 | 3 | 8 | 0 | 0 | submit | non-empty | yes | 3 | 448.7 |
+| httpx_3672 | 60.4 | 1 | 7 | 0 | 0 | submit | **empty** | no | never | 419.6 |
+| fastapi_14605 | 90.7 | 15 | 20 | 1 | 4 | submit | non-empty | no | 3 | 389.3 |
+| rich_3468 | 56.2 | 5 | 8 | 0 | 0 | submit | non-empty | no | 4 | 423.8 |
+| rich_3006 | 42.6 | 6 | 9 | 0 | 0 | submit | non-empty | yes | 5 | 437.4 |
+| sum, mean | 455.5 s, **56.9 s** | 43, 5.4 | 76, 9.5 | 1 | 7 | 8 submit, 0 calls, 0 turns, 0 time | 6 of 8 | 2 of 8 | | mean **423.1**, min **389.3** |
+
+First-edit call indices were taken from the ordered tool-call names in each trace (counted calls only, `submit_patch` excluded). The two empty-patch tasks differ: requests_7205 made 3 `edit_file` calls that all failed (so no change reached the tree) and httpx_3672 never called an edit tool (it wrote diffs as prose and then called `submit_patch` twice).
+
+**Endpoints, as defined in section 3.**
+
+| # | Result |
+|---|---|
+| E1 | 8 of 8 tasks with at least one well-formed executed call |
+| E2 | 0 malformed of 43 counted calls (0.0%); Arm R 0 of 132 |
+| E3 | `thinking` events are present in all 8 traces. `thinking_tokens` is null (7(a)), so the 4096 clause cannot be checked; the largest completion-token count on any one step is 4,881 (httpx_3672), under 8192, so the output cap was honoured. Whole-task output tokens: 2,170 to 7,915, 34,955 in all. Stray `<channel|>` marker text leaks at the end of a message in 4 of 8 tasks (fastapi_14448, httpx_3672, fastapi_14301, fastapi_14605) |
+| E4 | 43 counted calls and 76 turns in 455.5 s: 5.4 calls and 9.5 turns per task against Arm R's 16.5 and 18.9; **6.0 s per model turn** against 10.7 |
+| E5 | 1 compaction (fastapi_14605); Arm R 5 |
+| E6 | 8 submit, 0 calls, 0 turns, 0 time. Capped: **0 of 8** (Arm R 1 of 8) |
+| E7 | 6 of 8 non-empty patches |
+| E8 | counted-call index of the first edit: 3, 3, 3, 3, 4, 4, 5 and never; 7 of 8 edited by call 5, inside the prompt's deadline of 12. Arm R's was not computed (7(b)) |
+| E9 | 0 edit-argument-loss events (Arm R 1). 7 edit failures in total (requests_7205 3, fastapi_14605 4), from the edit tool rejecting the call, not from lost arguments |
+| E10 | vLLM up in 322.9 s (EXP-006 E4B 289 s; 31B 342-397 s). Peak in-flight not in the log (7(c)) |
+| E11 | seconds left under the 480 s cap, per task in the table above; mean 423.1 s, minimum 389.3 s (Arm R mean 277 s) |
+| E12 | resolved 2 of 8 (fastapi_14301, rich_3006), the same two ids Arm R resolved; `run_forensics compare` gives discordant pairs 0. Recorded, not read |
+
+**Reading applied as written.** Row 0 is out: the model input resolved, vLLM booted, all 8 tasks ran, E1 is 8 of 8. Row 1 is out: E7 is 6, not 0. Row 2 is out: 0 of 8 capped (needs 3 or more). **Row 3 fires**: the loop finishes inside the clock. Room for a parallel or verify stage on this model, per row 3's wording: the time left is a **mean of 423 s and a minimum of 389 s per task** at **6.0 s per turn**, which is **about 70 turns on average and about 65 turns at the minimum** (423.1 / 6.0 and 389.3 / 6.0), against Arm R's 277 s at 10.7 s per turn, about 26 turns. This is arithmetic on the unchanged loop; it assumes a second stage runs at the same seconds per turn and does not include a longer first stage. A verify or parallel stage is then costed on a dev-48 arm with a time-profile endpoint; no upload is licensed.
+
+**What this screen does not show.** The loop finished early because it edited early and submitted, not because it was efficient: the two tasks it resolved are the two that 31B resolved, six tasks were not resolved, and two of the eight ended with an empty patch. Whether the early submit is the model stopping short of the 28-call and 8-minute allowance is the one thing the numbers hint at (mean 5.4 calls of 28 allowed) and the one thing that a time-profile endpoint on a verify stage would have to cover. Two format defects visible in the traces, recorded only: the `<channel|>` marker leaking into message text in 4 of 8 tasks, and fastapi_14301 where a JSON tool call written as plain text was still executed as `edit_file` (so the parser accepted a text-form call there). Neither blocked a task.
+
+**Predictions against outcome.** Held: loop functions (80%); a well-formed call in 7 or 8 of 8 (8); seconds per turn about 5 within 3-8 (6.0); non-empty patches in 5 to 7 (6); resolves in the 15% "2 or more" bin (2, recorded not read). Wrong: malformed rate 5-20% (0%); mean task wall about 200 s, range 120-330 (56.9 s); kernel wall about 0.55 h (about 0.25 h); capped 3 or 4 of 8 with row 2 likeliest at 45% (0 capped, row 3 was the 25% outcome); edit argument loss at least as frequent as 31B (0 against 1). Edge: vLLM up about 290 s within 250-330 (322.9, at the upper edge). Not checkable: first edit later than 31B's (7(b)); peak in-flight 1 (7(c)). The direction of every miss is the same: the E4B did less work per task than the pre-registered guess, not more.
+
+**Cost.** About 0.25 GPU-h of the 30 per week (kernel span from the log, 7(e)), below the 0.45-0.8 h expected and the 1.3 h worst case. No upload slot used.
+
 ## Status
 
-2026-11-05: `rainm4/gemma4-exp033-e4b` pushed, QUEUED. Next, a separate job when `kaggle kernels status rainm4/gemma4-exp033-e4b` says COMPLETE: download with `kaggle kernels output rainm4/gemma4-exp033-e4b -p runs/EXP-033-e4b/`, then the section 6 analysis, then section 4 as written. If the log shows the model-input assert failing, that is row 0 (model load) and the model input path was the unverified item.
+2026-11-05: `rainm4/gemma4-exp033-e4b` COMPLETE, analyzed. Row 3 fired: 0 of 8 capped, 6 of 8 non-empty patches, 6.0 s per turn, mean 423 s and minimum 389 s left under the 480 s cap. About 0.25 GPU-h spent. Resolves 2 of 8 (the same two ids as Arm R), recorded not read. No upload licensed. Next decision belongs to the lead: a dev-48 arm with a time-profile endpoint that uses the room, or an LB-only E4B draw (zero GPU).
