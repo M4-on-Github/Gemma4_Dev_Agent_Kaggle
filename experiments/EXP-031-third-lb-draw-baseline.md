@@ -88,6 +88,13 @@ None yet.
 
 No build: the zip is the EXP-027 artifact, not repacked. `sha256sum experiments/EXP-027/v24_at8.zip` on 2026-11-05 = `c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600`. The zip is a gitignored archive; its provenance is EXP-027 §8 and the `submissions.md` rows 11 and 12 that carry the same sha.
 
+**Uploaded 2026-11-05** (recorded by the experimenter from `knowledge/submissions/S-013-result.md`, bed1cd6):
+- **Review and approval.** The critic's prereg verdict is `ready` (`experiments/EXP-031/critic.md`, 954b57b). The user approved, and S-013 was proposed.
+- **The upload.** The submitter uploaded `out/submission.zip` once, at 2026-11-05 23:34:14 UTC. Kaggle ref **58037856**, status PENDING. The sha256 of the uploaded file is `c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600`, which equals the approval and #11 and #12.
+- **Log.** `submissions.md` row 13.
+
 ## Status
 
-Pre-registered 2026-11-05, **not uploaded**. Waiting on: the user's decision whether to use a slot for this; if yes, the critic's `prereg` review (required for any upload), then S-013 (lead) and `approvals/S-013.txt` (user). Next command, submitter only, after approval: the §6 block.
+~~Pre-registered 2026-11-05, **not uploaded**. Waiting on: the user's decision whether to use a slot for this; if yes, the critic's `prereg` review (required for any upload), then S-013 (lead) and `approvals/S-013.txt` (user). Next command, submitter only, after approval: the §6 block.~~
+
+2026-11-05: **uploaded, score pending** (ref 58037856, 23:34:14 UTC, `submissions.md` row 13). Waiting on: the grading, which has taken 6 to 22 h. When the submitter reports the score, append §9, apply §4 as written and pool per §3, then fill the score into `submissions.md` row 13 and the README §3 row.
