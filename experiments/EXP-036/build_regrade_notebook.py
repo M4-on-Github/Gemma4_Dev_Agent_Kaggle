@@ -17,6 +17,13 @@ Run as:
       --template experiments/EXP-036/kaggle_regrade_template.py --cohort experiments/cohorts/dev-48.txt \
       --arm R=runs/EXP-028-armR/patches --arm RH=runs/EXP-028-armRH/patches \
       --out notebooks/exp036_regrade/kaggle_regrade.ipynb
+
+Any other arm set also needs --exp-id and --passes, because the template's EXP_ID and PASSES are literals
+(added 2026-11-05; the defaults reproduce the EXP-036 build byte for byte). EXP-038 section 3.3:
+  python -I -X utf8 experiments/EXP-036/build_regrade_notebook.py \
+      --template experiments/EXP-036/kaggle_regrade_template.py --cohort experiments/cohorts/dev-48.txt \
+      --arm E4B=runs/EXP-038-e4b-dev48/patches --exp-id EXP-038-regrade --passes E4B,GOLD,BASE \
+      --out notebooks/exp038_regrade/kaggle_regrade.ipynb
 """
 from __future__ import annotations
 
@@ -63,7 +70,12 @@ def main() -> int:
     ap.add_argument("--cohort", type=Path, required=True)
     ap.add_argument("--arm", action="append", default=[], metavar="LABEL=DIR", required=True)
     ap.add_argument("--out", type=Path, required=True)
+    # Added 2026-11-05 for EXP-038 section 3.3: the template's EXP_ID and PASSES are literals for EXP-036's
+    # R/RH run. The defaults reproduce EXP-036; the template file is not edited.
+    ap.add_argument("--exp-id", default="EXP-036-regrade")
+    ap.add_argument("--passes", default="R,RH,GOLD,BASE", help="comma list; every non-GOLD/BASE pass needs an --arm")
     a = ap.parse_args()
+    passes = [p.strip() for p in a.passes.split(",") if p.strip()]
 
     ids = [ln.strip() for ln in a.cohort.read_text(encoding="utf-8").splitlines()
            if ln.strip() and not ln.startswith("#")]
@@ -83,7 +95,14 @@ def main() -> int:
     if meta.get("code_file") != a.out.name:
         raise SystemExit(f"{meta_path}: code_file {meta.get('code_file')!r} != {a.out.name!r}")
 
+    missing_arms = [p for p in passes if p not in ("GOLD", "BASE") and p not in zips]
+    if missing_arms:
+        raise SystemExit(f"--passes names {missing_arms} but no --arm supplies them")
+
     text = a.template.read_text(encoding="utf-8")
+    if (a.exp_id, passes) != ("EXP-036-regrade", ["R", "RH", "GOLD", "BASE"]):
+        text = set_param(text, "EXP_ID", a.exp_id)
+        text = set_param(text, "PASSES", passes)
     text = set_param(text, "TASK_IDS", ids)
     text = set_param(text, "REGRADE_SCRIPT_B64", b64(ROOT / "tools" / "regrade_patches.py"))
     text = set_param(text, "SHIM_INLINE_B64", b64(ROOT / "tools" / "compat_shims" / "inline_snapshot" / "__init__.py"))

@@ -1,0 +1,2 @@
+# EXP-038 (as EXP-036): the built notebook embeds agent patches (diffs of competition repository code); never commit it (plan.md:52).
+*.ipynb

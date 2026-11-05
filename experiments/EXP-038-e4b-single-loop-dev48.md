@@ -403,6 +403,14 @@ None yet. Known at writing time:
      - The set U in the room definition also excludes the turns cap (Arm R would be 24 excluded), so the room is measured only on tasks at no cap at all.
    - `cost_estimate.py` gained one output key, `after_critic_prereg_2026_11_05`. Every earlier key is unchanged: the re-run output was compared key by key with the committed JSON.
 8. *Logged 2026-11-05.* The ledger arithmetic elsewhere ("1.86 + 1.24 = 3.10") used point B as if it were an upper end (critic, item 1). This file never stated B as a bound, but the 1.24 h figure handed to the lead was read that way.
+9. *Logged 2026-11-05, before the re-grade push. This is a build defect, and no reading changes.* Section 3.3 names the EXP-036 builder with `--arm E4B=...` and the EXP-036 template, but that pair cannot build this run as written.
+   - The template sets `EXP_ID = "EXP-036-regrade"` and `PASSES = ["R", "RH", "GOLD", "BASE"]` as fixed values, and the builder never rewrites them.
+   - Built with only `--arm E4B=...`, the notebook would stop at its count assert, because it would look for an `R` pass that no `--arm` supplies.
+   - **The fix.** `experiments/EXP-036/build_regrade_notebook.py` gained two optional flags, `--exp-id` and `--passes`. The builder writes them into the template's parameter cell only when they differ from the defaults. The template file is not edited.
+   - **The defaults still reproduce EXP-036.** I rebuilt the EXP-036 notebook from `runs/EXP-028-armR/patches` and `runs/EXP-028-armRH/patches` and compared it with the untracked `notebooks/exp036_regrade/kaggle_regrade.ipynb`. Both have sha256 `73df67c8453bd2ac31abf77aa6f6d6dc59590666b92a59d76e90020310e9686e`, so they are byte-identical.
+   - **This run uses** `--exp-id EXP-038-regrade --passes E4B,GOLD,BASE`, so GOLD and BASE are re-run and fault row F can be read in full.
+   - **Unchanged from section 3.3:** the timeouts (240 s and 300 s), the 20000-character tail and the shims.
+   - **Cosmetic.** The built notebook's markdown header still names EXP-036.
 
 ## 8. Built
 
