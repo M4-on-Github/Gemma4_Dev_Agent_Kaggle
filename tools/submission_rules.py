@@ -20,7 +20,22 @@ FREE_TOOLS = frozenset({"get_status", "submit_patch"})
 SKILL_TOOLS = frozenset({"list_skills", "load_skill", "load_skill_resource", "run_skill_script"})
 
 # VERIFY(Q2): model alias and provider prefixes (normalize_model_name strips the prefixes).
-ALLOWED_MODEL_NAMES = frozenset({"gemma-4-31b-it-qat-w4a16-ct"})
+# D-004 tooling 2026-11-05 (no EXP; nothing ships): {31B} -> {31B, E4B, E2B}, for the D-004
+# small-variant screens and the E2B/E4B small-model prize (research/kaggle/threads/kg-751104-small-model-prize.md). [V] data/raw/HARNESS_README.md
+# §2 (`model` field), §3.1 table and §3.2: the scorer's ALLOWED_MODEL_NAMES is exactly four quantized names,
+# 31B, 12B, E4B, E2B, all `-it-qat-w4a16-ct`; one base model per submission; an unlisted name raises
+# ParticipantVisibleError. [V] EXP-006 booted e4b and e2b from the Kaggle Model inputs
+# google/gemma-4/other/<name>/2 with the harness vLLM recipe and no extra flags. The bf16 aliases
+# (gemma-4-e2b-it, gemma-4-e4b-it, ...) are CLI-only in models.yaml and are NOT allowed here.
+# 12B is deliberately left out: it needs `--hf-overrides` in vLLM (HARNESS_README §3.1 MODEL_VLLM_EXTRA_ARGS)
+# that notebooks/kaggle_eval_l4x4.py does not pass, so a 12B tree could not be screened as built.
+ALLOWED_MODEL_NAMES = frozenset({
+    "gemma-4-31b-it-qat-w4a16-ct",   # the competition default; every upload so far
+    "gemma-4-e4b-it-qat-w4a16-ct",   # D-004 2026-11-05: added [V], small-model prize eligible
+    "gemma-4-e2b-it-qat-w4a16-ct",   # D-004 2026-11-05: added [V], small-model prize eligible
+})
+# The two names the small-model prize accepts (kg-751104: "Gemma E2B or Gemma E4B" [V]).
+SMALL_MODEL_NAMES = frozenset({"gemma-4-e4b-it-qat-w4a16-ct", "gemma-4-e2b-it-qat-w4a16-ct"})
 MODEL_PROVIDER_PREFIXES = ("openai/", "google/", "hosted_vllm/", "custom/")
 
 ROOT_CONFIG_NAMES = ("agent.yaml", "agent.yml", "root_agent.yaml", "root_agent.yml")

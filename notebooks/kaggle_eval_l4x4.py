@@ -7,7 +7,9 @@
 # `tools/analyze_traces.py` and `tools/estimate_budget.py` read.
 #
 # **Attach as inputs** (Add Input): competition `gemma-4-developer-agent`, dataset
-# `metric/gemma-4-developer-agent-wheelhouse`, model `google/gemma-4/Other/gemma-4-31b-it-qat-w4a16-ct/2`.
+# `metric/gemma-4-developer-agent-wheelhouse`, model `google/gemma-4/Other/gemma-4-31b-it-qat-w4a16-ct/2`
+# (or the `.../gemma-4-e4b-it-qat-w4a16-ct/2` / `.../gemma-4-e2b-it-qat-w4a16-ct/2` input when the zip's agent.yaml names a
+# small variant; the vLLM cell takes the model from the zip).
 # **Accelerator**: NVIDIA L4 x4 (competition-attached notebooks only). **Internet**: off.
 # The submission zip comes either from a private Kaggle dataset you upload (`SUBMISSION_ZIP`) or embedded as
 # base64 by `python tools/build_notebook.py --embed dist/submission.zip`.
@@ -38,6 +40,10 @@ EXCLUDE_IDS = []                  # known-unsound tasks from a previous gold con
 # or embed it: python tools/build_notebook.py --embed dist/submission.zip
 SUBMISSION_ZIP = "/kaggle/input/datasets/YOUR_KAGGLE_USERNAME/gemma4-sub-v1/submission.zip"   # VERIFY path
 SUBMISSION_B64 = ""               # filled in by tools/build_notebook.py --embed
+# Model: taken from the embedded zip's agent.yaml. Set MODEL_NAME only as a cross-check (the run asserts the
+# zip declares exactly this name), e.g. --set MODEL_NAME='"gemma-4-e2b-it-qat-w4a16-ct"'. The kernel-metadata
+# model_sources must attach google/gemma-4/other/<name>/2 for the same name.
+MODEL_NAME = ""
 
 # Compaction settings: Q7 ANSWERED [V] from HARNESS_README.md section 7.2 (interval 15, overlap 2,
 # token_threshold 14,336, event_retention_size 5). The 'interval 5' reading confused retention with interval.
@@ -229,14 +235,25 @@ print('eval_config:', EVAL)
 from adk_submission import ModelRegistry, discover_adapters, discover_declared_models
 from swegemma.config import ALLOWED_ADAPTER_EXTENSIONS, EvalConfig, build_submission_limits
 
-TARGET = 'gemma-4-31b-it-qat-w4a16-ct'
-MODEL_DIR = '/kaggle/input/models/google/gemma-4/other/gemma-4-31b-it-qat-w4a16-ct/2'
+# D-004 2026-11-05: TARGET was hard-coded to 31B; it now comes from the zip, so a small-variant candidate
+# runs without editing this file. Mirror of tools/submission_rules.py ALLOWED_MODEL_NAMES (the notebook runs
+# on Kaggle and cannot import tools/). 12B is excluded there and here: it needs vLLM --hf-overrides
+# (HARNESS_README §3.1 MODEL_VLLM_EXTRA_ARGS), which this cell does not pass.
+ALLOWED_MODELS = ('gemma-4-31b-it-qat-w4a16-ct', 'gemma-4-e4b-it-qat-w4a16-ct', 'gemma-4-e2b-it-qat-w4a16-ct')
 # [V] adk_submission.discovery.discover_declared_models(submission_dir) -> set[str]; walks the root
 # agent, sub_agents and agent_tools. There is no `validate_single_declared_model` anywhere in the
 # wheelhouse -- that was an invented name. Exactly one model may be declared, so assert the set size.
 declared = discover_declared_models(str(AGENT_DIR))
 assert len(declared) == 1, f'submission must declare exactly one model, got {sorted(declared)}'
-assert next(iter(declared)).endswith(TARGET), declared
+TARGET = next(iter(declared)).strip()
+for _prefix in ('openai/', 'google/', 'hosted_vllm/', 'custom/'):   # [V] HARNESS_README §3.2 normalize_model_name
+    if TARGET.startswith(_prefix):
+        TARGET = TARGET[len(_prefix):]
+        break
+assert TARGET in ALLOWED_MODELS, f'declared model {TARGET!r} not in {ALLOWED_MODELS}'
+assert not MODEL_NAME or MODEL_NAME == TARGET, f'MODEL_NAME={MODEL_NAME!r} but the zip declares {TARGET!r}'
+MODEL_DIR = f'/kaggle/input/models/google/gemma-4/other/{TARGET}/2'   # [V] path layout EXP-006 resolved 'exact'
+print('model:', TARGET, '->', MODEL_DIR)
 adapters = discover_adapters(str(AGENT_DIR), adapter_extensions=ALLOWED_ADAPTER_EXTENSIONS)
 # EXP-000 gold control needs no model: it applies each task's reference patch and runs test_patch.
 # Gate the server so a gold-control-only run costs ZERO GPU quota (plan §5.7) and can use a CPU notebook.
@@ -258,6 +275,8 @@ if NEED_SERVER:
     litellm.drop_params = True
     gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
     assert gpu_count >= 1, 'no GPU: select the L4 x4 accelerator'
+    assert Path(MODEL_DIR, 'config.json').exists(), (
+        f'{MODEL_DIR} missing: kernel-metadata.json model_sources must list google/gemma-4/other/{TARGET}/2')
     tp = 4 if gpu_count >= 4 else (2 if gpu_count >= 2 else 1)
     t0 = time.time()
     server = VllmServer(VllmConfig(

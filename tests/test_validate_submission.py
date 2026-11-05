@@ -90,6 +90,56 @@ def test_wrong_model_and_prefix_stripping(minimal_submission: Path):
     assert any("not allowed" in e for e in errors_of(minimal_submission))
 
 
+SMALL = ("gemma-4-e2b-it-qat-w4a16-ct", "gemma-4-e4b-it-qat-w4a16-ct")
+
+
+def _agent_with_model(sub: Path, model: str) -> None:
+    (sub / "agent.yaml").write_text(
+        f"name: a\nmodel: {model}\ninstruction: !include prompts/system.md\n"
+        "tools:\n  - run_command\n  - submit_patch\n")
+
+
+def test_small_variants_allowed_bare_and_prefixed(minimal_submission: Path):
+    # HARNESS_README §3.1/§3.2 [V]: the scorer admits the four -it-qat-w4a16-ct names; we admit 31B, E4B, E2B.
+    assert set(SMALL) <= V.R.ALLOWED_MODEL_NAMES and V.R.SMALL_MODEL_NAMES == set(SMALL)
+    for name in SMALL:
+        for model in (name, f"openai/{name}", f"hosted_vllm/{name}"):
+            _agent_with_model(minimal_submission, model)
+            assert not errors_of(minimal_submission), model
+
+
+def test_small_variant_lookalikes_rejected(minimal_submission: Path):
+    # bf16 aliases are CLI-only in models.yaml; 12B is excluded on purpose (needs --hf-overrides in vLLM).
+    for model in ("gemma-4-e2b-it", "gemma-4-e4b-it", "gemma-4-e2b", "gemma-4-12b-it-qat-w4a16-ct",
+                  "gemma-4-e2b-it-qat-w4a16"):
+        _agent_with_model(minimal_submission, model)
+        assert any("not allowed" in e for e in errors_of(minimal_submission)), model
+
+
+def test_mixed_31b_and_small_variant_is_error(minimal_submission: Path):
+    # Host rule [V]: one base model per submission, sub-agents included.
+    (minimal_submission / "sub_agents").mkdir()
+    (minimal_submission / "sub_agents" / "helper.yaml").write_text(
+        "name: helper\nmodel: gemma-4-e2b-it-qat-w4a16-ct\ndescription: reads files\n"
+        "instruction: !include ../prompts/system.md\ntools:\n  - read_file\n")
+    (minimal_submission / "agent.yaml").write_text(
+        "name: a\nmodel: gemma-4-31b-it-qat-w4a16-ct\ninstruction: !include prompts/system.md\n"
+        "tools:\n  - run_command\n  - submit_patch\n"
+        "sub_agents:\n  - config_path: sub_agents/helper.yaml\n")
+    assert any("single-model rule" in e for e in errors_of(minimal_submission))
+
+
+def test_notebook_model_list_mirrors_rules(repo_root: Path):
+    # notebooks/kaggle_eval_l4x4.py cannot import tools/, so it carries a copy; keep the two equal.
+    import ast
+    src = (repo_root / "notebooks" / "kaggle_eval_l4x4.py").read_text(encoding="utf-8")
+    found = [node.value for node in ast.walk(ast.parse(src))
+             if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "ALLOWED_MODELS" for t in node.targets)]
+    assert len(found) == 1
+    assert set(ast.literal_eval(found[0])) == set(V.R.ALLOWED_MODEL_NAMES)
+    assert "TARGET = 'gemma-4-31b-it-qat-w4a16-ct'" not in src   # the model comes from the zip
+
+
 def test_forbidden_strings(minimal_submission: Path):
     (minimal_submission / "prompts" / "system.md").write_text("If needed run pip install foo via subprocess.\n")
     errs = errors_of(minimal_submission)
