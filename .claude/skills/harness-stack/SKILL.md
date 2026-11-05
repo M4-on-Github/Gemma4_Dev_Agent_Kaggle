@@ -81,5 +81,14 @@ user-invocable: false
   - **`test_exit_code`.** 2 means collection was interrupted, -1 means the test patch did not apply, and 124 means a timeout with an empty tail.
   - **Snapshots.** Base-commit repo snapshots for all 129 tasks are at `data/local/snapshots/<id>.tgz`. Read them in one sequential pass (`tarfile.open(p, "r|*")`, keep the members you need). Per-member `extractfile` on the random-access handle re-seeks the gzip stream, so scanning a tests tree over 15 snapshots ran over 120 s; one sequential pass took 27 s (EXP-037 `desk_checks.py`).
   - **Known gap.** In the EXP-028 grading, fastapi tests fail collection on a missing test-only package (EXP-035 §9.3).
+  - **Protected files are stripped from the agent's patch** (2026-11-05, from the critic's EXP-043 review, checked against swegemma 0.2.11 source).
+    - **Where.** `strip_protected_files_from_patch` (`harness/verification.py`) runs on the diff in three places: `submit_patch` (`tools/execution.py`), before it reports `patch_size` and `files_changed`; the runner's fallback working-tree diff; and the final `agent_patch` (`harness/agent_runner.py`). It drops whole file sections.
+    - **What is protected.**
+      - By base name: `conftest.py`, `pytest.ini`, `pyproject.toml`, `tox.ini`, `setup.cfg`, `.pytest.ini`, `sitecustomize.py`, `usercustomize.py` and the harness's own stub module.
+      - Any `*.pth` file.
+      - Files named `test_*.py` or `*_test.py`.
+      - Any `.py` file with a parent directory named `tests`, `test` or `testing`, matched case-insensitively.
+      - The task's `test_files`.
+    - **Consequence.** An edit confined to those files submits an empty patch (rich_4075 in EXP-038; EXP-043 §9.7 item 11). A top-level package such as `<pkg>/__init__.py` is not stripped. The same file under `tests/` would be.
 - Upload under any filename other than `submission.zip` returns a bare 400 and costs an attempt, not the slot (EXP-023 §6).
 - Grading time for an upload: 6 to 22+ h observed (#11 pending at 21.5 h on 2026-10-29).
