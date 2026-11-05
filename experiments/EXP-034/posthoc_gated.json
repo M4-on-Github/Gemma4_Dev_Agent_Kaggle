@@ -1,0 +1,129 @@
+{
+  "n_ids": 48,
+  "gate_regex": "No module named '?(inline_snapshot|dirty_equals)",
+  "blocked_per_arm": {
+    "E0": 5,
+    "X003": 14,
+    "A25": 8,
+    "B25": 8,
+    "R": 13,
+    "RH": 14
+  },
+  "n_gated_union": 15,
+  "gated_resolved_per_arm": {
+    "E0": 2,
+    "X003": 3,
+    "A25": 2,
+    "B25": 1,
+    "R": 0,
+    "RH": 0
+  },
+  "n_nongated": 33,
+  "q1_nongated": {
+    "all": {
+      "per_arm": {
+        "E0": 9,
+        "X003": 9,
+        "A25": 9,
+        "B25": 8,
+        "R": 9,
+        "RH": 10
+      },
+      "union": 13,
+      "best": 10,
+      "union_minus_best": 3
+    },
+    "V": {
+      "per_arm": {
+        "R": 9,
+        "RH": 10
+      },
+      "union": 11,
+      "best": 10,
+      "union_minus_best": 1
+    },
+    "O": {
+      "per_arm": {
+        "E0": 9,
+        "X003": 9,
+        "A25": 9,
+        "B25": 8
+      },
+      "union": 12,
+      "best": 9,
+      "union_minus_best": 3
+    }
+  },
+  "q1_all48_check": {
+    "all": {
+      "per_arm": {
+        "E0": 11,
+        "X003": 12,
+        "A25": 11,
+        "B25": 9,
+        "R": 9,
+        "RH": 10
+      },
+      "union": 17,
+      "best": 12,
+      "union_minus_best": 5
+    },
+    "V": {
+      "per_arm": {
+        "R": 9,
+        "RH": 10
+      },
+      "union": 11,
+      "best": 10,
+      "union_minus_best": 1
+    },
+    "O": {
+      "per_arm": {
+        "E0": 11,
+        "X003": 12,
+        "A25": 11,
+        "B25": 9
+      },
+      "union": 16,
+      "best": 12,
+      "union_minus_best": 4
+    }
+  },
+  "rfwf_split": {
+    "R": {
+      "blocked": {
+        "n": 11,
+        "last_visible": {
+          "error": 1,
+          "none": 8,
+          "pass": 2
+        }
+      },
+      "graded": {
+        "n": 19,
+        "last_visible": {
+          "fail": 1,
+          "none": 13,
+          "pass": 5
+        }
+      }
+    },
+    "RH": {
+      "blocked": {
+        "n": 12,
+        "last_visible": {
+          "none": 11,
+          "pass": 1
+        }
+      },
+      "graded": {
+        "n": 15,
+        "last_visible": {
+          "fail": 1,
+          "none": 11,
+          "pass": 3
+        }
+      }
+    }
+  }
+}

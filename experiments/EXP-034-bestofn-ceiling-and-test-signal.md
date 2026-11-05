@@ -118,6 +118,24 @@ Committed output: `aggregates.json` (counts only) and `summary.jsonl` (task id a
 2. **(2026-11-05) `SUITE_RE` matches `unittest` inside a script's own text** (for example `from unittest.mock import ...` in a heredoc), so some script runs are typed as suite runs. Seen once in the hand check, where the result label was still right.
 3. **(2026-11-05) A script that crashes on its own mistake is labelled fail, not error.** §2.3 calls a run "error" only for a missing file, a timeout, or a syntax or import error. A script that raises `TypeError` or `AttributeError` because it misuses the API is "fail" by the rule, though the check did not run. Two of the ten hand-checked items are of this kind. This inflates the fail counts and the "before_fail" (usable oracle) count. It cannot move any last-visible fail count by more than the 1 that exists.
 4. **(2026-11-05) The "none after the last edit" category does not see `python -c` one-liners or `python - <<EOF` stdin scripts**, by the §2.3 definition. Their size is reported in §9 as a post-hoc line. It does not change the definitions.
+5. **(2026-11-05, found by the critic, `experiments/EXP-034/critic.md` audit 2; verified by me) The grading statement in §2.1 is false.** §2.1 says X003 needs the re-grade "because every later arm was graded with the shims present". That is wrong: no arm on disk was graded with the shims present except in the EXP-004 re-grade.
+   - **The eval notebook.** `notebooks/kaggle_eval_l4x4.py` has no shim code: a grep for `compat_shims`, `inline_snapshot` and `dirty_equals` finds nothing.
+   - **Grading environment of each arm:**
+
+     | arm | resolved flags used | graded |
+     |---|---|---|
+     | E0 | as run | without the shims. EXP-004 re-graded it with the shims and found 0 flips, so the flags are the same under either grader |
+     | X003 | the EXP-004 v2 re-grade | with the shims, gated per task (3 flips False to True) |
+     | A25, B25, R, RH | as run | without the shims |
+
+   - **Tasks hit.** The as-run grader tail shows `No module named` for one of the two packages on the following number of tasks in each arm: E0 5, X003 14, A25 8, B25 8, R 13, RH 14. Over the six arms that is 15 distinct tasks (the "gated" tasks).
+   - **Resolves on the gated tasks.**
+     - E0 (2), A25 (2) and B25 (1) resolve them only with patches that vendor a copy of the package (`+++ b/inline_snapshot/...` or `+++ b/dirty_equals/...`).
+     - X003 resolves 3 under the re-grade, none as run.
+     - R and RH resolve 0 of the 15, and none of their 96 patches vendors.
+   - **Effect on Q1.** The union of 17 therefore mixes two grading environments.
+   - **Effect on the readings: none.** They are applied as written. The uniform as-scored line (X003 as scored) also gives union minus best 5. §9.4 gives the non-gated numbers post hoc.
+   - Command: `python -I -X utf8 experiments/EXP-034/posthoc_gated.py --out experiments/EXP-034/posthoc_gated.json` (counts only).
 
 ## 9. Results (2026-11-05). Applies section 4 as written.
 
@@ -204,8 +222,33 @@ The largest category is **none after the last edit: 21 of 30**. 16 of the 30 ran
 - **Grading:** resolved flags come from each run's own grading (X003 re-graded), and grader timeouts differ between arms (300 s vs 240 s).
 - **Edit detection:** it found an edit in every non-empty patch in R and RH. A check for later edits written through `write_text(` or `open(..., "w")` found 0 such tasks in R and 1 in RH.
 
+### 9.4 Post hoc, not pre-registered: the gated tasks (critic Required fix 2, 2026-11-05)
+
+These lines come from `experiments/EXP-034/posthoc_gated.json`, written by `posthoc_gated.py`, which reuses `mine.py`'s own loaders and Q2 functions. A gated task is one where at least one arm's as-run grader tail shows the missing package (§7 item 5): 15 tasks, leaving 33 non-gated. The readings in §4 are not touched, and nothing below is a reading.
+
+**Q1 on the 33 non-gated tasks** (resolved flags as in §2.1):
+
+| set | per arm | union | best single | union minus best |
+|---|---|---:|---:|---:|
+| all six | E0 9, X003 9, A25 9, B25 8, R 9, RH 10 | 13 | 10 | **3** |
+| V {R, RH} | 9, 10 | 11 | 10 | 1 |
+| O {E0, X003, A25, B25} | 9, 9, 9, 8 | 12 | 9 | 3 |
+
+On the full 48, the same script reproduces §9.1: 17, 12, 5; V 1; O 4. Removing the gated tasks brings the all-arm union minus best down from 5 to 3, and O from 4 to 3. V stays at 1.
+
+**Arm R's RFWF group (30), split by its own grader tail**:
+
+| R RFWF | n | pass | fail | error | none after last edit |
+|---|---:|---:|---:|---:|---:|
+| grader-blocked (R's tail shows the missing package) | 11 | 2 | 0 | 1 | 8 |
+| graded | 19 | 5 | 1 | 0 | 13 |
+
+- **Grader-blocked tasks.** The hidden tests never ran on these 11, so "unresolved" says nothing about the fix.
+- **Graded tasks.** The 19 graded tasks give the same Q2-neither picture as the full group: neither pass (5) nor fail (1) is a majority.
+- **RH (27).** 12 are blocked (pass 1, none 11) and 15 are graded (pass 3, fail 1, none 11).
+
 ## Status
 
-COMPLETE 2026-11-05 (zero GPU).
+COMPLETE 2026-11-05 (zero GPU). The critic's Required fixes 1 and 2 (`experiments/EXP-034/critic.md`) are applied as §7 item 5 and §9.4. The readings are unchanged.
 - Q1-stays: all-arm union minus best is 5 (V family 1, O family 4); the selector bar is +3.0 tasks over a random arm.
 - Q2-neither: R RFWF pass 7, fail 1, none 21 of 30; replicated in RH.
