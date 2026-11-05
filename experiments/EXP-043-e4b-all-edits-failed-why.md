@@ -123,8 +123,87 @@ Nothing. No tree, zip, notebook or kernel. 0.0 L4x4-h.
 
 ## 9. Results
 
-Pending.
+Pre-registration commit e94b925. Sections 1 to 8 above are unchanged; this section applies them as written. The traces are `runs/EXP-038-e4b-dev48/traces/trace_<id>.json`; the budget in the agent's own system prompt is 28 tool calls and 8 minutes, and `n_calls` in `summary.jsonl` does not count `submit_patch`. All 8 tasks ended far inside the budget (longest 190.1 s and 17 calls).
+
+### 9.1 Error types, 39 calls on the 8 ids
+
+| Type | Calls | Where |
+|---|---|---|
+| E1 old string not found | 22 | 15661 4, 14873 4, 14459 4, 14360 2, 13786 4, rich_3676 3, rich_3063 1 |
+| E2 missing mandatory parameters | 5 | rich_3935 4, 14360 1 |
+| E3 other | 12 | 11 are "target string occurs N times" (13786 4, rich_3063 5, 14360 2), 1 is "old_string and new_string are identical" (15661) |
+
+The "identical" text was not anticipated in section 2; its call is class f (arguments malformed and cut mid-token, with a stray extra key, so both strings ended up equal).
+
+### 9.2 Call classes, 39 calls
+
+| Class | Calls | Tasks with at least one such call |
+|---|---|---|
+| b paraphrase | 20 | 6 (15661, 14873, 14459, 14360, 13786, rich_3676) |
+| g other | 11 | 3 (14360, 13786, rich_3063); all 11 are non-unique matches |
+| f call-format or argument loss | 6 | 3 (15661, 14360, rich_3935) |
+| h escaping | 2 | 2 (14459, rich_3063) |
+| a whitespace only, c from memory, d stale state, e wrong file | 0 | 0 |
+
+Descriptive sub-tags added after reading (not in the pre-registration, they change no count above). Of the 20 b calls, 14 altered text the agent had been shown (a misremembered pattern line, a corrupted character run inside a long literal, an appended call the file does not have, one changed token in a signature) and 6 ran past the last line the trace shows (the old string closes a statement whose continuation the agent never read: 14459 3 calls, where the read hit the 10000-character limit and cut the function, and rich_3676 3 calls, where the agent's own read range ended mid-statement). The 11 g calls are exact copies that occur 2 to 5 times in the file.
+
+### 9.3 Task table
+
+| Task | Failed calls | Error types | Class per call | Task class | Region read before first failed edit (file read) | Consecutive unchanged repeats | After the last failure | Message before submit | wall_s, n_calls |
+|---|---|---|---|---|---|---|---|---|---|
+| fastapi_15661 | 5 | E3 E1 E1 E1 E1 | f b b b b | b | yes (yes, whole file) | 1 | S1 | acknowledges failure | 59.6, 6 |
+| fastapi_14873 | 4 | E1 x4 | b b b b | b | yes (yes) | 0 | S1 | hedges (assumes applied) | 110.7, 10 |
+| fastapi_14459 | 4 | E1 x4 | h b b b | b | yes (yes, function cut by the read limit) | 0 | S1 | acknowledges failure | 121.0, 16 |
+| fastapi_14360 | 5 | E2 E1 E1 E3 E3 | f b b g g | b (tie, see 9.7) | yes (yes) | 2 | S2 (2 searches, then 3 submits) | acknowledges failure | 190.1, 17 |
+| fastapi_13786 | 8 | E1 E1 E1 E3 E3 E3 E1 E3 | b b b g g g b g | b (tie, see 9.7) | yes (yes) | 2 | none: 2 submits between failures, then a final text with no submit | claims applied | 91.5, 11 |
+| rich_3935 | 4 | E2 x4 | f f f f | f | yes (yes, whole file) | 3 | S2 (ls, one test run, then submit) | claims applied | 79.6, 7 |
+| rich_3676 | 3 | E1 x3 | b b b | b | yes (yes) | 1 | S1 | hedges | 84.2, 6 |
+| rich_3063 | 6 | E3 E1 E3 E3 E3 E3 | g h g g g g | g | yes (yes) | 3 | S1 | hedges | 121.3, 11 |
+
+Totals: region read before the first failed edit on 8 of 8; file read on 8 of 8; 12 of 39 failed calls repeat the previous failed call's file and old string. The categories "acknowledges failure, hedges, claims applied" and the S0 case (no submit after the last failure) were added at mining; "hedges" is counted as not saying the fix was applied.
+
+### 9.4 Readings applied as written
+
+| Row | Observed | Result |
+|---|---|---|
+| 1 | T(a) + T(b) + T(h) + T(c) = 6 (T(b) 6, others 0); T(c) = 0, T(a) + T(b) + T(h) = 6 | **Fires**, copy half only; the read half is not supported (8 of 8 tasks had read the region). Not robust: see 9.7 |
+| 2 | T(f) = 1 | no |
+| 3 | T(e) + T(g) = 1 | no as written; moves to 3 under the other tie resolution, see 9.7 |
+| 4 | b has 6 | not fired (a class has T >= 3) |
+| 5 | f 1, g 1, a c d e h 0 | those classes license nothing on their own |
+| 6, 7, 8 | S1 on 5 of 8 | **Row 8, no reading on the submit rule** |
+| 9 | claims applied on 2 of 8 | no |
+| 10 | rich_4075 | not decided, so (v): see 9.5 |
+
+Predictions against what was seen. Error types: predicted E1 33, E2 5, E3 1; seen 22, 5, 12 (the E3 count was the large miss: non-unique matches were not in my model). Task classes: predicted a 3, b 3, c 1, f 1; seen b 6, f 1, g 1, a 0, c 0. Calls: predicted a 14, b 12, c 5, f 5, g 3; seen b 20, g 11, f 6, h 2, a 0, c 0. Region read before the first failed edit: predicted 6, seen 8. S1: predicted 5, seen 5. Message says applied: predicted 5, seen 2. rich_4075: predicted (ii), seen unresolved with (ii) favoured.
+
+### 9.5 rich_4075
+
+Two `edit_file` calls on `pyproject.toml` (the problem statement is "empty with end" plus "drop support for Python 3.8"). Both returned status ok, one occurrence, strategy exact, with a diff in the observation; the next call, `submit_patch`, returned patch size 0 and files changed 0. The file `runs/EXP-038-e4b-dev48/patches/rich_4075.patch` is empty. Against the candidates fixed in section 2: (i) is excluded, the old and new strings differ in both calls; (iii) is excluded, no call sits between the second edit and the submit and no call undoes anything; (ii) and (iv) both fit and the traces cannot separate them: no trace in EXP-038 or in EXP-028 (Arm R) edited a config or build file and then submitted, so there is no non-empty patch to set against it, and the agent made no read after the edits. (ii) is the one the competition brief supports (tests and config files are reset before grading) and edits to source files in other tasks of this run do reach the patch, which makes a tool that silently writes nothing less likely, but this is a reading of documentation, not of this trace. Row 10 is not fired. The edit calls themselves worked; what the agent lost was an edit to a file the grader does not take.
+
+### 9.6 The other 17 ids with a failed edit (recorded, no reading)
+
+Error type counted for all 43 failed calls: E1 30, E2 4 (fastapi_13207, 14301, 15800, requests_6644, one each), E3 9 (fastapi_14605 5, httpx_3672 3, fastapi_13207 1; every E3 text seen is "target string occurs N times"). Counts per id: E1 15280 1, 14964 4, requests_7315 1, rich_4070 2, 14463 1, 14512 4, 9753 3, 14262 1, httpx_3672 1, 15800 4, rich_3180 4, rich_3480 2, rich_3105 2. All 25 tasks with a failed edit together: E1 52, E2 9, E3 21 of 82 calls. **Stopped at the error type:** the 30 E1 calls of these 17 ids were not classed by letter (a hand comparison of each old string with the file was not done); E2 calls are f and E3 calls are g by construction (4 and 9). fastapi_14605's five failures are all non-unique matches. The per-call classes of the 17 are open for a later job.
+
+### 9.7 Defects and caveats found
+
+1. **The tie rule has a gap and the verdict depends on it.** Two tasks have a tied majority: 13786 (4 b, 4 g) and 14360 (1 f, 2 b, 2 g). For 13786 the rule gives the first failed call (b); for 14360 the first call is f, which is not among the tied classes, so I took the tied class whose first call comes earliest (b). Resolved the other way (g), T(b) is 4 and T(g) is 3: row 1 does not fire (4 < 5) and row 3 fires (3 >= 3). The counts under any resolution are the same: tasks with at least one b call 6, with at least one g call 3, with at least one f call 3, with an h call 2. The honest summary is two independent failure families in 8 tasks, a mis-copy of text (6 tasks, at least once) and a non-unique match (3 tasks), plus lost arguments (3 tasks), and row 1 as written does not say which dominates.
+2. **Row 3 as written says g licenses neither a prompt line nor a rule on submit, and this was written without the non-unique case in mind.** The error text of those calls already tells the agent to give more surrounding context, and in 13786, 14360 and rich_3063 the agent repeated an identical call or went back to an earlier one rather than adding context. That is a behaviour a prompt line could address ("when the error says the text occurs more than once, copy lines before and after it"). It is not licensed by a reading; it is recorded as outside the readings.
+3. **The prompt already says old_string must match the file exactly, including indentation** (system prompt in every trace). Row 1's line therefore repeats an existing instruction; what is different is only emphasis or form. Compliance is untested and 8 of 8 tasks had read the region.
+4. **A harness inconsistency, one task.** In rich_3063 the first and second failed calls have the same old string and differ in their new string only by a trailing newline, yet the first got "occurs 4 times" and the second "not found". Whether the tool normalises escapes inconsistently or something else, the trace does not say. Same task: all six old strings carry doubled backslashes relative to the file, and the tool still reported matches for five of them.
+5. **Lost arguments are two different shapes.** In 14360 one call lost old_string (E2). In rich_3935 the model emitted all arguments as a single mangled key and repeated that exact call four times, the same shape every time, saying each time that it had provided the parameters. This is the C-004 path; it was not a copy error and the harness's error text did not change the behaviour.
+6. **Most of these agents stop early.** Wall 59.6 to 190.1 s of the 480 s and at most 17 of 28 calls: the failed-edit tasks did not run out of budget; the agent submits after 3 to 8 failures. 13786 submitted twice with an empty diff and then went back to editing, both times with calls that failed again, and ended with a final text and no submit after the last failure.
+7. **Classification is by hand** and the b calls in particular are a mix of two sub-kinds (altered text, and text beyond the read). The second sub-kind (6 calls, 2 tasks) would not be helped by "copy exactly" and points instead at read ranges that cover the whole span to be replaced.
+8. EXP-041 and EXP-042 are unchanged. The rich_4075 strings were compared in full only after the pre-registration commit, as the disclosure says.
+
+### 9.8 What this study cannot show
+
+**It cannot show whether the E4B would write a correct fix once the edit lands.** An applied edit is not a resolved task. In rich_3935 the agent says in its own text that it does not know the failing test and is guessing at the fix, and on rich_4075 the edit landed and left no diff.
+
+### 9.9 What it licenses
+
+Observational, one run of a stochastic loop, 8 tasks, hand classes, a tie rule that moves the verdict. Row 1 as written fires on the copy half and licenses at most a smoke-8 screen of a prompt line about exact copying, with the endpoint being the share of tasks with an applied edit, not the resolve rate, and with 9.7 items 1 to 3 in view. Row 8 gives nothing on a submit rule. Nothing in rows 2 and 3 licenses a lever. Claim status does not move.
 
 ## Status
 
-2026-11-05: pre-registered, committed before any failed call's arguments were read for this purpose. Results pending.
+2026-11-05: pre-registered (e94b925), mined and appended 2026-11-05, zero GPU. Row 1 fires as written (copy half, 6 of 8 tasks, tie-sensitive, T = 4 under the other resolution), row 8 on the submit rule, row 10 not decided for rich_4075 ((ii) favoured). Other 17 ids stopped at the error type.
