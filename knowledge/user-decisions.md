@@ -64,3 +64,13 @@ of 58, band 6-14. User's prediction: not yet given.
 Update 2026-11-04: "yea go ahead" at ~03:40 UTC; the lead's attempt to write the approval file on the user's behalf was
 blocked by the permission system (the user-only rule held); the user wrote `approvals/S-012.txt` at ~03:48 UTC; uploaded
 as Kaggle ref 57970005 at 03:51 UTC (submission #12). User's k-of-58 prediction: not given.
+
+## 2026-11-05: user steer on the parallel direction and on model sizes (D-004 not yet approved)
+User, after the 0.18 grade and the 2026-11-05 digest: "I would like to do smth like parallel agents and stuff smth that
+will improve the score by a lot", and then: "for parallel I want to test the beiigest and smallest - and the others only
+if if makes sense or somehow they perform better". Recorded as a steer on what D-004's screens cover (31B and one
+small model), not as approval of D-004; the user asked first for D-004 to be explained in detail.
+Facts the lead put to the user in reply: the small-model prize ($10,000, topic 751104 [V]) goes to the highest-ranking
+entry on E2B or E4B, with no extra credit for E2B over E4B, and the entry must be one of the team's two selected finals;
+the stored small-model standings (2026-10-20) top out at 0.06; we have no agent run on any small model, and
+`tools/submission_rules.py` admits only the 31B name today.
