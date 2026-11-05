@@ -1,0 +1,12 @@
+# cohort gated-8: 8 of the 15 gated dev-48 tasks (EXP-034 posthoc_gated.py: an as-run grader tail of any of six arms shows No module named inline_snapshot / dirty_equals); EXP-037; all fastapi/fastapi
+# SELECTED ON OUTCOME: the 5 ids that resolve under the EXP-036 re-grade in Arm R or RH (fastapi_13207, fastapi_14297, fastapi_14360, fastapi_14459, fastapi_14605), plus 3 of the other 10 gated ids. A resolve count on this cohort is a conversion measure on these ids, not a dev-48 rate.
+# rule for the 3: of the 10 other gated ids keep the 3 whose sha256 of the text "20261105037:<id>\n" (LF-terminated, no BOM) has the smallest hex digest; seed=20261105037
+# ids only, no competition data
+fastapi_11355
+fastapi_13207
+fastapi_14297
+fastapi_14360
+fastapi_14459
+fastapi_14512
+fastapi_14583
+fastapi_14605

@@ -1,0 +1,54 @@
+{
+ "threshold": 14336,
+ "tokens_per_byte": {
+  "R->RH": {
+   "n_tasks": 48,
+   "system_bytes_diff": [
+    942
+   ],
+   "median": 0.2866,
+   "min": 0.2866,
+   "max": 0.2866
+  },
+  "R->A25": {
+   "n_tasks": 48,
+   "system_bytes_diff": [
+    8066
+   ],
+   "median": 0.2508,
+   "min": 0.2508,
+   "max": 0.2508
+  }
+ },
+ "headroom_R": {
+  "dev48": {
+   "n_tasks": 48,
+   "peak_at_or_above_threshold": 38,
+   "first_prompt_tokens_median": 2925.5,
+   "newly_reach_with_+700": 1,
+   "newly_reach_with_+1400": 2,
+   "newly_reach_with_+1800": 2
+  },
+  "subset": {
+   "n_tasks": 8,
+   "peak_at_or_above_threshold": 8,
+   "first_prompt_tokens_median": 2834.5,
+   "newly_reach_with_+700": 0,
+   "newly_reach_with_+700_ids": [],
+   "newly_reach_with_+1400": 0,
+   "newly_reach_with_+1400_ids": [],
+   "newly_reach_with_+1800": 0,
+   "newly_reach_with_+1800_ids": [],
+   "peaks": {
+    "fastapi_11355": 14771,
+    "fastapi_13207": 15084,
+    "fastapi_14297": 15608,
+    "fastapi_14360": 15056,
+    "fastapi_14459": 15052,
+    "fastapi_14512": 14340,
+    "fastapi_14583": 16112,
+    "fastapi_14605": 14340
+   }
+  }
+ }
+}

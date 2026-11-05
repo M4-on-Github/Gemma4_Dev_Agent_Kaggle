@@ -1,0 +1,409 @@
+{
+ "n_ids": 48,
+ "gated_ids": [
+  "fastapi_11355",
+  "fastapi_13207",
+  "fastapi_13786",
+  "fastapi_14262",
+  "fastapi_14297",
+  "fastapi_14360",
+  "fastapi_14459",
+  "fastapi_14512",
+  "fastapi_14583",
+  "fastapi_14605",
+  "fastapi_14609",
+  "fastapi_14953",
+  "fastapi_14962",
+  "fastapi_14964",
+  "fastapi_15030"
+ ],
+ "n_gated": 15,
+ "gate_regex": "No module named '?(inline_snapshot|dirty_equals)",
+ "per_arm": {
+  "E0": {
+   "gated": {
+    "in_patch": 3,
+    "in_patch_under_tests": 0,
+    "n": 15,
+    "no_source_edit": 6,
+    "own_tail_blocked": 5,
+    "ran_pytest": 8,
+    "ran_pytest_after_last_edit": 5,
+    "resolved_as_run": 2,
+    "seen": 3,
+    "vendored": 3,
+    "vendored_under_tests": 0,
+    "vendored_without_seen": 0
+   },
+   "gated_ids": {
+    "seen": [
+     "fastapi_13207",
+     "fastapi_14297",
+     "fastapi_14583"
+    ],
+    "vendored": [
+     "fastapi_13207",
+     "fastapi_14297",
+     "fastapi_14583"
+    ],
+    "in_patch": [
+     "fastapi_13207",
+     "fastapi_14297",
+     "fastapi_14583"
+    ],
+    "vendored_then_dropped": [],
+    "resolved_as_run": [
+     "fastapi_13207",
+     "fastapi_14297"
+    ]
+   },
+   "first_seen_call_index": [
+    23,
+    23,
+    27
+   ],
+   "first_vendor_call_index": [
+    24,
+    24,
+    28
+   ],
+   "gated_calls_per_task": [
+    22,
+    23,
+    24,
+    28,
+    30,
+    32,
+    32,
+    35,
+    36,
+    39,
+    39,
+    41,
+    44,
+    45,
+    45
+   ],
+   "nongated": {
+    "in_patch": 1,
+    "in_patch_resolved": 1,
+    "in_patch_under_tests": 0,
+    "n": 33,
+    "seen": 1,
+    "vendored": 1
+   },
+   "nongated_in_patch_ids": [
+    "fastapi_13537"
+   ]
+  },
+  "X003": {
+   "gated": {
+    "n": 15,
+    "no_source_edit": 3,
+    "own_tail_blocked": 14,
+    "ran_pytest": 3,
+    "ran_pytest_after_last_edit": 2
+   },
+   "gated_ids": {
+    "seen": [],
+    "vendored": [],
+    "in_patch": [],
+    "vendored_then_dropped": [],
+    "resolved_as_run": []
+   },
+   "first_seen_call_index": [],
+   "first_vendor_call_index": [],
+   "gated_calls_per_task": [
+    11,
+    23,
+    24,
+    25,
+    28,
+    28,
+    28,
+    29,
+    29,
+    29,
+    30,
+    31,
+    31,
+    32,
+    33
+   ],
+   "nongated": {
+    "in_patch": 3,
+    "in_patch_resolved": 2,
+    "in_patch_under_tests": 0,
+    "n": 33,
+    "seen": 3,
+    "vendored": 3
+   },
+   "nongated_in_patch_ids": [
+    "fastapi_13537",
+    "fastapi_14301",
+    "fastapi_15589"
+   ]
+  },
+  "A25": {
+   "gated": {
+    "in_patch": 3,
+    "in_patch_under_tests": 0,
+    "n": 15,
+    "no_source_edit": 4,
+    "own_tail_blocked": 8,
+    "ran_pytest": 5,
+    "ran_pytest_after_last_edit": 4,
+    "resolved_as_run": 2,
+    "seen": 3,
+    "vendored": 3,
+    "vendored_under_tests": 0,
+    "vendored_without_seen": 0
+   },
+   "gated_ids": {
+    "seen": [
+     "fastapi_14297",
+     "fastapi_14360",
+     "fastapi_14953"
+    ],
+    "vendored": [
+     "fastapi_14297",
+     "fastapi_14360",
+     "fastapi_14953"
+    ],
+    "in_patch": [
+     "fastapi_14297",
+     "fastapi_14360",
+     "fastapi_14953"
+    ],
+    "vendored_then_dropped": [],
+    "resolved_as_run": [
+     "fastapi_14297",
+     "fastapi_14360"
+    ]
+   },
+   "first_seen_call_index": [
+    16,
+    16,
+    20
+   ],
+   "first_vendor_call_index": [
+    17,
+    17,
+    21
+   ],
+   "gated_calls_per_task": [
+    13,
+    17,
+    19,
+    20,
+    23,
+    28,
+    29,
+    30,
+    32,
+    32,
+    34,
+    36,
+    36,
+    36,
+    37
+   ],
+   "nongated": {
+    "in_patch": 1,
+    "in_patch_resolved": 1,
+    "in_patch_under_tests": 0,
+    "n": 33,
+    "seen": 1,
+    "vendored": 1
+   },
+   "nongated_in_patch_ids": [
+    "fastapi_13537"
+   ]
+  },
+  "B25": {
+   "gated": {
+    "in_patch": 1,
+    "in_patch_under_tests": 0,
+    "n": 15,
+    "no_source_edit": 6,
+    "own_tail_blocked": 8,
+    "ran_pytest": 4,
+    "ran_pytest_after_last_edit": 4,
+    "resolved_as_run": 1,
+    "seen": 1,
+    "vendored": 1,
+    "vendored_under_tests": 0,
+    "vendored_without_seen": 0
+   },
+   "gated_ids": {
+    "seen": [
+     "fastapi_14297"
+    ],
+    "vendored": [
+     "fastapi_14297"
+    ],
+    "in_patch": [
+     "fastapi_14297"
+    ],
+    "vendored_then_dropped": [],
+    "resolved_as_run": [
+     "fastapi_14297"
+    ]
+   },
+   "first_seen_call_index": [
+    17
+   ],
+   "first_vendor_call_index": [
+    18
+   ],
+   "gated_calls_per_task": [
+    11,
+    14,
+    16,
+    20,
+    22,
+    24,
+    25,
+    25,
+    28,
+    28,
+    29,
+    30,
+    37,
+    40,
+    45
+   ],
+   "nongated": {
+    "in_patch": 3,
+    "in_patch_resolved": 2,
+    "in_patch_under_tests": 0,
+    "n": 33,
+    "seen": 3,
+    "vendored": 3
+   },
+   "nongated_in_patch_ids": [
+    "fastapi_13537",
+    "fastapi_15800",
+    "fastapi_5624"
+   ]
+  },
+  "R": {
+   "gated": {
+    "n": 15,
+    "no_source_edit": 0,
+    "own_tail_blocked": 13,
+    "ran_pytest": 1,
+    "ran_pytest_after_last_edit": 0
+   },
+   "gated_ids": {
+    "seen": [],
+    "vendored": [],
+    "in_patch": [],
+    "vendored_then_dropped": [],
+    "resolved_as_run": []
+   },
+   "first_seen_call_index": [],
+   "first_vendor_call_index": [],
+   "gated_calls_per_task": [
+    14,
+    22,
+    23,
+    25,
+    26,
+    27,
+    28,
+    29,
+    29,
+    29,
+    30,
+    30,
+    55,
+    80,
+    80
+   ],
+   "nongated": {
+    "n": 33,
+    "seen": 0,
+    "vendored": 0
+   },
+   "nongated_in_patch_ids": []
+  },
+  "RH": {
+   "gated": {
+    "n": 15,
+    "no_source_edit": 0,
+    "own_tail_blocked": 14,
+    "ran_pytest": 0,
+    "ran_pytest_after_last_edit": 0
+   },
+   "gated_ids": {
+    "seen": [],
+    "vendored": [],
+    "in_patch": [],
+    "vendored_then_dropped": [],
+    "resolved_as_run": []
+   },
+   "first_seen_call_index": [],
+   "first_vendor_call_index": [],
+   "gated_calls_per_task": [
+    12,
+    19,
+    19,
+    22,
+    23,
+    26,
+    26,
+    27,
+    27,
+    29,
+    30,
+    31,
+    32,
+    37,
+    80
+   ],
+   "nongated": {
+    "n": 33,
+    "seen": 0,
+    "vendored": 0
+   },
+   "nongated_in_patch_ids": []
+  }
+ },
+ "snapshot_reach": {
+  "rule": "base-commit file under a tests/ or test/ directory, .py, naming inline_snapshot or dirty_equals",
+  "n_tasks_hit": 26,
+  "gated_hit": [
+   "fastapi_11355",
+   "fastapi_13207",
+   "fastapi_13786",
+   "fastapi_14262",
+   "fastapi_14297",
+   "fastapi_14360",
+   "fastapi_14459",
+   "fastapi_14512",
+   "fastapi_14583",
+   "fastapi_14605",
+   "fastapi_14609",
+   "fastapi_14953",
+   "fastapi_14962",
+   "fastapi_14964",
+   "fastapi_15030"
+  ],
+  "gated_miss": [],
+  "nongated_hit": [
+   "fastapi_13537",
+   "fastapi_14301",
+   "fastapi_14448",
+   "fastapi_14463",
+   "fastapi_14873",
+   "fastapi_15280",
+   "fastapi_15589",
+   "fastapi_15661",
+   "fastapi_15800",
+   "fastapi_5624",
+   "fastapi_9753"
+  ],
+  "snapshots_missing": []
+ }
+}
