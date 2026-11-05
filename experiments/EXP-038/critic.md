@@ -1,8 +1,8 @@
 ---
 id: EXP-038-critic
 exp: EXP-038
-tier: prereg
-verdict: needs-work
+tier: full
+verdict: accepted
 verified: regenerated
 date: 2026-11-05
 ---
@@ -114,3 +114,75 @@ What I checked: `git diff 143fba1 4024082` on the EXP file, on `cost_estimate.{p
 - My bootstrap p90s, 1.61 h and 1.76 h, put about 5 to 10% on the run not being COMPLETE at 1.75 h of GPU time. Queueing adds to the elapsed time.
 - Whether a cancelled kernel keeps any output is unverified: EXP-032's cancelled version was never downloaded.
 - So cancelling at 1.75 h buys protection against the tail, at the risk of losing the whole spend.
+
+## Results review 2026-11-05 (a1365bc)
+
+**Verdict: accepted. Row 4 governs, applied as written and amended; row T takes "otherwise", with 225.6 s of total-clock room per task. Every §9 number regenerates. No required fixes.**
+
+**Tier.** The lead dispatched `light`. I raised it to `full` because item 5 asks for a status move, and the checklist reserves status moves for `full`. I ran checks 1 to 6, 8 and 9; check 7 is n/a.
+
+**Audit**
+1. **Order: pass.** Fixes 5 to 8 (7964379, 19:00:47 UTC) were committed before the push at 19:02 UTC. Since then the file gained only §8's push record, the Status line and §9 below the line. An uncommitted §7 item 9 (the re-grade build) is in the worktree; I have not reviewed it.
+2. **Cohort and arms: pass.**
+   - The `summary.jsonl` ids equal dev-48 and match Arm R's.
+   - The as-run agent tree is the same as `experiments/EXP-033/candidate-e4b` (`diff -r`).
+   - The embedded zip is `9de869bd...`.
+   - `task_results` carries 8 min and 28 calls.
+3. **Numbers: pass.**
+   - `analyze_traces.py`, re-run into scratch, gives a byte-identical `summary.jsonl` and `aggregates.json`.
+   - The pair table from the two summaries is 5 / 4 / 0 / 39, exact p = 0.125. The 27-id table is as stated.
+   - E7 = (85.71 x 120 + 445.6) / 3600 = 2.98 h, and the total-clock room = (37,800 - 10,731) / 120 = 225.6 s.
+   - The per-task room over U (48 tasks) has mean 394.3 s and p10 332.5 s.
+   - The log ends at 4,559.9 s. Wilson gives 4.5-22.2%.
+4. **Readings: pass.** I applied the rows myself before reading §9.4:
+   - Row 0: 1 counted error (fastapi_13537, not a cap string) and 0 cap-string rows, so it does not fire.
+   - Row 0b: the constants match C-022, and 0 of 15 gated tasks resolved.
+   - Row 1: 38 of 48 non-empty and 0% malformed.
+   - Row 2: E7 2.98 h.
+   - Row 3: p = 0.125.
+   - So row 4 fires, as in §9.4.
+5. **Statistics: pass.** The test is paired McNemar, and the 9-against-5 marginals are not read.
+6. **Budget: pass.** E7 includes the measured overhead.
+8. **Scope and hygiene: pass.** §9.6 claims no more than §5 licenses. The hygiene check is OK on the five committed result files.
+9. **Reproducibility: pass.** The zip was reproduced at the prereg.
+
+**Item 3: what the data can and cannot exclude [mine].** §9.4 and §9.6 already say the result is not evidence of equality.
+- The paired difference, R minus E4B, is 4 of 48. Its 95% interval (Newcombe paired score, continuity-corrected) is -0.5 to +9.1 tasks.
+- The upper end reaches the largest deficit this design can show, which is 8: R's 9 minus the free requests_6644.
+- So the data rule out an E4B advantage of more than about 1 task, and rule out no E4B deficit at all.
+- For row 3 to fire, the E4B had to lose 6 of R's 8 non-free resolves and gain none.
+
+**Item 4: "admissible" is all the result supports.** An S-NNN also needs:
+- **The §5.8 override, written out.** The first line of §5.8 asks for a worst case of at most 11 h. This tree's worst case is 16.00 h by `analyze_traces`, and the packer's 120 x 9 min gives 18 h. The override must be recorded as #11's was (EXP-027 §2). E7 meets only the operational 10.5 h rule.
+- **A predicted k of 58.** dev-48 rates do not map onto the board (§3.2).
+- **The re-grade result, F and G.** Admissibility does not depend on it, but G is unknown until the re-grade runs.
+- **fastapi_13537, listed as a resolve risk.** It is not a clock risk (see the analysis below).
+
+**Item 5: claims.**
+- **C-020** may move to `supported`. Confidence is high for the time profile on dev-48; that it carries over to the hidden repos is my inference. Wording I accept: "The E4B runs the shipped v24 single loop at 8 min / 28 calls well inside the clock: on dev-48 (EXP-038) 0 of 48 tasks hit a cap, the mean task wall is 85.7 s (max 207.3 s), the projection is 2.98 h for 120 tasks against the 10.5 h rule, and `analyze_traces` counts 0 malformed calls in 478. For an E4B upload of this tree the clock is not the constraint. It resolves 5 of 48 as run against the 31B's 9 (paired 4-0, p = 0.125), which does not show that the two are equal."
+- **C-023** keeps its status and may cite: "On the E4B single loop, the 10.5 h rule leaves 225.6 s per task on average for an extra stage (EXP-038 row T). This binds before the per-task cap room, mean 394 s. A voting tree's dev-48 mean task wall must stay below about 311 s."
+
+**Item 6: no note is needed.**
+- The two p90s differ only by method: nearest-rank gives 147.2 s and interpolation gives 147.5 s. No reading uses p90.
+- `estimate_budget` (7.77 h, BLOCK) is correctly recorded and not read. It belongs in the S-NNN, under item 4.
+
+**Analysis [mine, I]**
+- **The E4B stops early.** The clock is slack because the E4B stops early, not because it solves faster:
+  - its median first edit is at turn 6, against R's 14;
+  - 47 of 48 tasks end by submit;
+  - no task uses more than 21 calls.
+- **fastapi_13537 is a format failure that no endpoint counts.**
+  - Three of its replies put a tool name inside a fenced block, each one after a harness continuation nudge, and the task ended with 0 tool calls.
+  - `n_malformed` counts only a tool-call token left in the content. So "0 malformed" does not mean that every intended call parsed.
+- **Instrument gap, for the experimenter.**
+  - `nudges` counts only user-source markers, so it misses the harness's `continuation_nudge` system events: 9 on 7 E4B tasks and 2 in R.
+  - As a result every `nudges` value reads 0.
+- **Run-to-run spread.**
+  - On the 8 smoke ids the E4B averaged 78.3 s here, against 56.9 s in EXP-033. The other 40 ids averaged 87.2 s.
+  - So most of the 1.51x gap between dev-48 and smoke-8 is run-to-run variation, not task mix (one pair of runs).
+  - EXP-040's 140 s wall bar sits on a reference that moved about 38%.
+
+**Suggested next.** All zero GPU:
+- mine the 4 R-only ids to see whether they are early stops (E4B call counts, and the files edited against the gold files);
+- fix the `nudges` count in `analyze_traces.py`;
+- run the §3.3 re-grade as planned.
