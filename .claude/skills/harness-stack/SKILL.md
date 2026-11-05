@@ -12,7 +12,7 @@ user-invocable: false
 
 - Python 3.13 (miniconda) is `python` in the Bash tool; the repo needs >= 3.12 with `pyyaml` and `pytest`. `python -m pytest -q` runs 48 tests (2026-11-05) in seconds on synthetic data; run it after touching `submission/`, `tools/` or adding a tracked file (two tests check the live tree and every tracked file).
 - Anything that reads downloaded or third-party files (`untrusted/`, run bundles, notebooks) runs as `python -I -X utf8 ...` so nothing is imported from the data's directory and encoding is stable.
-- `core.autocrlf=true`: the zip sha256 reproduces only from committed LF blobs. Pack from a clean checkout of the committed tree, compare `sha256sum` with the recorded value before any upload.
+- `core.autocrlf=true`: the zip sha256 reproduces only from committed LF blobs. Pack from a clean export of the committed tree, compare `sha256sum` with the recorded value before any upload. Export with `git -c core.autocrlf=false archive HEAD <tree> | tar -x -C out/<dir>`: plain `git archive` applies autocrlf and writes CRLF, so the repack differs even when the worktree is LF (EXP-038, 2026-11-05). `git ls-files --eol <tree>` showing `i/lf w/lf` means the worktree pack already matches.
 - User-level hook blocks any `git commit` message carrying a Claude co-author or "Generated with" line. Commit without attribution lines.
 - Bash heredocs whose body contains an apostrophe break the tool wrapper; use the Write tool for such files, or keep heredoc bodies apostrophe-free.
 - Odd directories `runs;C` and `tools;C` at the repo root are artifacts of a PowerShell path error, empty, untracked; ignore them.
