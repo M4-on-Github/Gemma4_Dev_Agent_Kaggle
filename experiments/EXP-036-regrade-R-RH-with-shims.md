@@ -199,7 +199,7 @@ python -I -X utf8 experiments/EXP-036/analyze_regrade.py --regrade runs/EXP-036-
 
 ---
 
-## 8. Built, push refused by the guard
+## 8. Built; first push refused by the guard; pushed after the user's exemption
 
 - **Pre-registration:** d86d09c.
 - **Commit 3d9d12c, tool change.** `tools/regrade_patches.py`:
@@ -230,10 +230,22 @@ python -I -X utf8 experiments/EXP-036/analyze_regrade.py --regrade runs/EXP-036-
 - **After the refusal, the template gained one assert.** It stops the kernel if any gold patch is empty, because GOLD would then silently equal BASE. Locally, all 48 cohort tasks in `data/raw/tasks.jsonl` have a non-empty `patch`. The next build picks the assert up.
 - **What the push needs.** A guard exemption recorded in `guard_push.py`. One form: allow a notebook with no `RUN_AGENT` parameter when its `kernel-metadata.json` has `enable_gpu` and `enable_tpu` false, no `machine_shape` and empty `model_sources`. The cohort check stays: `TASK_IDS` against `**Cohort:** dev-48` already passes. Changing the guard is outside the experimenter's paths and is the lead's or the user's decision.
 
+- **The notebook that was pushed.** It was rebuilt in the same command as commit 1c8e9c8 (2026-11-05 14:43:07 UTC), after the assert was added. Nothing the build reads has changed since then: the template, `tools/regrade_patches.py`, the shims and the metadata. Checked before the push:
+  - the assert is in the built notebook;
+  - the embedded tool and both shims are byte-equal to the committed files;
+  - `TASK_IDS` equal dev-48.
+
+  The notebook is 279,415 bytes, sha256 `73df67c8453bd2ac31abf77aa6f6d6dc59590666b92a59d76e90020310e9686e`, and is not committed.
+- **sha256 of the embedded patch zips:**
+  - R: `59d3c61b2831a715f1936041b941eb835b4bda5a9d9672e05bc7bfb6cbe08613`
+  - RH: `edd7b004075926eec595692eff59598a5eebf81ab6476d12d8c06f4d2e0708c8`
+- **Guard exemption.** Commit 45996cd records the user's decision of 2026-11-05 in `knowledge/user-decisions.md`. `guard_push.py` now passes a notebook that has no `RUN_AGENT` parameter when its metadata requests no GPU, no TPU, no machine shape and no model source. The committed pre-registration with a readings section is still required. The cohort check is skipped for such notebooks. `TASK_IDS` equal dev-48 anyway.
+- **Push 2026-11-05 15:13:59 UTC:** `Kernel version 1 successfully pushed.` The kernel is `rainm4/gemma4-exp036-regrade`, version 1. Its status right after the push was `KernelWorkerStatus.RUNNING`. The kernel metadata is unchanged and CPU-only.
+
 ## Status
 
-**BLOCKED by the push guard, 2026-11-05.** The pre-registration and the kernel files are committed, and no kernel has run. Once a guard exemption for CPU-only re-grade notebooks is in place:
+**RUNNING since 2026-11-05 15:13:59 UTC:** `rainm4/gemma4-exp036-regrade`, version 1, CPU only, 0 GPU-h. Expected to take under 1 h (§2.4). Next, as a separate job once the lead reports it COMPLETE:
 
-1. Rebuild with the §6 step-2 command, because the built `.ipynb` is not in git.
-2. Push the directory `notebooks/exp036_regrade`, kernel id `rainm4/gemma4-exp036-regrade`.
-3. When it is COMPLETE, download its output into `runs/EXP-036-regrade/` and run §6 step 4. The analysis script is written in that job.
+1. Download the kernel output into `runs/EXP-036-regrade/`. The bundle nests: move the inner `runs/EXP-036-regrade/` up a level.
+2. Write and commit `experiments/EXP-036/analyze_regrade.py`, then run §6 step 4.
+3. Read `environment.json` to confirm the accelerator, then append §9 by applying §4 as written.
