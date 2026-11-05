@@ -119,8 +119,18 @@ python -I -X utf8 experiments/EXP-030/l1b_trace_mining.py --run runs/EXP-030-p1 
 
 ## 7. Defects in this pre-registration, logged after the fact
 
-None yet. Known at writing time and not defects: L1a and L1b not run (section 1); the new `submit_patch`-in-sub-agent validator warning; the unreferenced `prompts/system.md`; E5's agreement measure and E2's stage ratio are defined on step timestamps, and if the trace schema stamps sub-agent steps differently from the single-loop traces the analysis will say so.
+1. The kernel was pushed before the coordinator's hold (critic direction review, cohort and design) reached the screener; see section 8. The cohort is smoke-8 against the critic's request for 8 cap-bound ids. 2. Known at writing time and not defects: L1a and L1b not run (section 1); the new `submit_patch`-in-sub-agent validator warning; the unreferenced `prompts/system.md`; E5's agreement measure and E2's stage ratio are defined on step timestamps, and if the trace schema stamps sub-agent steps differently from the single-loop traces the analysis will say so.
 
 ## 8. Built and pushed
 
-(filled in after the push)
+**Pre-registration commit `341a9e1`** (this file through section 7, `candidate-p1/`, `l1b_trace_mining.py`, `notebooks/exp030_p1/`). Section 4 was committed before the push and is not revised here.
+
+**Built 2026-11-05** with the Section 6 build command: `TASK_IDS` = the 8 smoke-8 ids, `N_TASKS = 8`, `EXP_ID = EXP-030-p1`, `RUN_GOLD_CONTROL = False`; embedded zip `dist/EXP-030-p1.zip` sha256 `0377116b7fbd62e92f93ef2bc57e5f0d235a6434446361c13d145bed9998a7a6`. The embedded zip was not decoded and re-hashed (no tool permitted to the screener for that).
+
+**Pushed 2026-11-05 (clock time not captured), version 1:** kernel `rainm4/gemma4-exp030-p1`, status RUNNING at the check right after the push. **Ordering defect, logged here and in section 7:** the push went out before a hold from the coordinator ("do not push yet; the critic direction review changes the design") was delivered; the message reached the screener after the push command had returned. The kernel is the design of section 2, smoke-8, 43 calls / 100 turns, with the critic's cohort objection (section 1) unresolved.
+
+Source facts checked while waiting: `submit_patch` and `get_status` are `budget_gated(count_tool_call=False)` (`data/src/swegemma/swegemma/tools/execution.py` lines 76 and 119), as the critic states. The other critic facts (shared per-task counters, compaction 49 drops in 36 of 48, root-level `default` editor sees all branches) were read in the same source earlier in this job (`context.py`, `agent_runner.py`, `contents.py`) and agree.
+
+## Status
+
+Kernel `rainm4/gemma4-exp030-p1` RUNNING (started by the push above). Next, a separate job once `kaggle kernels status rainm4/gemma4-exp030-p1` says COMPLETE: `kaggle kernels output rainm4/gemma4-exp030-p1 -p runs/EXP-030-p1/`, move the nested inner directory up, run the commands of section 6, apply section 4 as written. L1a and L1b are not run (Bash guard); `experiments/EXP-030/l1b_trace_mining.py` is untested.
