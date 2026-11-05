@@ -105,6 +105,8 @@ None yet. Known at writing time: the Arm R per-task fields in section 1 were rea
 
 Built 2026-11-05 with the section 6 commands; sha in section 2; validator output in section 2. Committed by pathspec before the push. **Push not yet done at the time of this writing**; the push record and `## Status` follow below.
 
+**Push record, 2026-11-05.** Kernel `rainm4/gemma4-exp033-e4b` pushed from `notebooks/exp033_e4b` after the pre-registration commit d2c11da (zip sha256 `9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0`), reply "Kernel version 1 successfully pushed". UTC time of day not recorded (no clock command). First status check straight after: `KernelWorkerStatus.QUEUED` (the EXP-032 P1 kernel may still be running; Kaggle did not refuse the push). Not waited on.
+
 ## Status
 
-Pre-registered, built, committed, not pushed yet.
+2026-11-05: `rainm4/gemma4-exp033-e4b` pushed, QUEUED. Next, a separate job when `kaggle kernels status rainm4/gemma4-exp033-e4b` says COMPLETE: download with `kaggle kernels output rainm4/gemma4-exp033-e4b -p runs/EXP-033-e4b/`, then the section 6 analysis, then section 4 as written. If the log shows the model-input assert failing, that is row 0 (model load) and the model input path was the unverified item.
