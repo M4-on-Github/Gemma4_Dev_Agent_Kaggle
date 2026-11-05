@@ -74,3 +74,13 @@ Facts the lead put to the user in reply: the small-model prize ($10,000, topic 7
 entry on E2B or E4B, with no extra credit for E2B over E4B, and the entry must be one of the team's two selected finals;
 the stored small-model standings (2026-10-20) top out at 0.06; we have no agent run on any small model, and
 `tools/submission_rules.py` admits only the 31B name today.
+
+## 2026-11-05 ~11:20 UTC: D-004 screens approved to start; today's upload decided later
+User: "since we have time, lets start with our experiments first and decide what to submit for the day later. many gpu ours
+are we looking to spend? also are we measuring, multiagent communication, collaboration abilities, swe abilities, task
+orchestration, parallel agnets and squential tool calling plus time constraints maximum optimization bounds etc?"
+Read by the lead as approval of the D-004 screens only (parallel-first, 31B then one small model), not of any upload.
+Budget told to the user: at most 3.2 GPU-h (31B parallel 0.8, E2B baseline and E2B parallel under 0.8 each, E4B under 0.8
+only if triggered). The user's list of things to measure is carried into the EXP-030 pre-registration as required
+endpoints, with the ones a smoke-8 cannot read named as such. The Nov 5 slot closes 23:59 UTC.
+

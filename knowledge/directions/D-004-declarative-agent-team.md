@@ -2,7 +2,7 @@
 id: D-004
 title: A declarative agent team (role sub-agents with isolated contexts) as the final tree, built one screened handoff at a time
 decision: start
-status: proposed
+status: approved
 track: both
 claims: [C-014, C-004, C-005, C-007, C-015]
 date: 2026-11-03
@@ -81,3 +81,5 @@ Zero steps carry more than one tool call. Readings the lead draws (interpretatio
 - Constraints unchanged: EXP-028 projects 10.04 h at the 8-min cap, so the parallel stage must replace reading time, not add to it; a blank slot under this direction stops uploads until the time profile is measured.
 - Expected impact stays as written above: of the order of the ~4-task MDE if the mechanism holds. Rank 1 is 6 to 7 tasks above our pooled baseline (17 vs 10.5 of 58); nothing in the logbook predicts that much from structure alone.
 
+## Approval 2026-11-05 (user, in chat)
+"since we have time, lets start with our experiments first and decide what to submit for the day later." Scope as the lead reads it: the D-004 screens in the parallel-first order of the addendum, on the 31B and on one small model (the user's steer of the same day), up to about 3.2 GPU-h. It does not cover any upload; each upload still needs its own S-NNN and approval file. The critic `direction` review was dispatched the same hour, after the approval rather than before it as this file promised; its dissent goes here when it returns and may change the branch design of later screens.

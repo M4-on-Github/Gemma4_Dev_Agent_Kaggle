@@ -34,7 +34,8 @@ S-012 (tree R, second draw) scored 0.18 = 11/58 (ref 57970005); EXP-029 row 3: p
 - Fix in experiment-protocol step 7: summaries live at `experiments/EXP-NNN/<arm>/summary.jsonl` (hygiene accepts only that name).
 - Critic backfill of migrated claims (start with EXP-024, EXP-025, EXP-027).
 - Experimenter: `submissions.md` row 12 and EXP-029 §9 for the 0.18 grade (not yet dispatched).
-- User: D-004 approval, plan.md §5.8 rewording, GPU quota counter.
+- D-004 approved 2026-11-05 for screens only. Planned spend: EXP-030 31B parallel smoke-8 0.8 GPU-h; E2B baseline and E2B parallel under 0.8 each; E4B under 0.8 only if E2B runs cleanly; ceiling 3.2 GPU-h, no dev-48 arm. Dispatched: critic `direction` review, screener EXP-030, experimenter (row 12, EXP-029 §9, small-model names in the rules).
+- User: plan.md §5.8 rewording, GPU quota counter and reset day, today's upload decision.
 
 ## Not pursued
 
