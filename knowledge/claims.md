@@ -204,6 +204,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - tests: EXP-034 (zero GPU; critic review pending); EXP-035 planned
 - history: 2026-11-05 added by the lead as hypothesis from D-005 Stage 0
 - history: 2026-11-05 evidence added, status unchanged (no critic verdict): EXP-036 recomputed the EXP-035 table on re-graded outputs, T3 in both arms: the failing tests are ones the hidden patch adds or changes in 19 of 27 (R) and 14 of 22 (RH) unresolved right-file tasks; an existing test would have exposed the wrong fix in 2 of 27 and 1 of 22. A required run of existing tests therefore has a pool of 1 to 2 tasks; the claim survives only for a check the agent writes from the issue
+- history: 2026-11-05 correction to the line above from the critic's light review of EXP-036 (needs-work): the groups are 22 tasks in R (visible 2, hidden-only 15, collection error 5) and 17 in RH (1, 10, 4, 2 unclassified) once the patch-insensitive tasks are removed; visible is a lower bound and for R lies between 2 and 7 of 22. The pool for a required run of existing tests is 2 to 7 of 22 in R, not 1 to 2
 
 ## C-020: The E4B model runs the shipped single loop without malformed calls and finishes in about a minute per task, so for the small-model prize the clock is not the constraint
 - status: hypothesis
@@ -224,6 +225,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - tests: EXP-035 (zero GPU); EXP-036 planned (CPU re-grade of R and RH with the packages present)
 - history: 2026-11-05 added by the lead as hypothesis from the critic's review of EXP-034
 - history: 2026-11-05 evidence added, status unchanged (no critic verdict yet): EXP-036 (CPU re-grade, 0 GPU-h) row 1 fired: with the two packages present the v24 patches resolve 3 of 15 gated tasks in Arm R (9 -> 12 of 48) and 5 of 15 in Arm RH (10 -> 15), no non-gated flip, no resolve lost, GOLD 15 of 15 on the gated tasks. R sits exactly on the threshold; RH replicates above it
+- history: 2026-11-05 critic light review of EXP-036: needs-work on text only; row 1 holds as applied, numbers reproduced, the five flips hand-checked against stand-in leniency (plain `==`, no risk found); RH is not an independent check of the grader, the robust part is the three tasks that flip in both arms; all 15 gated tasks are fastapi (15 of dev-48's 26). Status unchanged until the fixes are re-reviewed
 
 ## C-022: Six dev-48 tasks grade the same with the gold patch and with no patch on the Kaggle sandbox, so the reachable dev-48 ceiling is 43 of 48, with one free resolve and five impossible ones
 - status: hypothesis
@@ -233,3 +235,4 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - sources: EXP-036 section 9 (post hoc, not pre-registered: GOLD and BASE give the same exit code, count line and failing test ids on httpx_3672, requests_6644, requests_7205, requests_7309, requests_7315, requests_7427; GOLD 43 of 48, BASE 1 of 48); experiments/README.md section 1 (EXP-000 Kaggle gold-failure classes); EXP-002 (three of these ids failed the smoke-8 gold control)
 - tests: EXP-036 (zero GPU)
 - history: 2026-11-05 added by the lead as hypothesis from the experimenter's post hoc finding; cause not verified (two gold tails show the installed package's site-packages path, which suggests shadowing)
+- history: 2026-11-05 critic light review of EXP-036: evidence is concordance in eight gradings (GOLD, BASE, R re-grade, and all six EXP-034 arms as run), observed, not structural; McNemar comparisons unaffected; changed by it: absolute rates, any power stated on n = 48, EXP-034's always/none counts (6/31 becomes 5/26), the right-file-wrong-fix denominators (R 22), and smoke-8, which holds three of the six (at most 4 informative tasks of 8 for a tree that does not vendor). Status unchanged until the text fixes are re-reviewed
