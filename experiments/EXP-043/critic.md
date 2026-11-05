@@ -9,23 +9,21 @@ date: 2026-11-05
 
 ## Verdict
 **accepted.**
-- Row 1 fires on the copy half (a + b + h = 5 of 8). It does not fire on the read half (c = 1). This holds under every resolution of the fastapi_14360 tie.
+- Row 1 fires on the copy half (a + b + h = 5 of 8) and not on the read half (c = 1). This holds under every resolution of the fastapi_14360 tie.
 - The submit rule gets row 8. Row 10 does not fire.
-- a6ee841 fixes an application error. It is not a change of rule.
-- One recorded quantity is misapplied. No reading uses it.
-  - Region read is reported as 8 of 8.
-  - By the test as written it is 4 of 8.
+- a6ee841 fixes an application error. It does not change a rule.
+- One recorded quantity is misapplied, and no reading uses it: region read is 8 of 8 in the file but 4 of 8 by the test as written.
 
 ## Audit
 1. **Order: pass.**
    - Blind: the commit is at 21:58:45 and the first trace read at 21:58:48.
    - a6ee841 changes no rule text and opens no trace.
      - My mechanical c test fires on exactly the 5 calls it reclassed (fastapi_15661 x4, rich_3063 x1).
-     - It fires on 2 more calls, but under the written precedence f and E3 take those first.
-   - fastapi_13786's change follows the tie rule, because its first failed call is b.
+     - It also fires on 2 more calls, which f and E3 take first under the written precedence.
+   - fastapi_13786's change follows the tie rule: its first failed call is b.
    - The "after review" in §9.7 1a was the screener's own review.
    - 466a296 redacts the §2 disclosure, which sits above the results. It is logged in §9.7 item 9 and touches no design or reading text.
-2. **Cohort: pass.** The 8 ids are those where `n_edit_fail` equals the `edit_file` count, with 39 calls. The other 17 ids carry 43.
+2. **Cohort: pass.** The 8 ids where `n_edit_fail` equals the `edit_file` count carry 39 calls. The other 17 ids carry 43.
 3. **Numbers: pass, with one correction.**
    - These regenerate:
      - error types 22/5/12;
@@ -33,13 +31,13 @@ date: 2026-11-05
      - 12 repeats (file plus old string);
      - S1 on 5;
      - walls and calls.
-   - a = 0 and e = 0 regenerate. No not-found old string matches the text it was shown, either verbatim or ignoring whitespace.
-   - Correction, region read before the first failed edit (§3 item 1, that call's old string): 4 of 8 by the test as written.
+   - a = 0 and e = 0 regenerate. No not-found old string matches the text it was shown, verbatim or ignoring whitespace.
+   - Correction: region read before the first failed edit (§3 item 1, that call's old string) is 4 of 8 by the test as written.
      - fastapi_15661 and rich_3063 fail the line test.
      - The first failed calls of fastapi_14360 and rich_3935 carry no old string, so the test cannot pass.
-     - Taking each task's first failed call that has an old string gives 5 of 7. rich_3935 has none.
+     - Taking each task's first failed call that has an old string gives 5 of 7; rich_3935 has none.
      - The file was read on 8 of 8. The blind prediction was 6.
-   - The 14360 tie, resolved three ways (b / g / f, literally the first call's class):
+   - The 14360 tie, resolved three ways (b / g / f, the literal class of the first call):
      - row 1 sum 6 / 5 / 5;
      - copy half 5 / 4 / 4;
      - rows 2 and 3 never fire.
@@ -53,7 +51,7 @@ date: 2026-11-05
   - the harness error prefixes in EXP-043 §6/§2;
   - pytest labels with counts, exception class names, and the two package names in EXP-042;
   - EXP-041's first-word command labels and its paraphrase of our own prompt.
-- **Remove:** the example search command in EXP-042 §2. It is rich_4075's search term, found in 1 trace.
+- **Remove:** EXP-042 §2's example search command, which is rich_4075's search term (1 trace).
 - The over-removals in 466a296 need no restoring.
 
 Proposed line for the logbook conventions:
@@ -73,10 +71,10 @@ was read on 8 of 8. No reading uses this. Supersedes "8 of 8" for region read in
 "11. *Added 2026-11-05 (critic light, outside the readings) [V]:* swegemma 0.2.11 strips diff sections touching
 protected test and runner-config files, pyproject.toml among them, inside submit_patch before reporting the size:
 (ii) for rich_4075. Row 10 stays as applied."
-Screener, EXP-042 section 2: "(for example `grep python_version`)" -> "(for example a search for a version
-string)", plus a dated 9.10 item.
+Screener, EXP-042 section 2: the parenthetical example after "merely contains the word python" is rich_4075's
+search term; replace it with "(for example a search for a version string)" and add a dated 9.10 item.
 
-Lead, knowledge/plan.md EXP-043 entry:
+Lead, knowledge/plan.md EXP-043 entry (line 91 only):
 - "no critic review" -> "critic light accepted".
 - "By class:" sentence -> "By class [H]: 16 paraphrase calls (10 altered shown text, 6 ran past the last line
   read), 11 exact copies matching more than once, 6 lost or malformed arguments, 5 single-line old strings
