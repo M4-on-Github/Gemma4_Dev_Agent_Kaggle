@@ -216,6 +216,7 @@ It is observational. There are 5 E4B wins (4 without the free task); 3 ran a cou
 4. R's sharpened counts are a marker count with 10 hand checks, not a read of all runs.
 5. There are 12 fastapi checkers; 11 got the collection failure and fastapi_14962 only ran a pytest on a missing file.
 6. 2026-11-05: a command string with a repo script path, an error text, and a test file name were removed from 9.2 for hygiene (lead job, after the critic light on EXP-041); no number or reading changed.
+7. *Corrected 2026-11-05 (critic light):* rich_3105's second counted run exited 0 and its output contains none of the failure markers of the rule (its stderr does carry a path error from a sub-tool, and its stdout prints a result); by the rule as written it is informative, so the sharpened loss count is 4 of 43 (2 of 23 on the informative 27). W and every reading are unchanged. This supersedes "both failing" and "uninformative by the rule" for rich_3105 in 9.2; the first run exited 1 on a missing path.
 
 ## Status
 
