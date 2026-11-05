@@ -195,3 +195,68 @@ What I checked: `git diff 143fba1 4024082` on the EXP file, on `cost_estimate.{p
 - mine the 4 R-only ids (fastapi_13537, fastapi_15589, fastapi_9753, rich_3067): E4B call counts and first-edit turn, and the files edited against the gold files. This separates the first three explanations; chance needs a larger cohort;
 - fix the `nudges` count in `analyze_traces.py`;
 - read the re-grade (F, then G) when it completes. It is already running on CPU (9ec5c7d).
+
+## Re-grade review 2026-11-05 (9c68639, with 2eab7b4 and 9ec5c7d)
+
+**Verdict: accepted. Fault row F does not fire; G = 0 of 15 takes the "G <= 1" row. Both were applied as written and in order, F first. Every §9.7 number regenerates.** This section is a `light` review. The frontmatter keeps `full` from the review above, on which C-020 rests. The corrections at the end do not gate.
+
+**Audit**
+1. **Order: pass.**
+   - §3.3's G rows and row F predate both commits.
+   - 2eab7b4 (20:50:06 UTC) adds §7 item 9, dated, and the checklist allows that above the line. The push followed at 20:50:23 UTC.
+   - 9c68639 touches only the Status block, the README row and the text below the line.
+2. **Cohort and build: pass.**
+   - In all three passes the ids equal dev-48.
+   - Rebuilt into scratch with its default flags, the builder reproduces the untracked EXP-036 notebook byte for byte (`73df67c8...`). The flags rewrite the template only when they differ from the defaults.
+   - The EXP-038 build equals the pushed notebook (`4932f0bc...`). Its metadata differs from EXP-036's only in id and title.
+   - The patches and the `regrade_patches.py` that ran equal the repo copies.
+3. **Numbers: pass.**
+   - `analyze_regrade.py`, run with only `OUT_DIR` pointed at scratch, gives the same `summary.jsonl`. Its `aggregates.json` is the same once line endings are normalised: `write_text` writes CRLF on Windows.
+   - GOLD's and BASE's exit codes, tails at the cap, shim drops and the -9 id all equal EXP-036's.
+8. **Hygiene: pass.** The check is OK on six files. The outputs hold only ids, booleans, exit codes and error class names, and §9.7-9.8 quote no tail or patch text.
+
+**Item 3.** The 7-0 may be cited only within the block below.
+- Four of its discordant pairs are the as-run informative split. The other three are gated tasks that R resolves only with the stand-ins.
+- It grades the same patches under a condition that neither tree ships.
+- Any stronger use (the abstract, "finding", a claim move) needs a `full` review on new ids.
+
+**Item 4.**
+- **The rule matches EXP-036 by construction:** the same `err_files`, and the same group (unresolved under the re-grade, the patch touches a gold-patch file, exit 2).
+- **The three exit-2 tasks that are not own errors** fail on exactly BASE's file sets.
+- **The fastapi_15800 call is sound, but its caveat is wrong.** The call fires on BASE exiting 1: no collection interruption, and the summary is present. BASE's capped tail therefore never enters it, and it is as firm as fastapi_14964 and fastapi_15280.
+- **"5 against 2" needs its denominators:** 5 of 21 against R's 2 of 27 and RH's 2 of 22. Paired with R it is both 2, E4B only 3.
+
+**Item 5.**
+- The C-020 and C-022 lines stand. C-022's line understates: 14 gradings now agree.
+- C-021's "not model-independent" overstates. On the gated 15, paired, the E4B is 0-3 against R (p = 0.25) and 0-5 against RH (p = 0.0625).
+
+**Permitted and corrected text** (copy as written):
+
+```
+Item 3, ledger and paper, as a ceiling:
+"Re-graded with stand-ins for two test-only packages (a grading condition neither tree ships; its match to the
+hidden scorer is unknown), the 31B's v24 loop resolves 12 of 48 dev-48 tasks and the E4B 5. Paired, that is 7-0,
+exact McNemar p = 0.016, which EXP-038 section 3.3 reports with no reading. Three of the 7 are gated tasks that
+only the stand-ins make resolvable for R. The pre-registered as-run comparison is 4-0, p = 0.125: no difference
+detected."
+Not to be called significant or detected, and not to be read as the E4B being worse on the hidden set.
+
+C-021, replacing the 57d60be history line (lead):
+"history: 2026-11-05 note, status unchanged: on the E4B's patches the stand-ins flip 0 of 15 gated tasks
+(EXP-038 re-grade, 9c68639), against 3 (R) and 5 (RH). Paired on the 15, the E4B is 0-3 against R (p = 0.25)
+and 0-5 against RH (p = 0.0625), so the data do not show whether the gain depends on the model. C-021's 3 to 5
+is a 31B v24 figure. 5 of the E4B's 21 unresolved patches that touch a gold-patch file break collection
+themselves (file-set rule), 3 of them gated."
+
+C-022, optional (lead): "in ten gradings" -> "in fourteen gradings (adding the E4B as run and re-graded, and
+GOLD and BASE repeated in the EXP-038 re-grade)".
+
+knowledge/plan.md, the re-grade entry (lead): strike "the last is the least certain". Replace "Reading it
+needs a new pre-registration" with "Reading it needs new ids (held-out-24) or a replicate run; a
+pre-registration written now on these 48 would be post hoc."
+
+Section 9.7, a dated note under the fastapi_15800 caveat (experimenter):
+"*Corrected 2026-11-05 (critic light):* the fastapi_15800 call does not use BASE's file set. It fires because
+BASE exits 1, with no collection interruption and its summary present, so it is as firm as fastapi_14964 and
+fastapi_15280. The capped BASE tail does not weaken it."
+```
