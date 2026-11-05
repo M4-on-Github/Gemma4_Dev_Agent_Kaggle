@@ -140,6 +140,7 @@ for line in (DATA_DIR / 'tasks.jsonl').read_text(encoding='utf-8').splitlines():
     if t['instance_id'] in want:
         (gold_dir / f"{t['instance_id']}.patch").write_text(t.get('patch') or '', encoding='utf-8')
         (base_dir / f"{t['instance_id']}.patch").write_text('', encoding='utf-8')
+assert all(f.stat().st_size > 0 for f in gold_dir.glob('*.patch')), 'a gold patch is empty: GOLD would equal BASE'
 PATCH_DIRS['GOLD'] = gold_dir
 PATCH_DIRS['BASE'] = base_dir
 counts = {k: len(list(v.glob('*.patch'))) for k, v in PATCH_DIRS.items()}

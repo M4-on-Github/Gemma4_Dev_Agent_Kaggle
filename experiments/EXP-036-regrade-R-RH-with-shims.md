@@ -195,7 +195,7 @@ python -I -X utf8 experiments/EXP-036/analyze_regrade.py --regrade runs/EXP-036-
 
 ## 7. Defects in this pre-registration, logged after the fact
 
-None yet.
+1. **Where the runtime accelerator check lives.** §2.1 says the accelerator line from the kernel log is quoted in §8. The notebook as built writes that check to `environment.json`, so §9 reads it from there. The check is the same; only its place changed.
 
 ---
 
@@ -227,6 +227,7 @@ None yet.
   - The guard's message: `Blocked kernel push: RUN_AGENT is not True. Gold controls (RUN_AGENT = False; cell 5 then sets a 60-minute cap) run only from an exp000 directory.`
   - The guard accepts only notebooks that run the agent, or gold controls from an exp000 directory.
   - It was not worked around: no dummy `RUN_AGENT`, no exp000 directory name. No kernel exists, and 0 GPU-h and 0 CPU-h were spent.
+- **After the refusal, the template gained one assert.** It stops the kernel if any gold patch is empty, because GOLD would then silently equal BASE. Locally, all 48 cohort tasks in `data/raw/tasks.jsonl` have a non-empty `patch`. The next build picks the assert up.
 - **What the push needs.** A guard exemption recorded in `guard_push.py`. One form: allow a notebook with no `RUN_AGENT` parameter when its `kernel-metadata.json` has `enable_gpu` and `enable_tpu` false, no `machine_shape` and empty `model_sources`. The cohort check stays: `TASK_IDS` against `**Cohort:** dev-48` already passes. Changing the guard is outside the experimenter's paths and is the lead's or the user's decision.
 
 ## Status
