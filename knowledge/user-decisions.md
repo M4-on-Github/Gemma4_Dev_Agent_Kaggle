@@ -107,3 +107,9 @@ User: "I canceled the 31b experiment032 p1 by accident. do what you need."
 Read by the lead as: re-push arm P1 of EXP-032 unchanged (the screen was already approved under D-004). Not read as a
 higher GPU ceiling: the lost run (about 0.7 GPU-h) counts against the 3.2, and arm T4 stays conditional.
 
+## 2026-11-05 ~15:00 UTC: push guard gets a CPU-only exception
+- User, verbatim: "I mean isnt the regrade notebook only cpu what is the issue?" Then, asked whether to add a CPU-only exception to `.claude/hooks/guard_push.py` with the diff shown, chose "Yes, add it (Recommended)".
+- What was decided: a notebook with no `RUN_AGENT` parameter passes the push guard, without the cohort check, when its `kernel-metadata.json` has GPU and TPU off, no machine shape and no model source. The committed pre-registration with a readings section is still required. `RUN_AGENT = False` is still blocked outside exp000, and so is any such notebook with GPU on, a model attached or a machine shape set (checked on altered copies of the EXP-036 notebook).
+- Scope: this covers the guard change and the EXP-036 push it unblocks. It is not a GPU ceiling change and not an approval of any upload or dev-48 arm.
+- Not decided: what to do with the tracked EXP-004 files `notebooks/regrade_shim_dev48/kaggle_regrade_shim.{py,ipynb}` that embed agent patches.
+

@@ -11,7 +11,9 @@ notebooks/<dir>` passes only if:
   - it contains a readings section (a heading mentioning "reading" or "pre-registered"),
   - the directory holds exactly one .ipynb whose parameter cell runs the agent (`RUN_AGENT = True`; a gold
     control with `RUN_AGENT = False` is allowed only from an exp000 directory, because cell 5 then sets a
-    60-minute cap, the EXP-020 hazard),
+    60-minute cap, the EXP-020 hazard; a notebook with no `RUN_AGENT` parameter passes here, without the
+    cohort check, only when `kernel-metadata.json` is CPU-only: GPU and TPU off, no machine shape, no model
+    source),
   - the EXP file names one cohort (a `**Cohort:** <name>` line, or exactly one `experiments/cohorts/<name>.txt`
     reference) and the notebook's `TASK_IDS` equal that cohort's ids. This keeps a screen at 8 tasks and a
     dev-48 arm at 48: the GPU budget class is checked from the ids, not from the agent's label.
@@ -95,6 +97,17 @@ run_agent = param("RUN_AGENT")
 if run_agent is not True:
     if re.search(r"(?i)exp[-_]?000", Path(nb_dir).name):
         sys.exit(0)  # gold control: no agent run, no cohort check
+    # A CPU-only kernel that never runs the agent (a re-grade of patches already on disk, EXP-036): no GPU
+    # budget is at stake, so neither the 60-minute-cap hazard nor the cohort check applies. Added 2026-11-05
+    # on the user's decision. The notebook must have no RUN_AGENT parameter at all (False is still blocked).
+    try:
+        meta = json.loads((nb_path / "kernel-metadata.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        meta = {}
+    cpu_only = (meta.get("enable_gpu") is False and meta.get("enable_tpu") is False
+                and not meta.get("machine_shape") and not meta.get("model_sources"))
+    if run_agent is None and cpu_only:
+        sys.exit(0)
     block("RUN_AGENT is not True. Gold controls (RUN_AGENT = False; cell 5 then sets a 60-minute cap) run only from an exp000 directory.")
 
 # ---- the cohort the pre-registration declares
