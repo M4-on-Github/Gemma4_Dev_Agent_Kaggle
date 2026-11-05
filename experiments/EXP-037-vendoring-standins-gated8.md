@@ -79,7 +79,14 @@
 
 **Why both packages.** The command writes both stand-ins whenever either name is found, guarded only by the import check. On a repository that needs one package, the other is a stand-in that is not needed, by design. Splitting it would mean a longer command or a third call.
 
-**Stand-in code.** It is the subset of `tools/compat_shims/{inline_snapshot,dirty_equals}` that a test file can reach, rewritten without literal braces: the validator warns on braces (ADK templating), so there are no f-strings and no `{ }` groups.
+**Stand-in code.** ~~It is the subset of `tools/compat_shims/{inline_snapshot,dirty_equals}` that a test file can reach,~~ rewritten without literal braces: the validator warns on braces (ADK templating), so there are no f-strings and no `{ }` groups.
+
+*Corrected 2026-11-05, after the critic prereg review (`experiments/EXP-037/critic.md`, b60bb81), fix 4.* The struck words claimed coverage that the probes do not show. What the build shows is that the code behaves the same as `tools/compat_shims` (128 probes, 0 differ). It does not cover every name in the tests tree: in all 15 gated snapshots the tests tree imports `Is`, `IsInt` and `IsStr`, which neither shim provides. Why it is still enough on this grader is a chain of three links, and the conclusion holds only on this grader:
+1. The code is the same as `tools/compat_shims` (the 128 probes).
+2. GOLD resolves 15 of 15 gated tasks with `tools/compat_shims` supplied (EXP-036).
+3. The grader runs only the files the test patch touches (`Task.test_files`, harness-stack). The tests-tree files that import the missing names are not collected.
+
+So the stand-ins are sufficient for all 15 gated tasks on this grader only. Section 7a (desk check B1) lists the names the graded files and their conftest and helper closure actually reach.
 - `inline_snapshot`: `Snapshot`, `snapshot`.
 - `dirty_equals`: `IsDict`, `IsPartialDict`, `IsOneOf`, `HasRepr`, and `|` alternation.
 - **Build check** (`python experiments/EXP-037/check_standins.py`, passes):
@@ -115,6 +122,15 @@
 - Worst case: all 8 at the 480 s cap plus about 15 s setup each, 8 x 495 + 517 = 4,477 s, **1.24 h**.
 - Both figures are reported, and the over-1.0 decision is left to the lead.
 
+*Corrected 2026-11-05, after the critic prereg review (b60bb81), fix 2. The two bullets above are kept as first written.*
+- **The worst case is conditional.** It is 1.24 h only if no task overruns the 8-minute cap. Overruns happen: 1 of 96 R and RH tasks ran 751.9 s at the 8-minute cap (rich_3480 in RH). Each such overrun adds about 0.07 h.
+- **Re-runs ordered by rows 2 and 3.** Each re-run is a second smoke screen of 7 or 8 tasks and costs about 0.85 to 1.24 h. The approved ceiling has 1.34 of 3.2 h left before this run, and about 0.1 to 0.44 h after it. A re-run therefore exceeds what is left. **Each re-run needs its own approval from the user** before it is built or pushed. Until it is approved, a row 2 or row 3 result is reported as a kill pending a re-run that has not been funded.
+- **Notebook cells (critic P6).** The notebook's code cells equal Arm R's except two:
+  - cell 0, the parameters, which adds a new empty `MODEL_NAME`;
+  - cell 5, which takes the model directory from the zip (D-004) and resolves the same 31B directory.
+
+  Neither is a second variable.
+
 ## 3. Endpoints, fixed in advance
 
 All are read per task over the 8 ids from `traces/trace_<id>.json`, `task_results.jsonl` (`patch`) and `summary.jsonl`. The R and RH figures come from their existing runs on the same ids (section 1).
@@ -123,8 +139,8 @@ All are read per task over the 8 ids from `traces/trace_<id>.json`, `task_result
 |---|---|---|
 | a | **Mechanism** | Counts over the 8 tasks:<br>- G: the first counted tool call is a `run_command` containing `git grep -l -e inline_snapshot -e dirty_equals`.<br>- W: a `run_command` containing `cat > inline_snapshot/__init__.py` or `cat > dirty_equals/__init__.py` was issued; record the counted-call index of the first such call.<br>- **M_any**: the final patch creates at least one of top-level `inline_snapshot/__init__.py` or `dirty_equals/__init__.py`.<br>- M_both: it creates both.<br>- F: the created file text is byte-identical to the heredoc body in `insert_vendoring.md`. |
 | b | **As-run resolves (K)** | Of 8, as graded by the notebook (no shims at grading). Reference: R and RH as run 0 of 8; re-graded R 3 and RH 5, all on the five flip ids. Reported by id, split into the flip five and the other three. n = 8: K is a conversion count on outcome-selected ids, with no test and no dev-48 rate. |
-| c | **Cost** | Per task, paired against R by id:<br>- counted calls (`n_calls`), wall (`wall_s`), compactions (analyzer field), `calls_cap_hit`, `time_cap_hit`.<br>- **X**: of R's five uncapped tasks, how many now end at a cap.<br>- **X0**: of those, how many have no source-file edit in the final patch (any file other than the two stand-ins).<br>- Direct turn cost: Δ_miss = median elapsed of the grep turn; Δ_hit = median elapsed of the grep turn plus the write turn, both from step timestamps.<br>- **Δ_8min = (26/48) x Δ_hit + (22/48) x Δ_miss**, compared with the 13.8 s per-task headroom at 8 minutes. 26 of 48 is the dev-48 reach of the search (section 1); the hidden set's reach is unknown.<br>- Paired mean wall difference against R and its SE are also reported. |
-| d | **Harm** | **H1**: a stand-in path in the final patch that is not top-level, or that sits under a path component named `test` or `tests`.<br>**H2**: the write call's `git status --short` output shows any line not starting with `??` (a tracked file changed), or the final patch modifies a tracked file named like a package.<br>**H3**: a stand-in written (W) and absent from the final patch, or touched after the write by `edit_file`, `write_file` or a later `run_command` that names its path.<br>Also reported: tasks where only one package's import fails on the grader but both stand-ins were written (by design, section 2). "Written where not needed" cannot be read on this cohort, because every id needs a stand-in. |
+| c | **Cost** | Per task, paired against R by id:<br>- counted calls (`n_calls`), wall (`wall_s`), compactions (analyzer field), `calls_cap_hit`, `time_cap_hit`.<br>- **X**: of R's five uncapped tasks, how many now end at a cap.<br>- **X0**: of those, how many have no source-file edit in the final patch (any file other than the two stand-ins).<br>- Direct turn cost: ~~Δ_miss = median elapsed of the grep turn; Δ_hit = median elapsed of the grep turn plus the write turn~~, both from step timestamps.<br>- *Corrected 2026-11-05 after the critic prereg (b60bb81), fix 1:* Δ_miss = **mean** elapsed of the grep turn over the 8 tasks; Δ_hit = **mean** elapsed of the grep turn plus the write turn over the tasks that write. The 13.8 s headroom is derived from a mean projection (EXP-028 section 9), so a median does not compare with it. **Δ is a lower bound** on the added time: it omits the larger prompt on every later call and any extra compactions.<br>- **Δ_8min = (26/48) x Δ_hit + (22/48) x Δ_miss**, compared with the 13.8 s per-task headroom at 8 minutes. 26 of 48 is the dev-48 reach of the search (section 1); the hidden set's reach is unknown.<br>- Paired mean wall difference against R and its SE are also reported. |
+| d | **Harm** | **H1**: a stand-in path in the final patch that is not top-level, or that sits under a path component named `test` or `tests`.<br>**H2**: the write call's `git status --short` output shows any line not starting with `??` (a tracked file changed), or the final patch modifies a tracked file named like a package.<br>**H3**: a stand-in written (W) and absent from the final patch, or touched after the write by `edit_file`, `write_file` or a later `run_command` that names its path.<br>*Added 2026-11-05 after the critic prereg (b60bb81), fix 3:* for each H3 event, record what the touch did: names added, code changed, or code removed (or the file deleted). Row 1 counts every H3 event, including an additive one.<br>Also reported: tasks where only one package's import fails on the grader but both stand-ins were written (by design, section 2). "Written where not needed" cannot be read on this cohort, because every id needs a stand-in. |
 | e | Recorded, not read | The first source-file edit as a counted-call index (the `run_forensics.py` first-edit rule, with the stand-in write excluded), paired by id against R. It is recorded because v24's "Search once" and "Edit by tool call 12" now run after one or two calls are spent (section 7 item 2). Also recorded: `edit_file` arg-loss and malformed calls. |
 
 Statistics: none. n = 8 reads counts and all-or-none events only.
@@ -144,6 +160,15 @@ Rows are applied in order; the first match governs. The critic's rule applies: *
 | 6 | M_any 6 or more, K 2 or more, X0 1 or fewer, Δ_8min 13.8 s or less | **Promote to one dev-48 arm** (lead's call, 4 to 7 GPU-h, its own prereg and critic). Primary: paired dev-48 resolves against R, the gated and non-gated split, and projected hours with the non-hit grep cost. **No upload is licensed by this screen.** |
 | 7 | None of the above (for example M_any = 5) | Report the numbers; no decision. Lead's call. |
 
+**Amendments to the table, 2026-11-05, after the critic prereg review (`experiments/EXP-037/critic.md`, b60bb81), fix 3.** The table above is kept as first written. No result exists yet, so these are corrections before the fact. Where they differ from the table, these govern.
+- **Row 0, a grading fault, added.** A task has a grading fault if it has no grade, or if it has `test_exit_code` -1 (the test patch did not apply) on a patch that touches no test path. If any of the 8 tasks has one, K is not read and rows 3 to 6 do not apply. Endpoints (a), (c) and (d) are still reported, and the class is read from the log as row 0 says.
+- **M_any = 5, a rule added.** Rows 3 to 6 apply at M_any 5 or more, not 6 or more, with their K, X0 and Δ_8min thresholds unchanged. A reading at exactly M_any = 5 is labelled **mechanism weak (5 of 8)**, and its next step is the one its row gives. Row 7 keeps only outcomes that no row covers.
+- **Row 2's pooled-15 re-read, thresholds added.** The re-run on the second set (7 ids) needs its own user approval (section 2, Cost). If it runs, M_any is pooled over the 15 gated ids:
+  - 7 or fewer of 15: the mechanism kill stands.
+  - 11 or more of 15: rows 3 to 6 are applied to the pooled 15. K counts stay absolute (K = 0, K = 1, K 2 or more), because all five flip ids are in gated-8. X and X0 are counted over R's uncapped tasks among the 15. Δ_8min uses the pooled means.
+  - 8 to 10 of 15: report the numbers, with no decision; lead's call.
+- **Base rate of K 2 or more (critic, answer 1).** fastapi_13207, 14297 and 14360 flipped under the EXP-036 re-grade in both R and RH. If those three carry a stand-in, K of 2 or more is close to certain [I]. A row 5 or row 6 reading therefore shows mainly that a carried stand-in plus a fix already known to be right survives two extra calls and the as-run grader. It is not evidence of a resolve gain beyond EXP-036's +3 (R) and +5 (RH) of 48.
+
 A gated task resolves on this grader only if a stand-in is in the patch. Evidence: R and RH resolve 0 of the 15 as run without one, and every older-lineage gated resolve came with one (section 1). A K above 0 is therefore the stand-in's effect together with the fix. Whether the fix alone is right is what the row 3 diagnostic separates.
 
 **Prediction, written blind:**
@@ -155,6 +180,16 @@ A gated task resolves on this grader only if a stand-in is in the patch. Evidenc
 - Compactions: about 14 against R's 12.
 - Harm: 0 events.
 - Rows: row 5 at 35%, row 6 at 20%, rows 3 and 4 together at 25%, row 2 at 10%, row 1 at 10%.
+
+**Prediction restated 2026-11-05, after the critic prereg (b60bb81), fix 1.** The prediction above is kept as first written. It read Δ on medians, which fix 1 retracts. Under the corrected definition (means, a lower bound) and the amended table:
+- Mechanism, resolves, calls, caps, compactions and harm: unchanged (M_any 7, M_both 7, F in 5 of 7, write at call 2; K = 3 of 8, 80% interval 1 to 5; +2 calls; X 1 or 2, X0 0; compactions about 14; H 0).
+- Turn cost, on means:
+  - Δ_miss is about 12 s; on gated-8 it is read from the grep turn of all 8 tasks.
+  - Δ_hit is about 34 s on the forensics means (11.7 + 22.6 s), or 39 to 45 s on the section 7a write-turn model [I].
+  - So Δ_8min is about 24 s (range 22 to 30 s).
+  - Section 7a also shows that no two-call design clears 13.8 s on means: the floor is 18.0 s with zero extra bytes.
+  - So the 13.8 s rule flags with probability about 0.95, not at even odds.
+- Rows: row 5 at 50%, row 6 at 5% or less, rows 3 and 4 together at 25%, row 2 at 10%, row 1 at 10%. Row 7 is about 0, because M_any = 5 now falls under rows 3 to 6.
 
 ## 5. What this does and does not license
 
@@ -170,6 +205,12 @@ A gated task resolves on this grader only if a stand-in is in the patch. Evidenc
 - **Placement on another grader.** Top-level placement works on the subprocess sandbox because it puts the workspace on `PYTHONPATH` (`tools/regrade_patches.py`). It is verified on the fastapi layout only, which is all of gated-8. A grader with a different path setup is unverified.
 - **The hidden-set time projection.** Δ_8min uses dev-48's reach of 26 of 48; the hidden set's reach could be anywhere from 0 to that.
 
+*Added 2026-11-05, after the critic prereg (b60bb81), fix 4.*
+- **The shadowing regression, by its mechanism.** Take a grader that has the real packages, run on a patch whose agent sandbox lacked them, so the stand-ins were written. The top-level stand-in comes first on `PYTHONPATH=<workspace>` and replaces the real package. A graded file that imports a name the stand-in lacks then fails at collection, where it would otherwise pass. For example, the tests trees of all 15 gated snapshots import `Is`, `IsInt` and `IsStr` (section 7a). On this grader no graded file reaches those names, which is why the chain in section 2 holds. A grader with the real packages and different graded files is not covered.
+- **`__pycache__`.** The `.gitignore` of all 15 gated snapshots covers `__pycache__`, and 0 of the 15 older-lineage final patches that carry a stand-in have a `.pyc` or binary hunk (critic, answer 4). So on this layout the import check and pytest do not put bytecode into the patch [I]. `check_standins.py` excludes `__pycache__` in `files_of`, so it does not test this.
+- **The base rate of K.** K of 2 or more has a high base rate on this cohort (section 4 amendments). So "carries and converts" can be read; "gains" cannot.
+- **Non-gated tasks.** A stand-in cannot change a non-gated task's grade through an import, because such a task would be gated. On those tasks, cost and misplacement (H1, H2) are the only channels [I]. This screen reads neither on non-gated tasks; section 7a, B3, sizes a cohort that could.
+
 **No row licenses an upload.**
 
 ## 6. Exact commands
@@ -180,6 +221,7 @@ python -I -X utf8 experiments/EXP-037/vendor_paths.py
 python -I -X utf8 experiments/EXP-037/prompt_cost.py --ids experiments/cohorts/gated-8.txt --delta 700 1400 1800 --out experiments/EXP-037/prompt_cost.json
 python experiments/EXP-037/make_candidate.py
 python experiments/EXP-037/check_standins.py
+python -I -X utf8 experiments/EXP-037/desk_checks.py --tasks data/raw/tasks.jsonl --snapshots data/local/snapshots --out experiments/EXP-037/desk_checks.json   # added 2026-11-05, section 7a
 python tools/validate_submission.py experiments/EXP-037/candidate-vendor --strict
 python tools/pack_submission.py --src experiments/EXP-037/candidate-vendor --out dist/EXP-037-vendor.zip --skip-budget-gate --allow-warnings
 python tools/build_notebook.py --embed dist/EXP-037-vendor.zip --username rainm4 --cohort experiments/cohorts/gated-8.txt --set EXP_ID='"EXP-037-vendor"' --set RUN_GOLD_CONTROL=False --out notebooks/exp037_vendor/kaggle_eval_l4x4.ipynb
@@ -203,6 +245,134 @@ python tools/run_forensics.py compare runs/EXP-028-armR runs/EXP-037-vendor
 6. The analysis script for endpoints (a), (c), (d) and (e) is not written yet. If a trace field these definitions need is missing, the analysis will say which endpoint is lost.
 7. The screen artifact is packed with `--skip-budget-gate` (18.00 h at 8 minutes, the same as the base tree). The zip is never an upload candidate.
 
+8. *Logged 2026-11-05, from the critic prereg (b60bb81).* The instruction names two specific third-party packages, `inline_snapshot` and `dirty_equals`, in a prompt meant to be repo-agnostic. Neither name is in the lint word list, so validation passes. The names are chosen from what dev-48's tests import, which is a fastapi-family fact. Whether the hidden set's private repositories use either package is unknown (section 5).
+
+## 7a. Desk checks B1 to B3, 2026-11-05, after the critic prereg (zero GPU)
+
+These were run after the critic's review (b60bb81), at the lead's request. They change no endpoint, reading or build: the candidate tree, cohort file and notebook are unchanged. Every number below is from `python -I -X utf8 experiments/EXP-037/desk_checks.py --tasks data/raw/tasks.jsonl --snapshots data/local/snapshots --out experiments/EXP-037/desk_checks.json`. The output holds names, counts and ids only. Inputs from earlier work, cited as they are used:
+- turn means from `tools/run_forensics.py forensics runs/EXP-028-armR`: grep 11.7 s, heredoc-write 22.6 s, agent wall 230.4 min;
+- decode 29.8 tok/s and overhead 516.7 s (EXP-032 P1); overhead 444.8 s (EXP-033);
+- token rates 0.2866 to 0.39 per byte (section 2).
+
+**B1. The smallest stand-in that the graded files need.**
+
+*Method.* The graded files are the `.py` files the test patch touches, in their post-patch text. The patch applied cleanly to the base snapshot on all 15 gated tasks. To them are added every `conftest.py` on their directory chain and every local module they import, transitively. All imports are resolved inside the base-commit snapshot, and the names come from a static AST walk. Not modelled: `pytest_plugins`, dynamic imports, and `importorskip`.
+
+*Names the graded closure reaches,* by task count of 15:
+
+| Name | Tasks | How it is used |
+|---|---|---|
+| `inline_snapshot.snapshot` | 9 (all in the test-patch files themselves) | 73 calls, each with one positional argument, each an operand of `==`. No empty `snapshot()`, no keywords. |
+| `inline_snapshot.Snapshot` | 5 (11355, 13207, 14262, 14297, 14512), only through a closure file, never in a test-patch file | 10 uses, all as a parameter annotation. No subscription and no calls. |
+| `dirty_equals.IsDict` | 2 (13786, 14605) | 42 calls, positional arguments only. Every one is an operand of a two-operand `IsDict(...) \| IsDict(...)`: 21 expressions, 5 of them directly an `==` operand and the rest nested inside a larger compared value. No `.settings`, no keywords. |
+| `dirty_equals.IsPartialDict` | 1 (14360) | 1 call, positional, an operand of `==`. |
+
+On 4 tasks (11355, 13207, 14262, 14297) the test-patch files import nothing from either package. The gate there comes from a helper or conftest in the closure.
+
+*Not reached by any graded closure,* though present in the tests tree:
+- `Is`, `IsInt`, `IsStr`, `HasRepr` and `IsOneOf`: all 15 tasks;
+- `AnyThing` and `IsUUID`: 8;
+- `IsAnyStr` and `IsList`: 6.
+
+This is the critic's coverage chain seen from the graded side (section 2). It is consistent with GOLD resolving 15 of 15 under `tools/compat_shims`, which lacks `Is`, `IsInt` and `IsStr`.
+
+*The smallest stand-in.* It is the built command's form, keeping both import guards and the `git status` line, with the module bodies cut to the uses above. It has no literal braces.
+
+```
+cd /workspace
+if ! python -c 'import inline_snapshot' 2>/dev/null; then mkdir -p inline_snapshot; cat > inline_snapshot/__init__.py <<'EOF'
+class Snapshot: pass
+def snapshot(v=None): return v
+EOF
+fi
+if ! python -c 'import dirty_equals' 2>/dev/null; then mkdir -p dirty_equals; cat > dirty_equals/__init__.py <<'EOF'
+class _Or:
+    def __init__(self, a, b): self.a, self.b = a, b
+    def __eq__(self, o): return self.a == o or self.b == o
+    def __or__(self, o): return _Or(self, o)
+class IsDict(dict):
+    def __eq__(self, o): return isinstance(o, dict) and dict(o) == dict(self)
+    def __or__(self, o): return _Or(self, o)
+class IsPartialDict(dict):
+    def __eq__(self, o): return isinstance(o, dict) and all(k in o and o[k] == v for k, v in self.items())
+EOF
+fi
+git status --short | head -5
+```
+
+*Size and cost of the small command, against the built one:*
+
+| | Built command | Small command |
+|---|---|---|
+| Bytes | 1,712 (38 lines) | **796** (19 lines; module files 52 and 444 bytes; sha256 `a9c0abdc...783e`) |
+| Output tokens | 491 to 668 | **228 to 310** |
+| Generation at 29.8 tok/s | 16.5 to 22.4 s | **7.7 to 10.4 s** |
+
+The small modules were checked against `tools/compat_shims` with 979 equality probes, in both directions, on the observed forms: `snapshot(v)`, two- and three-operand `IsDict` chains, and `IsPartialDict`. 0 differ.
+
+*Projected mean added time per task at 8 minutes,* Δ_8min = (26/48) x Δ_hit + (22/48) x Δ_miss, with Δ_miss = 11.7 s. The write-turn model is [I]: one grep-turn mean (11.7 s) plus generation of the bytes beyond the 85-byte grep.
+
+| Design | Δ_8min |
+|---|---|
+| Built command, forensics means (write turn 22.6 s) | 23.9 s |
+| Built command, write-turn model (27.3 to 33.0 s) | 26.5 to 29.6 s |
+| **Small command, write-turn model (18.5 to 21.0 s)** | **21.7 to 23.1 s** |
+| Any second turn at all, zero extra bytes (floor) | 18.0 s |
+| Grep and small write in one command on every task [I] | 19.4 to 22.1 s |
+| Grep turn only, on every task | 11.7 s |
+| Headroom at 8 minutes | 13.8 s |
+
+**Answer.** The small stand-in saves about 1 to 8 s per task, but it does not make the section shippable at 8 minutes on means:
+- any design that spends a dedicated second turn on hit tasks has a floor of 18.0 s;
+- the dedicated grep turn alone spends 11.7 s of the 13.8 s.
+
+Only a design that spends no dedicated turn on miss tasks could fit [I]; none is designed here. All of these figures are lower bounds (section 3, endpoint c).
+
+*Verifying it would need* a CPU re-grade on Kaggle, no GPU, with the EXP-036 tool (`experiments/EXP-036/build_regrade_notebook.py` and `kaggle_regrade_template.py`), supplying the two small modules instead of `tools/compat_shims`:
+- GOLD on the 15 gated tasks must resolve 15 of 15;
+- R's and RH's patches on the five flip ids must give the same 3 and 5 flips as EXP-036.
+
+The static closure does not model dynamic imports, so this re-grade is the check. It is not built or pushed here.
+
+**B2. A 3-call mechanism run, costed (not built).**
+- *Tree.* The built candidate with `eval_config.yaml` `max_tool_calls: 3` and `max_time_minutes: 2`. This is a different `eval_config.yaml` from Arm R's, and the prompt's "You have 28 tool calls" is then false, a known mismatch for a run that reads only the mechanism.
+- *Cohort.* gated-8: every id is a hit. Adding 3 dev-48 ids outside the search's reach makes 11 tasks. Without them the run cannot read whether the grep prints nothing on a miss and no write follows.
+- *Reads:* G; whether the grep printed a path; W and its call index; F, from the write call's arguments in the trace and from the patch; H1, the placement; H2, from the `git status` line. It also reads the grep turn and write turn times directly, which are Δ_miss and Δ_hit as section 3 now defines them.
+- *Does not read:* K (no fix fits in 3 calls); X and X0; H3 (nothing follows the write); compactions; the prompt-growth cost on later calls; the first-edit displacement (endpoint e); any non-gated harm.
+- *Per-task inputs:*
+  - hit-task agent time 63.9 to 74.3 s: the grep mean, a write turn of 22.6 to 33.0 s, one more call, and 2 non-call turns at R's mean of 9.86 s per turn. R ran 1,402 turns, with a median of 2 turns beyond its calls per task.
+  - miss-task agent time 51.1 s;
+  - task wall outside turns 9.4 s, from R's 14,276.9 s of task wall less 13,824 s of agent wall, over 48 tasks;
+  - an allowance of 15 to 20 s per task for setup and grading, which is an assumption.
+- *Estimate,* with an overhead of 444.8 to 516.7 s:
+  - gated-8: **0.32 to 0.37 h**, with a ceiling of 0.45 h if every task runs the 2-minute cap;
+  - gated-8 plus 3 miss ids: **0.38 to 0.44 h**, with a ceiling of 0.57 h.
+
+  This is above the critic's ~0.2 h because the kernel overhead alone is 0.12 to 0.14 h. It fits inside the 1.34 h left on the ceiling.
+- *How it relates to the full screen.* It costs about a third to a half of the full screen's 0.90 to 0.93 h point estimate. If it kills the mechanism (M_any of 4 or fewer), the full screen is not needed. If the mechanism holds, the full screen is still needed for K, X0 and H3, so the two together cost more than the full screen alone.
+
+**B3. The harm cohort: non-gated tasks the search reaches.** There are 11 ids:
+- 13537, 14301, 14448, 14463, 14873, 15280, 15589, 15661, 15800, 5624, 9753, all fastapi.
+
+Resolves as run (EXP-036 `summary.jsonl`; the re-graded sets are identical):
+- **R: 5**, namely 13537, 14301, 14463, 15589 and 9753;
+- **RH: 5**, namely 13537, 14301, 14463, 15589 and 5624;
+- **both: 4**, namely 13537, 14301, 14463 and 15589.
+
+**So at least 3 exist that R resolves: there are 5.** A cohort of the 5 flip ids plus 3 of these could read harm on those 3, as unresolves against R, at n = 3.
+
+None of R's 5 hit a cap there (`experiments/EXP-028/armR/summary.jsonl`): 11 to 22 calls and 78.9 to 371.9 s. The two closest to a cap, where two extra calls and a longer prompt are most likely to matter, are:
+- 15589, at 371.9 s against the 480 s cap;
+- 9753, at 22 of 28 calls.
+
+Older lineages already carried top-level stand-ins on some of these ids and still resolved them (`vendor_paths.py`):
+- 13537: resolved in E0, A25 and B25, unresolved in X003;
+- 14301 and 15589: resolved in X003;
+- 5624: resolved in B25;
+- 15800: unresolved in B25.
+
+No cohort file is changed here.
+
 ## 8. Built, not pushed
 
 Built 2026-11-05 with the section 6 commands; the shas are in section 2. Committed by pathspec. **No kernel has been pushed.** The next step is a separate job, only after the user approves the GPU spend: push `notebooks/exp037_vendor` (kernel id `rainm4/gemma4-exp037-vendor`), then record the push and a new `## Status` line here.
@@ -210,3 +380,5 @@ Built 2026-11-05 with the section 6 commands; the shas are in section 2. Committ
 ## Status
 
 Built, not pushed; awaiting the user's GPU approval (estimate 0.90-0.93 h, worst case 1.24 h). Zip `dist/EXP-037-vendor.zip` sha256 `a43798560ae9bc1b5e5b8e82805c6a5d43282f14ffffbe6e02a3ee9b08f31a71`.
+
+2026-11-05: the critic's prereg review was needs-work (b60bb81). Its four text fixes are applied in sections 2 to 5 and 7, and the desk checks B1 to B3 are in section 7a. Tree, cohort and notebook are unchanged. Still not pushed: the design may change, and the push waits for the user. The worst case is 1.24 h if no task overruns (+0.07 h per overrun), and each row 2 or row 3 re-run needs its own approval.

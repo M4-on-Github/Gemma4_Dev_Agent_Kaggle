@@ -1,0 +1,637 @@
+{
+ "gated_ids": [
+  "fastapi_11355",
+  "fastapi_13207",
+  "fastapi_13786",
+  "fastapi_14262",
+  "fastapi_14297",
+  "fastapi_14360",
+  "fastapi_14459",
+  "fastapi_14512",
+  "fastapi_14583",
+  "fastapi_14605",
+  "fastapi_14609",
+  "fastapi_14953",
+  "fastapi_14962",
+  "fastapi_14964",
+  "fastapi_15030"
+ ],
+ "B1": {
+  "per_task": {
+   "fastapi_11355": {
+    "graded_py_files": 1,
+    "patch_applied_cleanly": true,
+    "closure_files": 38,
+    "closure_files_importing_pkgs": 1,
+    "names": [
+     "inline_snapshot.Snapshot"
+    ],
+    "names_in_test_patch_files": [],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "inline_snapshot.Is",
+     "inline_snapshot.snapshot"
+    ]
+   },
+   "fastapi_13207": {
+    "graded_py_files": 1,
+    "patch_applied_cleanly": true,
+    "closure_files": 38,
+    "closure_files_importing_pkgs": 1,
+    "names": [
+     "inline_snapshot.Snapshot"
+    ],
+    "names_in_test_patch_files": [],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "inline_snapshot.Is",
+     "inline_snapshot.snapshot"
+    ]
+   },
+   "fastapi_13786": {
+    "graded_py_files": 17,
+    "patch_applied_cleanly": true,
+    "closure_files": 57,
+    "closure_files_importing_pkgs": 1,
+    "names": [
+     "dirty_equals.IsDict"
+    ],
+    "names_in_test_patch_files": [
+     "dirty_equals.IsDict"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsStr",
+     "inline_snapshot.Is",
+     "inline_snapshot.Snapshot",
+     "inline_snapshot.snapshot"
+    ]
+   },
+   "fastapi_14262": {
+    "graded_py_files": 3,
+    "patch_applied_cleanly": true,
+    "closure_files": 41,
+    "closure_files_importing_pkgs": 1,
+    "names": [
+     "inline_snapshot.Snapshot"
+    ],
+    "names_in_test_patch_files": [],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsStr",
+     "inline_snapshot.Is",
+     "inline_snapshot.snapshot"
+    ]
+   },
+   "fastapi_14297": {
+    "graded_py_files": 2,
+    "patch_applied_cleanly": true,
+    "closure_files": 39,
+    "closure_files_importing_pkgs": 1,
+    "names": [
+     "inline_snapshot.Snapshot"
+    ],
+    "names_in_test_patch_files": [],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsStr",
+     "inline_snapshot.Is",
+     "inline_snapshot.snapshot"
+    ]
+   },
+   "fastapi_14360": {
+    "graded_py_files": 1,
+    "patch_applied_cleanly": true,
+    "closure_files": 37,
+    "closure_files_importing_pkgs": 1,
+    "names": [
+     "dirty_equals.IsPartialDict"
+    ],
+    "names_in_test_patch_files": [
+     "dirty_equals.IsPartialDict"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsStr",
+     "inline_snapshot.Is",
+     "inline_snapshot.Snapshot",
+     "inline_snapshot.snapshot"
+    ]
+   },
+   "fastapi_14459": {
+    "graded_py_files": 2,
+    "patch_applied_cleanly": true,
+    "closure_files": 42,
+    "closure_files_importing_pkgs": 2,
+    "names": [
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "inline_snapshot.Is",
+     "inline_snapshot.Snapshot"
+    ]
+   },
+   "fastapi_14512": {
+    "graded_py_files": 1,
+    "patch_applied_cleanly": true,
+    "closure_files": 38,
+    "closure_files_importing_pkgs": 2,
+    "names": [
+     "inline_snapshot.Snapshot",
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.AnyThing",
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "dirty_equals.IsUUID",
+     "inline_snapshot.Is"
+    ]
+   },
+   "fastapi_14583": {
+    "graded_py_files": 18,
+    "patch_applied_cleanly": true,
+    "closure_files": 59,
+    "closure_files_importing_pkgs": 10,
+    "names": [
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.AnyThing",
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "dirty_equals.IsUUID",
+     "inline_snapshot.Is"
+    ]
+   },
+   "fastapi_14605": {
+    "graded_py_files": 12,
+    "patch_applied_cleanly": true,
+    "closure_files": 49,
+    "closure_files_importing_pkgs": 8,
+    "names": [
+     "dirty_equals.IsDict",
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "dirty_equals.IsDict",
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.AnyThing",
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsAnyStr",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsList",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "dirty_equals.IsUUID",
+     "inline_snapshot.Is"
+    ]
+   },
+   "fastapi_14609": {
+    "graded_py_files": 8,
+    "patch_applied_cleanly": true,
+    "closure_files": 45,
+    "closure_files_importing_pkgs": 1,
+    "names": [
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.AnyThing",
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsAnyStr",
+     "dirty_equals.IsDict",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsList",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "dirty_equals.IsUUID",
+     "inline_snapshot.Is"
+    ]
+   },
+   "fastapi_14953": {
+    "graded_py_files": 11,
+    "patch_applied_cleanly": true,
+    "closure_files": 44,
+    "closure_files_importing_pkgs": 7,
+    "names": [
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.AnyThing",
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsAnyStr",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsList",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "dirty_equals.IsUUID",
+     "inline_snapshot.Is"
+    ]
+   },
+   "fastapi_14962": {
+    "graded_py_files": 3,
+    "patch_applied_cleanly": true,
+    "closure_files": 34,
+    "closure_files_importing_pkgs": 2,
+    "names": [
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.AnyThing",
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsAnyStr",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsList",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "dirty_equals.IsUUID",
+     "inline_snapshot.Is"
+    ]
+   },
+   "fastapi_14964": {
+    "graded_py_files": 4,
+    "patch_applied_cleanly": true,
+    "closure_files": 36,
+    "closure_files_importing_pkgs": 2,
+    "names": [
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.AnyThing",
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsAnyStr",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsList",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "dirty_equals.IsUUID",
+     "inline_snapshot.Is"
+    ]
+   },
+   "fastapi_15030": {
+    "graded_py_files": 6,
+    "patch_applied_cleanly": true,
+    "closure_files": 37,
+    "closure_files_importing_pkgs": 5,
+    "names": [
+     "inline_snapshot.snapshot"
+    ],
+    "names_in_test_patch_files": [
+     "inline_snapshot.snapshot"
+    ],
+    "tests_tree_names_not_in_closure": [
+     "dirty_equals.AnyThing",
+     "dirty_equals.HasRepr",
+     "dirty_equals.IsAnyStr",
+     "dirty_equals.IsInt",
+     "dirty_equals.IsList",
+     "dirty_equals.IsOneOf",
+     "dirty_equals.IsPartialDict",
+     "dirty_equals.IsStr",
+     "dirty_equals.IsUUID",
+     "inline_snapshot.Is"
+    ]
+   }
+  },
+  "tasks_reaching_name": {
+   "dirty_equals.IsDict": 2,
+   "dirty_equals.IsPartialDict": 1,
+   "inline_snapshot.Snapshot": 5,
+   "inline_snapshot.snapshot": 9
+  },
+  "use_forms": {
+   "dirty_equals.IsDict": {
+    "call_args": 42,
+    "in_bitor": 42,
+    "in_bitor_chain_of_2_operands": 42,
+    "bitor_in_compare:Eq": 10
+   },
+   "dirty_equals.IsPartialDict": {
+    "call_args": 1,
+    "compare_op:Eq": 1,
+    "in_compare": 1
+   },
+   "inline_snapshot.Snapshot": {
+    "bare:arg": 10
+   },
+   "inline_snapshot.snapshot": {
+    "call_args": 73,
+    "compare_op:Eq": 73,
+    "in_compare": 73
+   }
+  },
+  "keywords": {},
+  "tests_tree_tasks_per_name": {
+   "dirty_equals.AnyThing": 8,
+   "dirty_equals.HasRepr": 15,
+   "dirty_equals.IsAnyStr": 6,
+   "dirty_equals.IsDict": 11,
+   "dirty_equals.IsInt": 15,
+   "dirty_equals.IsList": 6,
+   "dirty_equals.IsOneOf": 15,
+   "dirty_equals.IsPartialDict": 11,
+   "dirty_equals.IsStr": 15,
+   "dirty_equals.IsUUID": 8,
+   "inline_snapshot.Is": 15,
+   "inline_snapshot.Snapshot": 8,
+   "inline_snapshot.snapshot": 15
+  },
+  "cost": {
+   "built": {
+    "bytes": 1712,
+    "tokens": [
+     491,
+     668
+    ],
+    "gen_s": [
+     16.5,
+     22.4
+    ],
+    "write_turn_model_s": [
+     27.3,
+     33.0
+    ],
+    "delta_8min_model_s": [
+     26.5,
+     29.6
+    ],
+    "delta_8min_forensics_means_s": 23.9
+   },
+   "small": {
+    "bytes": 796,
+    "tokens": [
+     228,
+     310
+    ],
+    "gen_s": [
+     7.7,
+     10.4
+    ],
+    "write_turn_model_s": [
+     18.5,
+     21.0
+    ],
+    "delta_8min_model_s": [
+     21.7,
+     23.1
+    ]
+   },
+   "floor_any_second_turn": {
+    "note": "second turn at the grep-turn mean, zero extra bytes",
+    "delta_8min_s": 18.0
+   },
+   "floor_miss_only": {
+    "note": "grep turn on every task, no second turn",
+    "delta_8min_s": 11.7
+   },
+   "headroom_s": 13.8,
+   "small_cmd_sha256": "a9c0abdcd3b8c7b222f0a2dc3a278d879f097defeb8cb70ba82c6fdcd3c5783e",
+   "small_cmd_has_braces": false,
+   "small_cmd_lines": 19,
+   "small_file_bytes": {
+    "inline_snapshot": 52,
+    "dirty_equals": 444
+   },
+   "one_call_small_every_task_s": {
+    "note": "grep and small write in one command on all 48 tasks [I]",
+    "delta_8min_s": [
+     19.4,
+     22.1
+    ]
+   },
+   "small_probes_vs_compat_shims": {
+    "n": 979,
+    "differ": 0
+   }
+  }
+ },
+ "B2_inputs": {
+  "R_wall_s_sum_48": 14276.9,
+  "R_turns_48": 1402,
+  "R_mean_s_per_turn_48": 9.86,
+  "R_calls_past_cap_on_capped": [
+   [
+    0,
+    17
+   ]
+  ],
+  "R_n_calls_minus_cap_on_capped": [
+   [
+    0,
+    7
+   ],
+   [
+    1,
+    4
+   ],
+   [
+    2,
+    3
+   ],
+   [
+    4,
+    2
+   ],
+   [
+    18,
+    1
+   ],
+   [
+    26,
+    1
+   ]
+  ],
+  "R_turns_minus_calls_median": 2.0
+ },
+ "B2_estimate": {
+  "non_turn_s_per_task": 9.4,
+  "hit_agent_s": [
+   63.9,
+   74.3
+  ],
+  "miss_agent_s": 51.1,
+  "setup_and_grade_allowance_s": [
+   15,
+   20
+  ],
+  "seconds_lo_hi_hours_lo_hi": {
+   "gated-8, overhead 444.8 s": [
+    1151,
+    1275,
+    0.32,
+    0.35
+   ],
+   "gated-8, overhead 516.7 s": [
+    1223,
+    1346,
+    0.34,
+    0.37
+   ],
+   "gated-8, ceiling at max_time_minutes 2": [
+    1637,
+    0.45
+   ],
+   "gated-8 plus 3 miss ids, overhead 444.8 s": [
+    1378,
+    1516,
+    0.38,
+    0.42
+   ],
+   "gated-8 plus 3 miss ids, overhead 516.7 s": [
+    1450,
+    1588,
+    0.4,
+    0.44
+   ],
+   "gated-8 plus 3 miss ids, ceiling at max_time_minutes 2": [
+    2057,
+    0.57
+   ]
+  }
+ },
+ "B3": {
+  "nongated_reach_ids": [
+   "fastapi_13537",
+   "fastapi_14301",
+   "fastapi_14448",
+   "fastapi_14463",
+   "fastapi_14873",
+   "fastapi_15280",
+   "fastapi_15589",
+   "fastapi_15661",
+   "fastapi_15800",
+   "fastapi_5624",
+   "fastapi_9753"
+  ],
+  "n": 11,
+  "R_as_run_resolved": [
+   "fastapi_13537",
+   "fastapi_14301",
+   "fastapi_14463",
+   "fastapi_15589",
+   "fastapi_9753"
+  ],
+  "RH_as_run_resolved": [
+   "fastapi_13537",
+   "fastapi_14301",
+   "fastapi_14463",
+   "fastapi_15589",
+   "fastapi_5624"
+  ],
+  "both_as_run_resolved": [
+   "fastapi_13537",
+   "fastapi_14301",
+   "fastapi_14463",
+   "fastapi_15589"
+  ],
+  "R_regraded_resolved": [
+   "fastapi_13537",
+   "fastapi_14301",
+   "fastapi_14463",
+   "fastapi_15589",
+   "fastapi_9753"
+  ],
+  "RH_regraded_resolved": [
+   "fastapi_13537",
+   "fastapi_14301",
+   "fastapi_14463",
+   "fastapi_15589",
+   "fastapi_5624"
+  ],
+  "R_cost_on_R_resolved": {
+   "fastapi_13537": {
+    "n_calls": 11,
+    "wall_s": 211.6,
+    "calls_cap_hit": false,
+    "time_cap_hit": false
+   },
+   "fastapi_14301": {
+    "n_calls": 13,
+    "wall_s": 78.9,
+    "calls_cap_hit": false,
+    "time_cap_hit": false
+   },
+   "fastapi_14463": {
+    "n_calls": 13,
+    "wall_s": 189.1,
+    "calls_cap_hit": false,
+    "time_cap_hit": false
+   },
+   "fastapi_15589": {
+    "n_calls": 14,
+    "wall_s": 371.9,
+    "calls_cap_hit": false,
+    "time_cap_hit": false
+   },
+   "fastapi_9753": {
+    "n_calls": 22,
+    "wall_s": 203.0,
+    "calls_cap_hit": false,
+    "time_cap_hit": false
+   }
+  }
+ }
+}
