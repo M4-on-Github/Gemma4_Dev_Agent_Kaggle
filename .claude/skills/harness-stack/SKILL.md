@@ -57,5 +57,12 @@ user-invocable: false
 - The rank-3 v24 prompt at 8 min on their dev sets: mean 275-296 s, 15-24% at cap, median 25 calls, median first edit at step 10 (`research/2026-10-28-kaggle-open-scouting.md` §3).
 - `edit_file` arg loss: 37.9% of calls across two dev-48 runs (EXP-024); 53.5% at thinking 256 vs 18.2% at 4096; the lost call's `new_string` ends in `ng:` on 200/201 (EXP-026 §1); ~90% identical-retry rate after a loss.
 - Grading runs whole test files; `pytest -k` is faster but a broken sibling test fails the task (`experiments/README.md` §1h).
+- The grading data was confirmed from the harness source and EXP-035 (2026-11-05).
+  - **Which tests run.** pytest runs only the files that the test patch touches (`Task.test_files` = `extract_test_files_from_patch`). A failing test in any other file is therefore impossible by construction.
+  - **The test-patch diff.** It has `---`/`+++` headers with no `diff --git` line, and a created file is a lone `@@ -0,0 +1,N @@` hunk.
+  - **`test_tail`.** It holds the last 1500 characters of `STDOUT:...STDERR:`. The `FAILED`/`ERROR` lines carry parametrized ids, so to check that the list is complete, count those lines against the count line; do not deduplicate them.
+  - **`test_exit_code`.** 2 means collection was interrupted, -1 means the test patch did not apply, and 124 means a timeout with an empty tail.
+  - **Snapshots.** Base-commit repo snapshots for all 129 tasks are at `data/local/snapshots/<id>.tgz`.
+  - **Known gap.** In the EXP-028 grading, fastapi tests fail collection on a missing test-only package (EXP-035 §9.3).
 - Upload under any filename other than `submission.zip` returns a bare 400 and costs an attempt, not the slot (EXP-023 §6).
 - Grading time for an upload: 6 to 22+ h observed (#11 pending at 21.5 h on 2026-10-29).
