@@ -1,0 +1,132 @@
+{
+ "row0": {
+  "rows": 48,
+  "ids_equal_cohort": true,
+  "noncap_error_ids": [
+   "fastapi_13537"
+  ],
+  "noncap_error_strings": [
+   "Agent completed execution without calling submit_patch."
+  ],
+  "cap_string_rows": 0,
+  "cap_string_rows_with_0_turns": [],
+  "errors_counted": 1,
+  "vllm_up_s": 323.8,
+  "decode_tok_s": 56.2,
+  "statuses": [
+   "SUCCESS"
+  ]
+ },
+ "row0b": {
+  "constant_tasks_against_constant": [],
+  "constant_resolved": [
+   "requests_6644"
+  ],
+  "gated_resolved": [],
+  "gated_resolved_patch_creates_module": [],
+  "gated_anomaly": []
+ },
+ "E1": {
+  "resolved": 5,
+  "n": 48
+ },
+ "E2_48": {
+  "n": 48,
+  "both": 5,
+  "R_only": 4,
+  "E4B_only": 0,
+  "neither": 39,
+  "R_only_ids": [
+   "fastapi_13537",
+   "fastapi_15589",
+   "fastapi_9753",
+   "rich_3067"
+  ],
+  "E4B_only_ids": [],
+  "mcnemar_exact_two_sided_p": 0.125
+ },
+ "E2_27_informative": {
+  "n": 27,
+  "both": 4,
+  "R_only": 4,
+  "E4B_only": 0,
+  "neither": 19,
+  "R_only_ids": [
+   "fastapi_13537",
+   "fastapi_15589",
+   "fastapi_9753",
+   "rich_3067"
+  ],
+  "E4B_only_ids": [],
+  "mcnemar_exact_two_sided_p": 0.125
+ },
+ "E3": {
+  "mean_wall_s": 85.7,
+  "median_wall_s": 82.0,
+  "p90_wall_s": 147.5,
+  "max_wall_s": 207.3,
+  "max_wall_id": "rich_4070",
+  "calls_cap": 0,
+  "time_cap": 0,
+  "turns_cap": 0,
+  "capped_calls_or_time": 0,
+  "none_submit_no_cap": 47,
+  "max_calls": 21,
+  "max_turns": 26
+ },
+ "E4": {
+  "malformed": 0,
+  "calls_incl_free": 478
+ },
+ "E5": {
+  "non_empty": 38,
+  "n": 48
+ },
+ "E6": {
+  "median_first_edit_turn": 6,
+  "n_edited": 47,
+  "never_edited": 1
+ },
+ "E7": {
+  "mean_wall_s": 85.7,
+  "overhead_s": 445.6,
+  "projected_h": 2.981,
+  "ceiling_h": 10.5
+ },
+ "E8": {
+  "log_end_s": 4559.9,
+  "kernel_h": 1.267,
+  "task_wall_sum_s": 4114.3
+ },
+ "E9": {
+  "compactions": 20,
+  "edit_arg_loss": 9,
+  "s_per_turn_all": 6.85,
+  "resolved_by_repo": {
+   "Textualize/rich": 2,
+   "encode/httpx": 0,
+   "fastapi/fastapi": 2,
+   "psf/requests": 1
+  }
+ },
+ "rowT": {
+  "capped_calls_or_time": 0,
+  "U": 48,
+  "excluded": 0,
+  "per_task_room_mean_s": 394.3,
+  "per_task_room_p10_s": 332.5,
+  "total_clock_room_s": 225.6,
+  "binding_at_mean_s": 225.6,
+  "binding_at_p10_s": 225.6,
+  "call_headroom_mean": 19.1,
+  "call_headroom_p10": 11.7,
+  "turn_headroom_mean": 67.5,
+  "turn_headroom_p10": 60.7,
+  "s_per_turn_U": 6.85
+ },
+ "armR_reference": {
+  "mean_wall_s": 297.4,
+  "overhead_s": 555.5,
+  "kernel_h": 4.12
+ }
+}

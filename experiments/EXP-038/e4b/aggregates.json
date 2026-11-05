@@ -1,0 +1,52 @@
+{
+  "tasks": 48,
+  "resolved": 5,
+  "resolve_rate": 0.10416666666666667,
+  "resolve_ci95": [
+    0.04532105090117825,
+    0.2216768812614093
+  ],
+  "empty_patch_rate": 0.20833333333333334,
+  "timeout_rate": 0.0,
+  "time_cap_hit_rate": 0.0,
+  "calls_cap_hit_rate": 0.0,
+  "overflow_rate": 0.0,
+  "submit_patch_rate": 0.9791666666666666,
+  "scratch_in_patch_rate": 0.0,
+  "malformed_turn_rate": 0.0,
+  "spin_rate": 0.058823529411764705,
+  "edit_fail_rate": 0.19294117647058823,
+  "edit_arg_loss_rate": 0.021176470588235293,
+  "median_wall_s": 82.05,
+  "p90_wall_s": 147.2,
+  "mean_calls": 8.854166666666666,
+  "mean_output_tokens": 5970.458333333333,
+  "nudges_total": 0,
+  "compactions_total": 20,
+  "phase_histogram": {
+    "SUBMIT": 47,
+    "NONE": 1
+  },
+  "setup_s_used": 0.052083333333333336,
+  "setup_source": "measured",
+  "projected_12h_total_h": 2.858888888888889,
+  "worst_case_h": 16.00173611111111,
+  "by_repo": {
+    "fastapi/fastapi": {
+      "n": 26,
+      "resolved": 2
+    },
+    "psf/requests": {
+      "n": 5,
+      "resolved": 1
+    },
+    "Textualize/rich": {
+      "n": 16,
+      "resolved": 2
+    },
+    "encode/httpx": {
+      "n": 1,
+      "resolved": 0
+    }
+  }
+}

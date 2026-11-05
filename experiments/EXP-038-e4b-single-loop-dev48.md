@@ -460,9 +460,148 @@ Whether a cancelled Kaggle batch kernel keeps any of its output is unverified he
 
 ~~BUILT, NOT PUSHED (2026-11-05). Awaiting the critic `prereg` review and the lead's word to the user on the 0.88-1.24 h point range.~~
 
-~~BUILT, NOT PUSHED (2026-11-05).~~ **RUNNING since 2026-11-05 19:02 UTC**: kernel `rainm4/gemma4-exp038-e4b-dev48` v1. The stop-rule clock times are 20:47 and 21:02 UTC. Next, a separate job when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp038-e4b-dev48 -p runs/EXP-038-e4b-dev48/`, un-nest, then the section 6 analysis commands. The lines below are kept as written before the push.
+**COMPLETE, ANALYZED (2026-11-05).** Section 9 has the results. The governing row is row 4, no difference detected: E2 is 4-0 against the E4B, p = 0.125. Row T takes its "otherwise" branch, with 225.6 s of room per task. The kernel ran 1.267 h by its log span. The follow-up is the section 3.3 CPU re-grade, a separate zero-GPU job, where fault row F and G are read. No row licenses an upload.
+
+~~BUILT, NOT PUSHED (2026-11-05).~~ ~~**RUNNING since 2026-11-05 19:02 UTC**~~ (superseded by the line above): kernel `rainm4/gemma4-exp038-e4b-dev48` v1. The stop-rule clock times are 20:47 and 21:02 UTC. Next, a separate job when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp038-e4b-dev48 -p runs/EXP-038-e4b-dev48/`, un-nest, then the section 6 analysis commands. The lines below are kept as written before the push.
 
 - The critic's four text fixes are applied (section 7, item 7).
 - The user has approved the full dev-48 at up to 2.0 GPU-h, with the section 8 stop rule.
 - Next: the critic re-checks the fixes. Then the push is a separate job: directory `notebooks/exp038_e4b_dev48`, kernel `rainm4/gemma4-exp038-e4b-dev48`.
 - ~~The lead starts the 1.75 h clock at the push.~~ The push record states the push time in UTC; the push report gives push + 1.75 h and push + 2.0 h (section 8, critic re-check).
+
+---
+
+## 9. Results, 2026-11-05. Section 4's readings applied as written and as amended before the push
+
+**Governing row: row 4, no difference detected.** E2 is 4-0 against the E4B, exact McNemar p = 0.125. Row T takes its "otherwise" branch: 0 of 48 tasks hit a cap. The binding room is the total clock: 225.6 s per task.
+
+**Sources.** Every number below comes from one of the commands listed here. None is worked out by hand.
+- `python -I -X utf8 experiments/EXP-038/analyze_results.py` writes `experiments/EXP-038/results.json`. It holds ids, counts, error strings and config values only.
+- `tools/analyze_traces.py runs/EXP-038-e4b-dev48 --cap-minutes 8 --max-calls 28` writes `summary.jsonl` and `aggregates.json`. Both are copied to `experiments/EXP-038/e4b/`.
+- `tools/run_forensics.py forensics runs/EXP-038-e4b-dev48` and `tools/run_forensics.py compare runs/EXP-028-armR runs/EXP-038-e4b-dev48`.
+- `tools/estimate_budget.py --results`, recorded under E9 only.
+- The kernel log, `gemma4-exp038-e4b-dev48.log`.
+
+The download nested one level and was un-nested (section 7, item 3). Traces and patches stay in `runs/`.
+
+### 9.1 The run, the GPU figure, the stop rule
+
+- Kernel `rainm4/gemma4-exp038-e4b-dev48` v1 was COMPLETE at the lead's status check, 20:36 UTC.
+- **E8, the GPU figure for the ledger: 1.267 h.** This is the last kernel-log entry, at 4,559.9 s. It is counted the way Arm R's 4.12 h was: kernel hours on the 4x L4 machine, as a log span.
+  - No Kaggle UI figure was seen, and queueing time is not included (section 7, item 4).
+  - It is within the user's 2.0 GPU-h.
+- **Overhead: 445.6 s.** This is the log end minus the task wall sum of 4,114.3 s. EXP-033 measured 444.8 s.
+  - vLLM came up in 323.8 s.
+  - The decode probe ran at 56.2 tok/s.
+- **The stop rule (section 8) was not used.** The lead saw COMPLETE at 20:36 UTC, before the 20:47 UTC decision point. Nothing was cancelled.
+
+### 9.2 Row 0, row 0b and fault row F
+
+| Check (as amended) | Value | Fires? |
+|---|---|---|
+| Kernel failed before the task loop | no; vLLM up, 48 of 48 tasks ran | no |
+| Rows in `task_results.jsonl` | 48 (threshold: fewer than 44); ids equal dev-48; every status `SUCCESS` | no |
+| Errors that are not cap strings | 1: `fastapi_13537`, `Agent completed execution without calling submit_patch.` | no (fewer than 5) |
+| Cap-string rows | 0 | — |
+| Cap-string rows with `n_turns` 0, which count as errors | 0 | — |
+| Errors counted under row 0 | 1 | no |
+| Cancelled under the stop rule | no | no |
+
+**Row 0 does not fire.**
+
+**Row 0b does not fire.**
+- Constant tasks: `requests_6644` resolved and the other five did not. That matches the constants.
+- Gated tasks: 0 of the 15 resolved, so the vendoring clause was not needed.
+
+**Fault row F cannot be checked yet.** F belongs to the section 3.3 CPU re-grade, which is a separate follow-up job. It has not run, so G is not read here.
+
+### 9.3 Endpoints
+
+| # | Result | Arm R |
+|---|---|---|
+| E1 | **5 of 48** resolved as run. Wilson 95% 4.5-22.2%, from `aggregates.json`. Section 3.2's caveat applies: the as-run ceiling is 28 of 48, and these rates are not compared with board scores | 9 of 48 |
+| E2, 48 ids | both 5 / R only **4** / E4B only **0** / neither 39. Exact McNemar two-sided p = **0.125**; `run_forensics compare` agrees. The R-only ids are `fastapi_13537`, `fastapi_15589`, `fastapi_9753` and `rich_3067` | |
+| E2, 27 informative ids | both 4 / R only 4 / E4B only 0 / neither 19, p = 0.125. These are the same four R-only ids. The 21 gated and constant ids are all concordant: `requests_6644` resolved in both arms, and none of the others resolved in either | 8 of 27 |
+| E3 | wall mean **85.7 s**, median 82.0 s, p90 147.5 s, max 207.3 s (`rich_4070`). **Capped: 0** (0 at the call cap, 0 at the time cap, 0 at the turns cap). 47 tasks ended by `submit_patch` with no cap. Most calls in a task: 21; most turns: 26 | mean 297.4 s; 23 capped |
+| E4 | **0** malformed out of 478 calls, free calls included | 1 call |
+| E5 | **38 of 48** non-empty | 42 of 48 |
+| E6 | median first-edit turn **6** (n = 47, `collect_forensics`). One task never edited: `fastapi_13537` | 14 (n = 44) |
+| E7 | 85.7 s x 120 / 3600 + 445.6 s = **2.98 h**, read against 10.5 h | 10.07 h restated |
+| E8 | **1.267 h** log span | 4.12 h |
+| E9 (recorded, not read) | 6.85 s per turn (smoke-8: 6.0 s); 20 compactions; 9 `edit_file` argument losses. Resolved by repo: rich 2, fastapi 2, requests 1, httpx 0. `estimate_budget.py --results` reports a per-task mean of 3.88 min, a projected 7.77 h, p90 12.01 h, "cap hits 3" and VERDICT BLOCK. As amended in section 3.1 these figures are not read: they are the script's own model, and the run had 0 caps and a measured 85.7 s mean. `analyze_traces` projects 2.86 h, with a worst case of 16.00 h | |
+
+### 9.4 The readings, in order
+
+1. **Row 0 does not fire** (9.2).
+2. **Row 0b does not fire** (9.2).
+3. **Row 1 does not fire.** E5 is 38 of 48, not below 24. E4 is 0%, not above 10%.
+4. **Row 2 does not fire.** E7 is 2.98 h, not above 10.5 h. The mean task wall is 85.7 s, against the 311.3 s threshold.
+5. **Row 3 does not fire.** R only (4) is more than E4B only (0), but p = 0.125 is not below 0.05. Section 4 already noted that with 5 or fewer discordant pairs, no split can reach p < 0.05.
+6. **Row 4 fires: no difference detected.**
+   - The 48 ids cannot separate the two models. The split is 4-0 against the E4B, and the discordant ids are listed under E2.
+   - The marginal counts, 9 against 5, are not read as an effect.
+   - The result reflects the test's power with 4 discordant pairs. It is not evidence that the models are equal.
+   - **Next step, as written: as row 3.**
+     - An E4B upload proposal for the small-model line is *admissible*, not licensed. Section 5.8 is met: dev-48 has run, and E7 is 2.98 h.
+     - Whether to make that proposal is for the lead and the user to decide. It still needs an S-NNN, a critic `prereg` and `approvals/S-NNN.txt`.
+     - This arm becomes the E4B reference: C-023 and any later E4B design are read paired against it.
+7. **Row T: the "otherwise" branch.** 0 of 48 tasks were capped by calls or time, below the 15 that would make the run cap-bound. The room is measured over U:
+
+   | Quantity | Value |
+   |---|---|
+   | Tasks in U | 48 |
+   | Excluded as capped | 0 |
+   | Per-task room, 480 s minus `wall_s` (a lower bound) | mean 394.3 s, p10 332.5 s |
+   | Total-clock room, (10.5 h minus E7) x 3600 / 120 | **225.6 s** |
+   | Binding room, at the mean and at p10 | **225.6 s**. The total clock binds at both |
+   | Call headroom (28 minus `n_calls`) | mean 19.1, p10 11.7 |
+   | Turn headroom (80 minus `n_turns`) | mean 67.5, p10 60.7 |
+   | Seconds per turn over U | 6.85 s |
+
+   Any extra stage on this model, such as C-023 voting, is priced against 225.6 s per task on average. Neither the per-task room nor EXP-033's 423 s is the price.
+
+**Did not fit a pre-registered row: `fastapi_13537`.** This is the one error that is not a cap string, and one of R's four R-only flips.
+- The E4B ran 8 turns, 0 tool calls, 1,236 output tokens and a 19.6 s wall, with no edit and no submit.
+- One task is below row 0's error threshold and below row 1's empty-patch threshold. It is reported here and governs nothing.
+
+### 9.5 Predictions scored
+
+| Endpoint | Predicted (section 4.2; restated where marked) | Observed | Held? |
+|---|---|---|---|
+| E1 | 5 of 48 (2-9) | 5 | yes, exact |
+| E2 | R only 5 (2-8), E4B only 1 (0-3) | 4 and 0 | yes, both in their intervals |
+| E3 mean | 75 s (50-150 s) | 85.7 s | in range; the point was low |
+| E3 p90 / max | 150 s / about 300 s | 147.5 s / 207.3 s | p90 yes; max lower |
+| E3 capped | 1 of 48 (0-5), call cap more often than time cap | 0 | count yes; which cap is untestable at 0 |
+| E4 | under 2% malformed | 0% | yes |
+| E5 | 36 of 48 (28-44) | 38 | yes |
+| E6 | median 6 (4-9) | 6 | yes, exact |
+| E7 | restated 2.62 h (1.79-5.12 h) | 2.98 h | in range; the point was low |
+| E8 | restated 1.12 h (0.79-2.12 h); first-written 1.05 h (0.85-1.6 h), withdrawn | 1.267 h | in both ranges; both points low |
+| Governing row | row 4 at 55% | row 4 | yes |
+| Row T | "otherwise" at 85%; binding room about 236 s, total clock; per-task room about 405 s | "otherwise"; 225.6 s, total clock; 394.3 s | yes |
+
+**My 75 s was low.** The observed mean is 85.7 s, so my 1.12 h kernel figure was also low against 1.267 h. Point A (0.88 h), which the critic had withdrawn, was further off.
+
+**The critic's cost estimate held.**
+- Its central 1.25-1.3 h, which is a mean task wall of 84.5-88.2 s, contains both the observed 1.267 h and the observed 85.7 s.
+- Point B (1.24 h) was just under.
+- The critic gave about 45% to a run over 1.34 h and about 25% to one over 1.5 h. Neither happened, but one run is a single draw, not a calibration test.
+- Scenario C (2.41 h) did not occur: no task hit the call cap.
+
+**The re-grade predictions** (F at 5%; G 0 or 1 of 15 at 65%) wait for the section 3.3 job.
+
+### 9.6 What this licenses and what it does not
+
+**Licensed:**
+- EXP-038 as the E4B single-loop reference on dev-48;
+- the dev-48 profile that `plan.md` section 5.8 requires before any E4B upload proposal (E7 2.98 h against the 10.5 h rule);
+- the row T room of 225.6 s per task, for pricing any extra stage on the E4B.
+
+**Not licensed:**
+- an upload. No row licenses one, and an E4B proposal would go through the lead, the user, a critic `prereg` and `approvals/S-NNN.txt`;
+- any claim that the E4B equals the 31B, since the test had only 4 discordant pairs;
+- any board-score estimate;
+- anything about the 31B lineage.
+
+**Still to run:** the section 3.3 CPU re-grade, pre-registered as a separate zero-GPU job. Fault row F and G are read when it runs.
