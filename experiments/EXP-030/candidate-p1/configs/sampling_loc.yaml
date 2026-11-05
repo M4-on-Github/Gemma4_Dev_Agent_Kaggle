@@ -1,0 +1,9 @@
+# EXP-030 2026-11-05: localizers only. Same temperature, top_p, top_k as sampling.yaml; thinking_budget 4096 -> 1024 and
+# max_output_tokens 8192 -> 2048 so a read-only turn is short (generation is 94% of wall, EXP-028 s9) and a plan cannot run long.
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+max_output_tokens: 2048
+thinking_config:
+  thinking_budget: 1024
+  include_thoughts: true

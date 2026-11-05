@@ -1,0 +1,11 @@
+name: loc_c
+description: Read-only localizer that starts from the existing tests and fixtures of the affected feature and works back to the source file they exercise.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include ../prompts/loc_c.md
+include_contents: none
+output_key: plan_c
+tools:
+  - run_command
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling_loc.yaml

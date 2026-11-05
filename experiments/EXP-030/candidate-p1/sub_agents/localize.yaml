@@ -1,0 +1,7 @@
+name: localize
+agent_class: ParallelAgent
+description: Three read-only localizers run at the same time, each with a different search angle, each writing a short plan to session state.
+sub_agents:
+  - config_path: sub_agents/loc_a.yaml
+  - config_path: sub_agents/loc_b.yaml
+  - config_path: sub_agents/loc_c.yaml

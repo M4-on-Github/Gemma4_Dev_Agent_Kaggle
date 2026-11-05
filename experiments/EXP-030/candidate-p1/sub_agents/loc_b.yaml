@@ -1,0 +1,11 @@
+name: loc_b
+description: Read-only localizer that searches the symbols named in the issue (functions, classes, parameters) and finds their definitions and callers.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include ../prompts/loc_b.md
+include_contents: none
+output_key: plan_b
+tools:
+  - run_command
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling_loc.yaml

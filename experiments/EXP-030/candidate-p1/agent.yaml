@@ -1,0 +1,8 @@
+# EXP-030 2026-11-05: root changes from one LlmAgent (the v24 loop) to SequentialAgent[ParallelAgent[loc_a, loc_b, loc_c], editor] (D-004 link A6, tree P1).
+# The root carries no model, tools or instruction; every LlmAgent is in sub_agents/ and carries its own model.
+name: swe_agent
+agent_class: SequentialAgent
+description: Locate in parallel with three read-only localizers, then edit and submit with one editor that receives their plans.
+sub_agents:
+  - config_path: sub_agents/localize.yaml
+  - config_path: sub_agents/editor.yaml

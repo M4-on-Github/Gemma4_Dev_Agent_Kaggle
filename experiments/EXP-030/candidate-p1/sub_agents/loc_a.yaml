@@ -1,0 +1,11 @@
+name: loc_a
+description: Read-only localizer that follows the reported behaviour (error strings, messages, status codes, return values) to the code that produces it.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include ../prompts/loc_a.md
+include_contents: none
+output_key: plan_a
+tools:
+  - run_command
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling_loc.yaml

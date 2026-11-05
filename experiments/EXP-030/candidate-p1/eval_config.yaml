@@ -1,0 +1,10 @@
+# EXP-030 2026-11-05: max_tool_calls 28 -> 43 (3 localizers x 5 calls = 15, plus the 28 the editor had alone; the counter is one shared
+# budget across all agents, EXP-007 H4). max_turns 80 -> 100 (3 localizers x up to 6 model turns = 18 more LLM calls; keeps the
+# turn limit from becoming the binding cap, since a limit error raised inside a parallel branch can arrive wrapped in a TaskGroup error).
+# max_time_minutes stays 8: the localizer stage runs inside the same wall budget. Packed with --skip-budget-gate (8 min = 18 h worst case,
+# as in EXP-027 and EXP-028; this is a screen of 8 tasks).
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 43
+  max_time_minutes: 8
+  max_turns: 100
