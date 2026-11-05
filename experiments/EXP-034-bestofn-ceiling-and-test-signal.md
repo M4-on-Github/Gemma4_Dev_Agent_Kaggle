@@ -198,6 +198,9 @@ The largest category is **none after the last edit: 21 of 30**. 16 of the 30 ran
 
 - **Comment stripping:** the diff normalisation drops a comment line only when it starts with `#`. Patches that differ only in a docstring still count as different.
 - **Turn cap:** it has no flag in `summary.jsonl`. Endings are taken from `calls_cap_hit`, `time_cap_hit`, `timeout_hit` and the trace's last call.
+  - *Reconciled after the run against the harness `error` field in `task_results.jsonl`.* R has 4 "turns budget (80 turns)" endings, which matches EXP-028. Three are counted here as calls cap, because the calls flag is set too. One is counted as `submit_patch`; it is the single proxy-true pair with `n_turns` >= 79. That task is unresolved and RFWF, and its last visible result is error.
+  - So R's RFWF "submit 16" is really 15 submits and 1 turn-cap ending. The submit-before-cap proxy holds one unresolved pair that should be false. The 7 last-pass unresolved tasks are not affected.
+  - R's 6 session timeouts are 5 counted here as time cap and 1 counted as calls cap. RH has 1 turn-budget ending, counted as calls cap. None of this moves either reading.
 - **Grading:** resolved flags come from each run's own grading (X003 re-graded), and grader timeouts differ between arms (300 s vs 240 s).
 - **Edit detection:** it found an edit in every non-empty patch in R and RH. A check for later edits written through `write_text(` or `open(..., "w")` found 0 such tasks in R and 1 in RH.
 
