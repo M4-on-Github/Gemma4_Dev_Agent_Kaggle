@@ -122,7 +122,7 @@ What I checked: `git diff 143fba1 4024082` on the EXP file, on `cost_estimate.{p
 **Tier.** The lead dispatched `light`. I raised it to `full` because item 5 asks for a status move, and the checklist reserves status moves for `full`. I ran checks 1 to 6, 8 and 9; check 7 is n/a.
 
 **Audit**
-1. **Order: pass.** Fixes 5 to 8 (7964379, 19:00:47 UTC) were committed before the push at 19:02 UTC. Since then the file gained only §8's push record, the Status line and §9 below the line. An uncommitted §7 item 9 (the re-grade build) is in the worktree; I have not reviewed it.
+1. **Order: pass.** Fixes 5 to 8 (7964379, 19:00:47 UTC) were committed before the push at 19:02 UTC. Up to a1365bc, the file gained only §8's push record, the Status line and §9 below the line. Two later commits added more: 2eab7b4 a dated §7 item 9 (a re-grade build defect, with no reading changed), and 9ec5c7d the re-grade push record. I have not reviewed either.
 2. **Cohort and arms: pass.**
    - The `summary.jsonl` ids equal dev-48 and match Arm R's.
    - The as-run agent tree is the same as `experiments/EXP-033/candidate-e4b` (`diff -r`).
@@ -185,4 +185,4 @@ What I checked: `git diff 143fba1 4024082` on the EXP file, on `cost_estimate.{p
 **Suggested next.** All zero GPU:
 - mine the 4 R-only ids to see whether they are early stops (E4B call counts, and the files edited against the gold files);
 - fix the `nudges` count in `analyze_traces.py`;
-- run the §3.3 re-grade as planned.
+- read the re-grade (F, then G) when it completes. It is already running on CPU (9ec5c7d).
