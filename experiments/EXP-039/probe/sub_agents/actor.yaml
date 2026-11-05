@@ -2,7 +2,8 @@ name: actor
 description: Tallies the votes with the stated tie rule, applies the winning candidate, checks once, and submits.
 model: gemma-4-e4b-it-qat-w4a16-ct
 instruction: !include ../prompts/actor.md
-include_contents: none
+# EXP-039 follow-up: default contents, so the actor sees the task message (include_contents none would start its window at the last voter's text).
+include_contents: default
 tools:
   - run_command
   - read_file

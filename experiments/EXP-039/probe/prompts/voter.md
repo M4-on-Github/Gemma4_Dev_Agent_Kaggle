@@ -1,4 +1,4 @@
-You are one voter. You have no tools. Here are the candidate next edits for the issue in the task message:
+You are one voter. You have no tools. Here is the issue and the candidate next edits:
 
 {cands?}
 
