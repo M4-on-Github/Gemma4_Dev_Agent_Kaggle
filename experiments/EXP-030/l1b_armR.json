@@ -1,0 +1,181 @@
+{
+  "run": "runs/EXP-028-armR",
+  "n_tasks": 48,
+  "latency": {
+    "model_turn": {
+      "n": 1401,
+      "median_s": 3.552,
+      "p90_s": 25.567,
+      "max_s": 192.042,
+      "total_s": 13186.0,
+      "share_of_traced_wall": 0.9705
+    },
+    "ALL": {
+      "n": 1353,
+      "median_s": 0.018,
+      "p90_s": 0.104,
+      "max_s": 241.021,
+      "total_s": 400.8,
+      "share_of_traced_wall": 0.0295
+    },
+    "edit_file": {
+      "n": 175,
+      "median_s": 0.018,
+      "p90_s": 0.025,
+      "max_s": 0.463,
+      "total_s": 4.0,
+      "share_of_traced_wall": 0.0003
+    },
+    "get_status": {
+      "n": 2,
+      "median_s": 0.012,
+      "p90_s": 0.014,
+      "max_s": 0.014,
+      "total_s": 0.0,
+      "share_of_traced_wall": 0.0
+    },
+    "read_file": {
+      "n": 420,
+      "median_s": 0.013,
+      "p90_s": 0.019,
+      "max_s": 0.034,
+      "total_s": 5.6,
+      "share_of_traced_wall": 0.0004
+    },
+    "run_command:other": {
+      "n": 4,
+      "median_s": 0.011,
+      "p90_s": 0.031,
+      "max_s": 0.031,
+      "total_s": 0.1,
+      "share_of_traced_wall": 0.0
+    },
+    "run_command:pytest": {
+      "n": 8,
+      "median_s": 1.116,
+      "p90_s": 1.523,
+      "max_s": 81.538,
+      "total_s": 88.4,
+      "share_of_traced_wall": 0.0065
+    },
+    "run_command:python": {
+      "n": 104,
+      "median_s": 0.174,
+      "p90_s": 0.597,
+      "max_s": 241.021,
+      "total_s": 269.0,
+      "share_of_traced_wall": 0.0198
+    },
+    "run_command:read/search": {
+      "n": 325,
+      "median_s": 0.018,
+      "p90_s": 0.034,
+      "max_s": 0.217,
+      "total_s": 7.9,
+      "share_of_traced_wall": 0.0006
+    },
+    "run_command:write": {
+      "n": 50,
+      "median_s": 0.239,
+      "p90_s": 0.622,
+      "max_s": 0.721,
+      "total_s": 14.6,
+      "share_of_traced_wall": 0.0011
+    },
+    "submit_patch": {
+      "n": 239,
+      "median_s": 0.044,
+      "p90_s": 0.054,
+      "max_s": 0.462,
+      "total_s": 10.9,
+      "share_of_traced_wall": 0.0008
+    },
+    "write_file": {
+      "n": 26,
+      "median_s": 0.013,
+      "p90_s": 0.019,
+      "max_s": 0.02,
+      "total_s": 0.3,
+      "share_of_traced_wall": 0.0
+    }
+  },
+  "localization_bound": {
+    "definitions": "touched_gold_file: an edit_file/write_file path (non-/tmp) equals a gold-patch file. names_gold_*: a non-edit tool call's arguments contain a gold file's relative path / basename. *_call values are 1-based tool-call numbers. cap_bound: calls_cap_hit in analyze_traces summary.jsonl.",
+    "all": {
+      "n": 48,
+      "touched_gold_file": 39,
+      "edited_other_file_only": 4,
+      "never_edited_source": 5,
+      "names_gold_path_in_args": 45,
+      "names_gold_basename_in_args": 45,
+      "patch_touches_gold": 38,
+      "median_call_first_names_gold_path": 2,
+      "median_call_first_names_gold_basename": 2,
+      "median_call_first_gold_edit": 14,
+      "median_calls_before_first_edit": 13,
+      "median_seconds_before_first_edit": 167.5,
+      "median_calls_before_first_edit_touching_gold": 13
+    },
+    "resolved": {
+      "n": 9,
+      "touched_gold_file": 8,
+      "edited_other_file_only": 1,
+      "never_edited_source": 0,
+      "names_gold_path_in_args": 9,
+      "names_gold_basename_in_args": 9,
+      "patch_touches_gold": 8,
+      "median_call_first_names_gold_path": 5,
+      "median_call_first_names_gold_basename": 5,
+      "median_call_first_gold_edit": 10.0,
+      "median_calls_before_first_edit": 9,
+      "median_seconds_before_first_edit": 95.7,
+      "median_calls_before_first_edit_touching_gold": 9.0
+    },
+    "unresolved": {
+      "n": 39,
+      "touched_gold_file": 31,
+      "edited_other_file_only": 3,
+      "never_edited_source": 5,
+      "names_gold_path_in_args": 36,
+      "names_gold_basename_in_args": 36,
+      "patch_touches_gold": 30,
+      "median_call_first_names_gold_path": 2.0,
+      "median_call_first_names_gold_basename": 2.0,
+      "median_call_first_gold_edit": 16,
+      "median_calls_before_first_edit": 15.5,
+      "median_seconds_before_first_edit": 183.5,
+      "median_calls_before_first_edit_touching_gold": 15
+    },
+    "cap_bound": {
+      "n": 18,
+      "touched_gold_file": 12,
+      "edited_other_file_only": 3,
+      "never_edited_source": 3,
+      "names_gold_path_in_args": 15,
+      "names_gold_basename_in_args": 15,
+      "patch_touches_gold": 11,
+      "median_call_first_names_gold_path": 2,
+      "median_call_first_names_gold_basename": 2,
+      "median_call_first_gold_edit": 23.0,
+      "median_calls_before_first_edit": 24,
+      "median_seconds_before_first_edit": 169.7,
+      "median_calls_before_first_edit_touching_gold": 22.0
+    },
+    "not_cap_bound": {
+      "n": 30,
+      "touched_gold_file": 27,
+      "edited_other_file_only": 1,
+      "never_edited_source": 2,
+      "names_gold_path_in_args": 30,
+      "names_gold_basename_in_args": 30,
+      "patch_touches_gold": 27,
+      "median_call_first_names_gold_path": 2.0,
+      "median_call_first_names_gold_basename": 2.0,
+      "median_call_first_gold_edit": 12,
+      "median_calls_before_first_edit": 11.0,
+      "median_seconds_before_first_edit": 165.7,
+      "median_calls_before_first_edit_touching_gold": 11
+    },
+    "cap_bound_known": true
+  }
+}
