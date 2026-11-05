@@ -468,7 +468,13 @@ Whether a cancelled Kaggle batch kernel keeps any of its output is unverified he
 
 ~~BUILT, NOT PUSHED (2026-11-05). Awaiting the critic `prereg` review and the lead's word to the user on the 0.88-1.24 h point range.~~
 
-**Re-grade RUNNING since 2026-11-05 20:50 UTC:** CPU kernel `rainm4/gemma4-exp038-regrade` v1, with the GPU off. The push record is at the end of section 9. Next: download, un-nest, then read F and G.
+**Re-grade COMPLETE, ANALYZED (2026-11-05)**, sections 9.7 and 9.8.
+- F does not fire.
+- G = 0 of 15, so the reading is G <= 1: vendoring is not a priority for the small-model line.
+- Re-graded with the stand-ins, the E4B resolves 5 of 48 (R 12, RH 15).
+- The kernel ran 1,370.9 s on CPU, with 0 GPU-h.
+
+~~**Re-grade RUNNING since 2026-11-05 20:50 UTC:** CPU kernel `rainm4/gemma4-exp038-regrade` v1, with the GPU off. The push record is at the end of section 9. Next: download, un-nest, then read F and G.~~
 
 **COMPLETE, ANALYZED (2026-11-05).** Section 9 has the results. The governing row is row 4, no difference detected: E2 is 4-0 against the E4B, p = 0.125. Row T takes its "otherwise" branch, with 225.6 s of room per task. The kernel ran 1.267 h by its log span. The follow-up is the section 3.3 CPU re-grade, a separate zero-GPU job, where fault row F and G are read. No row licenses an upload.
 
@@ -641,3 +647,80 @@ The download nested one level and was un-nested (section 7, item 3). Traces and 
   1. `kaggle kernels output rainm4/gemma4-exp038-regrade -p runs/EXP-038-regrade/`
   2. Un-nest `runs/EXP-038-regrade/runs/EXP-038-regrade/`.
   3. Read fault row F (GOLD 43 of 48, BASE 1 of 48, 48 rows per pass), then G, as section 3.3 sets out.
+
+### 9.7 Re-grade results, 2026-11-05. Section 3.3's readings applied as written: fault row F first, then G
+
+**Reading: F does not fire, and G <= 1 fires: G = 0 of 15.** The grading gap costs the E4B little on dev-48. Vendoring is not a priority for the small-model line. This row licenses no tree change and no upload.
+
+**Sources.**
+- Kernel `rainm4/gemma4-exp038-regrade` v1. The lead saw COMPLETE at 21:38 UTC.
+- Downloaded with `kaggle kernels output rainm4/gemma4-exp038-regrade -p runs/EXP-038-regrade/` and un-nested one level.
+- `python -I -X utf8 experiments/EXP-038/analyze_regrade.py` wrote:
+  - `experiments/EXP-038/regrade/aggregates.json`: counts, ids, exit codes and error class names;
+  - `experiments/EXP-038/regrade/summary.jsonl`: per task, the id and booleans only.
+- The script uses EXP-036's definitions: its gated set, its tail check, its group of unresolved tasks whose patch touches a gold-patch file, and the critic's file-set rule. No tail or patch text is committed.
+- **Cost:** the kernel log ends at 1,370.9 s. The pass times were E4B 430.4 s, GOLD 264.2 s and BASE 514.1 s. GPU time is 0.
+
+**Fault row F: does not fire.**
+
+| Check | Value | Expected (EXP-036) |
+|---|---|---|
+| Rows per pass | E4B 48, GOLD 48, BASE 48; the ids equal dev-48 in every pass | 48 |
+| GOLD | 43 of 48, 15 of 15 gated. Unresolved: `httpx_3672`, `requests_7205`, `requests_7309`, `requests_7315`, `requests_7427` | the same |
+| BASE | 1 of 48, `requests_6644` | the same |
+
+These audit figures are recorded and not read. GOLD's and BASE's audit profile matches EXP-036's exactly.
+- **Exit codes.** E4B: 0 on 5, 1 on 34, 2 on 9. GOLD: 0 on 43, 1 on 4, 2 on 1. BASE: -9 on 1 (`rich_3480`, the same id as in EXP-036), 0 on 1, 1 on 40, 2 on 6.
+- **Shims.** They were dropped into the workspace on 15 of 15 gated and 11 nongated tasks in every pass.
+- **Packages.** No gated tail still reports a missing package in any pass.
+- **Tails at the 20000-character cap.** E4B 6, GOLD 0, BASE 6.
+- **Errors.** No pass has a row error.
+
+**G and the re-graded resolves.**
+
+| Measure | E4B | R (EXP-036) | RH (EXP-036) |
+|---|---|---|---|
+| Resolved as run, all 48 | 5 | 9 | 10 |
+| Resolved with stand-ins, all 48 | **5** | 12 | 15 |
+| **G**: gated tasks moving from unresolved to resolved, of 15 | **0** | 3 (`fastapi_13207`, `fastapi_14297`, `fastapi_14360`) | 5 |
+| Moving from unresolved to resolved, nongated | 0 | 0 | 0 |
+| Moving from resolved to unresolved | 0 | 0 | 0 |
+
+Under the re-grade, the E4B's 15 gated tasks exit 1 on 10 and 2 on 5.
+
+**The paired re-graded 2x2 against R's re-grade** is reported, as section 3.3 requires, and is not a reading. Section 9.4's governing row stays row 4: that row reads E2 as run.
+
+| Ids | Both | R only | E4B only | Neither | Exact McNemar p |
+|---|---|---|---|---|---|
+| All 48 | 5 | 7 | 0 | 36 | 0.0156 |
+| 15 gated | 0 | 3 | 0 | 12 | 0.25 |
+| 27 informative | 4 | 4 | 0 | 19 | 0.125 |
+
+- The 7 R-only ids are `fastapi_13207`, `fastapi_14297`, `fastapi_14360`, `fastapi_13537`, `fastapi_15589`, `fastapi_9753` and `rich_3067`.
+- The as-run split was 4-0. The re-grade adds R's three gated resolves, which makes it 7-0.
+- No reading in this file is attached to the all-48 re-graded p. It is recorded and not read as row 3.
+
+**The patch's own collection errors (file-set rule).**
+- **In EXP-036's group:** 21 unresolved E4B tasks touch a gold-patch file, 7 of them gated. Of these, 8 exit 2, and 5 are the patch's own error: `fastapi_14605`, `fastapi_14609`, `fastapi_14964`, `fastapi_15280`, `fastapi_15800`.
+  - The 3 exit-2 tasks that are not the patch's own are `fastapi_14262`, `fastapi_15030` and `httpx_3672`. They show the same failing file set as BASE.
+- **Over every exit-2 row:** 9 rows, with the same 5 own errors.
+- **EXP-036 reference:** R had 2 of 27 (`fastapi_14605`, `fastapi_14609`). RH had 2 of 22 (`fastapi_14448`, `fastapi_14609`).
+- **Caveat:** on `fastapi_15800`, BASE's tail is at the cap. Its BASE file set may therefore be incomplete, and that own-error call is the least certain of the five.
+- Of the 5, 3 are gated (`fastapi_14605`, `fastapi_14609`, `fastapi_14964`). On those three, the E4B's patch breaks collection of a graded file with the stand-ins present. So G = 0 is partly the patches' own doing, not only the missing packages.
+
+**Prediction scored.**
+- G 0 or 1 of 15 at 65%: **held** (G = 0).
+- Fault row F at 5%: did not fire.
+
+### 9.8 Observation outside the readings: EXP-041's two ids
+
+EXP-041 (618d3b1, 2303c4c) found that the E4B ran pytest on `fastapi_15589` and `fastapi_9753`, hit collection errors from the missing packages, and submitted anyway.
+- **Both are informative ids, not gated.** Neither is in EXP-036's 15 gated ids. Arm R resolved both as run, and both are among the four R-only ids of E2.
+- **As run,** the graded test files did not report the missing packages: the grading tail has no missing-package line for either id, and both exited 1. The collection errors EXP-041 saw came from the agent's own wider pytest runs in the sandbox, not from the graded files.
+- **With stand-ins present,** the re-grade does not resolve either id. Both exit 1, both had shims dropped in, and neither tail reports a missing package. GOLD resolves both and BASE resolves neither.
+- **So on these two tasks the fix failed, not the grading gap.** The patch, graded with the packages available, still fails the tests. The shims do not rescue the grade. [I] The missing packages may have kept the agent's own pytest run from showing whether its fix passed.
+- This is an observation, not a pre-registered reading.
+
+### Re-grade status
+
+COMPLETE and ANALYZED, 2026-11-05. No further job is pre-registered in this file.

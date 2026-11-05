@@ -1,0 +1,410 @@
+{
+ "F": {
+  "rows_per_pass": {
+   "E4B": 48,
+   "GOLD": 48,
+   "BASE": 48
+  },
+  "ids_equal_cohort": {
+   "E4B": true,
+   "GOLD": true,
+   "BASE": true
+  },
+  "GOLD_all48": 43,
+  "GOLD_gated": 15,
+  "GOLD_unresolved_ids": [
+   "httpx_3672",
+   "requests_7205",
+   "requests_7309",
+   "requests_7315",
+   "requests_7427"
+  ],
+  "GOLD_unresolved_expected": [
+   "httpx_3672",
+   "requests_7205",
+   "requests_7309",
+   "requests_7315",
+   "requests_7427"
+  ],
+  "BASE_all48": 1,
+  "BASE_resolved_ids": [
+   "requests_6644"
+  ],
+  "BASE_resolved_expected": [
+   "requests_6644"
+  ],
+  "fires": false
+ },
+ "audit": {
+  "exit_codes": {
+   "E4B": {
+    "0": 5,
+    "1": 34,
+    "2": 9
+   },
+   "GOLD": {
+    "0": 43,
+    "1": 4,
+    "2": 1
+   },
+   "BASE": {
+    "-9": 1,
+    "0": 1,
+    "1": 40,
+    "2": 6
+   }
+  },
+  "exit_minus9_ids": {
+   "E4B": [],
+   "GOLD": [],
+   "BASE": [
+    "rich_3480"
+   ]
+  },
+  "tails_at_cap": {
+   "E4B": 6,
+   "GOLD": 0,
+   "BASE": 6
+  },
+  "shims_dropped": {
+   "E4B": {
+    "gated": 15,
+    "nongated": 11
+   },
+   "GOLD": {
+    "gated": 15,
+    "nongated": 11
+   },
+   "BASE": {
+    "gated": 15,
+    "nongated": 11
+   }
+  },
+  "gated_still_missing_package": {
+   "E4B": [],
+   "GOLD": [],
+   "BASE": []
+  },
+  "errors": {
+   "E4B": [],
+   "GOLD": [],
+   "BASE": []
+  }
+ },
+ "E4B": {
+  "as_run": {
+   "all48": 5,
+   "gated": 0,
+   "nongated": 5,
+   "informative27": 4
+  },
+  "regraded": {
+   "all48": 5,
+   "gated": 0,
+   "nongated": 5,
+   "informative27": 4
+  },
+  "G_gated_F_to_T": 0,
+  "F_to_T_gated_ids": [],
+  "F_to_T_nongated_ids": [],
+  "T_to_F_ids": [],
+  "gated_exit_codes": {
+   "1": 10,
+   "2": 5
+  }
+ },
+ "G_reading": "G <= 1",
+ "reference_EXP036": {
+  "R": {
+   "regraded_all48": 12,
+   "regraded_gated": 3,
+   "G": 3,
+   "F_to_T_gated_ids": [
+    "fastapi_13207",
+    "fastapi_14297",
+    "fastapi_14360"
+   ]
+  },
+  "RH": {
+   "regraded_all48": 15,
+   "regraded_gated": 5,
+   "G": 5,
+   "F_to_T_gated_ids": [
+    "fastapi_13207",
+    "fastapi_14297",
+    "fastapi_14360",
+    "fastapi_14459",
+    "fastapi_14605"
+   ]
+  }
+ },
+ "paired_regraded_vs_R_regraded": {
+  "all48": {
+   "n": 48,
+   "both": 5,
+   "R_only": 7,
+   "E4B_only": 0,
+   "neither": 36,
+   "R_only_ids": [
+    "fastapi_13207",
+    "fastapi_13537",
+    "fastapi_14297",
+    "fastapi_14360",
+    "fastapi_15589",
+    "fastapi_9753",
+    "rich_3067"
+   ],
+   "E4B_only_ids": [],
+   "mcnemar_exact_two_sided_p": 0.0156
+  },
+  "gated15": {
+   "n": 15,
+   "both": 0,
+   "R_only": 3,
+   "E4B_only": 0,
+   "neither": 12,
+   "R_only_ids": [
+    "fastapi_13207",
+    "fastapi_14297",
+    "fastapi_14360"
+   ],
+   "E4B_only_ids": [],
+   "mcnemar_exact_two_sided_p": 0.25
+  },
+  "informative27": {
+   "n": 27,
+   "both": 4,
+   "R_only": 4,
+   "E4B_only": 0,
+   "neither": 19,
+   "R_only_ids": [
+    "fastapi_13537",
+    "fastapi_15589",
+    "fastapi_9753",
+    "rich_3067"
+   ],
+   "E4B_only_ids": [],
+   "mcnemar_exact_two_sided_p": 0.125
+  }
+ },
+ "own_collection_error": {
+  "rule": "file-set (EXP-036 critic re-review 2026-11-05)",
+  "group_unresolved_patch_touches_gold_file": {
+   "n_prime": 21,
+   "gated_in_group": 7,
+   "exit2": 8,
+   "own_error": 5,
+   "own_error_ids": [
+    "fastapi_14605",
+    "fastapi_14609",
+    "fastapi_14964",
+    "fastapi_15280",
+    "fastapi_15800"
+   ],
+   "c_tasks": [
+    {
+     "task_id": "fastapi_14262",
+     "gated": true,
+     "base_exit": 2,
+     "patch_error_classes": [
+      "TypeError"
+     ],
+     "base_error_classes": [
+      "TypeError"
+     ],
+     "n_files_failing_collection_patch": 2,
+     "n_files_failing_collection_base": 2,
+     "n_newly_failing_graded_files": 0,
+     "patch_tail_under_cap": true,
+     "base_tail_under_cap": true,
+     "own_error": false
+    },
+    {
+     "task_id": "fastapi_14605",
+     "gated": true,
+     "base_exit": 2,
+     "patch_error_classes": [
+      "ImportError"
+     ],
+     "base_error_classes": [
+      "ImportError"
+     ],
+     "n_files_failing_collection_patch": 12,
+     "n_files_failing_collection_base": 11,
+     "n_newly_failing_graded_files": 1,
+     "patch_tail_under_cap": true,
+     "base_tail_under_cap": true,
+     "own_error": true
+    },
+    {
+     "task_id": "fastapi_14609",
+     "gated": true,
+     "base_exit": 2,
+     "patch_error_classes": [
+      "IndentationError"
+     ],
+     "base_error_classes": [
+      "ImportError"
+     ],
+     "n_files_failing_collection_patch": 5,
+     "n_files_failing_collection_base": 1,
+     "n_newly_failing_graded_files": 4,
+     "patch_tail_under_cap": true,
+     "base_tail_under_cap": true,
+     "own_error": true
+    },
+    {
+     "task_id": "fastapi_14964",
+     "gated": true,
+     "base_exit": 1,
+     "patch_error_classes": [
+      "ImportError"
+     ],
+     "base_error_classes": [],
+     "n_files_failing_collection_patch": 3,
+     "n_files_failing_collection_base": 0,
+     "n_newly_failing_graded_files": 3,
+     "patch_tail_under_cap": true,
+     "base_tail_under_cap": true,
+     "own_error": true
+    },
+    {
+     "task_id": "fastapi_15030",
+     "gated": true,
+     "base_exit": 2,
+     "patch_error_classes": [
+      "ImportError"
+     ],
+     "base_error_classes": [
+      "ImportError"
+     ],
+     "n_files_failing_collection_patch": 1,
+     "n_files_failing_collection_base": 1,
+     "n_newly_failing_graded_files": 0,
+     "patch_tail_under_cap": true,
+     "base_tail_under_cap": true,
+     "own_error": false
+    },
+    {
+     "task_id": "fastapi_15280",
+     "gated": false,
+     "base_exit": 1,
+     "patch_error_classes": [
+      "SyntaxError"
+     ],
+     "base_error_classes": [
+      "AttributeError"
+     ],
+     "n_files_failing_collection_patch": 1,
+     "n_files_failing_collection_base": 0,
+     "n_newly_failing_graded_files": 1,
+     "patch_tail_under_cap": true,
+     "base_tail_under_cap": true,
+     "own_error": true
+    },
+    {
+     "task_id": "fastapi_15800",
+     "gated": false,
+     "base_exit": 1,
+     "patch_error_classes": [
+      "SyntaxError"
+     ],
+     "base_error_classes": [
+      "AttributeError",
+      "FileNotFoundError"
+     ],
+     "n_files_failing_collection_patch": 1,
+     "n_files_failing_collection_base": 0,
+     "n_newly_failing_graded_files": 1,
+     "patch_tail_under_cap": true,
+     "base_tail_under_cap": false,
+     "own_error": true
+    },
+    {
+     "task_id": "httpx_3672",
+     "gated": false,
+     "base_exit": 2,
+     "patch_error_classes": [
+      "AttributeError"
+     ],
+     "base_error_classes": [
+      "AttributeError"
+     ],
+     "n_files_failing_collection_patch": 1,
+     "n_files_failing_collection_base": 1,
+     "n_newly_failing_graded_files": 0,
+     "patch_tail_under_cap": true,
+     "base_tail_under_cap": true,
+     "own_error": false
+    }
+   ]
+  },
+  "all_exit2_rows": {
+   "n": 9,
+   "own_error": 5,
+   "own_error_ids": [
+    "fastapi_14605",
+    "fastapi_14609",
+    "fastapi_14964",
+    "fastapi_15280",
+    "fastapi_15800"
+   ]
+  },
+  "reference_EXP036": {
+   "R": {
+    "n_prime": 27,
+    "C": 6,
+    "own_error": 2,
+    "own_error_ids": [
+     "fastapi_14605",
+     "fastapi_14609"
+    ]
+   },
+   "RH": {
+    "n_prime": 22,
+    "C": 5,
+    "own_error": 2,
+    "own_error_ids": [
+     "fastapi_14448",
+     "fastapi_14609"
+    ]
+   }
+  }
+ },
+ "exp041_ids": {
+  "fastapi_15589": {
+   "gated": false,
+   "as_run_resolved": false,
+   "regraded_resolved": false,
+   "regrade_exit": 1,
+   "shims_dropped": true,
+   "regrade_missing_package": false,
+   "as_run_exit": 1,
+   "as_run_missing_package": false,
+   "R_as_run": true,
+   "R_regraded": true,
+   "GOLD_regraded": true,
+   "BASE_regraded": false
+  },
+  "fastapi_9753": {
+   "gated": false,
+   "as_run_resolved": false,
+   "regraded_resolved": false,
+   "regrade_exit": 1,
+   "shims_dropped": true,
+   "regrade_missing_package": false,
+   "as_run_exit": 1,
+   "as_run_missing_package": false,
+   "R_as_run": true,
+   "R_regraded": true,
+   "GOLD_regraded": true,
+   "BASE_regraded": false
+  }
+ },
+ "seconds": {
+  "E4B": 430.4,
+  "GOLD": 264.2,
+  "BASE": 514.1
+ },
+ "kernel_log_end_s": 1370.9
+}
