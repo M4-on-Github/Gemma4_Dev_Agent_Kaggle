@@ -182,8 +182,13 @@ python tools/run_forensics.py compare runs/EXP-033-e4b/runs/EXP-033-e4b <inner b
 
 ## 8. Built
 
-(filled in after the pack and the notebook build)
+Built 2026-11-05 after the pre-registration commit 3f33acd, with the section 6 commands.
+
+- Pack: `python tools/pack_submission.py --src experiments/EXP-040/candidate-v1 --out dist/EXP-040-v1.zip --skip-budget-gate --allow-warnings` gave 26 reachable files, `RESULT: VALID (0 errors, 3 warnings)` (the packing gate demoted to a warning, the `submit_patch` sub-agent warning, the 240 s timeout warning), 20 agents, `dist/EXP-040-v1.zip` 13.0 KiB. **Zip sha256 `e476acb6ee48d264503e87fe0e4b8b5673e34bff23eb5dd6a3c1b136525429d8`** (confirmed with `sha256sum`). The zip was packed from LF worktree files that equal the committed blobs, so it reproduces from commit 3f33acd. Screen build, never uploaded.
+- Notebook: `notebooks/exp040_v1/kaggle_eval_l4x4.ipynb`, parameter cell read back: `EXP_ID = "EXP-040-v1"`, `RUN_GOLD_CONTROL = False`, `RUN_AGENT = True`, `TASK_IDS` = fastapi_14301, fastapi_14448, fastapi_14605, httpx_3672, requests_7205, requests_7309, rich_3006, rich_3468 (the 8 ids of `experiments/cohorts/smoke-8.txt`), `N_TASKS = 8`, `MODEL_NAME = "gemma-4-e4b-it-qat-w4a16-ct"`; 17,788 base64 characters embedded.
+- `notebooks/exp040_v1/kernel-metadata.json`: copied from `notebooks/exp033_e4b/` with only `id` (`rainm4/gemma4-exp040-v1`) and `title` (`gemma4-exp040-v1`) changed (`diff` shows those two lines only; model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`, wheelhouse and competition sources as EXP-033).
+- **Kernel id: `rainm4/gemma4-exp040-v1`. Not pushed.** The push is a separate job after the user approves the GPU. Push command: `kaggle kernels push -p notebooks/exp040_v1`.
 
 ## Status
 
-2026-11-05: written, tree built, checks (a) to (d) run, **not pushed**. Awaiting the user's GPU approval, then the lead's dispatch of the push.
+2026-11-05: tree built, zip `e476acb6...29d8` packed, notebook built, checks (a) to (d) run, kernel `rainm4/gemma4-exp040-v1` **not pushed**. Awaiting the user's GPU approval, then the lead's dispatch of the push.
