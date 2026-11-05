@@ -210,3 +210,13 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - sources: EXP-033 section 9 (8 of 8 ran, 0 malformed in 43 calls, 6 of 8 non-empty patches, mean wall 56.9 s, 423 s left under the cap; resolves 2 of 8 recorded, not read); lit-2506.03524 (fixed workflow beat a free loop below about 10B in one table)
 - tests: EXP-033 (smoke-8; critic review pending)
 - history: 2026-11-05 added by the lead as hypothesis
+
+## C-021: 15 of 48 dev-48 tasks are graded without two test-only packages; the shipped v24 prompt has no vendoring text and resolves none of them, so part of its measured failure is the sandbox gap, not the fix
+- status: hypothesis
+- confidence: medium
+- topics: [grading, prompt]
+- expected gain: +1 to +3 of 48 on dev-48 from porting the vendoring section (lead's inference); on the board unknown, since it is not known whether the hidden grader lacks the packages.
+- sources: experiments/EXP-034/critic.md (15 gated tasks; R and RH 0 of 15; E0 2, A25 2, B25 1 through vendored code; X003 3 under the EXP-004 re-grade; non-gated union minus best 3); EXP-035 section 9 (R: 11 of 16 unreadable grader outputs are a missing module; RH 12 of 18); EXP-004 (re-grade with shims: EXP-003 9 -> 12); submissions.md rows 1 to 12 (board does not settle it)
+- tests: EXP-035 (zero GPU); EXP-036 planned (CPU re-grade of R and RH with the packages present)
+- history: 2026-11-05 added by the lead as hypothesis from the critic's review of EXP-034
+

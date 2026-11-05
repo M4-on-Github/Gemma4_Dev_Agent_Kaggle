@@ -8,7 +8,7 @@ claims: [C-014, C-015]
 date: 2026-11-05
 ---
 
-Proposed 2026-11-05 after the user asked (verbatim in `knowledge/user-decisions.md`): "we can take the approach of best of N type of thing, or orchestrator type of thing or multi agent collaboration agents right? and we don't know which type do best? maybe do some lit review on the setups and meanwhile plan to benchmark it one the model for the competition and figure out which one we should go with?" Stage 0 below is already running because it costs no GPU time. Everything from Stage 1 on waits for the user's approval and for the critic's `direction` review, which is dispatched when Stage 0 has reported. Slots that were marked pending were filled on 2026-11-05 from Stage 0 (section "Stage 0 results"); the only one left is the critic's dissent.
+Proposed 2026-11-05 after the user asked (verbatim in `knowledge/user-decisions.md`): "we can take the approach of best of N type of thing, or orchestrator type of thing or multi agent collaboration agents right? and we don't know which type do best? maybe do some lit review on the setups and meanwhile plan to benchmark it one the model for the competition and figure out which one we should go with?" Stage 0 below is already running because it costs no GPU time. Everything from Stage 1 on waits for the user's approval and for the critic's `direction` review, which is dispatched when Stage 0 has reported. Slots that were marked pending were filled on 2026-11-05 from Stage 0 (section "Stage 0 results"); the critic's `direction` review arrived the same day (`experiments/EXP-034/critic.md`, needs-work) and the section "Critic review and revision" supersedes the staging, the common setting and the impact table wherever they differ.
 
 ## What are we trying to do?
 Decide by measurement, on Gemma 4 31B in this harness, which agent structure the final tree should have: one loop (F0), best-of-N with a selector (F1), an orchestrator that delegates to workers (F2), or a role pipeline with a verifier (F3). The answer is allowed to be "the single loop".
@@ -55,7 +55,7 @@ Sources: `research/lit/lit-2026-11-05-architecture-families.md`; `experiments/EX
 
 **EXP-034 Q1, the selection ceiling.** Resolves per arm 11, 12, 11, 9, 9, 10; union 17; union minus best 5, so the pre-registered gate keeps F1. Two qualifications, both in the EXP file: between R and RH the number is 1 (most of the 5 is difference between configs, not between draws of one), and the best free proxy scores 13.33 of 48 over six full runs against 12 for the best single arm. Tasks solved always, sometimes, never: 6, 11, 31. A selector can act on the 11.
 
-**EXP-034 Q2, the test signal.** Of Arm R's 30 right-file-wrong-fix tasks: last visible result after the last edit was a pass in 7, a fail in 1, an error in 1, and there was no test after the last edit in 21 (16 ran no test anywhere). RH replicates it (4, 1, 0, 22 of 27). Endings: 15 by `submit_patch`, 11 on the call cap, 3 on the clock, 1 on the turn cap. Lead's reading [I]: half of these tasks handed in a wrong fix with budget left and without checking it, although the shipped prompt asks for one check. So the first thing a verify stage adds is that the check happens at all; whether the check can see the bug is not yet known. A reproduction that failed before the first edit exists in at most 6 of 48 tasks (3 in this group).
+**EXP-034 Q2, the test signal.** Of Arm R's 30 right-file-wrong-fix tasks: last visible result after the last edit was a pass in 7, a fail in 1, an error in 1, and there was no test after the last edit in 21 (16 ran no test anywhere). RH replicates it (4, 1, 0, 22 of 27). Endings: 15 by `submit_patch`, 11 on the call cap, 3 on the clock, 1 on the turn cap. Lead's reading [I], **retracted 2026-11-05 after the critic's count**: "half of these tasks handed in a wrong fix with budget left and without checking it". The record supports less: 8 of 30 submitted with no counted test after the last edit (4 if a `python -c` run counts as a check), 4 of those 8 are tasks the grader could not test, and only 2 submitted before 270 s. What stands: 21 of 30 ran no counted test after the last edit, and 10 of the 15 submits came after 270 s. A reproduction that failed before the first edit exists in at most 6 of 48 tasks (3 in this group).
 
 **EXP-033, E4B single loop, smoke-8.** The loop works: 8 of 8 tasks ran and submitted, 0 malformed calls in 43, 6 of 8 non-empty patches, 6.0 s per turn, mean wall 56.9 s, 423 s left under the 8 min cap, about 0.25 GPU-h. Resolves 2 of 8 are recorded and not read (n = 8). For E4B the clock does not bind, so every family fits, and a dev-48 arm costs about 1 GPU-h instead of 3.5.
 
@@ -71,10 +71,10 @@ Sources: `research/lit/lit-2026-11-05-architecture-families.md`; `experiments/EX
 - B. Run all four families on dev-48 straight away. Against: 4 arms are 13 to 15 GPU-h at 4.5 min, half a week of quota, and a paired dev-48 contrast only reads large effects (about 5 net tasks: 5 wins to 0 losses, or 7 to 1).
 - C. Decide from the literature alone. Against: no source we hold matches the constraints (one 31B model for every role, no hidden tests, 4.5 min, shared call budget); the review ranks hypotheses, it does not replace the run.
 - Strongest argument against A: the instrument is weak. dev-48 and the board both need about 4 to 5 tasks of true gain to see anything, and the largest pool any family acts on is unknown until EXP-034. The plan may end with "no family is distinguishable from the loop", having cost about 17 to 20 GPU-h. That outcome is still the paper-track result and keeps the loop as the final tree.
-- Critic's dissent: **pending** (`direction` review after Stage 0).
+- Critic's dissent (2026-11-05, verbatim): "The benchmark's instrument partly measures the sandbox: 15 of the 48 dev-48 tasks are graded without two test-only packages the Kaggle sandbox lacks, and the shipped v24 prompt, which dropped our vendoring section, resolves none of them while the older-lineage arms resolve 1-2 through vendored code; 11 of Arm R's 30 right-file-wrong-fix tasks never had their hidden tests run, and on the other 33 tasks the six-arm best-of-N ceiling is 3, not 5. Re-grade R and RH with the shims on a CPU kernel, finish EXP-035 on the graded tasks, and test porting the vendoring section as its own one-variable arm, keeping ship decisions on the as-run grade until we know whether the hidden grader has these packages. Then screen one change at a time against Arm R at its shipped 8 minutes, starting with a required executed check, rather than four structures at 4.5 minutes, where 10 of R's 15 wrong-fix submits would never happen because they came after 270 s." The lead accepts it; see "Critic review and revision".
 
 ## Expected score impact
-Restated 2026-11-05 from Stage 0. Every figure here is the lead's inference [I] from the numbers in "Stage 0 results"; none is a measured effect.
+**Superseded the same day by the table in "Critic review and revision"; kept for the record.** Restated 2026-11-05 from Stage 0. Every figure here is the lead's inference [I] from the numbers in "Stage 0 results"; none is a measured effect.
 
 | Family | Pool it can act on | Expected gain on dev-48 | P(at least 4 of 58 on the board) |
 |---|---|---|---|
@@ -84,6 +84,41 @@ Restated 2026-11-05 from Stage 0. Every figure here is the lead's inference [I] 
 | F2, orchestrator | none identified: location is already found in 45 of 48 | 0 or negative | under 0.05 |
 
 No family has evidence for a gain the instruments can read with confidence (dev-48 needs about 5 net tasks, the board about 4). The likeliest end state is the single loop with an executed check, as a `LoopAgent` if the model does not run the check when only told to.
+
+## Critic review and revision (2026-11-05)
+Review: `experiments/EXP-034/critic.md` (verdict needs-work on EXP-034; every Q1 number regenerated exactly; readings applied as written). EXP-035 (`experiments/EXP-035-grader-failing-tests-visibility.md`) reported in the same hour and agrees with the critic's main finding.
+
+**The finding that changes the plan: part of what we called wrong fixes was never tested.**
+- 15 of the 48 dev-48 tasks have hidden tests that import two test-only packages the sandbox lacks. Unless the agent's patch carries stand-ins for them, the hidden tests fail at collection whatever the fix is.
+- Arms R and RH ran the v24 prompt, which has no vendoring text, and resolve 0 of those 15. Our older prompt lineage has the "Known sandbox gaps" section and resolves 1 to 2 of them; EXP-004's re-grade of EXP-003 with the packages present resolved 3.
+- 11 of Arm R's 30 right-file-wrong-fix tasks are in this group, so their fix was never graded. EXP-035: 16 of the 30 grader outputs are unreadable (11 of them this cause), 10 fail only on tests the hidden patch adds, 4 fail on a test that existed (2 of those 4 may be environmental); RH replicates.
+- EXP-034's pre-registration said every later arm was graded with the packages present. That is false for A25, B25, R and RH; the union of 17 mixes two grading environments. On the 33 tasks that are not gated, union minus best is 3 over six arms, not 5.
+- Not known: whether the hidden grader lacks these packages, or whether the hidden repos use them. Board record (`submissions.md`): our older lineage with the vendoring section scored 0.06 to 0.13, the v24 tree without it 0.17 and 0.18, at different caps, so the board does not settle it.
+
+**Corrections the critic required, applied here.**
+1. The probability column meant P(true gain of at least 4 of 58), not P(one draw shows +4), which is about 13% under no effect.
+2. F3: "at most 23 of 48" is withdrawn. 5 of the 7 subtracted passes were the agent's own scripts, and 11 of the 23 were never graded. The literature's +4.5 points is from selecting among 26 candidates, not from a verify-and-fix loop.
+3. F0: the 11 call-cap tasks are arm T4's pool at 8 min. At 4.5 min the clock stops the loop at about 21 calls, so a cap of 40 does nothing there.
+4. F1: the 39% gap closure is measured against a majority-vote baseline, not a random pick; on the 33 non-gated tasks the expected gain is 0.9 to 1.3.
+5. F2: "no pool" ignored our compaction data (36 of 48 Arm R tasks compacted, 3 of them resolved; 12 did not, 6 resolved; confounded by task length). A tester worker that runs the check through `agent_tool` is an orchestrator form the plan had not considered.
+
+| Change | Pool | Expected gain on dev-48 [I] | P(true gain >= 4 of 58) [I] |
+|---|---|---|---|
+| Port the vendoring section into the v24 prompt | the 15 gated tasks, where v24 resolves 0 | +1 to +3 if the hidden grader also lacks the packages; 0 on the board if it has them | unknown until the re-grade; the only change here with a hard zero to recover from |
+| Required executed check after the last edit (in the loop, or `LoopAgent[verify, fix]`) | the graded wrong fixes: 19 of 48, of which at most 4 show a failure on an existing test | under +2 | at most 0.1 |
+| Raised call cap at 8 min (arm T4) | 11 call-cap tasks | unknown until T4 runs | under 0.1 |
+| Best-of-3 with an executed selector | 3 of 33 non-gated tasks over six arms | +0.9 to +1.3 | about 0.05 |
+| Orchestrator, tester-worker form | unknown; the zero-GPU compaction check below | unknown | under 0.05 |
+
+**Revised staging (replaces Stages 0 to 3 above; Stages 4 and 5 unchanged).**
+- 0c, zero GPU, dispatched: EXP-036 re-grades R's and RH's patches with the two packages present on a CPU kernel (the EXP-004 pattern), then finishes EXP-035 on the tasks that become readable. EXP-034 gets the section 7 defect and the two post-hoc lines the critic asked for.
+- 0d, zero GPU, after 0c: within the 11 sometimes-solved tasks, compare compaction before the first edit between resolving and failing arms (the critic's check for the orchestrator's pool).
+- Reference: Arm R at 8 min, already on disk, at no GPU cost. The 4.5 min common setting is withdrawn as the comparison setting: 10 of R's 15 wrong-fix submits came after 270 s. The cost is that anything that adds wall time at 8 min has 13.8 s per task of headroom (B2) and needs its own dev-48 time profile before upload.
+- Screens, one change at a time on smoke-8 against R's rows for the same ids, about 0.7 GPU-h each, in this order: the vendoring section; the required executed check; then a structure (`LoopAgent[verify, fix]`, best-of-3, tester worker) only if the check screen shows the model does not run the check when told to, or EXP-036 shows a pool for it.
+- A dev-48 arm (3.5 GPU-h, user approval each) only for a change that passed its screen. The F0 arm at 4.5 min is dropped. If nothing passes, the final tree is the measured 8 min tree, not an unmeasured 4.5 min one.
+- The E4B dev-48 arm (about 1 GPU-h) serves the small-model prize and is moved out of this direction; it is the user's separate decision.
+- Smoke-8 kill rules, with the critic's binomials: "reached in fewer than 4 of 8" kills a true 60% rate 17% of the time, so a kill at the screen gets one re-run on a second set of 8 before it stands.
+- Ship decisions stay on the as-run grade until we know whether the hidden grader has the packages.
 
 ## Risks and kill criteria
 - Stage 0 kills: F1 if union minus best is under 4 tasks; the existing-test verifier if most right-file-wrong-fix tasks end on a visible pass (F3 then needs the reproduction form or is dropped).
