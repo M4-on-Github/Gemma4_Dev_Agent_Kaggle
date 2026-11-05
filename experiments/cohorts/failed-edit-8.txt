@@ -1,0 +1,12 @@
+# cohort failed-edit-8: the 8 dev-48 ids on which every edit_file call of the EXP-038 E4B run failed (n_edit_fail equals the edit_file count in tool_histogram, count >= 1); EXP-044, EXP-043
+# SELECTED ON OUTCOME: the rule is the EXP-038 summary.jsonl condition above, no seed and no sampling; all 8 ids that meet it are here. The baseline applied-edit share on these ids is 0 of 8 by construction from one stochastic draw, so a re-run of the unchanged tree can apply edits by regression to the mean alone. A count on this cohort is a conversion measure on these ids, not a dev-48 rate.
+# 3 of the 8 are gated (fastapi_13786, fastapi_14360, fastapi_14459: EXP-037, gated-8.txt): their resolves are recorded and carry no information about the edit line.
+# ids only, no competition data
+fastapi_13786
+fastapi_14360
+fastapi_14459
+fastapi_14873
+fastapi_15661
+rich_3063
+rich_3676
+rich_3935
