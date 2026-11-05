@@ -139,3 +139,11 @@ Read by the lead as:
 - No number was given. The lead takes the smaller of the two it offered, 0.4 GPU-h, as the working figure [lead's reading]. The ledger may reach 3.13 + 0.4 = 3.53 GPU-h on this screen.
 - 0.4 h is a point at which the lead reports, not a forecast and not enforced: nothing in the kernel stops it, and cancelling is the user's from the Kaggle UI. If the kernel is still running at push + 0.4 h the lead says so and gives the worst-case end time (push + 1.22 h).
 - Not approved by this message: a dev-48 voting arm (the row 5 follow-on), the per-step second arm, the scale-up to about 100 voters, a reproduction-before-submit screen, any upload, any 31B arm, a new general ceiling.
+
+## 2026-11-05 ~23:32 UTC: S-013 approved (third draw of the baseline zip)
+User, verbatim: "oh shit its almost a new day. what should we submit for today?"; then the user ran the approval command the lead gave, which wrote `approvals/S-013.txt` (content c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600, checked by the lead at 23:32 UTC).
+Context: the lead recommended S-013 (the zip of #11 and #12, EXP-031 pre-registered at fdb0b95) as the only upload that could pass the gates before 23:59 UTC, and listed three needs: the user's yes, the critic's `prereg` review of EXP-031, the user-written approval file.
+Read by the lead as:
+- Writing the approval file is the user's yes to uploading S-013 once, and to starting the submitter agent for it.
+- The lead told the user the slot stays empty if the critic's verdict is not `ready` or not in time; that condition stands.
+- Not approved by this: an E4B upload, any other zip, any GPU.
