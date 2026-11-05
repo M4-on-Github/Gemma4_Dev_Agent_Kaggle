@@ -10,7 +10,7 @@ user-invocable: false
 
 ## Environment
 
-- Python 3.13 (miniconda) is `python` in the Bash tool; the repo needs >= 3.12 with `pyyaml` and `pytest`. `python -m pytest -q` runs 42 tests (2026-11-05) in seconds on synthetic data; run it after touching `submission/`, `tools/` or adding a tracked file (two tests check the live tree and every tracked file).
+- Python 3.13 (miniconda) is `python` in the Bash tool; the repo needs >= 3.12 with `pyyaml` and `pytest`. `python -m pytest -q` runs 48 tests (2026-11-05) in seconds on synthetic data; run it after touching `submission/`, `tools/` or adding a tracked file (two tests check the live tree and every tracked file).
 - Anything that reads downloaded or third-party files (`untrusted/`, run bundles, notebooks) runs as `python -I -X utf8 ...` so nothing is imported from the data's directory and encoding is stable.
 - `core.autocrlf=true`: the zip sha256 reproduces only from committed LF blobs. Pack from a clean checkout of the committed tree, compare `sha256sum` with the recorded value before any upload.
 - User-level hook blocks any `git commit` message carrying a Claude co-author or "Generated with" line. Commit without attribution lines.
@@ -28,7 +28,7 @@ user-invocable: false
 
 ## Kaggle kernels
 
-- `python tools/build_notebook.py --embed <zip> --username rainm4 --cohort experiments/cohorts/<cohort>.txt --out notebooks/<expNNN_dir>/kaggle_eval_l4x4.ipynb` builds from `notebooks/kaggle_eval_l4x4.py` (py:percent). `--set` rewrites parameter-cell assignments. Hazard (EXP-020): cell 5 sets `max_time_minutes: 60.0` under `if not RUN_AGENT:`.
+- `python tools/build_notebook.py --embed <zip> --username rainm4 --cohort experiments/cohorts/<cohort>.txt --out notebooks/<expNNN_dir>/kaggle_eval_l4x4.ipynb` builds from `notebooks/kaggle_eval_l4x4.py` (py:percent). `--set` rewrites parameter-cell assignments. The value is Python source and must be a literal: quote strings as `--set EXP_ID='"EXP-0NN-x"'`. Since 2026-11-05 the builder refuses a non-literal value or a parameter cell that does not parse; the EXP-030 kernel died on an unquoted value. Hazard (EXP-020): cell 5 sets `max_time_minutes: 60.0` under `if not RUN_AGENT:`.
 - `kernel-metadata.json`: copy from the last working arm (`notebooks/exp025_armA`, `exp028_armR`) changing only `id` and `title`; keep `enable_gpu`, `machine_shape: NvidiaL4`, the pinned `docker_image` sha (`plan.md:1188`), `dataset_sources` (wheelhouse), `competition_sources`, `model_sources`. `enable_internet: false`.
 - Running a small variant (2026-11-05): the eval notebook takes the model from the embedded zip's `agent.yaml` (31B, E4B or E2B, `-it-qat-w4a16-ct`; mirror of `ALLOWED_MODEL_NAMES`); the only metadata change is `model_sources` = `google/gemma-4/other/<name>/2`. Serving recipe and budgets are the same as 31B; 12B is not supported by our notebook (needs `--hf-overrides`). Facts, tags and the step list: `reference/small-variants.md`.
 - `kaggle kernels push -p notebooks/<expNNN_dir>` (the push guard needs the committed EXP file, with a `**Cohort:**` line matching the notebook's `TASK_IDS`, and `RUN_AGENT = True` outside exp000); `kaggle kernels status rainm4/<slug>`; `kaggle kernels output rainm4/<slug> -p runs/<EXP>-<arm>/`.
@@ -42,6 +42,10 @@ user-invocable: false
 ## Run analysis
 
 - `python tools/analyze_traces.py runs/<EXP> --cap-minutes <cap> --max-calls <calls>` -> `summary.jsonl` + `aggregates.json`. Counts arg-loss failures by the harness string `mandatory input parameters are not present` (the `"status": "error"` envelope misses them ~10x).
+- Compaction is live in the scorer, and no trace step records it (Q7, 2026-11-05).
+  - Before each model call of any agent, sub-agents included, if the latest prompt count is ≥ 14,336, everything but the last 5 events is summarized by one extra model call. That call counts on the task clock but not as a turn.
+  - It fired 49 times in EXP-028 Arm R. `compactions` before 2026-11-05 read 0 and is wrong in every older `summary.jsonl`.
+  - `agent.yaml` cannot set it. Details, including the ParallelAgent issue 7324 risk, are in `reference/compaction.md`.
 - `python tools/run_forensics.py forensics runs/<EXP>` (where wall-clock went, first-edit turn); `python tools/run_forensics.py compare runs/<A> runs/<B>` (paired 2x2 on shared ids).
 - `python tools/regrade_patches.py` re-grades collected patches at 0 GPU-h; `tools/gold_control.py` needs the Docker orchestrator and cannot run on Kaggle.
 - `python -I -X utf8 tools/exp024_stats.py` and `tools/exp022_stats.py` regenerate the paper's and the direction reviews' numbers.
