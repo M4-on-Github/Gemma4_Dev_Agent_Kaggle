@@ -216,8 +216,10 @@ Rows are applied in order, and the first match governs. Row T is applied in addi
 **Row 0. Blank or crash.**
 - **Condition:** the kernel fails before the task loop, or fewer than 44 of 48 tasks have a `task_results.jsonl` row, ~~or 5 or more rows carry a non-empty `error`.~~
   - *Amended 2026-11-05, after the critic prereg (143fba1), fix 1:* or 5 or more rows carry a non-empty `error` that is not a harness cap string. The cap strings are those beginning `Agent exceeded session timeout` (as run: `Agent exceeded session timeout (8.0 min)`) or `Agent exceeded turns budget` (as run: `Agent exceeded turns budget (80 turns)`). Rows with a cap string are read under E3 and row T, not here. The first-written clause fired on Arm R itself: 10 of its 48 rows carry these strings (6 session timeout, 4 turns budget; `runs/EXP-028-armR/task_results.jsonl`). So it would have read a cap-bound E4B as a crash, and row T's cap-bound branch could never have been reached.
+  - *Added 2026-11-05 (critic re-check):* a cap-string row whose `n_turns` is 0 counts as an error.
   - *Added 2026-11-05, before the push, with the user's 2.0 GPU-h approval (section 8):* or the kernel was cancelled under the section 8 stop rule, whatever number of rows survive. Such a run is read as truncated.
 - **Reading:** infrastructure, not the model. Say which (model input, vLLM boot, harness error, Kaggle stop) from the log and the first failing row.
+  - *Added 2026-11-05 (critic re-check):* a run cancelled under the section 8 stop rule is read as **truncated**, neither infrastructure nor a model reading. It is read as a crash instead only if the surviving output shows a failure before the task loop, or 5 or more errors counted under the clauses above among the surviving rows. Report the elapsed time at the cancel, the number of surviving rows, and their mean `wall_s` and capped count. No endpoint is read and row T is not applied. A re-run is priced from these figures, not from section 2.2.
 - **Next step:** report to the lead. No re-run is funded by this file. A re-run is a new dispatch and needs the user's GPU approval, because the user's condition was about 1 GPU-h. Endpoints on the rows present are reported, not read. No E4B proposal.
 
 **Row 0b. Grading anomaly.**
@@ -425,13 +427,15 @@ Against 2.0 h:
 - The notebook and zip are not rebuilt to add a deadline, so the cohort and the sha stay as committed.
 
 **The rule, applied by people, not by the kernel:**
-1. The lead counts elapsed time from the push. That count includes queueing, so it runs ahead of GPU time, which is the safe side.
-2. If the kernel is not COMPLETE at 1.75 h elapsed, the lead tells the user then, and does not let the run go on past 2.0 h on its own reading.
+1. ~~The lead counts elapsed time from the push. That count includes queueing, so it runs ahead of GPU time, which is the safe side.~~
+2. ~~If the kernel is not COMPLETE at 1.75 h elapsed, the lead tells the user then, and does not let the run go on past 2.0 h on its own reading.~~
 3. Cancelling is the user's action in the Kaggle UI. No guarded agent command list in `.claude/agents/*.md` includes a cancel; the experimenter's commands are not prefix-guarded, and whether the Kaggle CLI has a cancel command is not verified here [I].
 4. A kernel cancelled there is read as **truncated under row 0** (section 4.1, the clause dated 2026-11-05 for a cancellation under this rule), whatever number of rows survive. Endpoints on any rows that survive are reported, not read, and no E4B proposal follows.
 5. A re-run needs a new GPU approval from the user.
 
 Whether a cancelled Kaggle batch kernel keeps any of its output is unverified here. The download job reports what it finds.
+
+*Amended 2026-11-05 (critic re-check):* the push record states the push time in UTC, and the lead's push report gives the user two clock times, push + 1.75 h and push + 2.0 h. The decision at push + 1.75 h is the user's, made from the Kaggle UI. If no one acts, the run continues to its end, 2.0 h is not enforced, and the exposure is section 2.2's tail (scenario C 2.41 h, conditional worst case 6.66 h).
 
 ## Status
 
@@ -441,4 +445,4 @@ BUILT, NOT PUSHED (2026-11-05).
 - The critic's four text fixes are applied (section 7, item 7).
 - The user has approved the full dev-48 at up to 2.0 GPU-h, with the section 8 stop rule.
 - Next: the critic re-checks the fixes. Then the push is a separate job: directory `notebooks/exp038_e4b_dev48`, kernel `rainm4/gemma4-exp038-e4b-dev48`.
-- The lead starts the 1.75 h clock at the push.
+- ~~The lead starts the 1.75 h clock at the push.~~ The push record states the push time in UTC; the push report gives push + 1.75 h and push + 2.0 h (section 8, critic re-check).
