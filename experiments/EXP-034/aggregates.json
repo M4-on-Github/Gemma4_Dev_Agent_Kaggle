@@ -1,0 +1,403 @@
+{
+  "arms": [
+    "E0",
+    "X003",
+    "A25",
+    "B25",
+    "R",
+    "RH"
+  ],
+  "n_intersection": 48,
+  "n_intersection_in_dev48": 48,
+  "q1a": {
+    "all": {
+      "per_arm": {
+        "E0": 11,
+        "X003": 12,
+        "A25": 11,
+        "B25": 9,
+        "R": 9,
+        "RH": 10
+      },
+      "union": 17,
+      "best_single": 12,
+      "union_minus_best": 5,
+      "curve": {
+        "1": 10.333,
+        "2": 12.733,
+        "3": 14.2,
+        "4": 15.267,
+        "5": 16.167,
+        "6": 17
+      }
+    },
+    "V": {
+      "per_arm": {
+        "R": 9,
+        "RH": 10
+      },
+      "union": 11,
+      "best_single": 10,
+      "union_minus_best": 1,
+      "curve": {
+        "1": 9.5,
+        "2": 11
+      }
+    },
+    "O": {
+      "per_arm": {
+        "E0": 11,
+        "X003": 12,
+        "A25": 11,
+        "B25": 9
+      },
+      "union": 16,
+      "best_single": 12,
+      "union_minus_best": 4,
+      "curve": {
+        "1": 10.75,
+        "2": 13.333,
+        "3": 15,
+        "4": 16
+      }
+    }
+  },
+  "q1a_sensitivity_x003_as_scored": {
+    "all": {
+      "per_arm": {
+        "E0": 11,
+        "X003": 9,
+        "A25": 11,
+        "B25": 9,
+        "R": 9,
+        "RH": 10
+      },
+      "union": 16,
+      "best_single": 11,
+      "union_minus_best": 5,
+      "curve": {
+        "1": 9.833,
+        "2": 12,
+        "3": 13.35,
+        "4": 14.333,
+        "5": 15.167,
+        "6": 16
+      }
+    },
+    "O": {
+      "per_arm": {
+        "E0": 11,
+        "X003": 9,
+        "A25": 11,
+        "B25": 9
+      },
+      "union": 15,
+      "best_single": 11,
+      "union_minus_best": 4,
+      "curve": {
+        "1": 10,
+        "2": 12.5,
+        "3": 14,
+        "4": 15
+      }
+    }
+  },
+  "q1b": {
+    "all_arms": 6,
+    "some_not_all": 11,
+    "none": 31,
+    "histogram_n_arms_resolving": {
+      "0": 31,
+      "1": 5,
+      "2": 1,
+      "3": 2,
+      "4": 2,
+      "5": 1,
+      "6": 6
+    }
+  },
+  "q1c": {
+    "n_pairs_nonempty": 202,
+    "random_arm": 10.333,
+    "random_nonempty": 12.217,
+    "union": 17,
+    "submit_before_cap_with_n_turns_ge_79": 1,
+    "proxies": {
+      "diff_match": {
+        "proxy_true_resolved": 36,
+        "proxy_true_unresolved": 25,
+        "proxy_false_resolved": 26,
+        "proxy_false_unresolved": 115,
+        "selector_score": 12.383,
+        "gain_over_random_arm": 2.05,
+        "gain_over_random_nonempty": 0.167
+      },
+      "majority_files": {
+        "proxy_true_resolved": 37,
+        "proxy_true_unresolved": 46,
+        "proxy_false_resolved": 25,
+        "proxy_false_unresolved": 94,
+        "selector_score": 12.5,
+        "gain_over_random_arm": 2.167,
+        "gain_over_random_nonempty": 0.283
+      },
+      "smaller": {
+        "proxy_true_resolved": 14,
+        "proxy_true_unresolved": 51,
+        "proxy_false_resolved": 48,
+        "proxy_false_unresolved": 89,
+        "selector_score": 12.0,
+        "gain_over_random_arm": 1.667,
+        "gain_over_random_nonempty": -0.217
+      },
+      "submit_before_cap": {
+        "proxy_true_resolved": 35,
+        "proxy_true_unresolved": 50,
+        "proxy_false_resolved": 27,
+        "proxy_false_unresolved": 90,
+        "selector_score": 13.333,
+        "gain_over_random_arm": 3.0,
+        "gain_over_random_nonempty": 1.117
+      }
+    }
+  },
+  "q2": {
+    "R": {
+      "all": {
+        "n": 48,
+        "last_visible": {
+          "error": 1,
+          "fail": 1,
+          "no_edit": 6,
+          "none": 27,
+          "pass": 13
+        },
+        "last_pass": 13,
+        "last_fail_incl_text": 1,
+        "last_fail_by_ending": {
+          "time_cap_or_timeout": 1
+        },
+        "last_pass_by_ending": {
+          "other": 1,
+          "submit": 12
+        },
+        "no_test_anywhere": 22,
+        "repro": {
+          "after_only": 9,
+          "before_fail": 6,
+          "before_nonfail": 6,
+          "no_repro_script": 27
+        },
+        "endings": {
+          "calls_cap": 18,
+          "other": 1,
+          "submit": 24,
+          "time_cap_or_timeout": 5
+        }
+      },
+      "resolved": {
+        "n": 9,
+        "last_visible": {
+          "none": 3,
+          "pass": 6
+        },
+        "last_pass": 6,
+        "last_fail_incl_text": 0,
+        "last_fail_by_ending": {},
+        "last_pass_by_ending": {
+          "other": 1,
+          "submit": 5
+        },
+        "no_test_anywhere": 3,
+        "repro": {
+          "after_only": 3,
+          "before_fail": 1,
+          "before_nonfail": 2,
+          "no_repro_script": 3
+        },
+        "endings": {
+          "other": 1,
+          "submit": 8
+        }
+      },
+      "unresolved": {
+        "n": 39,
+        "last_visible": {
+          "error": 1,
+          "fail": 1,
+          "no_edit": 6,
+          "none": 24,
+          "pass": 7
+        },
+        "last_pass": 7,
+        "last_fail_incl_text": 1,
+        "last_fail_by_ending": {
+          "time_cap_or_timeout": 1
+        },
+        "last_pass_by_ending": {
+          "submit": 7
+        },
+        "no_test_anywhere": 19,
+        "repro": {
+          "after_only": 6,
+          "before_fail": 5,
+          "before_nonfail": 4,
+          "no_repro_script": 24
+        },
+        "endings": {
+          "calls_cap": 18,
+          "submit": 16,
+          "time_cap_or_timeout": 5
+        }
+      },
+      "rfwf": {
+        "n": 30,
+        "last_visible": {
+          "error": 1,
+          "fail": 1,
+          "none": 21,
+          "pass": 7
+        },
+        "last_pass": 7,
+        "last_fail_incl_text": 1,
+        "last_fail_by_ending": {
+          "time_cap_or_timeout": 1
+        },
+        "last_pass_by_ending": {
+          "submit": 7
+        },
+        "no_test_anywhere": 16,
+        "repro": {
+          "after_only": 6,
+          "before_fail": 3,
+          "before_nonfail": 3,
+          "no_repro_script": 18
+        },
+        "endings": {
+          "calls_cap": 11,
+          "submit": 16,
+          "time_cap_or_timeout": 3
+        }
+      },
+      "python_c_calls": 76,
+      "python_stdin_heredoc_calls": 0
+    },
+    "RH": {
+      "all": {
+        "n": 48,
+        "last_visible": {
+          "fail": 1,
+          "no_edit": 5,
+          "none": 35,
+          "pass": 7
+        },
+        "last_pass": 7,
+        "last_fail_incl_text": 1,
+        "last_fail_by_ending": {
+          "submit": 1
+        },
+        "last_pass_by_ending": {
+          "calls_cap": 2,
+          "submit": 5
+        },
+        "no_test_anywhere": 36,
+        "repro": {
+          "after_only": 3,
+          "before_fail": 2,
+          "before_nonfail": 2,
+          "no_repro_script": 41
+        },
+        "endings": {
+          "calls_cap": 17,
+          "submit": 23,
+          "time_cap_or_timeout": 8
+        }
+      },
+      "resolved": {
+        "n": 10,
+        "last_visible": {
+          "none": 8,
+          "pass": 2
+        },
+        "last_pass": 2,
+        "last_fail_incl_text": 0,
+        "last_fail_by_ending": {},
+        "last_pass_by_ending": {
+          "calls_cap": 1,
+          "submit": 1
+        },
+        "no_test_anywhere": 7,
+        "repro": {
+          "after_only": 1,
+          "before_fail": 1,
+          "no_repro_script": 8
+        },
+        "endings": {
+          "calls_cap": 2,
+          "submit": 7,
+          "time_cap_or_timeout": 1
+        }
+      },
+      "unresolved": {
+        "n": 38,
+        "last_visible": {
+          "fail": 1,
+          "no_edit": 5,
+          "none": 27,
+          "pass": 5
+        },
+        "last_pass": 5,
+        "last_fail_incl_text": 1,
+        "last_fail_by_ending": {
+          "submit": 1
+        },
+        "last_pass_by_ending": {
+          "calls_cap": 1,
+          "submit": 4
+        },
+        "no_test_anywhere": 29,
+        "repro": {
+          "after_only": 2,
+          "before_fail": 1,
+          "before_nonfail": 2,
+          "no_repro_script": 33
+        },
+        "endings": {
+          "calls_cap": 15,
+          "submit": 16,
+          "time_cap_or_timeout": 7
+        }
+      },
+      "rfwf": {
+        "n": 27,
+        "last_visible": {
+          "fail": 1,
+          "none": 22,
+          "pass": 4
+        },
+        "last_pass": 4,
+        "last_fail_incl_text": 1,
+        "last_fail_by_ending": {
+          "submit": 1
+        },
+        "last_pass_by_ending": {
+          "submit": 4
+        },
+        "no_test_anywhere": 21,
+        "repro": {
+          "after_only": 2,
+          "before_fail": 1,
+          "before_nonfail": 1,
+          "no_repro_script": 23
+        },
+        "endings": {
+          "calls_cap": 8,
+          "submit": 14,
+          "time_cap_or_timeout": 5
+        }
+      },
+      "python_c_calls": 18,
+      "python_stdin_heredoc_calls": 120
+    }
+  }
+}

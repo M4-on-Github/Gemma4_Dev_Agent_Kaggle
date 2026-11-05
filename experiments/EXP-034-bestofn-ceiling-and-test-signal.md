@@ -114,8 +114,95 @@ Committed output: `aggregates.json` (counts only) and `summary.jsonl` (task id a
 
 ## 7. Defects in this pre-registration, logged after the fact
 
-(none yet)
+1. **(2026-11-05, after the run) The hand-check pool was too small for the stratified draw.** Arm R has only 15 last-visible test runs (13 pass, 1 fail, 1 error), so the §2.3 draw gave 6 items, not 10. Deviation: 4 more were drawn with `random.Random(34)` from every other R test run labelled fail, fail (text) or error (3 fail, 1 error, from tasks not already drawn), to reach the 10 the dispatch asks for. The extra four test the classifier, not the last-visible endpoint.
+2. **(2026-11-05) `SUITE_RE` matches `unittest` inside a script's own text** (for example `from unittest.mock import ...` in a heredoc), so some script runs are typed as suite runs. Seen once in the hand check, where the result label was still right.
+3. **(2026-11-05) A script that crashes on its own mistake is labelled fail, not error.** §2.3 calls a run "error" only for a missing file, a timeout, or a syntax or import error. A script that raises `TypeError` or `AttributeError` because it misuses the API is "fail" by the rule, though the check did not run. Two of the ten hand-checked items are of this kind. This inflates the fail counts and the "before_fail" (usable oracle) count. It cannot move any last-visible fail count by more than the 1 that exists.
+4. **(2026-11-05) The "none after the last edit" category does not see `python -c` one-liners or `python - <<EOF` stdin scripts**, by the §2.3 definition. Their size is reported in §9 as a post-hoc line. It does not change the definitions.
+
+## 9. Results (2026-11-05). Applies section 4 as written.
+
+Commands as §6, run 2026-11-05 after the pre-registration commit f5f387a. GPU: **0.0 L4x4-h** (no kernel). Output: `experiments/EXP-034/aggregates.json` (counts), `experiments/EXP-034/summary.jsonl` (48 rows, task id and booleans), script `experiments/EXP-034/mine.py`. Intersection: **48 ids**, all six arms, all in `cohorts/dev-48.txt`.
+
+### 9.1 Q1, the best-of-N ceiling
+
+| set | per arm | union | best single | union minus best | expected union for k = 1, 2, 3, 4, 5, 6 |
+|---|---|---:|---:|---:|---|
+| all six | E0 11, X003 12 (shim re-grade), A25 11, B25 9, R 9, RH 10 | **17** | 12 | **5** | 10.33, 12.73, 14.20, 15.27, 16.17, 17 |
+| V {R, RH} | 9, 10 | 11 | 10 | 1 | 9.5, 11 |
+| O {E0, X003, A25, B25} | 11, 12, 11, 9 | 16 | 12 | 4 | 10.75, 13.33, 15.0, 16 |
+| all six, X003 as scored (9) | as above, X003 9 | 16 | 11 | 5 | 9.83, 12.0, 13.35, 14.33, 15.17, 16 |
+
+Always / some / none over the six arms: **6 / 11 / 31**. Histogram of arms resolving a task: 0: 31, 1: 5, 2: 1, 3: 2, 4: 2, 5: 1, 6: 6. The pool a selector could act on is the **11** "some but not all" tasks.
+
+**Selector proxies** over the 202 (task, arm) pairs with a non-empty patch. Each 2x2 is given as proxy-true resolved / unresolved and proxy-false resolved / unresolved. Scores are expected tasks out of 48.
+
+| proxy | true: res / unres | false: res / unres | selector score | vs random arm (10.33) | vs random non-empty (12.22) | union |
+|---|---|---|---:|---:|---:|---:|
+| diff match | 36 / 25 | 26 / 115 | 12.38 | +2.05 | +0.17 | 17 |
+| majority file set (>= 4 of 6) | 37 / 46 | 25 / 94 | 12.50 | +2.17 | +0.28 | 17 |
+| smaller patch | 14 / 51 | 48 / 89 | 12.00 | +1.67 | -0.22 | 17 |
+| **submit before cap** | 35 / 50 | 27 / 90 | **13.33** | **+3.00** | **+1.12** | 17 |
+
+Of the +3.00, +1.88 comes from preferring any non-empty patch (random non-empty minus random arm). One proxy-true pair had `n_turns` >= 79, a possible turn-cap ending counted as "before cap" (§2.2 item 4).
+
+**Reading: Q1-stays fires** on endpoint 1 (union minus best = 5, which is at least 4). Best-of-N stays, and **the number a selector has to beat is +3.0 tasks over a random arm** (the submit-before-cap proxy alone scores 13.33 of 48). The X003 sensitivity line also gives 5, so it does not move the reading.
+
+**The family readings differ, which §4 requires stating.**
+- V (R and RH, the closest thing on disk to two draws of the shipped config) gives union minus best = **1**. By the same threshold that is Q1-low.
+- O gives 4.
+
+The V number is the closer picture of N draws of one config. The all-arm 5 comes from arms that differ in prompt, caps and sampling, so most of the measured ceiling is diversity across configs, not across draws.
+
+### 9.2 Q2, the visible test signal (Arm R; RH replicate)
+
+Arm R, last visible result after the last edit. Fail includes fail (text), but no fail (text) occurred as a last-visible result.
+
+| group | n | pass | fail | error | none after last edit | no edit found | no test run anywhere |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| all | 48 | 13 | 1 | 1 | 27 | 6 | 22 |
+| resolved | 9 | 6 | 0 | 0 | 3 | 0 | 3 |
+| unresolved | 39 | 7 | 1 | 1 | 24 | 6 | 19 |
+| **RFWF** | **30** | **7** | **1** | **1** | **21** | 0 | 16 |
+
+- **Last visible pass and unresolved (tests cannot see the bug): 7.** All 7 ended by `submit_patch`, and all 7 are RFWF.
+- **Last visible fail and unresolved: 1.** It ended by the time cap or session timeout.
+- **RFWF endings:** calls cap 11, `submit_patch` 16, time cap or timeout 3.
+- **Reproduction scripts (R, all 48).** 21 tasks wrote and ran one:
+  - run before the first edit and failed (a usable oracle): **6**;
+  - run before the first edit without failing: 6;
+  - run only after the first edit: 9.
+
+  27 tasks had none. In RFWF the same split is 3 / 3 / 6, with 18 none. The oracle counts of 6 and 3 include scripts that crashed on their own mistakes (§7 item 3), so they are upper bounds.
+- **A last visible pass separates weakly:** 6 of the 13 last-pass tasks resolved, against 9 of 48 overall.
+
+**RH replicate.**
+- RFWF (n = 27): pass 4, fail 1 (ended by submit), error 0, none 22. No test run anywhere: 21.
+- All 48: pass 7, fail 1, none 35, no edit found 5, no test run anywhere 36.
+- Reproduction scripts: 7 tasks only, oracle 2.
+
+**Hand check (§2.3, with the §7 item 1 top-up).** 10 R observations were classified by hand before the tool's label was read: **8 of 10 agree**. Both disagreements are the §7 item 3 kind: a script that crashed on its own API misuse, labelled fail by the tool and error by hand. One further item was typed suite instead of script (§7 item 2), with the right label.
+
+**Reading: Q2-neither fires.** In Arm R's RFWF group neither pass (7 of 30) nor fail (1 of 30) is a majority. **Replicated in RH:** pass 4, fail 1, none 22 of 27, the same reading.
+
+The largest category is **none after the last edit: 21 of 30**. 16 of the 30 ran no test or script anywhere in the trace. The finding, stated as §4 asks:
+- On the right-file-wrong-fix tasks the agent almost never checks its final patch, so the traces cannot say whether existing tests would have seen the bug.
+- The record shows neither "tests cannot see it" (Q2-pass) nor "the agent knew and ran out of budget" (Q2-fail).
+- What that implies for a verify stage is left to the lead.
+
+**Post hoc, not pre-registered (§7 item 4).**
+- Of R's 27 "none" tasks, 17 have nothing but `submit_patch` or `get_status` after the last edit, and 7 have a `python -c` after it. Among the 21 RFWF "none" tasks, 4 have one.
+- R makes 76 `python -c` calls in all and no stdin heredocs.
+- RH makes 18 `python -c` calls and 120 stdin heredocs; its recovery section routes edits through stdin heredocs. 13 of RH's 22 RFWF "none" tasks have a heredoc after the last edit. It may be an edit or a check; this analysis does not separate the two.
+
+### 9.3 Not verified
+
+- **Comment stripping:** the diff normalisation drops a comment line only when it starts with `#`. Patches that differ only in a docstring still count as different.
+- **Turn cap:** it has no flag in `summary.jsonl`. Endings are taken from `calls_cap_hit`, `time_cap_hit`, `timeout_hit` and the trace's last call.
+- **Grading:** resolved flags come from each run's own grading (X003 re-graded), and grader timeouts differ between arms (300 s vs 240 s).
+- **Edit detection:** it found an edit in every non-empty patch in R and RH. A check for later edits written through `write_text(` or `open(..., "w")` found 0 such tasks in R and 1 in RH.
 
 ## Status
 
-Pre-registered 2026-11-05; nothing in sections 3 to 5 computed yet.
+COMPLETE 2026-11-05 (zero GPU).
+- Q1-stays: all-arm union minus best is 5 (V family 1, O family 4); the selector bar is +3.0 tasks over a random arm.
+- Q2-neither: R RFWF pass 7, fail 1, none 21 of 30; replicated in RH.
