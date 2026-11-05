@@ -94,3 +94,11 @@ today's upload, S-013 stays proposed. "Resets at 7pm" is read as the daily submi
 the lead asked the user to confirm, since the weekly GPU quota or a literal 19:00 UTC would change the plan. The GPU
 ceiling stays 3.2 GPU-h: P1 1.0 to 1.35, E4B 0.45 to 0.8, T4 about 1.0 if it runs.
 
+## 2026-11-05 ~14:00 UTC: compare the architecture families by literature and by benchmark
+User: "well, we can take the approach of best of N type of thing, or orchestrator type of thing or multi agent
+collaboration agents right? and we don't know which type do best? maybe do some lit review on the setups and meanwhile
+plan to benchmark it one the model for the competition and figure out which one we should go with?"
+Read by the lead as: dispatch the lit review now (done, lit-scout) and write a benchmark plan (D-005, status proposed).
+Not read as approval of any GPU spend beyond the D-004 screens already running. Zero-GPU trace mining (EXP-034,
+experimenter) was started as part of the plan's Stage 0.
+
