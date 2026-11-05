@@ -147,3 +147,10 @@ Read by the lead as:
 - Writing the approval file is the user's yes to uploading S-013 once, and to starting the submitter agent for it.
 - The lead told the user the slot stays empty if the critic's verdict is not `ready` or not in time; that condition stands.
 - Not approved by this: an E4B upload, any other zip, any GPU.
+
+## 2026-11-06 ~00:30 UTC: no second upload while S-013 is pending; status and options asked for
+User, verbatim: "the slot opens yes, but I don't think it accepts concurrent submissions so we have to wait for competition submissions. in the mean time where are we with both 31b and E4. what more can we test/etweak?"
+Read by the lead as:
+- No upload is proposed or made while S-013 (ref 58037856) is pending. Whether Kaggle would in fact accept a second upload while one is pending is not verified [user's belief]; the lead does not test it with an upload.
+- The user asked for the state of the 31B and E4B lines and for what can still be tested. This is a question, not an approval: no GPU, no upload and no new agent is approved by it.
+- The lead's question about preparing an E4B upload proposal was not answered; it stays open.
