@@ -121,3 +121,12 @@ Read by the lead as:
 - "Maximum allowed agents" is read as the largest number of voters the clock and the server's memory permit on the E4B, stated as a bound, not the validator's `MAX_AGENTS = 500`.
 - "Some deterministic good rule" for ties: a declarative config has no code, so the rule is a fixed sentence in the tallying agent's prompt (for example: the lowest-temperature voter among the tied wins); whether the agent applies it is recomputed from the traces offline.
 - Not approved by this message: any upload, any 31B dev-48 arm, the D-005 screens other than the above.
+
+## 2026-11-05 ~18:40 UTC: the full 48 for EXP-038, up to 2 GPU-h
+User, verbatim: "2 hrs should be fine for full 48"
+Context: the lead had withdrawn its reading that the "only 1 hr" condition was met (critic's central estimate 1.25 to 1.3 GPU-h) and put three options: (1) the full 48 with the ceiling raised from 3.2 to 4.0, (2) the 27 informative ids at about 0.75 h, (3) not this week.
+Read by the lead as:
+- Option (1): EXP-038, the E4B single loop on the full dev-48, is approved at up to 2.0 GPU-h for that run. The 27-id variant is not built.
+- The ledger may therefore reach 1.86 + 2.0 = 3.86 GPU-h on this arm. The user named a number for this arm, not a new ceiling for other work.
+- Not approved by this message: the EXP-040 voting screen (0.30 to 0.36 GPU-h), any upload, any 31B dev-48 arm. The lead asks once about the voting screen.
+- 2.0 h is treated as a stop line, not a forecast: if the kernel's GPU time nears 2.0 h without finishing, the lead tells the user; it does not let the run continue on its own reading.
