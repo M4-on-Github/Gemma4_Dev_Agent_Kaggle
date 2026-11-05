@@ -163,6 +163,8 @@ Nothing above this heading is changed. Where an item corrects earlier wording th
 
 Built 2026-11-05 with the section 6 commands; shas in section 2. Committed by pathspec before any push. **No kernel has been pushed.** Next, a separate job, only after the critic `prereg` review returns: push `notebooks/exp032_p1` and `notebooks/exp032_t4` (or the lead's chosen order), then record the kernel ids and a `## Status` line.
 
+**Push record, 2026-11-05 (after the section 7 additions of 40cc718).** Arm P1 only: kernel `rainm4/gemma4-exp032-p1` pushed from `notebooks/exp032_p1` (zip sha256 `86c609598a876c936e2b7dcfe6e9eab7b6c137da5d9103487e38de390b8b3338`), reply "Kernel version 1 successfully pushed". The clock time in UTC was not recorded (the screener has no clock command). First status check straight after the push: `KernelWorkerStatus.RUNNING`. Arm T4 (`rainm4/gemma4-exp032-t4`, zip sha `3af1479d1c591d7379e0204f8b65d3da3d48da45e39bb17eba9e03f8ea8dce69`) is **held** per section 7 item 6: it is pushed only after P1 is read as not row 0 and without a localize-stage crash.
+
 ## Status
 
-Pre-registered, built, committed, not pushed. Waiting for the critic `prereg` review (combined cost 2.0-2.5 L4x4-h, above 1 GPU-h). Kernels would be `rainm4/gemma4-exp032-p1` and `rainm4/gemma4-exp032-t4`.
+2026-11-05: P1 kernel `rainm4/gemma4-exp032-p1` pushed and RUNNING, not waited on. T4 held (section 7 item 6). Next: when `kaggle kernels status rainm4/gemma4-exp032-p1` says COMPLETE, download with `kaggle kernels output rainm4/gemma4-exp032-p1 -p runs/EXP-032-p1/`, analyze (section 6), and apply section 4 as amended by section 7. Estimated P1 cost 1.1-1.35 GPU-h.
