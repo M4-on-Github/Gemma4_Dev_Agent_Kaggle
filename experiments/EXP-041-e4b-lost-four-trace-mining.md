@@ -134,8 +134,8 @@ Pre-registration committed as 618d3b1 before any of the four E4B traces was open
 
 How each flag was decided:
 
-- **fastapi_13537, d.** Zero tool calls in 8 turns. Four agent replies (steps 4, 7, 10, 13) are a fenced `json` block naming a command (for example a `git grep` and `read_file ./fastapi/requests.py 100-200`) written as text, after three harness `continuation_nudge` events [H, read steps 4 and 13]. No `edit_file` executed, patch empty, `submit_patch` never called, "Agent completed execution without calling submit_patch." Confirms what the critic reported; not blind.
-- **fastapi_15589, c.** The patch edits the gold file (overlap), non-empty, and the task fails. (a) does **not** hold by the rule as written: `n_calls` is 4, but a test run (`pytest`, no arguments) was issued after the edit. That run collected 1108 items with 304 errors, all `ModuleNotFoundError: inline_snapshot`; the model quoted a prompt instruction to ignore import errors and submitted [H, read steps 5 to 9]. The edit flips the fallback in `getattr(..., "convert_underscores", True)` to `False`; Arm R changed the same file and resolved.
+- **fastapi_13537, d.** Zero tool calls in 8 turns. Four agent replies (steps 4, 7, 10, 13) are a fenced `json` block naming a command (a shell search and a file read, written as text), after three harness `continuation_nudge` events [H, read steps 4 and 13]. No `edit_file` executed, patch empty, `submit_patch` never called, "Agent completed execution without calling submit_patch." Confirms what the critic reported; not blind.
+- **fastapi_15589, c.** The patch edits the gold file (overlap), non-empty, and the task fails. (a) does **not** hold by the rule as written: `n_calls` is 4, but a test run (`pytest`, no arguments) was issued after the edit. That run collected 1108 items with 304 errors, all `ModuleNotFoundError: inline_snapshot`; the model quoted a prompt instruction to ignore import errors and submitted [H, read steps 5 to 9]. The edit inverts a boolean default in the gold file. Arm R changed the same file and resolved.
 - **fastapi_9753, c.** The patch edits the gold file, non-empty, fails. `n_calls` 9 exceeds the (a) threshold of 8. Three of five `edit_file` calls failed with "old_string not found" before two applied. One test run, `pytest tests/`, collected 709 items with 148 errors (`dirty_equals`, `inline_snapshot` missing); `submit_patch` was then called twice.
 - **rich_3067, a and b.** `n_calls` 7, both `run_command` calls are `git grep`, no test or code run: (a) holds. The patch edits `rich/style.py`; the gold file is `rich/highlighter.py`: (b) holds. Convention precedence gives b. Arm R read `rich/highlighter.py`, wrote a scratch reproduction, and ran it five times.
 
@@ -182,6 +182,7 @@ Inference, not a result. Four traces and a 19-id control cannot support a rate o
 4. The shell of this agent allows no pipes, chaining or ad-hoc scripts, so everything above is `grep -o` output counted by hand plus Read; a transcription slip is possible and every number is reproducible with the commands of section 6.
 5. The E4B 2-of-4 and 4-of-4 shares in 9.4 compare four traces with 19, and no resolved E4B task (fastapi_14301, fastapi_14463, rich_3006, rich_3905) was examined, so whether "executed check" separates E4B wins from E4B losses is open. That is the cheapest next L1 step (zero GPU, four traces).
 6. Nothing in `submission/`, `tools/` or `tests/` was touched; no kernel, no GPU.
+7. 2026-11-05: text removed from 9.1 for hygiene (critic light, 2026-11-05): a command example in the fastapi_13537 bullet and a code-level description of the edit in the fastapi_15589 bullet, both replaced by generic wording. No number or reading changed.
 
 ## Status
 

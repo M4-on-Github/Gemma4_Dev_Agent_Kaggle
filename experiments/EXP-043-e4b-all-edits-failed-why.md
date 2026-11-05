@@ -62,8 +62,8 @@ E2 calls are class f by construction; E3 calls are classed by the same table (a 
 Not blind, disclosed so the readings are weighed accordingly:
 
 - The counts: `n_edit_fail` and `edit_file` per task for all 48 (EXP-042 section 9.7), including that the 8 ids have every edit failed.
-- The error text "Failed to replace: old_string not found. Ensure you're not escaping content incorrectly and check whitespace, indentation, and context." in rich_3105 (not one of the 8), and the agent's own messages in fastapi_14262, fastapi_14463 and fastapi_13207 saying an edit failed because the old string was not found, and in fastapi_13207 one saying it failed on missing mandatory parameters (so E2 occurs in the run; fastapi_13207 is not one of the 8).
-- For rich_4075: the file it edited (`pyproject.toml`), that the first call's old and new strings both begin with the same 8 characters (`python = ` and a quote), that the second call's old string begins with four spaces and a quote, and that its first command was a search for a python-version string. I have not compared the full strings.
+- The harness's not-found error text in rich_3105 (not one of the 8), and the agent's own messages in fastapi_14262, fastapi_14463 and fastapi_13207 saying an edit failed because the old string was not found, and in fastapi_13207 one saying it failed on missing mandatory parameters (so E2 occurs in the run; fastapi_13207 is not one of the 8).
+- For rich_4075: the file it edited (`pyproject.toml`), that the first call's old and new strings both begin with the same 8 characters, that the second call's old string begins with indentation, and that its first command was a search. I have not compared the full strings.
 - EXP-041's classes a, b, c, d for the 19 control ids and 4 targets, which included several of the 8 ids here (the five empty-patch control tasks). Those classes were about where the edit went and why the fix did not land, not about the old string against the file; I recorded no old-string comparison then.
 - The 8 ids' tool histograms and that none of them has a `write_file` call [recheck at mining, not recorded].
 
@@ -131,9 +131,9 @@ Pre-registration commit e94b925. Sections 1 to 8 above are unchanged; this secti
 |---|---|---|
 | E1 old string not found | 22 | 15661 4, 14873 4, 14459 4, 14360 2, 13786 4, rich_3676 3, rich_3063 1 |
 | E2 missing mandatory parameters | 5 | rich_3935 4, 14360 1 |
-| E3 other | 12 | 11 are "target string occurs N times" (13786 4, rich_3063 5, 14360 2), 1 is "old_string and new_string are identical" (15661) |
+| E3 other | 12 | 11 are non-unique-match errors (13786 4, rich_3063 5, 14360 2), 1 is an identical-strings error (15661) |
 
-The "identical" text was not anticipated in section 2; its call is class f (arguments malformed and cut mid-token, with a stray extra key, so both strings ended up equal).
+The identical-strings error was not anticipated in section 2; its call is class f (arguments malformed and cut mid-token, with a stray extra key, so both strings ended up equal).
 
 ### 9.2 Call classes, 39 calls
 
@@ -148,7 +148,7 @@ The "identical" text was not anticipated in section 2; its call is class f (argu
 
 **The c test fires on single-line old strings that are not verbatim lines of any observation.** As pre-registered (defect 2 of section 7 foresaw it), a one-line old string that paraphrases or escapes a line of a file the agent has just read has no line that matches, so it is class c under the precedence c before h, a, b. That applies to the four E1 calls of fastapi_15661 (a pattern line written in a different form from the line in the read) and to the one E1 call of rich_3063 (a line with doubled backslashes). In both tasks the file had been read whole or at that region, so c here does not mean "never looked": the table in 9.3 carries the read column for that reason. A first pass of this section classed those five as b (4) and h (1); the precedence as written was then applied and the counts above are the result.
 
-Descriptive sub-tags added after reading (not in the pre-registration, they change no count above). Of the 16 b calls, 10 altered text the agent had been shown (a corrupted character run inside a long literal, an appended call the file does not have, one changed token in a signature) and 6 ran past the last line the trace shows (the old string closes a statement whose continuation the agent never read: 14459 3 calls, where the read hit the 10000-character limit and cut the function, and rich_3676 3 calls, where the agent's own read range ended mid-statement). The 11 g calls are exact copies that occur 2 to 5 times in the file.
+Descriptive sub-tags added after reading (not in the pre-registration, they change no count above). Of the 16 b calls, 10 altered text the agent had been shown (an altered character run, an added line, one changed token) and 6 ran past the last line the trace shows (the old string closes a statement whose continuation the agent never read: 14459 3 calls, where the read hit the 10000-character limit and cut the function, and rich_3676 3 calls, where the agent's own read range ended mid-statement). The 11 g calls are exact copies that occur 2 to 5 times in the file.
 
 ### 9.3 Task table
 
@@ -186,7 +186,7 @@ Two `edit_file` calls on `pyproject.toml` (the problem statement pairs a renderi
 
 ### 9.6 The other 17 ids with a failed edit (recorded, no reading)
 
-Error type counted for all 43 failed calls: E1 30, E2 4 (fastapi_13207, 14301, 15800, requests_6644, one each), E3 9 (fastapi_14605 5, httpx_3672 3, fastapi_13207 1; every E3 text seen is "target string occurs N times"). Counts per id: E1 15280 1, 14964 4, requests_7315 1, rich_4070 2, 14463 1, 14512 4, 9753 3, 14262 1, httpx_3672 1, 15800 4, rich_3180 4, rich_3480 2, rich_3105 2. All 25 tasks with a failed edit together: E1 52, E2 9, E3 21 of 82 calls. **Stopped at the error type:** the 30 E1 calls of these 17 ids were not classed by letter (a hand comparison of each old string with the file was not done); E2 calls are f and E3 calls are g by construction (4 and 9). fastapi_14605's five failures are all non-unique matches. The per-call classes of the 17 are open for a later job.
+Error type counted for all 43 failed calls: E1 30, E2 4 (fastapi_13207, 14301, 15800, requests_6644, one each), E3 9 (fastapi_14605 5, httpx_3672 3, fastapi_13207 1; every E3 error seen is a non-unique match). Counts per id: E1 15280 1, 14964 4, requests_7315 1, rich_4070 2, 14463 1, 14512 4, 9753 3, 14262 1, httpx_3672 1, 15800 4, rich_3180 4, rich_3480 2, rich_3105 2. All 25 tasks with a failed edit together: E1 52, E2 9, E3 21 of 82 calls. **Stopped at the error type:** the 30 E1 calls of these 17 ids were not classed by letter (a hand comparison of each old string with the file was not done); E2 calls are f and E3 calls are g by construction (4 and 9). fastapi_14605's five failures are all non-unique matches. The per-call classes of the 17 are open for a later job.
 
 ### 9.7 Defects and caveats found
 
@@ -194,11 +194,12 @@ Error type counted for all 43 failed calls: E1 30, E2 4 (fastapi_13207, 14301, 1
 1a. **The c test was applied as written** (no non-blank line of old_string of 8 or more characters appears in any earlier observation). It fires on 15661's four not-found calls and on rich_3063's second call, where the old string is a paraphrase of a line the agent had been shown; the first draft of this section called those b and h and was corrected after review.
 2. **Row 3 as written says g licenses neither a prompt line nor a rule on submit, and this was written without the non-unique case in mind.** The error text of those calls already tells the agent to give more surrounding context, and in 13786, 14360 and rich_3063 the agent repeated an identical call or went back to an earlier one rather than adding context. That is a behaviour a prompt line could address ("when the error says the text occurs more than once, copy lines before and after it"). It is not licensed by a reading; it is recorded as outside the readings.
 3. **The prompt already says old_string must match the file exactly, including indentation** (system prompt in every trace). Row 1's line therefore repeats an existing instruction; what is different is only emphasis or form. Compliance is untested and 8 of 8 tasks had read the region.
-4. **A harness inconsistency, one task.** In rich_3063 the first and second failed calls have the same old string and differ in their new string only by a trailing newline, yet the first got "occurs 4 times" and the second "not found". Whether the tool normalises escapes inconsistently or something else, the trace does not say. Same task: all six old strings carry doubled backslashes relative to the file, and the tool still reported matches for five of them.
+4. **A harness inconsistency, one task.** In rich_3063 the first and second failed calls have the same old string and differ in their new string only by a trailing newline, yet the first got a non-unique-match error (4 occurrences) and the second a not-found error. Whether the tool normalises escapes inconsistently or something else, the trace does not say. Same task: all six old strings carry doubled backslashes relative to the file, and the tool still reported matches for five of them.
 5. **Lost arguments are two different shapes.** In 14360 one call lost old_string (E2). In rich_3935 the model emitted all arguments as a single mangled key and repeated that exact call four times, the same shape every time, saying each time that it had provided the parameters. This is the C-004 path; it was not a copy error and the harness's error text did not change the behaviour.
 6. **Most of these agents stop early.** Wall 59.6 to 190.1 s of the 480 s and at most 17 of 28 calls: the failed-edit tasks did not run out of budget; the agent submits after 3 to 8 failures. 13786 submitted twice with an empty diff and then went back to editing, both times with calls that failed again, and ended with a final text and no submit after the last failure.
 7. **Classification is by hand** and the b calls in particular are a mix of two sub-kinds (altered text 10 calls, and text beyond the read 6). The second sub-kind (6 calls, 2 tasks) would not be helped by "copy exactly" and points instead at read ranges that cover the whole span to be replaced.
 8. EXP-041 and EXP-042 are unchanged. The rich_4075 strings were compared in full only after the pre-registration commit, as the disclosure says.
+9. 2026-11-05: quoted harness error text, a file-content fragment and a code-level description were removed from the disclosure, 9.1, 9.2, 9.6 and 9.7 for hygiene (critic light on EXP-041, lead job); no number or reading changed.
 
 ### 9.8 What this study cannot show
 

@@ -125,9 +125,9 @@ Non-checking ids (31): fastapi_13537, 13786, 14360, 14459, 14512, 14605, 14609, 
 - 11 fastapi ids (fastapi_11355, 13207, 14262, 14297, 14301, 14448, 14463, 14583, 15030, 15589, 9753) ran a `pytest tests/` or bare `pytest` whose output is `collected N items / M errors`, exit 2, with `ModuleNotFoundError` for the missing test dependencies (the marker is in the output of each of these 11 traces). None of those runs ran a test.
 - fastapi_14262, fastapi_14448 and fastapi_14962 each also ran a `pytest <file>` on a path that does not exist: exit 4, `no tests ran`.
 - rich_3006 (win): 813 items collected, the suite ran with failures in other modules, exit 1. Informative by the rule.
-- rich_3935: `pytest tests/test_padding.py`, 5 passed. Informative by the rule. All four of its `edit_file` calls failed and its patch is empty, so the run exercised an unmodified tree.
+- rich_3935: `pytest` on one test file, 5 passed. Informative by the rule. All four of its `edit_file` calls failed and its patch is empty, so the run exercised an unmodified tree.
 - requests_7205 and requests_7427 (both impossible ids): 611 and 623 items collected, tests ran, exit 1, many setup errors (`E`) in the first. Informative by the rule [H]; both are dropped in the informative-27 version.
-- rich_3105: `python3 tools/make_terminal_widths.py` twice, both failing on a missing relative path (`No such file or directory`) for the target. Uninformative by the rule [H]; the script runs the repo's own table generator, not the edit.
+- rich_3105: a repo script run twice, both failing on a missing path. Uninformative by the rule [H]; the script is a repo utility, not a check of the edit.
 
 ### 9.3 E4B 2x2 (counts; no test)
 
@@ -215,6 +215,7 @@ It is observational. There are 5 E4B wins (4 without the free task); 3 ran a cou
 3. rich_3105 and fastapi_14360 are [H] calls (uninformative); requests_7205 and requests_7427 are [H] calls (informative though with many setup errors). Flipping any of the four changes no row of section 4 for the E4B (W stays 1) and no reading for R.
 4. R's sharpened counts are a marker count with 10 hand checks, not a read of all runs.
 5. There are 12 fastapi checkers; 11 got the collection failure and fastapi_14962 only ran a pytest on a missing file.
+6. 2026-11-05: a command string with a repo script path, an error text, and a test file name were removed from 9.2 for hygiene (lead job, after the critic light on EXP-041); no number or reading changed.
 
 ## Status
 
