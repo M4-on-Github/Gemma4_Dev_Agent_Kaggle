@@ -184,4 +184,124 @@ python -I -X utf8 experiments/EXP-035/grader_tests.py --tasks data/raw/tasks.jso
 
 ## 7. Defects in this pre-registration, logged after the fact
 
-None yet.
+1. **(2026-11-05, found by the hand check) The completeness rule in §2.2 collapsed parametrized cases.**
+   - **What the text says.** Ids are cut at `[` and deduplicated, then compared with the count line's failed-plus-errors.
+   - **What goes wrong.** Four failing cases of one parametrized test become one id. A complete list is then read as partial, and a hidden-only task as unreadable. Hand-check item #2 showed it: the eye said hidden only, the tool said unreadable.
+   - **Correction.** The tool now counts one failing node id per summary line, parameters included. That is what pytest prints, and what "the list is complete" means. The cut-and-deduplicate ids are still used to classify each test.
+   - **Effect.** §9 applies §4 to the corrected count and reports the as-written count beside it. The two fire the same row in both arms.
+2. **(2026-11-05) Exit code 124 is not in u0.** §1 and §2.2 name only -1. One RH task has exit 124, the GNU `timeout` code, and an empty tail, which is a grading timeout. The tool labels it crash / u5. Only the cause split moves; the task is unreadable either way.
+3. **(2026-11-05) The order of the unreadable causes was fixed in the code, not in §2.4.** The tool takes the first that matches, in the order u0, u1, u3, u2, u5. A missing third-party module comes first because such a task says nothing about the fix. This affects only the u0 to u5 split.
+4. **(2026-11-05) §2.3 does not separate a (b) failure caused by the agent's patch from a failure the grading environment causes under any patch.** Dev-48 drops tasks whose gold patch failed the gold control, but that control ran in a different environment from these kernels. §9.4 reports one such case as a post-hoc line. The counts are not changed.
+5. **(2026-11-05) The RH last-pass set.** §2.5 says "RH's 4". EXP-034's 4 counts RFWF tasks only; RH's per-task boolean is true for 5 unresolved tasks with a non-empty patch, 4 of them RFWF. §9 gives both counts.
+
+## 8. Runs
+
+There is no kernel and no upload. The script ran locally over `runs/EXP-028-armR/` and `runs/EXP-028-armRH/` (task results, traces), `data/raw/tasks.jsonl` and `data/local/snapshots/`, using the §6 command. The pre-registration was commit 372ab10, before anything was computed. After the §7.1 correction, the script was re-run with the same command. Per-task rows, the hand-check dossier, the key and the eye labels are in `runs/EXP-035/` (gitignored).
+
+## 9. Results (2026-11-05)
+
+GPU: 0.0 h. Every number comes from `experiments/EXP-035/aggregates.json` except the hand check (§9.5). The hand check compares `runs/EXP-035/handcheck/eye.txt`, written before the key was opened, with `key.txt` (the corrected tool) and `key_v1.txt` (the tool as written).
+
+### 9.1 Row 0, infrastructure: does not fire
+
+- RFWF n: R 30, RH 27. Both match EXP-034.
+- RFWF tasks without a tail: 0 in each arm.
+- Snapshot files where `ast` failed: 0.
+- Tests that fell back to the diff-only rule: 0.
+
+### 9.2 Primary endpoint and governing row
+
+| group | n | V | H | U | V share (Wilson 95%) | U share (Wilson 95%) | H / (V + H) |
+|---|---|---|---|---|---|---|---|
+| R RFWF | 30 | 4 | 10 | 16 | 0.133 (0.053-0.297) | 0.533 (0.361-0.698) | 0.714 |
+| R all unresolved non-empty | 33 | 4 | 11 | 18 | 0.121 (0.048-0.273) | 0.545 (0.380-0.702) | 0.733 |
+| RH RFWF | 27 | 3 | 6 | 18 | 0.111 (0.039-0.281) | 0.667 (0.478-0.814) | 0.667 |
+| RH all unresolved non-empty | 33 | 3 | 8 | 22 | 0.091 (0.031-0.236) | 0.667 (0.496-0.802) | 0.727 |
+
+Applying §4 to R RFWF:
+
+- **Row 1 fires (U = 16 >= 15): no reading.** The grader's output cannot say whether existing tests would have exposed the wrong fix.
+- **u1 dominates** (11 of 16; §9.3). By the row as written, the next step is the lead's, a re-grade with the dependencies present, not a design decision.
+- **Replicated.** RH fires row 1 too (U = 18 >= 14).
+- **Rows 2 and 3 are not reached.**
+  - V = 4 (RH 3) is far below row 2's 10 (RH 9).
+  - The readable subset leans hidden only: H / (V + H) is 0.714 in R and 0.667 in RH, both at or above row 3's 2/3. This is descriptive only, because row 1 governs. On 14 and 9 readable tasks it is not a reading.
+- **As written (§7.1).** The uncorrected completeness rule gives R V 4, H 7, U 19 and RH V 3, H 5, U 19. That is the same row in both arms.
+  - The correction moves 3 R tasks and 1 RH task from unreadable to hidden only.
+  - R RFWF tail forms, as written: complete 9, partial 6, collection 15. Corrected: complete 14, partial 1, collection 15.
+- **Sensitivity lines.**
+  - S1 (literal) and S2 (visible-strict) equal the primary in both arms.
+  - **S3 (visible-broad, which counts u2 as visible) alone would move R to row 4 (mixed).** It gives V 6, H 10, U 14: U < 15, V < 10, and H / (V + H) = 0.625 < 2/3.
+  - RH under S3 stays in row 1 (V 6, H 6, U 15 >= 14).
+- **Consistency check: 0 contradictions.**
+  - R: all 7 last-pass tasks are RFWF. 5 are hidden only, 2 unreadable, 0 visible.
+  - RH: 5 last-pass tasks, 4 of them RFWF (§7.5). 3 are hidden only, 2 unreadable, 0 visible.
+
+### 9.3 Why so much is unreadable
+
+| arm, group | u0 patch did not apply | u1 missing third-party module | u2 agent patch breaks import | u3 hidden test imports a new name | u4 partial list / unlocated | u5 other |
+|---|---|---|---|---|---|---|
+| R RFWF (U 16) | 0 | 11 | 2 | 1 | 1 | 1 |
+| R all (U 18) | 0 | 13 | 2 | 1 | 1 | 1 |
+| RH RFWF (U 18) | 0 | 12 | 3 | 0 | 1 | 2 |
+| RH all (U 22) | 0 | 14 | 3 | 0 | 2 | 3 |
+
+- **By repository** (`posthoc_primary_by_repo`):
+  - fastapi accounts for 15 of R's 16 unreadable RFWF tasks, and for 15 of RH's 18.
+  - 15 of the 17 fastapi RFWF tasks in R are unreadable.
+  - The u1 tails are collection errors: a test-only package is missing when the tests are imported at grading. In the tails I read for this experiment and for the hand check, it was the snapshot-testing package that the compat shims stand in for.
+- **Post-hoc: a partial list whose failing files were all created by the test patch.** There is 1 such task in R RFWF, 1 in RH RFWF and 2 in RH all-unresolved. Logically these are hidden only, but §2.4 makes them u4. Moving them would give R V 4, H 11, U 15 and RH V 3, H 7, U 17. R would still be row 1 (U = 15 >= 15).
+- **Post-hoc: exit 124.** The one RH exit-124 task, a grading timeout, is u5 (§7.2).
+- **Tail forms.**
+  - R RFWF: collection 15, complete 14, partial 1.
+  - RH RFWF: collection 15, complete 9, crash 2, partial 1.
+- **Exit codes.**
+  - R RFWF: 1 x15, 2 x15.
+  - RH RFWF: 1 x11, 2 x15, 124 x1.
+
+### 9.4 Test level, and the visible tasks
+
+- **Failing tests by category.**
+  - R RFWF: (a) 0, as the grader's design implies; (b) 13, of which b-strict 11; (c) added 19; (c) changed 6.
+  - RH RFWF: (b) 8, of which b-strict 8; (c) added 18; (c) changed 3.
+- **Diff-only rule against the snapshot rule** (R RFWF): b|b 13, c|b 5, c|c 20, b|c 0. The diff-only rule never calls a test (b) when the snapshot calls it (c). It does miss 5 (b) tests in R (RH 3).
+- **Did the visible tasks run the failing test after their last edit?**
+  - R (V = 4): 1 ran any test, 0 ran that file.
+  - RH (V = 3): 1 ran any test, 1 ran that file.
+- **Post-hoc, unverified (§7.4).** Of the visible tasks, 2 of 4 in R and 2 of 3 in RH are in the requests repository.
+  - In each arm, one visible task's tail traces into the installed copy of that package in site-packages, not into the workspace.
+  - So the requests (b) failures may come from the grading environment, not from the agent's fix: a shadowing install, or a test that fails under any patch.
+  - If they do, the visible count falls to 2 in R and 1 in RH, all in rich.
+  - This was not checked against the gold patch in the same environment. It changes no row.
+
+### 9.5 Hand check
+
+The sample was 10 tasks, pooled over R and RH with `random.Random(35)` and stratified 5 / 3 / 2 by exit code (1 / 2 / other). The eye labels were written before the key was opened.
+
+- **Eye against the tool as written: 9/10 on the per-task category.** The one disagreement is the §7.1 defect: the eye read hidden only, the tool read unreadable (partial).
+- **Eye against the corrected tool: 10/10.**
+- **Sub-label differences.**
+  - The tail form of one visible task (partial against complete). The correction fixes this.
+  - The cause of the exit-124 task (the eye read a timeout, the tool reads u5; §7.2).
+
+### 9.6 Prediction against the outcome
+
+| | predicted | observed |
+|---|---|---|
+| R RFWF V / H / U | 5 / 11 / 14 | 4 / 10 / 16 |
+| visible share | 17% (80% interval 5-35%) | 13.3%, inside the interval |
+| governing row | row 3 (about 50%), row 1 (about 40%), row 2 (about 10%) | **row 1**, the second likeliest |
+| last-pass tasks hidden only or unreadable | at least 5 of 7 | 7 of 7, with 0 contradictions |
+| hand check | at least 8/10 | 9/10 as written, 10/10 corrected |
+
+The miss is in U. fastapi's u1 collection errors exceeded what I allowed for, and that moved the row from 3 to 1.
+
+### 9.7 What this licenses
+
+- **Nothing on the main question.** Row 1 fires and replicates.
+- **Descriptive only.** In both arms:
+  - few readable wrong fixes (4 and 3) fail a test that existed before the test patch;
+  - those that do rarely ran that file after the last edit;
+  - half of them may be environmental.
+- **Next step, by row 1.** Re-grade R's and RH's patches with the missing test-only package present, so the fastapi tasks become readable. The routes are `regrade_patches.py` (the EXP-004 pattern) or the Docker orchestrator. The decision is the lead's.
+- No upload, tree change or GPU arm is licensed (§5).

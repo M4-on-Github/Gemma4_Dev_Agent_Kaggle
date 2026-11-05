@@ -1,0 +1,442 @@
+{
+  "arms": [
+    "R",
+    "RH"
+  ],
+  "R": {
+    "rfwf": {
+      "n": 30,
+      "visible": 4,
+      "hidden_only": 10,
+      "unreadable": 16,
+      "visible_share": 0.133,
+      "visible_wilson95": [
+        0.053,
+        0.297
+      ],
+      "hidden_only_share": 0.333,
+      "hidden_only_wilson95": [
+        0.192,
+        0.512
+      ],
+      "unreadable_share": 0.533,
+      "unreadable_wilson95": [
+        0.361,
+        0.698
+      ],
+      "hidden_share_of_readable": 0.714,
+      "s1_literal": {
+        "hidden_only": 10,
+        "unreadable": 16,
+        "visible": 4
+      },
+      "s2_strict": {
+        "hidden_only": 10,
+        "unreadable": 16,
+        "visible": 4
+      },
+      "s3_broad": {
+        "hidden_only": 10,
+        "unreadable": 14,
+        "visible": 6
+      },
+      "unreadable_causes": {
+        "u1": 11,
+        "u2": 2,
+        "u3": 1,
+        "u4": 1,
+        "u5": 1
+      },
+      "tail_form": {
+        "collection": 15,
+        "complete": 14,
+        "partial": 1
+      },
+      "exit_codes": {
+        "1": 15,
+        "2": 15
+      },
+      "test_level": {
+        "b": 13,
+        "c_added": 19,
+        "c_changed": 6
+      },
+      "test_level_b_strict": 11,
+      "diff_only_vs_snapshot": {
+        "b|b": 13,
+        "c|b": 5,
+        "c|c": 20
+      },
+      "as_written_primary": {
+        "hidden_only": 7,
+        "unreadable": 19,
+        "visible": 4
+      },
+      "as_written_tail_form": {
+        "collection": 15,
+        "complete": 9,
+        "partial": 6
+      },
+      "posthoc_unreadable_partial_all_fail_files_created": 1,
+      "posthoc_exit124_by_cause": {},
+      "posthoc_installed_repo_package_in_tail_by_primary": {
+        "visible": 1
+      },
+      "posthoc_primary_by_repo": {
+        "Textualize/rich": {
+          "hidden_only": 6,
+          "visible": 2
+        },
+        "encode/httpx": {
+          "unreadable": 1
+        },
+        "fastapi/fastapi": {
+          "hidden_only": 2,
+          "unreadable": 15
+        },
+        "psf/requests": {
+          "hidden_only": 2,
+          "visible": 2
+        }
+      },
+      "visible_ran_any_test_after_last_edit": 1,
+      "visible_ran_that_file_after_last_edit": 0
+    },
+    "all_unresolved_nonempty": {
+      "n": 33,
+      "visible": 4,
+      "hidden_only": 11,
+      "unreadable": 18,
+      "visible_share": 0.121,
+      "visible_wilson95": [
+        0.048,
+        0.273
+      ],
+      "hidden_only_share": 0.333,
+      "hidden_only_wilson95": [
+        0.198,
+        0.504
+      ],
+      "unreadable_share": 0.545,
+      "unreadable_wilson95": [
+        0.38,
+        0.702
+      ],
+      "hidden_share_of_readable": 0.733,
+      "s1_literal": {
+        "hidden_only": 11,
+        "unreadable": 18,
+        "visible": 4
+      },
+      "s2_strict": {
+        "hidden_only": 11,
+        "unreadable": 18,
+        "visible": 4
+      },
+      "s3_broad": {
+        "hidden_only": 11,
+        "unreadable": 16,
+        "visible": 6
+      },
+      "unreadable_causes": {
+        "u1": 13,
+        "u2": 2,
+        "u3": 1,
+        "u4": 1,
+        "u5": 1
+      },
+      "tail_form": {
+        "collection": 17,
+        "complete": 15,
+        "partial": 1
+      },
+      "exit_codes": {
+        "1": 16,
+        "2": 17
+      },
+      "test_level": {
+        "b": 13,
+        "c_added": 20,
+        "c_changed": 7
+      },
+      "test_level_b_strict": 11,
+      "diff_only_vs_snapshot": {
+        "b|b": 13,
+        "c|b": 6,
+        "c|c": 21
+      },
+      "as_written_primary": {
+        "hidden_only": 8,
+        "unreadable": 21,
+        "visible": 4
+      },
+      "as_written_tail_form": {
+        "collection": 17,
+        "complete": 10,
+        "partial": 6
+      },
+      "posthoc_unreadable_partial_all_fail_files_created": 1,
+      "posthoc_exit124_by_cause": {},
+      "posthoc_installed_repo_package_in_tail_by_primary": {
+        "visible": 1
+      },
+      "posthoc_primary_by_repo": {
+        "Textualize/rich": {
+          "hidden_only": 7,
+          "visible": 2
+        },
+        "encode/httpx": {
+          "unreadable": 1
+        },
+        "fastapi/fastapi": {
+          "hidden_only": 2,
+          "unreadable": 17
+        },
+        "psf/requests": {
+          "hidden_only": 2,
+          "visible": 2
+        }
+      },
+      "visible_ran_any_test_after_last_edit": 1,
+      "visible_ran_that_file_after_last_edit": 0
+    },
+    "last_pass_034": {
+      "n": 7,
+      "n_rfwf": 7,
+      "primary": {
+        "hidden_only": 5,
+        "unreadable": 2
+      },
+      "visible_with_that_file_run_after_last_edit": 0
+    },
+    "infra": {
+      "rfwf_n": 30,
+      "rfwf_expected_exp034": 30,
+      "rfwf_missing_tail": 0,
+      "ast_fail_files": 0,
+      "diff_fallback_tests": 0
+    }
+  },
+  "RH": {
+    "rfwf": {
+      "n": 27,
+      "visible": 3,
+      "hidden_only": 6,
+      "unreadable": 18,
+      "visible_share": 0.111,
+      "visible_wilson95": [
+        0.039,
+        0.281
+      ],
+      "hidden_only_share": 0.222,
+      "hidden_only_wilson95": [
+        0.106,
+        0.408
+      ],
+      "unreadable_share": 0.667,
+      "unreadable_wilson95": [
+        0.478,
+        0.814
+      ],
+      "hidden_share_of_readable": 0.667,
+      "s1_literal": {
+        "hidden_only": 6,
+        "unreadable": 18,
+        "visible": 3
+      },
+      "s2_strict": {
+        "hidden_only": 6,
+        "unreadable": 18,
+        "visible": 3
+      },
+      "s3_broad": {
+        "hidden_only": 6,
+        "unreadable": 15,
+        "visible": 6
+      },
+      "unreadable_causes": {
+        "u1": 12,
+        "u2": 3,
+        "u4": 1,
+        "u5": 2
+      },
+      "tail_form": {
+        "collection": 15,
+        "complete": 9,
+        "crash": 2,
+        "partial": 1
+      },
+      "exit_codes": {
+        "1": 11,
+        "124": 1,
+        "2": 15
+      },
+      "test_level": {
+        "b": 8,
+        "c_added": 18,
+        "c_changed": 3
+      },
+      "test_level_b_strict": 8,
+      "diff_only_vs_snapshot": {
+        "b|b": 8,
+        "c|b": 3,
+        "c|c": 18
+      },
+      "as_written_primary": {
+        "hidden_only": 5,
+        "unreadable": 19,
+        "visible": 3
+      },
+      "as_written_tail_form": {
+        "collection": 15,
+        "complete": 6,
+        "crash": 2,
+        "partial": 4
+      },
+      "posthoc_unreadable_partial_all_fail_files_created": 1,
+      "posthoc_exit124_by_cause": {
+        "u5": 1
+      },
+      "posthoc_installed_repo_package_in_tail_by_primary": {
+        "visible": 1
+      },
+      "posthoc_primary_by_repo": {
+        "Textualize/rich": {
+          "hidden_only": 4,
+          "unreadable": 2,
+          "visible": 1
+        },
+        "encode/httpx": {
+          "unreadable": 1
+        },
+        "fastapi/fastapi": {
+          "unreadable": 15
+        },
+        "psf/requests": {
+          "hidden_only": 2,
+          "visible": 2
+        }
+      },
+      "visible_ran_any_test_after_last_edit": 1,
+      "visible_ran_that_file_after_last_edit": 1
+    },
+    "all_unresolved_nonempty": {
+      "n": 33,
+      "visible": 3,
+      "hidden_only": 8,
+      "unreadable": 22,
+      "visible_share": 0.091,
+      "visible_wilson95": [
+        0.031,
+        0.236
+      ],
+      "hidden_only_share": 0.242,
+      "hidden_only_wilson95": [
+        0.128,
+        0.41
+      ],
+      "unreadable_share": 0.667,
+      "unreadable_wilson95": [
+        0.496,
+        0.802
+      ],
+      "hidden_share_of_readable": 0.727,
+      "s1_literal": {
+        "hidden_only": 8,
+        "unreadable": 22,
+        "visible": 3
+      },
+      "s2_strict": {
+        "hidden_only": 8,
+        "unreadable": 22,
+        "visible": 3
+      },
+      "s3_broad": {
+        "hidden_only": 8,
+        "unreadable": 19,
+        "visible": 6
+      },
+      "unreadable_causes": {
+        "u1": 14,
+        "u2": 3,
+        "u4": 2,
+        "u5": 3
+      },
+      "tail_form": {
+        "collection": 18,
+        "complete": 11,
+        "crash": 2,
+        "partial": 2
+      },
+      "exit_codes": {
+        "1": 14,
+        "124": 1,
+        "2": 18
+      },
+      "test_level": {
+        "b": 8,
+        "c_added": 20,
+        "c_changed": 7
+      },
+      "test_level_b_strict": 8,
+      "diff_only_vs_snapshot": {
+        "b|b": 8,
+        "c|b": 7,
+        "c|c": 20
+      },
+      "as_written_primary": {
+        "hidden_only": 7,
+        "unreadable": 23,
+        "visible": 3
+      },
+      "as_written_tail_form": {
+        "collection": 18,
+        "complete": 8,
+        "crash": 2,
+        "partial": 5
+      },
+      "posthoc_unreadable_partial_all_fail_files_created": 2,
+      "posthoc_exit124_by_cause": {
+        "u5": 1
+      },
+      "posthoc_installed_repo_package_in_tail_by_primary": {
+        "visible": 1
+      },
+      "posthoc_primary_by_repo": {
+        "Textualize/rich": {
+          "hidden_only": 6,
+          "unreadable": 2,
+          "visible": 1
+        },
+        "encode/httpx": {
+          "unreadable": 1
+        },
+        "fastapi/fastapi": {
+          "unreadable": 19
+        },
+        "psf/requests": {
+          "hidden_only": 2,
+          "visible": 2
+        }
+      },
+      "visible_ran_any_test_after_last_edit": 1,
+      "visible_ran_that_file_after_last_edit": 1
+    },
+    "last_pass_034": {
+      "n": 5,
+      "n_rfwf": 4,
+      "primary": {
+        "hidden_only": 3,
+        "unreadable": 2
+      },
+      "visible_with_that_file_run_after_last_edit": 0
+    },
+    "infra": {
+      "rfwf_n": 27,
+      "rfwf_expected_exp034": 27,
+      "rfwf_missing_tail": 0,
+      "ast_fail_files": 0,
+      "diff_fallback_tests": 0
+    }
+  }
+}
