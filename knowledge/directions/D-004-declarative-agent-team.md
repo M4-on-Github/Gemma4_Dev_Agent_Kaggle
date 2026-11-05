@@ -98,3 +98,52 @@ Changes the lead made the same day:
 - Successor design noted, not scheduled (lead, [I]): since the failure is the fix and not the location, the stage that could use idle capacity on it is a tool-free parallel step of several fix proposals from one located context (this file's original A6 wording), which makes no tool calls, so it neither spends `max_tool_calls` nor produces the function-call events the defect needs. Its open problem is selection (C-015).
 - Small models: the critic says an E2B pair reads no resolves at n = 8 and suggests one E4B single-loop screen; put to the user, both small screens held.
 
+## Addendum 2026-11-05 (lead): bounds and the measurement matrix (user request, ~13:35 UTC)
+
+The user asked that every ability on their list be tested, plus what the lead adds, with mathematically stated maximum
+bounds where they make sense. Each bound below is a formula, its inputs with a tag ([V] official or our own measured
+run, [M] mirror, [I] inference), and what it rules out. Inputs come from `tools/submission_rules.py`, EXP-006, EXP-007,
+EXP-028 Arm R (`experiments/EXP-028/armR/summary.jsonl` and its traces), `experiments/EXP-030/critic.md` and the
+2026-11-05 scout digest. A bound is a ceiling, not an expected gain.
+
+Symbols: N = 120 hidden tasks; c = `max_time_minutes` cap; K = `max_tool_calls`; B = parallel branches; X(B) = server
+throughput multiplier at B concurrent requests; tau = wall seconds per counted call.
+
+| # | Bound | Formula | Inputs | Value | What it rules out |
+|---|---|---|---|---|---|
+| B1 | Worst-case time cap | N (c + 1.0 min) <= 11.0 h | N = 120, setup 1.0 min, gate 11.0 h [V rules] | c <= 4.5 min | any cap above 4.5 min without a measured profile |
+| B2 | Measured-profile headroom at 8 min | h = (H - N (w + s)/3600 - o) 3600/N | w = 297.44 s, s = 0.05 s, o = 0.12 h server start and residual, so 10.04 h projected [V EXP-028 section 9] | 13.8 s per task to our own 10.5 h ceiling; 28.8 s to the 11 h gate; 58.8 s to the 12 h limit | any stage that adds more mean wall than this while shipping at 8 min |
+| B3 | Shared call budget | editor calls >= K - sum of localizer allowances | one counter per task for all agents; `submit_patch` and `get_status` free [V source] | 28 - 15 = 13; 43 - 15 = 28 | "a locate stage returns calls to the editor" (retracted above) |
+| B4 | Least added wall of a pre-stage | >= k turns x turn time; a branch is never faster than one request | median turn 3.56 s, p90 25.86 s [V Arm R traces] | 5 calls + 1 report = 6 turns: >= 21 s median | a pre-stage that fits B2's 13.8 s unless it displaces editor turns |
+| B5 | Concurrency and stage wall | B <= 8.74 at 32k context; stage wall for B branches of k turns ~ k t1 B / X(B) | 31B: X(4) = 3.60, X(16) = 9.85; E4B 45.63, X(4) = 3.47; E2B 67.18, X(4) = 3.21 [V EXP-006]; real overlap in ParallelAgent, wall ratio 0.206 [V EXP-007] | B = 4 does 4x the turns in 1.11x the wall of one branch | more than 8 full-context branches on 31B; any claim that parallelism shortens a single chain of dependent calls |
+| B6 | Tool stall | a synchronous tool blocks siblings for its duration | stall share 78% [V EXP-007 H3]; `read_file` max 0.03 s, read/search commands max 0.72 s, pytest max 81.5 s, python max 241 s [V Arm R] | reads cost nothing; one test run can stall every sibling for over a minute | execution tools inside a parallel stage |
+| B7 | Compaction margin | reads before crossing = (14,336 - P0) / g | threshold 14,336 on the latest prompt of any branch [V source]; first prompt P0 median 2,926, max 5,808; growth g per unranged read median 1,472, p90 1,991; per ranged read median 621, p90 1,427 [V Arm R traces, lead's count] | unranged: 7.7 reads at the median, 4.3 at max P0 and p90 g; ranged: 18 at the median, 6.0 at the worst | a localizer allowance above 4 unranged reads; 5 ranged reads stay under at the worst (12.9k) |
+| B8 | Which cap binds | time binds when c < K tau | tau = 12.83 s per counted call, 10.18 s per turn (mean) [V Arm R] | K = 28: crossover 359 s = 6.0 min. At 8 min the call cap binds (18 of 48 tasks), at 4.5 min the clock binds (30 of 48 walls above 270 s) | reading a cap-bound result at 8 min as a time problem, or the reverse |
+| B9 | Calls that fit at the safe cap | K_fit(c, B) = c X(B) / tau, parallelisable share only | c = 270 s | single loop 21 calls; ceiling 76 call-equivalents at B = 4 if every call were independent [I] | nothing yet: this is the case for parallelism, and it holds only at 4.5 min with a raised K |
+| B10 | Amdahl ceiling per task | speedup <= 1 / ((1 - p) + p / X(B)) | p <= 0.69, the share of counted calls that are reads or searches [V critic]; treats them as independent, which overstates [I] | <= 2.0x at B = 4 | wall savings above half, on any design |
+| B11 | Locate-stage score ceiling | tasks whose miss is location | 45 of 48 name a gold file by about call 2; 30 of 39 unresolved touch a gold file [V critic, L1b] | about 5 of 48, about 6 of 58 on the public board [I] | a locate stage as the source of a jump: the pool is the wrong fix in the right file, at most 30 of 48 |
+| B12 | Selection ceiling | union of two runs' resolves minus the better run | R 9, RH 10, union 11 of 48 [V] | +1 over the better arm with a perfect selector | best-of-two editing without a selector that beats chance (C-015) |
+| B13 | Board resolution | sd = sqrt(58 p (1 - p)); best of k draws | p = 0.18: sd 2.9 tasks; MDE about 4 tasks [V plan.md 5.5]; 18 draws at a true 11 or 12 of 58 give a 17 with probability 0.50 or 0.76 [V scout] | reading a move under 4 tasks as an effect; reading 0.29 as a true 17 of 58 |
+| B14 | What 4.5 min costs the single loop | resolves finishing under 270 s | 8 of 9 Arm R resolves end by 212 s, one at 372 s [V] | at most 1 of 9 lost [I, n = 9] | the belief that 8 min is where the resolves are |
+
+Reading across B2, B3, B8 and B9, written before EXP-032 and EXP-033 report: at the 8 min and 28 call setting the call
+cap binds and parallelism buys nothing a single loop lacks. The setting where idle server capacity can become work is
+the worst-case-safe one, 4.5 min with a raised call cap, where the clock binds and B14 says the single loop loses little.
+That is an inference to be tested, not a result.
+
+### Measurement matrix: the user's list, the endpoint that reads it, and where
+
+| Ability | Endpoint (count or seconds) | Bound it is read against | Read in |
+|---|---|---|---|
+| Multi-agent communication | editor's first edit lands in a file a report named; editor re-reads a report-named file before editing; report length | B3 (calls a re-read wastes) | EXP-032 E4, E11 |
+| Collaboration | pairwise agreement of the three reports on files; gold-file hit by the union against the best single report | B11 | EXP-032 |
+| SWE ability | resolves (dev-48 or the board only; reported without a rate at n = 8); patch touches a gold file; first gold-file edit index; edit argument loss; malformed calls | B11, B13 | EXP-032, EXP-033, every dev-48 arm |
+| Task orchestration | all three reports present when the editor starts; which role is running when a cap ends the task; crashes by class and by author; nudges | B3 | EXP-032 E1, E6, E7 |
+| Parallel agents | peak requests in flight; stage wall against the sum of branch walls (realised speedup against X(B)); compactions per branch; sibling stall seconds | B5, B6, B7, B10 | EXP-032 |
+| Sequential tool calling | calls per model turn (1.00 in Arm R, no multi-call step in 48 traces); seconds per call; identical repeats | B8 | every run |
+| Time constraints | wall per task; which cap ends each task; projected hidden hours; seconds left under the cap | B1, B2, B8, B14 | every run; EXP-033 reads the seconds left on E4B |
+| Model size (lead's addition) | the same endpoints on E4B: seconds per turn, malformed-call rate, whether thinking is honoured | B5 with E4B's X(B) | EXP-033 |
+| Efficiency (lead's addition) | realised over bound for B5 and B9; resolves per GPU-hour once a dev-48 arm exists | B9, B10 | EXP-032 onward |
+
+What a smoke-8 cannot read: any resolve rate, and B11 to B14 as effects. Those need a dev-48 arm (user approval) or the board.
+

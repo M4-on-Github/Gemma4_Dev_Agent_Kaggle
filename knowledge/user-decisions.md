@@ -84,3 +84,13 @@ Budget told to the user: at most 3.2 GPU-h (31B parallel 0.8, E2B baseline and E
 only if triggered). The user's list of things to measure is carried into the EXP-030 pre-registration as required
 endpoints, with the ones a smoke-8 cannot read named as such. The Nov 5 slot closes 23:59 UTC.
 
+## 2026-11-05 ~13:30 UTC: E4B first for the small model; test every listed ability, with stated bounds
+User: "I think we should test for all in addition to what you come up with and have mathamatically formulated maximum
+bounds that make sense if we can. yea we can start with E4B. it is only 8.30 am EST the thing resets at 7pm UTC"
+Read by the lead as: (1) the small-model screen starts with E4B (EXP-033 dispatched and pushed, single loop, smoke-8);
+(2) "test for all" means every ability on the user's earlier list is an endpoint, plus the lead's additions, each read
+against a stated bound (D-004 addendum of this date), not a run on all four model sizes; (3) no decision yet on
+today's upload, S-013 stays proposed. "Resets at 7pm" is read as the daily submission limit, 00:00 UTC = 19:00 EST;
+the lead asked the user to confirm, since the weekly GPU quota or a literal 19:00 UTC would change the plan. The GPU
+ceiling stays 3.2 GPU-h: P1 1.0 to 1.35, E4B 0.45 to 0.8, T4 about 1.0 if it runs.
+
