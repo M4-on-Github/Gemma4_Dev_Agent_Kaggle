@@ -47,7 +47,12 @@ user-invocable: false
   - It fired 49 times in EXP-028 Arm R. `compactions` before 2026-11-05 read 0 and is wrong in every older `summary.jsonl`.
   - `agent.yaml` cannot set it. Details, including the ParallelAgent issue 7324 risk, are in `reference/compaction.md`.
 - `python tools/run_forensics.py forensics runs/<EXP>` (where wall-clock went, first-edit turn); `python tools/run_forensics.py compare runs/<A> runs/<B>` (paired 2x2 on shared ids).
-- `python tools/regrade_patches.py` re-grades collected patches at 0 GPU-h; `tools/gold_control.py` needs the Docker orchestrator and cannot run on Kaggle.
+- `python tools/regrade_patches.py` re-grades collected patches at 0 GPU-h. It runs only on a Kaggle CPU kernel: `swegemma` and the pinned image are not available locally.
+  - Match the scored grade with `--timeout 240 --verification-timeout 300`. The eval notebook passes `timeout_seconds` from `eval_config` but no `verification_timeout_seconds`, so the harness default of 300 s applies.
+  - Empty patches are graded, as base plus the test patch.
+  - Template and builder: `experiments/EXP-036/`. The built `.ipynb` embeds agent patches and must stay untracked.
+  - As of 2026-11-05, the push guard refuses such a notebook: it has no `RUN_AGENT = True` and does not come from exp000. A CPU-only exemption is needed (EXP-036 §8).
+- `tools/gold_control.py` needs the Docker orchestrator and cannot run on Kaggle.
 - `python -I -X utf8 tools/exp024_stats.py` and `tools/exp022_stats.py` regenerate the paper's and the direction reviews' numbers.
 - Only `python -I -X utf8 tools/export_release_csv.py runs/<EXP> ... --out paper/release/<file>.csv` produces a publishable per-task file (positive allowlist of fields).
 

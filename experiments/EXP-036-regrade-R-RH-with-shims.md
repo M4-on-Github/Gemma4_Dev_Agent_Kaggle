@@ -199,6 +199,40 @@ None yet.
 
 ---
 
-## 8. Built and pushed
+## 8. Built, push refused by the guard
 
-Not yet.
+- **Pre-registration:** d86d09c.
+- **Commit 3d9d12c, tool change.** `tools/regrade_patches.py`:
+  - `--verification-timeout` (0 means the same as `--timeout`);
+  - `--tail-chars` (default 6000, unchanged);
+  - a per-row `shims_dropped` list.
+
+  The full test suite passes.
+- **Same commit, the kernel files:**
+  - template `experiments/EXP-036/kaggle_regrade_template.py`;
+  - builder `experiments/EXP-036/build_regrade_notebook.py`;
+  - `notebooks/exp036_regrade/kernel-metadata.json`;
+  - `notebooks/exp036_regrade/.gitignore`, which keeps the built `.ipynb` out of git.
+- **Built 2026-11-05:**
+  - `notebooks/exp036_regrade/kaggle_regrade.ipynb`, 279,290 bytes, ignored and not committed.
+  - Its `TASK_IDS` equal the 48 dev-48 ids.
+  - The embedded zips hold all 48 patches per arm, byte-equal to `runs/EXP-028-arm{R,RH}/patches/`.
+  - There is no `RUN_AGENT` parameter, because no agent runs.
+- **CPU-only, as built:**
+  - the metadata has `enable_gpu: false`, `enable_tpu: false`, `enable_internet: false`, no `machine_shape` and `model_sources: []`, and the builder refuses to build otherwise;
+  - the notebook imports none of `vllm`, `torch`, `litellm` or `google.adk`;
+  - its first code cell records the Python version, any `/dev/nvidia*` device nodes and `CUDA_VISIBLE_DEVICES` into `environment.json`. That file is the runtime confirmation and is read in §9.
+- **Push 2026-11-05: refused by `.claude/hooks/guard_push.py`.**
+  - The command was the kernels push with `-p notebooks/exp036_regrade`.
+  - The guard's message: `Blocked kernel push: RUN_AGENT is not True. Gold controls (RUN_AGENT = False; cell 5 then sets a 60-minute cap) run only from an exp000 directory.`
+  - The guard accepts only notebooks that run the agent, or gold controls from an exp000 directory.
+  - It was not worked around: no dummy `RUN_AGENT`, no exp000 directory name. No kernel exists, and 0 GPU-h and 0 CPU-h were spent.
+- **What the push needs.** A guard exemption recorded in `guard_push.py`. One form: allow a notebook with no `RUN_AGENT` parameter when its `kernel-metadata.json` has `enable_gpu` and `enable_tpu` false, no `machine_shape` and empty `model_sources`. The cohort check stays: `TASK_IDS` against `**Cohort:** dev-48` already passes. Changing the guard is outside the experimenter's paths and is the lead's or the user's decision.
+
+## Status
+
+**BLOCKED by the push guard, 2026-11-05.** The pre-registration and the kernel files are committed, and no kernel has run. Once a guard exemption for CPU-only re-grade notebooks is in place:
+
+1. Rebuild with the §6 step-2 command, because the built `.ipynb` is not in git.
+2. Push the directory `notebooks/exp036_regrade`, kernel id `rainm4/gemma4-exp036-regrade`.
+3. When it is COMPLETE, download its output into `runs/EXP-036-regrade/` and run §6 step 4. The analysis script is written in that job.
