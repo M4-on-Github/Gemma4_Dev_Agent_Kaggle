@@ -348,7 +348,15 @@ RFWF after the re-grade: R n′ = 27 (EXP-034 found 30 as run, and 3 of those ar
 - V = 1, below 7.3.
 - H = 14, at least 2/3 × 15 = 10. **T3, replicated.**
 
-**Reading T3: mostly hidden only.** On the right-file-wrong-fix tasks the grader can now read, the failing tests are almost all tests the test patch adds or changes. The fixes that would catch them need a model-written reproduction that fails before the fix (D-005 F3). Running the existing test file of the edited module would have exposed the wrong fix on 2 of 27 (R) and 1 of 22 (RH).
+**Reading T3: mostly hidden only.** On the right-file-wrong-fix tasks the grader can now read, the failing tests are almost all tests the test patch adds or changes. The fixes that would catch them need a model-written reproduction that fails before the fix (D-005 F3). ~~Running the existing test file of the edited module would have exposed the wrong fix on 2 of 27 (R) and 1 of 22 (RH).~~
+
+*Corrected 2026-11-05, after the critic's light review (`experiments/EXP-036/critic.md`, Q4 and Required fix 1). The struck sentence is kept as first written.*
+- The sentence is replaced by this one. On the RFWF tasks the grader can judge, an existing test in the graded files fails under the patch on 2 of 22 (R) and 1 of 17 (RH). The rest fail only on tests that the test patch adds or changes, and the table stays **T3**.
+- "Visible" is a lower bound. The grader runs only the test-patch files, not "the existing test file of the edited module". For R, the visible count lies between 2 and 7 of 22: the lower bound is V, and the upper bound counts every C or U task as visible.
+- **Post hoc** (not pre-registered), from `aggregates.json` under `<arm>.table.posthoc_excluding_gold_equals_base`. This field was added to `analyze_regrade.py` in the same commit; every pre-existing field regenerates unchanged, and `summary.jsonl` is byte-identical.
+  - Five of the six patch-insensitive tasks of §9.4 item 1 sit inside both arms' RFWF groups: `httpx_3672` as C, and `requests_7205`, `requests_7309`, `requests_7315` and `requests_7427` as H.
+  - On all five, GOLD fails the same tests, so none of them is a judged wrong fix.
+  - Without them, R is n′ = 22 (V 2, H 15, C 5, U 0) and RH is n′ = 17 (V 1, H 10, C 4, U 2). Both still read T3.
 
 **By gated status:**
 - R gated: C 4, H 6. R non-gated: C 2, V 2, H 13.
@@ -378,11 +386,22 @@ These lines are not pre-registered.
 - **Consequences:**
   - The 5-of-33 non-gated GOLD miss in §9.2 is entirely these five tasks.
   - Excluding the six, R goes from 8 to 11 of 42 and RH from 9 to 14 of 42.
-  - Paired comparisons on dev-48 are unaffected: every arm gets the same constant on these six.
+  - Paired comparisons on dev-48 are ~~unaffected~~ **concordant in all eight gradings** on these six: every arm gets the same constant. This is observed, not structural. *Corrected 2026-11-05 after the critic's review (Q3, Required fix 2); the struck word is the one first written.*
   - Absolute dev-48 rates carry one free resolve and five that are impossible.
+  - *Added 2026-11-05 after the critic's review (Required fix 2).*
+    - On the as-run grader, a tree that does not vendor has about **27 informative dev-48 tasks**: 48 minus the 6, minus the 15 gated.
+    - smoke-8 holds three of the six (`httpx_3672`, `requests_7205`, `requests_7309`, all impossible) plus 1 gated task. So at most 4 of 8 are informative there, and a non-vendoring tree can resolve at most 4 of 8 as run.
 - `httpx_3672` is one of R's and RH's C tasks (exit 2).
 
-**2. The C tasks are mostly the patch's own collection errors.**
+**2. ~~The C tasks are mostly the patch's own collection errors.~~ 1 of R's 6 C tasks and 1 of RH's 5 are the patch's own collection error. On the others, BASE already fails collection.**
+
+*Corrected 2026-11-05 after the critic's review (Q4, Required fix 3). The struck heading is the one first written.*
+- The patch's own collection errors are R `fastapi_14605` (SyntaxError, where BASE gives ImportError) and RH `fastapi_14448` (NameError, where BASE exits 1).
+- Source: `aggregates.json`, fields `<arm>.table.posthoc_c_tasks` and `posthoc_c_own_collection_error`, added in the same commit.
+- The rule compares BASE's exit code and the error class names in the two tails. It treats ModuleNotFoundError as ImportError, because an import failure under the patch where BASE also fails to import means the patch did not supply what the tests import.
+- On plain class names the count would be 2 and 2. The extra task is R `fastapi_15661` (ImportError against BASE ModuleNotFoundError) and RH `fastapi_14609` (ModuleNotFoundError for a repository submodule against BASE ImportError); both fall in the import family.
+
+The original text of this item follows unchanged.
 - The gated C tasks fail to collect with errors other than the missing package:
   - R: `TypeError`, `SyntaxError` and two `ImportError`s, on `fastapi_14262`, `fastapi_14605`, `fastapi_14609` and `fastapi_15030`;
   - RH: a `ModuleNotFoundError` for a repository submodule (`fastapi._compat.v1`, not one of the two packages) and the same `TypeError` and `ImportError` tasks.

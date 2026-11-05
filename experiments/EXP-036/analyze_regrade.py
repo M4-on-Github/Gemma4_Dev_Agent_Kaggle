@@ -264,6 +264,41 @@ def main() -> int:
             "b_tests_base_pass": sum(r["n_b_base_pass"] for r in grp),
             "tasks_with_base_unknown_b": sum(r["n_b_base_unknown"] > 0 for r in grp),
         }
+        # Post hoc, added 2026-11-05 after the critic's light review (experiments/EXP-036/critic.md Q4): the same
+        # table without the tasks on which GOLD and BASE grade alike (`insens`), since none of them is a judged
+        # wrong fix; V's bounds (lower = V; upper = V + C + U, every unreadable task counted as visible); and,
+        # per C task, BASE's exit and the error class names in both tails, to tell the patch's own collection
+        # error from one BASE already has.
+        gx = [r for r in grp if r["task_id"] not in insens]
+        cx = Counter(r["cat"] for r in gx)
+        nx = len(gx)
+
+        def err_classes(tail):
+            return sorted(set(re.findall(r"^E\s+(\w+(?:Error|Exception))\b", tail or "", re.M)))
+        c_tasks = []
+        for r in grp:
+            if r["cat"] != "C":
+                continue
+            t = r["task_id"]
+            pe, be = err_classes(rg[arm][t]["tail"]), err_classes(rg["BASE"][t]["tail"])
+            # family rule: ModuleNotFoundError is a subclass of ImportError; an import failure under the patch
+            # where BASE also fails to import means the patch did not supply what the tests import, which BASE
+            # lacks too, so it is not the patch's own error. The raw class-name rule is kept alongside.
+            fam = lambda cs: sorted({"ImportError" if c == "ModuleNotFoundError" else c for c in cs})
+            c_tasks.append({"task_id": t, "gated": r["gated"], "base_exit": rg["BASE"][t]["exit"],
+                            "patch_error_classes": pe, "base_error_classes": be,
+                            "own_error_raw": rg["BASE"][t]["exit"] != 2 or pe != be,
+                            "own_error": rg["BASE"][t]["exit"] != 2 or fam(pe) != fam(be)})
+        out[arm]["table"]["posthoc_excluding_gold_equals_base"] = {
+            "excluded_in_group": sorted(r["task_id"] for r in grp if r["task_id"] in insens),
+            "n_prime": nx, "C": cx["C"], "V": cx["V"], "H": cx["H"], "U": cx["U"],
+            "row": ("T0" if nx < 12 else "T1" if cx["C"] + cx["U"] >= nx / 2 else "T2" if cx["V"] >= nx / 3
+                    else "T3" if cx["V"] + cx["H"] and cx["H"] >= (2 / 3) * (cx["V"] + cx["H"]) else "T4"),
+            "V_lower": cx["V"], "V_upper": cx["V"] + cx["C"] + cx["U"],
+        }
+        out[arm]["table"]["posthoc_c_tasks"] = c_tasks
+        out[arm]["table"]["posthoc_c_own_collection_error"] = sum(x["own_error"] for x in c_tasks)
+        out[arm]["table"]["posthoc_c_own_collection_error_raw_class_rule"] = sum(x["own_error_raw"] for x in c_tasks)
     out["base_status_known_tasks"] = sum(1 for t in ids48 if base_pt[t]["complete"] and not base_pt[t]["interrupted"] and rg["BASE"][t]["exit"] in (0, 1))
 
     a.out.parent.mkdir(parents=True, exist_ok=True)

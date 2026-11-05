@@ -212,7 +212,106 @@
       "b_tests_base_fail": 4,
       "b_tests_base_unknown": 0,
       "b_tests_base_pass": 7,
-      "tasks_with_base_unknown_b": 0
+      "tasks_with_base_unknown_b": 0,
+      "posthoc_excluding_gold_equals_base": {
+        "excluded_in_group": [
+          "httpx_3672",
+          "requests_7205",
+          "requests_7309",
+          "requests_7315",
+          "requests_7427"
+        ],
+        "n_prime": 22,
+        "C": 5,
+        "V": 2,
+        "H": 15,
+        "U": 0,
+        "row": "T3",
+        "V_lower": 2,
+        "V_upper": 7
+      },
+      "posthoc_c_tasks": [
+        {
+          "task_id": "fastapi_14262",
+          "gated": true,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "TypeError"
+          ],
+          "base_error_classes": [
+            "TypeError"
+          ],
+          "own_error_raw": false,
+          "own_error": false
+        },
+        {
+          "task_id": "fastapi_14605",
+          "gated": true,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "SyntaxError"
+          ],
+          "base_error_classes": [
+            "ImportError"
+          ],
+          "own_error_raw": true,
+          "own_error": true
+        },
+        {
+          "task_id": "fastapi_14609",
+          "gated": true,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "ImportError"
+          ],
+          "base_error_classes": [
+            "ImportError"
+          ],
+          "own_error_raw": false,
+          "own_error": false
+        },
+        {
+          "task_id": "fastapi_15030",
+          "gated": true,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "ImportError"
+          ],
+          "base_error_classes": [
+            "ImportError"
+          ],
+          "own_error_raw": false,
+          "own_error": false
+        },
+        {
+          "task_id": "fastapi_15661",
+          "gated": false,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "ImportError"
+          ],
+          "base_error_classes": [
+            "ModuleNotFoundError"
+          ],
+          "own_error_raw": true,
+          "own_error": false
+        },
+        {
+          "task_id": "httpx_3672",
+          "gated": false,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "AttributeError"
+          ],
+          "base_error_classes": [
+            "AttributeError"
+          ],
+          "own_error_raw": false,
+          "own_error": false
+        }
+      ],
+      "posthoc_c_own_collection_error": 1,
+      "posthoc_c_own_collection_error_raw_class_rule": 2
     }
   },
   "RH": {
@@ -325,7 +424,94 @@
       "b_tests_base_fail": 4,
       "b_tests_base_unknown": 0,
       "b_tests_base_pass": 4,
-      "tasks_with_base_unknown_b": 0
+      "tasks_with_base_unknown_b": 0,
+      "posthoc_excluding_gold_equals_base": {
+        "excluded_in_group": [
+          "httpx_3672",
+          "requests_7205",
+          "requests_7309",
+          "requests_7315",
+          "requests_7427"
+        ],
+        "n_prime": 17,
+        "C": 4,
+        "V": 1,
+        "H": 10,
+        "U": 2,
+        "row": "T3",
+        "V_lower": 1,
+        "V_upper": 7
+      },
+      "posthoc_c_tasks": [
+        {
+          "task_id": "fastapi_14262",
+          "gated": true,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "TypeError"
+          ],
+          "base_error_classes": [
+            "TypeError"
+          ],
+          "own_error_raw": false,
+          "own_error": false
+        },
+        {
+          "task_id": "fastapi_14448",
+          "gated": false,
+          "base_exit": 1,
+          "patch_error_classes": [
+            "NameError"
+          ],
+          "base_error_classes": [
+            "TypeError",
+            "ValueError"
+          ],
+          "own_error_raw": true,
+          "own_error": true
+        },
+        {
+          "task_id": "fastapi_14609",
+          "gated": true,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "ModuleNotFoundError"
+          ],
+          "base_error_classes": [
+            "ImportError"
+          ],
+          "own_error_raw": true,
+          "own_error": false
+        },
+        {
+          "task_id": "fastapi_15030",
+          "gated": true,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "ImportError"
+          ],
+          "base_error_classes": [
+            "ImportError"
+          ],
+          "own_error_raw": false,
+          "own_error": false
+        },
+        {
+          "task_id": "httpx_3672",
+          "gated": false,
+          "base_exit": 2,
+          "patch_error_classes": [
+            "AttributeError"
+          ],
+          "base_error_classes": [
+            "AttributeError"
+          ],
+          "own_error_raw": false,
+          "own_error": false
+        }
+      ],
+      "posthoc_c_own_collection_error": 1,
+      "posthoc_c_own_collection_error_raw_class_rule": 2
     }
   },
   "GOLD": {
