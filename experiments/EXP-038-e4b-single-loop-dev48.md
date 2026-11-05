@@ -135,7 +135,7 @@ Computed by:
 | E3 | Wall profile | mean, p90, max of `wall_s`; tasks at each cap: calls (`calls_cap_hit`), time (`time_cap_hit`), turns (80, `n_turns >= 80`), and none (`submit_patch_called` and no cap) | mean 297.4, p90 483.3, max 489.9; 18 calls, 6 time, 23 either |
 | E4 | Malformed calls | sum `n_malformed` / all calls including malformed | 1 call |
 | E5 | Non-empty patch rate | `patch_empty` false, of 48 | 42 of 48 |
-| E6 | First-edit turn | `run_forensics.py forensics`: the median of `first_edit_turn` over the tasks that edited, and the count that never edited. This is a turn index, not EXP-033's counted-call index | median 14, n = 44 |
+| E6 | First-edit turn | the median of `first_edit_turn` over all tasks that edited, and the count that never edited, from `run_forensics.collect_forensics` imported by a short analysis script (as EXP-028 did; the `forensics` CLI prints only per-outcome cohort medians). This is a turn index, not EXP-033's counted-call index | median 14, n = 44 |
 | E7 | Projected hidden-set hours at 120 tasks | `estimate_budget.py --results`; cross-check: mean task wall x 120 / 3600 + this kernel's measured overhead (log end minus the task wall sum) | 10.04 h |
 | E8 | Kernel wall, for the GPU ledger | last kernel-log entry, in hours; the Kaggle figure if one is shown | 4.12 h |
 | E9 | Recorded, not read | seconds per model turn, compactions, `n_edit_arg_loss`, `vLLM up`, decode tok/s, resolves by repo | |
@@ -230,7 +230,7 @@ Rows are applied in order, and the first match governs. Row T is applied in addi
 - **Otherwise:**
   - **Reading:** report the mean and the 10th percentile of seconds left under 480 s, over tasks not at a cap, together with seconds per model turn. These are the room an extra stage would have on this model, in seconds and turns.
 
-## 5. Predictions, written blind (before any E4B dev-48 trace exists)
+### 4.2 Predictions, written blind (before any E4B dev-48 trace exists)
 
 | Endpoint | Prediction | Interval |
 |---|---|---|
@@ -260,7 +260,7 @@ Row T: "otherwise" 85%.
 
 **Follow-up re-grade.** G 0 or 1 of 15, at 65%.
 
-## 6. What this does and does not license
+## 5. What this does and does not license
 
 **Can decide:**
 - whether the E4B single loop, as shipped for the 31B, functions on dev-48 (rows 0 and 1);
@@ -278,7 +278,7 @@ It also produces the dev-48 profile that `plan.md` section 5.8 requires before a
 
 No row licenses an upload. Section 4 says what an upload still needs.
 
-## 7. Exact commands
+## 6. Exact commands
 
 ```
 python -I -X utf8 experiments/EXP-038/cost_estimate.py
@@ -298,7 +298,7 @@ python tools/estimate_budget.py --eval-config experiments/EXP-033/candidate-e4b/
 # copy runs/EXP-038-e4b-dev48/summary.jsonl to experiments/EXP-038/e4b/summary.jsonl
 ```
 
-## 8. Defects in this pre-registration, logged after the fact
+## 7. Defects in this pre-registration, logged after the fact
 
 None yet. Known at writing time:
 
@@ -307,10 +307,11 @@ None yet. Known at writing time:
 3. The kernel output nests one level (EXP-033 section 7(d)).
 4. GPU-h is the log span unless Kaggle shows a figure (section 2.2).
 5. The cost script reads only counts, and its output holds no task text.
+6. Before the push and before any run, section numbers were aligned to the usual shape: predictions became 4.2, and licenses, commands, defects and built moved up one (5 to 8). E6 now names `collect_forensics` for the overall median. No reading, threshold or prediction text changed.
 
-## 9. Built
+## 8. Built
 
-Built 2026-11-05 with the section 7 commands. Committed by pathspec.
+Built 2026-11-05 with the section 6 commands. Committed by pathspec.
 
 **Not pushed.** The critic `prereg` review comes first: the conditional worst case is above 1 GPU-h, and this arm is the section 5.8 gate for a small-model upload. The point estimate's upper end (1.24 h) is above the user's "about 1 hr", and the lead takes that to the user before any push.
 
