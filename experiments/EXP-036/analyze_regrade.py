@@ -275,20 +275,35 @@ def main() -> int:
 
         def err_classes(tail):
             return sorted(set(re.findall(r"^E\s+(\w+(?:Error|Exception))\b", tail or "", re.M)))
+
+        def err_files(tail):
+            # files whose collection failed: the short-summary lines "ERROR <path>[ - <message>]" (no "::",
+            # which would be a per-test setup error, not a collection error)
+            return {m for m in re.findall(r"^ERROR (\S+?)(?:\s+-\s.*)?$", tail or "", re.M) if "::" not in m}
         c_tasks = []
         for r in grp:
             if r["cat"] != "C":
                 continue
             t = r["task_id"]
             pe, be = err_classes(rg[arm][t]["tail"]), err_classes(rg["BASE"][t]["tail"])
-            # family rule: ModuleNotFoundError is a subclass of ImportError; an import failure under the patch
-            # where BASE also fails to import means the patch did not supply what the tests import, which BASE
-            # lacks too, so it is not the patch's own error. The raw class-name rule is kept alongside.
-            fam = lambda cs: sorted({"ImportError" if c == "ModuleNotFoundError" else c for c in cs})
+            graded = set(G.tp_files(tasks[t].get("test_patch") or ""))
+            pf, bf = err_files(rg[arm][t]["tail"]), err_files(rg["BASE"][t]["tail"])
+            new_fail = sorted((pf - bf) & graded) if graded else sorted(pf - bf)
+            # EXP-036 erratum 2026-11-05 (critic re-review, experiments/EXP-036/critic.md): the family rule that
+            # stood here (ModuleNotFoundError folded into ImportError, compared by class name) cleared
+            # fastapi_14609 in both arms and is withdrawn, as is reading the raw class-name rule as a count. The
+            # file-set rule replaces it: the patch's own collection error iff BASE does not exit 2, or a graded
+            # file that collects under BASE fails to collect under the patch. It would miss a patch that changes
+            # the error on an identical file set; that case does not occur in R or RH. The raw class-name rule
+            # is kept as a field only because the first review cited it.
             c_tasks.append({"task_id": t, "gated": r["gated"], "base_exit": rg["BASE"][t]["exit"],
                             "patch_error_classes": pe, "base_error_classes": be,
+                            "n_files_failing_collection_patch": len(pf), "n_files_failing_collection_base": len(bf),
+                            "n_newly_failing_graded_files": len(new_fail),
+                            "patch_tail_under_cap": len(rg[arm][t]["tail"] or "") < TAIL_CAP,
+                            "base_tail_under_cap": len(rg["BASE"][t]["tail"] or "") < TAIL_CAP,
                             "own_error_raw": rg["BASE"][t]["exit"] != 2 or pe != be,
-                            "own_error": rg["BASE"][t]["exit"] != 2 or fam(pe) != fam(be)})
+                            "own_error": rg["BASE"][t]["exit"] != 2 or bool(new_fail)})
         out[arm]["table"]["posthoc_excluding_gold_equals_base"] = {
             "excluded_in_group": sorted(r["task_id"] for r in grp if r["task_id"] in insens),
             "n_prime": nx, "C": cx["C"], "V": cx["V"], "H": cx["H"], "U": cx["U"],
@@ -298,6 +313,8 @@ def main() -> int:
         }
         out[arm]["table"]["posthoc_c_tasks"] = c_tasks
         out[arm]["table"]["posthoc_c_own_collection_error"] = sum(x["own_error"] for x in c_tasks)
+        out[arm]["table"]["posthoc_c_own_collection_error_rule"] = "file-set (critic re-review 2026-11-05)"
+        out[arm]["table"]["posthoc_c_own_collection_error_ids"] = sorted(x["task_id"] for x in c_tasks if x["own_error"])
         out[arm]["table"]["posthoc_c_own_collection_error_raw_class_rule"] = sum(x["own_error_raw"] for x in c_tasks)
     out["base_status_known_tasks"] = sum(1 for t in ids48 if base_pt[t]["complete"] and not base_pt[t]["interrupted"] and rg["BASE"][t]["exit"] in (0, 1))
 

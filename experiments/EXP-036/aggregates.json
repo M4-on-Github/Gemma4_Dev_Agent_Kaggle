@@ -241,6 +241,11 @@
           "base_error_classes": [
             "TypeError"
           ],
+          "n_files_failing_collection_patch": 2,
+          "n_files_failing_collection_base": 2,
+          "n_newly_failing_graded_files": 0,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": false,
           "own_error": false
         },
@@ -254,6 +259,11 @@
           "base_error_classes": [
             "ImportError"
           ],
+          "n_files_failing_collection_patch": 12,
+          "n_files_failing_collection_base": 11,
+          "n_newly_failing_graded_files": 1,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": true,
           "own_error": true
         },
@@ -267,8 +277,13 @@
           "base_error_classes": [
             "ImportError"
           ],
+          "n_files_failing_collection_patch": 5,
+          "n_files_failing_collection_base": 1,
+          "n_newly_failing_graded_files": 4,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": false,
-          "own_error": false
+          "own_error": true
         },
         {
           "task_id": "fastapi_15030",
@@ -280,6 +295,11 @@
           "base_error_classes": [
             "ImportError"
           ],
+          "n_files_failing_collection_patch": 1,
+          "n_files_failing_collection_base": 1,
+          "n_newly_failing_graded_files": 0,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": false,
           "own_error": false
         },
@@ -293,6 +313,11 @@
           "base_error_classes": [
             "ModuleNotFoundError"
           ],
+          "n_files_failing_collection_patch": 1,
+          "n_files_failing_collection_base": 1,
+          "n_newly_failing_graded_files": 0,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": true,
           "own_error": false
         },
@@ -306,11 +331,21 @@
           "base_error_classes": [
             "AttributeError"
           ],
+          "n_files_failing_collection_patch": 1,
+          "n_files_failing_collection_base": 1,
+          "n_newly_failing_graded_files": 0,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": false,
           "own_error": false
         }
       ],
-      "posthoc_c_own_collection_error": 1,
+      "posthoc_c_own_collection_error": 2,
+      "posthoc_c_own_collection_error_rule": "file-set (critic re-review 2026-11-05)",
+      "posthoc_c_own_collection_error_ids": [
+        "fastapi_14605",
+        "fastapi_14609"
+      ],
       "posthoc_c_own_collection_error_raw_class_rule": 2
     }
   },
@@ -453,6 +488,11 @@
           "base_error_classes": [
             "TypeError"
           ],
+          "n_files_failing_collection_patch": 2,
+          "n_files_failing_collection_base": 2,
+          "n_newly_failing_graded_files": 0,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": false,
           "own_error": false
         },
@@ -467,6 +507,11 @@
             "TypeError",
             "ValueError"
           ],
+          "n_files_failing_collection_patch": 1,
+          "n_files_failing_collection_base": 0,
+          "n_newly_failing_graded_files": 1,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": false,
           "own_error_raw": true,
           "own_error": true
         },
@@ -480,8 +525,13 @@
           "base_error_classes": [
             "ImportError"
           ],
+          "n_files_failing_collection_patch": 5,
+          "n_files_failing_collection_base": 1,
+          "n_newly_failing_graded_files": 4,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": true,
-          "own_error": false
+          "own_error": true
         },
         {
           "task_id": "fastapi_15030",
@@ -493,6 +543,11 @@
           "base_error_classes": [
             "ImportError"
           ],
+          "n_files_failing_collection_patch": 1,
+          "n_files_failing_collection_base": 1,
+          "n_newly_failing_graded_files": 0,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": false,
           "own_error": false
         },
@@ -506,11 +561,21 @@
           "base_error_classes": [
             "AttributeError"
           ],
+          "n_files_failing_collection_patch": 1,
+          "n_files_failing_collection_base": 1,
+          "n_newly_failing_graded_files": 0,
+          "patch_tail_under_cap": true,
+          "base_tail_under_cap": true,
           "own_error_raw": false,
           "own_error": false
         }
       ],
-      "posthoc_c_own_collection_error": 1,
+      "posthoc_c_own_collection_error": 2,
+      "posthoc_c_own_collection_error_rule": "file-set (critic re-review 2026-11-05)",
+      "posthoc_c_own_collection_error_ids": [
+        "fastapi_14448",
+        "fastapi_14609"
+      ],
       "posthoc_c_own_collection_error_raw_class_rule": 2
     }
   },

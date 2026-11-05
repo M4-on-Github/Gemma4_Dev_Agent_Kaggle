@@ -393,13 +393,30 @@ These lines are not pre-registered.
     - smoke-8 holds three of the six (`httpx_3672`, `requests_7205`, `requests_7309`, all impossible) plus 1 gated task. So at most 4 of 8 are informative there, and a non-vendoring tree can resolve at most 4 of 8 as run.
 - `httpx_3672` is one of R's and RH's C tasks (exit 2).
 
-**2. ~~The C tasks are mostly the patch's own collection errors.~~ 1 of R's 6 C tasks and 1 of RH's 5 are the patch's own collection error. On the others, BASE already fails collection.**
+**2. ~~The C tasks are mostly the patch's own collection errors.~~ ~~1 of R's 6 C tasks and 1 of RH's 5 are the patch's own collection error.~~ 2 of R's 6 C tasks and 2 of RH's 5 are the patch's own collection error. On the others, BASE already fails collection on the same graded files.**
 
-*Corrected 2026-11-05 after the critic's review (Q4, Required fix 3). The struck heading is the one first written.*
-- The patch's own collection errors are R `fastapi_14605` (SyntaxError, where BASE gives ImportError) and RH `fastapi_14448` (NameError, where BASE exits 1).
+*Corrected 2026-11-05 after the critic's review (Q4, Required fix 3). The first struck heading is the one first written.*
+
+*Erratum 2026-11-05, after the critic's re-review (`experiments/EXP-036/critic.md`, "Re-review 2026-11-05"):*
+- The count of fix 3 was wrong, and the critic says so. The second struck heading is fix 3's.
+- **The rule now used.** The patch's own collection error iff BASE does not exit 2, or a graded file (a test-patch file) that collects under BASE fails to collect under the patch.
+  - The file sets are read from the short-summary `ERROR <path>` lines of the two re-graded tails.
+  - All 11 patch tails are under the 20,000-character cap.
+- **Result.** R: `fastapi_14605` and `fastapi_14609`. RH: `fastapi_14448` and `fastapi_14609`.
+  - On `fastapi_14609`, in both arms, the patch breaks collection of 4 graded files that collect under BASE: 5 files under the patch against 1 under BASE.
+  - On `fastapi_14605` (R), the patch adds 1 such file.
+  - On `fastapi_14448` (RH), BASE exits 1.
+- The analysis script's `own_error` field now applies this rule, and `aggregates.json` is regenerated from it (`posthoc_c_own_collection_error` 2 and 2, with the ids in `posthoc_c_own_collection_error_ids`). `summary.jsonl` is byte-identical.
+- Counted as visible, the own errors put R at 4 to 7 of 22 and RH at 3 to 7 of 17. The post hoc table still reads T3 in both arms (R: V 4, H 15; RH: V 3, H 10).
+- No reading changes. §9.3's "2 of 22 / 1 of 17" stays a valid lower bound on the classifier's V.
+
+Text of fix 3 as first written, now superseded (kept, not deleted):
+- ~~The patch's own collection errors are R `fastapi_14605` (SyntaxError, where BASE gives ImportError) and RH `fastapi_14448` (NameError, where BASE exits 1).~~
 - Source: `aggregates.json`, fields `<arm>.table.posthoc_c_tasks` and `posthoc_c_own_collection_error`, added in the same commit.
-- The rule compares BASE's exit code and the error class names in the two tails. It treats ModuleNotFoundError as ImportError, because an import failure under the patch where BASE also fails to import means the patch did not supply what the tests import.
+- ~~The rule compares BASE's exit code and the error class names in the two tails. It treats ModuleNotFoundError as ImportError, because an import failure under the patch where BASE also fails to import means the patch did not supply what the tests import.~~
+  - The critic's re-review on this rationale: neither class-name rule is sound. The family rule clears `fastapi_14609`, where the patch breaks 4 graded files that BASE collects. The raw rule flags R `fastapi_15661`, where the patch and BASE fail on the same single file.
 - On plain class names the count would be 2 and 2. The extra task is R `fastapi_15661` (ImportError against BASE ModuleNotFoundError) and RH `fastapi_14609` (ModuleNotFoundError for a repository submodule against BASE ImportError); both fall in the import family.
+  - *Erratum note:* the raw rule reaches 2 and 2 only by coincidence (critic). It is kept in `aggregates.json` as `posthoc_c_own_collection_error_raw_class_rule` and is not a count.
 
 The original text of this item follows unchanged.
 - The gated C tasks fail to collect with errors other than the missing package:
