@@ -705,7 +705,9 @@ Under the re-grade, the E4B's 15 gated tasks exit 1 on 10 and 2 on 5.
   - The 3 exit-2 tasks that are not the patch's own are `fastapi_14262`, `fastapi_15030` and `httpx_3672`. They show the same failing file set as BASE.
 - **Over every exit-2 row:** 9 rows, with the same 5 own errors.
 - **EXP-036 reference:** R had 2 of 27 (`fastapi_14605`, `fastapi_14609`). RH had 2 of 22 (`fastapi_14448`, `fastapi_14609`).
+  - *Added 2026-11-05 (critic light, item 4):* with denominators, the counts are 5 of 21 for the E4B, 2 of 27 for R and 2 of 22 for RH. Paired with R, 2 tasks are own errors for both arms (`fastapi_14605`, `fastapi_14609`) and 3 for the E4B only. R has none of its own. These figures are checked against `experiments/EXP-038/regrade/aggregates.json` and `experiments/EXP-036/aggregates.json`.
 - **Caveat:** on `fastapi_15800`, BASE's tail is at the cap. Its BASE file set may therefore be incomplete, and that own-error call is the least certain of the five.
+  - *Corrected 2026-11-05 (critic light):* the fastapi_15800 call does not use BASE's file set. It fires because BASE exits 1, with no collection interruption and its summary present, so it is as firm as fastapi_14964 and fastapi_15280. The capped BASE tail does not weaken it.
 - Of the 5, 3 are gated (`fastapi_14605`, `fastapi_14609`, `fastapi_14964`). On those three, the E4B's patch breaks collection of a graded file with the stand-ins present. So G = 0 is partly the patches' own doing, not only the missing packages.
 
 **Prediction scored.**
