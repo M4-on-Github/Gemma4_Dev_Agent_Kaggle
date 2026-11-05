@@ -215,6 +215,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - tests: EXP-033 (smoke-8; critic review pending)
 - history: 2026-11-05 added by the lead as hypothesis
 - history: 2026-11-05 note: the E4B dev-48 question is unchanged by EXP-036; any E4B number on dev-48 carries the same grading gap (C-021) and the 43 of 48 ceiling (C-022)
+- history: 2026-11-05 note: the user approved the E4B dev-48 reference arm on the condition of about 1 GPU-h (EXP-038, to be pre-registered; `knowledge/user-decisions.md`)
 
 ## C-021: On the Kaggle subprocess grader, 15 of 48 dev-48 tasks (all fastapi) are graded without two test-only packages. The shipped v24 prompt does not vendor them, and R and RH resolve 0 of 15. With API-faithful stand-ins present, the same patches resolve 3 of 15 (R) and 5 of 15 (RH), 3 of them in both. So 3 to 5 of the v24 lineage's dev-48 failures are the grading gap, not the fix
 - status: supported
@@ -241,3 +242,12 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - history: 2026-11-05 critic light review of EXP-036: evidence is concordance in eight gradings (GOLD, BASE, R re-grade, and all six EXP-034 arms as run), observed, not structural; McNemar comparisons unaffected; changed by it: absolute rates, any power stated on n = 48, EXP-034's always/none counts (6/31 becomes 5/26), the right-file-wrong-fix denominators (R 22), and smoke-8, which holds three of the six (at most 4 informative tasks of 8 for a tree that does not vendor). Status unchanged until the text fixes are re-reviewed
 - history: 2026-11-05 correction to the line above: the gradings are ten, not eight (GOLD, BASE, the R and RH re-grades, and the six EXP-034 arms as run); requests_6644 resolves and the other five do not in each
 - history: 2026-11-05 hypothesis -> supported, confidence medium -> high as an observation (the mechanism is not verified), reworded as the critic required: critic re-review of EXP-036, verdict accepted (`experiments/EXP-036/critic.md`). Earlier title: "Six dev-48 tasks grade the same with the gold patch and with no patch on the Kaggle sandbox, so the reachable dev-48 ceiling is 43 of 48, with one free resolve and five impossible ones". The 28 as run is the critic's inference
+
+## C-023: On the E4B, tool-less voters at different temperatures that vote on the executor's next move, with a fixed tie rule, raise the resolve count over the E4B single loop within the 8 minute cap
+- status: hypothesis
+- confidence: low
+- topics: [architecture, budget]
+- expected gain: unknown; no bound yet. The E4B single loop leaves about 423 s under the cap (EXP-033, smoke-8), which is the room voting would spend.
+- sources: user request 2026-11-05 (`knowledge/user-decisions.md`); D-004 bounds B3 (one call counter for all agents), B5 (E4B 45.63x KV room, X(4) = 3.47); EXP-032 P1 row e (prompt-only call limits ignored, the editor starved); `research/lit/lit-2026-11-05-architecture-families.md` (majority vote over patches: no gain, ties at N of 3 or fewer; nothing on per-step voting in a repo task)
+- tests: none yet; L0 desk check dispatched to the screener (is it expressible in the declarative config, does the loop terminate, the bound on the voter count, per-agent sampling)
+- history: 2026-11-05 added by the lead as hypothesis, on the user's request; filed under D-005 as a family, no GPU approved yet

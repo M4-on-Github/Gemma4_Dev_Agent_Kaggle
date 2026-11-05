@@ -113,3 +113,11 @@ higher GPU ceiling: the lost run (about 0.7 GPU-h) counts against the 3.2, and a
 - Scope: this covers the guard change and the EXP-036 push it unblocks. It is not a GPU ceiling change and not an approval of any upload or dev-48 arm.
 - Not decided: what to do with the tracked EXP-004 files `notebooks/regrade_shim_dev48/kaggle_regrade_shim.{py,ipynb}` that embed agent patches.
 
+## 2026-11-05 ~17:30 UTC: option (c), and voting agents
+User, verbatim: "yea if it is only 1 hr of GPU go with c. I also wanna try voting agents where agents vote for the best next move (with varying temps and stuff) and if there is a tie we choose smth by some deterministic good rule. I also wanna try this witht he E4B maximum allowed agents for fun."
+Read by the lead as:
+- Option (c) is approved on a condition: the E4B single loop on dev-48 runs if it costs about 1 GPU-h. Point estimate from EXP-033's own numbers: 0.25 h for 8 tasks including about 0.13 h of kernel overhead, so about 0.12 h per 8 tasks, 0.72 h for 48, 0.85 to 1.0 h in all. Conditional worst case: every task at the 8 minute cap is about 6.8 h; smoke-8 capped 0 of 8 with 423 s to spare, so that is a bound, not a forecast. The lead goes back to the user only if the pre-registration's estimate lands materially above 1.0. No vendoring GPU this week (options (a) and (b) are closed).
+- Voting agents: a request to try it, read as design and a zero-GPU desk check now (new claim C-023, filed under D-005 as a family), then a smoke-8 screen on the E4B whose cost is stated to the user before any push. Not read as a higher GPU ceiling: 3.2 stands until the user says a number.
+- "Maximum allowed agents" is read as the largest number of voters the clock and the server's memory permit on the E4B, stated as a bound, not the validator's `MAX_AGENTS = 500`.
+- "Some deterministic good rule" for ties: a declarative config has no code, so the rule is a fixed sentence in the tallying agent's prompt (for example: the lowest-temperature voter among the tied wins); whether the agent applies it is recomputed from the traces offline.
+- Not approved by this message: any upload, any 31B dev-48 arm, the D-005 screens other than the above.
