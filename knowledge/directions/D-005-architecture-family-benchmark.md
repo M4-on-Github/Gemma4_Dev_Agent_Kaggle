@@ -120,6 +120,8 @@ Review: `experiments/EXP-034/critic.md` (verdict needs-work on EXP-034; every Q1
 - Smoke-8 kill rules, with the critic's binomials: "reached in fewer than 4 of 8" kills a true 60% rate 17% of the time, so a kill at the screen gets one re-run on a second set of 8 before it stands.
 - Ship decisions stay on the as-run grade until we know whether the hidden grader has the packages.
 
+**Stage 0c result (2026-11-05, EXP-036, c680b31; not yet critic-reviewed).** Row 1 fired: with the two packages present the baseline's patches resolve 3 of the 15 gated tasks in Arm R (9 -> 12 of 48) and 5 in RH (10 -> 15), with no other task changing. The vendoring screen is therefore next, on a cohort of gated tasks (smoke-8 holds one). The recomputed EXP-035 table is T3: the wrong fixes fail on tests the hidden patch adds or changes (19 of 27 in R, 14 of 22 in RH) and an existing test would have exposed 2 of 27 and 1 of 22, so the "required executed check" row of the table above has a pool of 1 to 2 tasks if the check is the existing tests; it moves below the vendoring screen. Six dev-48 tasks ignore the patch (C-022): the reachable ceiling is 43 of 48. Check 0d (compaction on the sometimes-solved tasks) is deferred: EXP-032 P1 parked the parallel stage the same day and the orchestrator forms are last in the order.
+
 ## Risks and kill criteria
 - Stage 0 kills: F1 if union minus best is under 4 tasks; the existing-test verifier if most right-file-wrong-fix tasks end on a visible pass (F3 then needs the reproduction form or is dropped).
 - A family is killed at its screen by the rule in its table row, after at most one fix and re-run.
