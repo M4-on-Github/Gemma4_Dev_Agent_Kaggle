@@ -154,6 +154,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - sources: plan.md §4.1 and §6.0.3; EXP-007 (ADK ParallelAgent gives real concurrency, max_in_flight 2, but a sync tool call stalls the sibling branch ~78%); EXP-024 §3 Q7 (no-go); lit-2407.01489 (Agentless: pipeline, not agent loop; selection signals need tests)
 - tests: EXP-006, EXP-007 (probes; no agent run)
 - history: 2026-10-29 migrated as hypothesis; parked
+- history: 2026-11-05 evidence added, status unchanged (no critic verdict): lit-2026-11-05-architecture-families found no source for the 12/18 -> 6/18 figure; lit-2512.08296 has every multi-agent topology at or below the single agent at equal budget (n = 20, direction only); lit-2602.03786 is mixed by model. D-005 ranks the orchestrator last and screens it only on the user's request.
 
 ## C-015: Best-of-N attempts are affordable in wall-clock (88.6% idle KV capacity) but there is no selection signal without hidden tests, so N parallel editing branches cannot pay; N read-only localizers feeding one editor is the only fitting shape
 - status: hypothesis
@@ -161,8 +162,9 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - topics: [selection, multi-agent]
 - expected gain: unknown; parked until a selection proxy exists.
 - sources: EXP-006 (max_concurrency_32k(31B) = 8.74); lit-2512.13607 (regression tests then reproduction tests then majority vote; majority vote saturates early); lit-2505.23604 (Best@50 = 41.6 with a reward model); lit-2602.03419 (55.0 -> 68.2 at TTS@8 with a verifier); research/2026-10-28-literature-review.md §4 (Trae selector peaks at 5-6 candidates)
-- tests: none
+- tests: EXP-034 (zero GPU; critic review pending)
 - history: 2026-10-29 migrated as hypothesis; parked
+- history: 2026-11-05 evidence added, status unchanged (no critic verdict): EXP-034 Q1 union minus best is 5 of 48 over six arms but 1 between R and RH; best free proxy +3.0 over a random arm, +1.12 over a random non-empty patch. lit-2026-11-05-architecture-families: selectors that run tests close 39 to 55% of the gap to the oracle, majority vote adds nothing. Unparked as family F1 of D-005 with an executed selector.
 
 ## C-016: Task difficulty on dev-48 is strongly heterogeneous but only about half to two-thirds of a run's resolves repeat across runs of different configs
 - status: hypothesis
@@ -190,3 +192,21 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - sources: EXP-009 Part C5 (20/20 resolved runs reproduced before their first edit) and Part C2; plan.md §6.1a (27.3% of wall-clock in heredoc repro files); kg-rank3-apache §3 (script-writing calls fell from 28% to 0-3% of calls by v20)
 - tests: EXP-017 (LB only, uninformative)
 - history: 2026-10-29 migrated as hypothesis
+
+## C-019: On right-file-wrong-fix tasks the agent hands in its patch without running any test after its last edit, so an executed verify step is the structural change with the most room
+- status: hypothesis
+- confidence: low
+- topics: [multi-agent, prompt, budget]
+- expected gain: about +2 of 48 if the published effect of regression-test checking transfers (lead's inference); the pool is at most 23 of 48 and unsized until EXP-035.
+- sources: EXP-034 section 9.2 (R: 21 of 30 with no test after the last edit, 7 on a visible pass and wrong, 15 of 30 ended by submit; RH replicates); lit-2504.07164 (regression tests +4.5 points); lit-2604.13120 (Tester -14, Debugger -11, Critic -4 of 100 on removal); lit-2310.01798 (self-correction without an external signal lowers accuracy)
+- tests: EXP-034 (zero GPU; critic review pending); EXP-035 planned
+- history: 2026-11-05 added by the lead as hypothesis from D-005 Stage 0
+
+## C-020: The E4B model runs the shipped single loop without malformed calls and finishes in about a minute per task, so for the small-model prize the clock is not the constraint
+- status: hypothesis
+- confidence: low
+- topics: [budget, rules]
+- expected gain: none claimed; opens the small-model prize at about 1 GPU-h per dev-48 arm.
+- sources: EXP-033 section 9 (8 of 8 ran, 0 malformed in 43 calls, 6 of 8 non-empty patches, mean wall 56.9 s, 423 s left under the cap; resolves 2 of 8 recorded, not read); lit-2506.03524 (fixed workflow beat a free loop below about 10B in one table)
+- tests: EXP-033 (smoke-8; critic review pending)
+- history: 2026-11-05 added by the lead as hypothesis
