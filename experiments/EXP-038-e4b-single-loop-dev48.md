@@ -468,6 +468,8 @@ Whether a cancelled Kaggle batch kernel keeps any of its output is unverified he
 
 ~~BUILT, NOT PUSHED (2026-11-05). Awaiting the critic `prereg` review and the lead's word to the user on the 0.88-1.24 h point range.~~
 
+**Re-grade RUNNING since 2026-11-05 20:50 UTC:** CPU kernel `rainm4/gemma4-exp038-regrade` v1, with the GPU off. The push record is at the end of section 9. Next: download, un-nest, then read F and G.
+
 **COMPLETE, ANALYZED (2026-11-05).** Section 9 has the results. The governing row is row 4, no difference detected: E2 is 4-0 against the E4B, p = 0.125. Row T takes its "otherwise" branch, with 225.6 s of room per task. The kernel ran 1.267 h by its log span. The follow-up is the section 3.3 CPU re-grade, a separate zero-GPU job, where fault row F and G are read. No row licenses an upload.
 
 ~~BUILT, NOT PUSHED (2026-11-05).~~ ~~**RUNNING since 2026-11-05 19:02 UTC**~~ (superseded by the line above): kernel `rainm4/gemma4-exp038-e4b-dev48` v1. The stop-rule clock times are 20:47 and 21:02 UTC. Next, a separate job when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp038-e4b-dev48 -p runs/EXP-038-e4b-dev48/`, un-nest, then the section 6 analysis commands. The lines below are kept as written before the push.
@@ -613,3 +615,29 @@ The download nested one level and was un-nested (section 7, item 3). Traces and 
 - anything about the 31B lineage.
 
 **Still to run:** the section 3.3 CPU re-grade, pre-registered as a separate zero-GPU job. Fault row F and G are read when it runs.
+
+### Re-grade push record, 2026-11-05
+
+- **Kernel:** `rainm4/gemma4-exp038-regrade`, version 1.
+- **Push time: 2026-11-05 20:50 UTC**, from `date -u` (20:50:23) taken right after the push returned.
+  - The CLI reported: `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp038-regrade`
+- **Status**, checked once after the push: `KernelWorkerStatus.RUNNING`.
+- **GPU off.** `notebooks/exp038_regrade/kernel-metadata.json` is `notebooks/exp036_regrade/kernel-metadata.json` with only `id` and `title` changed. It sets:
+  - `enable_gpu: false`, `enable_tpu: false`, `enable_internet: false`;
+  - no `machine_shape` and `model_sources: []`;
+  - the CPU `docker_image` and the wheelhouse dataset, both the same as EXP-036.
+  - The builder also refuses any metadata that asks for an accelerator.
+- **Built** with this command (section 7, item 9):
+
+  `python -I -X utf8 experiments/EXP-036/build_regrade_notebook.py --template experiments/EXP-036/kaggle_regrade_template.py --cohort experiments/cohorts/dev-48.txt --arm E4B=runs/EXP-038-e4b-dev48/patches --exp-id EXP-038-regrade --passes E4B,GOLD,BASE --out notebooks/exp038_regrade/kaggle_regrade.ipynb`
+
+  - It has 48 ids and 48 E4B patches. `fastapi_13537`'s patch is empty and is graded as base plus the test patch.
+  - Passes, in order: `E4B`, `GOLD`, `BASE`.
+  - Timeouts: 240 s and 300 s. Tail: 20000 characters.
+  - The notebook's sha256 is `4932f0bcfad49a0ec01546c2f49054d44f34eacfa196198bdde7d07bc60e1d3f`.
+- **The notebook is not committed.** It embeds the agent patches (plan.md:52). As with EXP-036, `notebooks/exp038_regrade/.gitignore` ignores `*.ipynb`. Only that file and `kernel-metadata.json` are tracked, both committed in 2eab7b4 before the push.
+  - The push guard passed the notebook under its CPU-only exemption: no `RUN_AGENT` parameter and CPU-only metadata.
+- **Next, a separate job.** When the lead reports COMPLETE:
+  1. `kaggle kernels output rainm4/gemma4-exp038-regrade -p runs/EXP-038-regrade/`
+  2. Un-nest `runs/EXP-038-regrade/runs/EXP-038-regrade/`.
+  3. Read fault row F (GOLD 43 of 48, BASE 1 of 48, 48 rows per pass), then G, as section 3.3 sets out.
