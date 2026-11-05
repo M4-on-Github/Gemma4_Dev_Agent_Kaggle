@@ -148,7 +148,7 @@ What I checked: `git diff 143fba1 4024082` on the EXP file, on `cost_estimate.{p
 
 **Item 3: what the data can and cannot exclude [mine].** §9.4 and §9.6 already say the result is not evidence of equality.
 - The paired difference, R minus E4B, is 4 of 48. Its 95% interval (Newcombe paired score, continuity-corrected) is -0.5 to +9.1 tasks.
-- The upper end reaches the largest deficit this design can show, which is 8: R's 9 minus the free requests_6644.
+- The upper end exceeds the largest deficit this design can show, which is 8: R's 9 minus the free requests_6644. So the top of the interval carries no information.
 - So the data rule out an E4B advantage of more than about 1 task, and rule out no E4B deficit at all.
 - For row 3 to fire, the E4B had to lose 6 of R's 8 non-free resolves and gain none.
 
@@ -159,7 +159,9 @@ What I checked: `git diff 143fba1 4024082` on the EXP file, on `cost_estimate.{p
 - **fastapi_13537, listed as a resolve risk.** It is not a clock risk (see the analysis below).
 
 **Item 5: claims.**
-- **C-020** may move to `supported`. Confidence is high for the time profile on dev-48; that it carries over to the hidden repos is my inference. Wording I accept: "The E4B runs the shipped v24 single loop at 8 min / 28 calls well inside the clock: on dev-48 (EXP-038) 0 of 48 tasks hit a cap, the mean task wall is 85.7 s (max 207.3 s), the projection is 2.98 h for 120 tasks against the 10.5 h rule, and `analyze_traces` counts 0 malformed calls in 478. For an E4B upload of this tree the clock is not the constraint. It resolves 5 of 48 as run against the 31B's 9 (paired 4-0, p = 0.125), which does not show that the two are equal."
+- **C-020** may move to `supported`. Confidence is high for the time profile on dev-48; that it carries over to the hidden repos is my inference.
+  - **Its title must be restated.** "Without malformed calls" and "about a minute per task" both come from smoke-8. dev-48 shows an uncounted format failure and an 85.7 s mean.
+  - Wording I accept: "The E4B runs the shipped v24 single loop at 8 min / 28 calls well inside the clock: on dev-48 (EXP-038) 0 of 48 tasks hit a cap, the mean task wall is 85.7 s (max 207.3 s), and the projection is 2.98 h for 120 tasks against the 10.5 h rule. `analyze_traces` counts 0 malformed calls in 478. That count does not see one task, fastapi_13537, which wrote its calls as text and ended with 0 tool calls. For an E4B upload of this tree the clock is not the constraint. It resolves 5 of 48 as run against the 31B's 9 (paired 4-0, p = 0.125), which does not show that the two are equal."
 - **C-023** keeps its status and may cite: "On the E4B single loop, the 10.5 h rule leaves 225.6 s per task on average for an extra stage (EXP-038 row T). This binds before the per-task cap room, mean 394 s. A voting tree's dev-48 mean task wall must stay below about 311 s."
 
 **Item 6: no note is needed.**
@@ -171,6 +173,13 @@ What I checked: `git diff 143fba1 4024082` on the EXP file, on `cost_estimate.{p
   - its median first edit is at turn 6, against R's 14;
   - 47 of 48 tasks end by submit;
   - no task uses more than 21 calls.
+- **Why the E4B trails by 4 (competing explanations):**
+  - it submits before the fix is complete (an early stop);
+  - it edits the wrong file;
+  - it cannot write the fix even when it finds the right file;
+  - chance, since 4-0 is consistent with no deficit.
+
+  The cheapest test is below, at zero GPU.
 - **fastapi_13537 is a format failure that no endpoint counts.**
   - Three of its replies put a tool name inside a fenced block, each one after a harness continuation nudge, and the task ended with 0 tool calls.
   - `n_malformed` counts only a tool-call token left in the content. So "0 malformed" does not mean that every intended call parsed.
@@ -183,6 +192,6 @@ What I checked: `git diff 143fba1 4024082` on the EXP file, on `cost_estimate.{p
   - EXP-040's 140 s wall bar sits on a reference that moved about 38%.
 
 **Suggested next.** All zero GPU:
-- mine the 4 R-only ids to see whether they are early stops (E4B call counts, and the files edited against the gold files);
+- mine the 4 R-only ids (fastapi_13537, fastapi_15589, fastapi_9753, rich_3067): E4B call counts and first-edit turn, and the files edited against the gold files. This separates the first three explanations; chance needs a larger cohort;
 - fix the `nudges` count in `analyze_traces.py`;
 - read the re-grade (F, then G) when it completes. It is already running on CPU (9ec5c7d).
