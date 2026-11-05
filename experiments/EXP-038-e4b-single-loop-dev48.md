@@ -396,6 +396,9 @@ None yet. Known at writing time:
    - Fix 2 is in the E7 row and the note below the section 3.1 table, in E9 and in row 2.
    - Fix 3 is the room definition under row T.
    - Fix 4 is in four places: section 2.2 (the critic's central estimate and probabilities; point A withdrawn), section 4.2 (the restated prediction, with E8 = 1.12 h), row 0b (the gated clause narrowed) and section 3.3 (re-grade fault row F).
+   - *Clarified 2026-11-05.* Two counts of "capped" now appear in section 4.1:
+     - Row T's cap-bound test, 15 or more of 48, keeps its first-written rule: either cap, meaning `calls_cap_hit` or `time_cap_hit` (Arm R 23).
+     - The set U in the room definition also excludes the turns cap (Arm R would be 24 excluded), so the room is measured only on tasks at no cap at all.
    - `cost_estimate.py` gained one output key, `after_critic_prereg_2026_11_05`. Every earlier key is unchanged: the re-run output was compared key by key with the committed JSON.
 8. *Logged 2026-11-05.* The ledger arithmetic elsewhere ("1.86 + 1.24 = 3.10") used point B as if it were an upper end (critic, item 1). This file never stated B as a bound, but the 1.24 h figure handed to the lead was read that way.
 
@@ -424,7 +427,7 @@ Against 2.0 h:
 **The rule, applied by people, not by the kernel:**
 1. The lead counts elapsed time from the push. That count includes queueing, so it runs ahead of GPU time, which is the safe side.
 2. If the kernel is not COMPLETE at 1.75 h elapsed, the lead tells the user then, and does not let the run go on past 2.0 h on its own reading.
-3. Cancelling is the user's action in the Kaggle UI. No agent here has a cancel command.
+3. Cancelling is the user's action in the Kaggle UI. No guarded agent command list in `.claude/agents/*.md` includes a cancel; the experimenter's commands are not prefix-guarded, and whether the Kaggle CLI has a cancel command is not verified here [I].
 4. A kernel cancelled there is read as **truncated under row 0** (section 4.1, the clause dated 2026-11-05 for a cancellation under this rule), whatever number of rows survive. Endpoints on any rows that survive are reported, not read, and no E4B proposal follows.
 5. A re-run needs a new GPU approval from the user.
 
