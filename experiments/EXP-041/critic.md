@@ -2,7 +2,7 @@
 id: EXP-041-critic
 exp: EXP-041
 tier: light
-verdict: needs-work
+verdict: accepted
 verified: regenerated
 date: 2026-11-05
 ---
@@ -28,3 +28,11 @@ date: 2026-11-05
 Delete the original text rather than striking it through, because struck text still carries the content. Add a dated note in §9.6 saying the text was removed for hygiene (critic light, 2026-11-05).
 1. In §9.1, the fastapi_13537 bullet: replace the parenthetical that begins "(for example a" with "(a shell search and a file read, written as text)".
 2. In §9.1, the fastapi_15589 bullet: replace the sentence that begins "The edit flips the fallback" with "The edit inverts a boolean default in the gold file." Keep the sentence that follows it, on Arm R.
+
+## Re-review 2026-11-05
+**accepted.**
+- 466a296 applies both fixes word for word, deletes the old text and adds the note at §9.6 item 7. No number or reading changed.
+- The passages that remain are allowed under the hygiene line in `experiments/EXP-043/critic.md`:
+  - first-word command labels;
+  - the paraphrase of our own prompt;
+  - the unquoted description of how a call began.

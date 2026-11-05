@@ -90,3 +90,8 @@ on the 31B (EXP-034) and is not shown for the E4B."
 ```
 
 The C-020 EXP-041 note stands.
+
+## Note 2026-11-05
+- Item 7 of §9.10 (3c77885) is acceptable as written. It is more exact than my text above. Its parenthetical describes the stderr without quoting it, which keeps it inside the hygiene line in `experiments/EXP-043/critic.md`.
+- One residual remains. The example search command in §2 reproduces rich_4075's search term. The replacement text is in the EXP-043 review.
+- Verdict unchanged.
