@@ -187,6 +187,22 @@ python tools/run_forensics.py compare runs/EXP-033-e4b/runs/EXP-033-e4b <inner b
 
 **Defects known at writing.** (1) The real ADK substitution has not run: `google.adk` does not import here (no `opentelemetry`), so (b) is a source read plus a port. (2) The realistic `cands` length is an estimate: no E4B candidate list exists on disk. (3) The voters decide on the proposer's restatement (2.2), so a bad `ISSUE:` line makes a bad vote, and C and A cannot tell the two apart. (4) `thinking_budget: 0` and `include_thoughts: false` are validated but whether the E4B template honours them is unverified (F5); the first trace shows it. (5) The actor on default contents inherits the proposer's reads, so its first call may sit close to 14,336. (6) `tally.py` cannot be run by this agent's shell outside pytest; a wrapper under `tools/` or the experimenter's hand is needed after the run. (7) A is a hand judgement by one reader.
 
+**Found at analysis, 2026-11-05.** Added after the run. Nothing above is rewritten.
+
+**(8) `tally.extract_rounds` puts a restart pass's early votes into the previous pass.** It opens a new pass only when voter_01's step appears. In a restart pass, any voter whose reply completes before voter_01's is written into the previous pass instead.
+- **Where it happened:** only httpx_3672, the one task with two passes. In its pass 2, eight voters (2, 7, 8, 10, 12, 13, 14, 16) finished before voter 1. The pass-2 candidate list was empty, so those eight replies parse as malformed.
+- **What it moved, in the as-written output:** E2 for that task (8 parseable, corrected 16), E11 (lead 6, corrected 10) and E12 (1, 3 and 4 malformed by bucket, corrected 0, 0 and 0). D for the task is false either way: W = P1 = B.
+- **Effect on the readings:** no row changes.
+- **The fix:** `tally.py` is the committed instrument and is left unchanged. `experiments/EXP-040/analyze_results.py` re-segments passes as maximal runs of consecutive voter steps, scores them with the same `tally.score_round`, and reports both versions. Section 9 gives the as-written figure as the endpoint and the corrected figure beside it.
+
+**(9) A was not judged blind to resolved.** The kernel log line `RESOLVED 1/8` and the per-task resolved flags were seen before the hand check.
+
+**(10) E6's second clause was not defined as a computation.** The clause is "the actor's first message mentions the issue". It was judged by hand by the same reader.
+
+**(11) The voter prompts are not recorded in the trace.** E6's first clause is therefore read from two proxies:
+- whether the proposer's final text, which `{cands?}` carries, has an `ISSUE:` line;
+- each voter step's prompt-token count.
+
 **Not run, second arm A: the per-step version** (the user's "vote for the best next move"). It is `LoopAgent[proposer, Parallel[voters], actor]`, and it can be screened honestly only if the executor stops after one counted call per round. The harness has no exit tool and the prompt-only rule failed in EXP-032 P1 (21 of 24 localizers ignored a 5-call limit), so the first thing needed is a zero-GPU read of that rate on traces that exist: the share of actor invocations that end after exactly one counted call (EXP-032 P1 traces and, from this screen, the actor's text-only turns), and, if that is inconclusive, a 3-task two-round stub loop whose executor is told to make one call and reply DONE, about 0.13 to 0.2 GPU-h, boot-dominated [I]. What from this screen would justify trying it: row 5, D >= 2 of 8 (the vote changes the pick more than once at a single point), A >= 7 of 8, mean wall under 90 s (per-step costs about 4.7 times the single loop, EXP-039 Q5), and a one-call rate of at least 80% in the zero-GPU read. Otherwise per-step voting is not screened.
 
 **Not run, scale-up to "maximum": about 100 voters at one vote point.** Nothing above X(16) = 9.45 is measured, and EXP-006 measured decode-bound 256-token bursts on short prompts, which overstates X under real prefills. The first thing needed is a concurrency probe at real prompt sizes: a bursts-only kernel (no agent, the E4B boot plus bursts of 16, 32, 64 and 100 identical requests at 0.5k and 4.3k prompt tokens, `max_output_tokens` 256), about 0.1 to 0.15 GPU-h with the 0.125 h boot dominating [I]. It is not pre-registered here and it needs its own approval. The vote stage itself would add about 5 to 30 s per task (EXP-039 Q5) and 100 turns per pass against `max_turns` 200, so N = 100 leaves room for one pass and a restart only if `max_turns` goes to 500, the schema limit.
@@ -202,10 +218,17 @@ Built 2026-11-05 after the pre-registration commit 3f33acd, with the section 6 c
 
 ## Status
 
-**RUNNING since 2026-11-05 22:03 UTC.** Kernel `rainm4/gemma4-exp040-v1` v1; the push record is below. The lead reports to the user at 22:27 UTC. The worst-case end is 23:16 UTC. Next is a separate job, once the lead reports COMPLETE:
-- `kaggle kernels output rainm4/gemma4-exp040-v1 -p runs/EXP-040-v1/`
-- un-nest the output;
-- then the section 6 analysis commands.
+**COMPLETE, ANALYZED (2026-11-05).** Section 9 has the results.
+- **Run:** `rainm4/gemma4-exp040-v1` v1, valid. 8 of 8 tasks ran with an empty `err`, on the E4B.
+- **Governing row: row 2,** D = 0 of 8, under both the as-written and the corrected tally. V1 as specified is killed at L2.
+- **Kernel:** 0.315 GPU-h by log span.
+- **Licensed:** none of the following:
+  - a dev-48 voting arm (row 5 did not fire);
+  - an upload;
+  - any change of status for C-023, which stays a hypothesis.
+- **Next:** the prompt-diverse variant named by row 2 would be a new design, with its own pre-registration and dispatch.
+
+~~**RUNNING since 2026-11-05 22:03 UTC.** Kernel `rainm4/gemma4-exp040-v1` v1; the push record is below. The lead reports to the user at 22:27 UTC. The worst-case end is 23:16 UTC. Next is a separate job, once the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp040-v1 -p runs/EXP-040-v1/`, un-nest the output, then the section 6 analysis commands.~~
 
 ~~2026-11-05: tree built, zip `e476acb6...29d8` packed, notebook built, checks (a) to (d) run, kernel `rainm4/gemma4-exp040-v1` **not pushed**. Awaiting the user's GPU approval, then the lead's dispatch of the push.~~
 
@@ -235,3 +258,187 @@ Built 2026-11-05 after the pre-registration commit 3f33acd, with the section 6 c
 **Clock times.** The kernel enforces neither of them.
 - push + 0.4 h = **2026-11-05 22:27 UTC**. This is the lead's working figure. At this time the lead reports to the user; cancelling is the user's call, from the Kaggle UI.
 - push + 1.22 h = **2026-11-05 23:16 UTC**. This is the pre-registered conditional worst case from section 2.4.
+
+---
+
+## 9. Results, 2026-11-05. Section 4's readings applied as written.
+
+### 9.1 Download and commands
+
+- The lead's status check at 22:28 UTC showed COMPLETE.
+- `kaggle kernels output rainm4/gemma4-exp040-v1 -p runs/EXP-040-v1/` downloaded the bundle at 22:29 UTC. I moved the nested `runs/EXP-040-v1/runs/EXP-040-v1/` up one level, so the run directory is `runs/EXP-040-v1/`.
+
+Commands, each run as `python -I -X utf8`:
+- `tools/analyze_traces.py runs/EXP-040-v1 --cap-minutes 8 --max-calls 28`
+- `tools/run_forensics.py forensics runs/EXP-040-v1`
+- `tools/run_forensics.py compare runs/EXP-033-e4b/runs/EXP-033-e4b runs/EXP-040-v1`
+- `tools/estimate_budget.py --eval-config experiments/EXP-040/candidate-v1/eval_config.yaml --results runs/EXP-040-v1/summary.jsonl`
+- `experiments/EXP-040/tally.py runs/EXP-040-v1/traces`: the pre-registered recompute, run directly; section 7 item (6) said a wrapper would be needed.
+- `experiments/EXP-040/analyze_results.py`: writes `experiments/EXP-040/results.json`, which holds ids, counts, letters, voter indices and seconds only.
+
+Copied into `experiments/EXP-040/v1/`: `summary.jsonl` and `aggregates.json`.
+
+Every number below comes from these outputs, except A (E5) and E6's second clause, which are hand judgements (section 7 items 9 and 10).
+
+### 9.2 Run validity
+
+The run is valid on every check, so the endpoints are read.
+
+| Check | Result |
+|---|---|
+| Rows | 8 in `task_results.jsonl` |
+| Ids | exactly the 8 ids of `experiments/cohorts/smoke-8.txt` |
+| `err` | empty on 8 of 8; status `SUCCESS` on 8 of 8 |
+| Model | the log line `model: gemma-4-e4b-it-qat-w4a16-ct -> /kaggle/input/models/...` is present, and every agent step's `model_name` is the E4B path |
+| Server | `vLLM up in 319.8s (tp=4, gpus=4)`; decode probe 400 tokens in 7.14 s |
+| Loop | every trace has the proposer, all 16 voters (voter_01 to voter_16, one step each in pass 1) and the actor |
+| Truncation | none; `[8/8]` and `RESOLVED 1/8` are both in the log |
+
+### 9.3 Endpoints
+
+Where section 7 item (8) applies, the as-written `tally.py` value is the endpoint and the corrected value is given beside it.
+
+| # | Endpoint | Result | Reference (EXP-033) |
+|---|---|---|---|
+| E1 | C | 4 candidates on 6 tasks, 1 on 2 (fastapi_14448, rich_3468). **C >= 2 on 6 of 8.** | none |
+| E2 | Parseable votes, pass 1 | 16 of 16 on 7 tasks. httpx_3672 has 8 as written and 16 corrected. **Voted (12 or more) on 7 of 8 as written, 8 of 8 corrected.** | none |
+| E3 | D | **0 of 8**, both as written and corrected. W = P1 on every task, and D is undefined on none (voter 1's vote is valid on 8 of 8). | none |
+| E4 | Tie rule; stated winner | The tie rule decided 0 tasks. The actor's first message names a winner on 2 tasks (fastapi_14301, httpx_3672), and it equals W on both. No actor message after the vote names any other letter. | none |
+| E5 | A (hand) | **6 of 8** by the rule as written; A_file is 7 of 8; per task below. | none |
+| E6 | F11 check | Below the table. | none |
+| E7 | Passes and turns | One pass on 7 tasks, two on httpx_3672. Harness `llm_calls` per task 21 to 41; trace agent steps 25 to 45, all far below 200. | single pass by construction |
+| E8 | Wall | Per task 67.0 to 116.8 s; **mean 86.5 s**, median 84.8 s. 0 of 8 at the time, call or turn cap; none past 480 s. Vote stage below. | mean 56.9 s, 0 capped |
+| E9 | Calls, compactions, patches | 0 malformed of 67 counted calls. Compactions 5 (1, 1, 0, 0, 0, 1, 2, 0). Non-empty patches 7 of 8. | 0 of 43; 1; 6 of 8 |
+| E10 | Resolves | 1 of 8 (fastapi_14301). Recorded, not read. | 2 of 8 |
+| E11 | Lead | Below the table. Recorded, not read. | none |
+| E12 | Malformed votes by temperature bucket, pass 1 | Below the table. Recorded, not read. | none |
+
+The E1 to E3 rows are `tally.py`'s output.
+
+**E5, A per task.** Followed (first edit in the named file and the named function or change): fastapi_14301, fastapi_14448, requests_7205, requests_7309, rich_3006, rich_3468.
+- rich_3468's edit matched through the harness's fallback (unescaped) match. It landed in the named span.
+- fastapi_14605 is file-only. The first edit is in the named file, but it adds a supporting line, not the change the winning candidate names. That change follows two edits later. Section 2.3 (d) counts an ambiguous case as not followed. Counting it as followed would give A = 7. That changes no row, because row 2 governs before row 3.
+- httpx_3672 is not followed: the actor made no edit in either pass.
+
+**E6, the F11 check.** The voter prompts are not recorded in the trace (section 7 item 11), so the first clause is read from two proxies. The second clause is a hand judgement (section 7 item 10).
+- **ISSUE line:** the proposer's final text has an `ISSUE:` line on 5 of 8 tasks; it is missing on fastapi_14448, httpx_3672 and rich_3006.
+- **Voter prompt tokens:** 385 to 809 per task in pass 1, the same for all 16 voters of a task. This is consistent with the candidate list reaching every voter.
+- **Actor first prompt:** 5,170 to 14,005 tokens on default contents, 0 tasks at or above 14,336. The highest, requests_7205, is 331 tokens under the threshold.
+- **Actor first message (hand check):** it refers to the task's issue on 8 of 8.
+
+**E8, the vote stage.** Voter steps are stamped when the parallel stage emits them, so the time from the first to the last voter stamp (0.15 to 0.44 s) is an emission spread, not generation time. From the proposer's last step to the last voter stamp: 0.83 to 1.44 s on 7 tasks, and 11.49 s on requests_7309. The proposer stage, from the task prompt to the proposer's last step, ran 10.0 to 55.0 s.
+
+**E11, the lead, per task.**
+
+| Task | Lead |
+|---|---|
+| requests_7309 | 10 |
+| requests_7205 | 16 |
+| fastapi_14448 | 16 |
+| fastapi_14301 | 14 |
+| httpx_3672 | 6 as written, 10 corrected |
+| fastapi_14605 | 16 |
+| rich_3468 | 16 |
+| rich_3006 | 4 |
+
+- **D by lead:** 0 tasks with D true and lead under 3; 0 with lead 3 or more.
+- **Unanimous on all 16:** 4 of 8. Two of these are the C = 1 tasks, so 2 of the 6 tasks with C >= 2 are unanimous.
+- **Closest task:** rich_3006, whose 16 votes split 10 to 6 between two letters.
+
+**E12, malformed votes by temperature bucket, pass 1.**
+
+| Bucket | As written | Corrected |
+|---|---|---|
+| 0.6 or below (n = 48) | 1 | 0 |
+| above 0.6 up to 1.0 (n = 40) | 3 | 0 |
+| above 1.0 (n = 40) | 4 | 0 |
+
+- No voter was absent.
+- All 8 as-written malformed votes are httpx_3672's pass-2 replies (section 7 item 8).
+- In pass 1, every voter reply on every task was a single valid pick: 128 of 128 replies were 4 completion tokens each. So `thinking_budget: 0` held for the voters (section 7 item 4).
+
+### 9.4 Readings applied, first match
+
+| Row | Condition | Value | Fires |
+|---|---|---|---|
+| 0 | Crash in more than 2 of 8; fewer than 6 of 8 voted (12 or more parseable); or the tree does not run | 0 crashes; 7 of 8 voted (8 corrected); the tree ran on 8 of 8 | no |
+| 1 | C >= 2 in fewer than 6 of 8 | 6 of 8, exactly at the boundary | no |
+| 2 | D = 0 of 8 | **0 of 8**, as written and corrected | **yes, governs** |
+
+**Row 2: kill V1 as specified.** At N = 16, the vote and voter 1 agreed on every task. C-023 stays a hypothesis, pending a prompt-diverse variant. Rows 3 to 6 are not reached. For the record:
+- A = 6 of 8, so row 3's A <= 4 is not met;
+- the mean wall of 86.5 s with 0 capped is within row 4's bounds;
+- row 5 needs D >= 1 and is not met.
+
+**Licensed:** stopping V1 as built (a single vote point, 16 same-prompt voters differing only in temperature).
+
+**Not licensed:**
+- a dev-48 voting arm, since row 5 did not fire;
+- an upload;
+- any change of status for C-023;
+- a claim that voting does not help the E4B (section 5).
+
+The prompt-diverse variant that row 2 names is a new design: it needs its own pre-registration and the lead's dispatch, and nothing here approves it.
+
+### 9.5 Predictions scored (section 4 and 4.1)
+
+**Section 4:**
+
+| Prediction | Pre-registered | Outcome | Scored |
+|---|---|---|---|
+| The loop functions | 75% | 8 of 8 | held |
+| C >= 2 in at least 6 of 8 | 65% | 6 of 8 | held, at the boundary |
+| D >= 1 | 60% | D = 0 | missed |
+| Voted in 6 or more of 8 | 70% | 7 of 8 (8 corrected) | held |
+| A >= 6 of 8 | 55% | 6 of 8 | held |
+| At least one task with more than one pass | 50% | httpx_3672 | held |
+| Mean wall 90 to 130 s | | 86.5 s | missed, low |
+| Kernel 0.30 to 0.40 h | | 0.315 h | held |
+| Resolves 1 to 3 of 8 | | 1 | held |
+
+Row odds:
+- row 2 had about 20%, and it fired;
+- row 5 had about 25%, rows 1 and 0 about 20% and 15%, row 4 about 10%; none of these fired.
+
+**Section 4.1, the scout's blind expectations:**
+- Row 2 a little likelier than 20%: consistent with the outcome. This is one draw, not a test.
+- At least 3 of 8 tasks unanimous: 4 of 8. Held as written, but it holds only because the 2 C = 1 tasks are counted. Among the tasks with C >= 2, 2 of 6 were unanimous.
+
+### 9.6 Cost
+
+| Item | Value | Basis |
+|---|---|---|
+| **Kernel log span** | **1,135.6 s = 0.315 GPU-h** | the last log entry, measured as EXP-033's 0.25 h and EXP-038's 1.267 h were |
+| Against the estimate | inside the pre-registered 0.30 to 0.36 h, under the lead's 0.4 h working figure, far under the 1.22 h conditional worst case | section 2.4 |
+| Task time | 692.4 s | the sum of `duration_s` |
+| Overhead | 443.2 s | span minus task time; section 2.4 estimated about 445 s |
+| Mean task | 86.5 s, inside the 79 to 105 s point estimate; max 116.8 s | |
+| Caps | no task at any cap; all well under row 4's 140 s mean bar and the 480 s cap | |
+
+The `estimate_budget` projection (mean 8.47 h, worst case 16.00 h, `BLOCK` at the 8-minute cap) is recorded for completeness. A screen is never uploaded.
+
+No upload slot was used.
+
+### 9.7 Paired per-task view, same 8 ids (recorded, not read)
+
+| Reference | Ref. mean wall | V1 mean wall | V1 slower on | Ref. resolves | V1 resolves | 2x2 |
+|---|---|---|---|---|---|---|
+| EXP-033 (E4B single loop, smoke-8) | 56.9 s | 86.5 s | 8 of 8 | 2 of 8 | 1 of 8 | both fastapi_14301; ref-only rich_3006; V1-only none |
+| EXP-038 smoke-8 subset (E4B single loop, dev-48) | 78.3 s | 86.5 s | 6 of 8 | 2 of 8 | 1 of 8 | the same 2x2 |
+
+- **Resolves:** one discordant pair, exact McNemar p = 1.0 (`run_forensics compare`). Eight tasks cannot show a resolve difference, and none is claimed.
+- **Wall:** the reference for the same config on the same ids moved from 56.9 s to 78.3 s between two runs (the critic's note). V1's +8.2 s against the EXP-038 subset is inside that drift, so no time effect is read either way.
+
+### 9.8 Outside the readings (recorded, not read)
+
+- **D could only be true on 6 of 8 tasks.** On the 2 tasks with one candidate, every vote must equal voter 1's, so D = 0 there by construction.
+- **The candidates were mostly one fix written several ways.** On 3 of the 6 tasks with C = 4 (fastapi_14301, requests_7309, rich_3006), the four candidates propose the same change in different words. This is the reader's judgement, not a computed endpoint. It is one plausible reason the vote never moved off voter 1's pick, and it fits the near-duplicate concern in the section 4 prediction.
+- **httpx_3672's restart pass.**
+  - The actor ended pass 1 with text and no tool call. The trace then has a harness `continuation_nudge` event, and the whole tree re-ran.
+  - The re-run proposer's prompt was 583 tokens, against 1,409 at its first call in pass 1. Its reply had no lettered candidate. This fits its `include_contents: none` window starting at the nudge, the F11 pattern again on a restart [I].
+  - With no candidate set, all 16 pass-2 votes parse as invalid, and the fallback letter applies. The 16 pass-2 voter replies ran 19 to 256 completion tokens; 5 hit the 256 cap.
+  - The actor then ran commands and submitted an empty patch: the 1 empty patch of 8.
+- **The `nudges` counter missed this nudge.** `analyze_traces.py` reports 0 nudges although the trace has one `continuation_nudge` step. This is the counter defect already reported during EXP-038: it looks for user-sourced text markers, while the harness records nudges as system events.
+- **A prompt above the threshold with no compaction.** fastapi_14448 reached a 23,720-token prompt with `compactions` 0. That is a note on the counter or on compaction timing, for the lead; it is not read here.
+- **A channel-marker leak.** One proposer reply (fastapi_14605) has a thinking-channel marker leaked into its visible text, followed by a repeat of its first candidate. `tally.candidate_letters` still found 4 distinct letters.
+- **Where the extra time went.** The proposer stage took 10 to 55 s per task; the 16-voter burst took about 1 s on 7 of 8. Most of V1's added wall over EXP-033 is the proposer [I, by stage stamps].

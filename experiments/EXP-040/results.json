@@ -1,0 +1,658 @@
+{
+ "validity": {
+  "rows": 8,
+  "ids_equal_smoke8": true,
+  "errors_empty": 8,
+  "status_success": 8,
+  "served_model_line": "gemma-4-e4b-it-qat-w4a16-ct",
+  "trace_model_names_e4b_only": true,
+  "vllm_up_s": 319.8,
+  "tasks_with_proposer_16_voters_actor": 8,
+  "summary_json_resolved": 1
+ },
+ "row0": {
+  "crashes": 0,
+  "tasks_with_12_parseable_pass1": 7
+ },
+ "E1_C": {
+  "per_task": {
+   "requests_7309": 4,
+   "requests_7205": 4,
+   "fastapi_14448": 1,
+   "fastapi_14301": 4,
+   "httpx_3672": 4,
+   "fastapi_14605": 4,
+   "rich_3468": 1,
+   "rich_3006": 4
+  },
+  "C_ge_2": 6
+ },
+ "E2_parseable": {
+  "per_task": {
+   "requests_7309": 16,
+   "requests_7205": 16,
+   "fastapi_14448": 16,
+   "fastapi_14301": 16,
+   "httpx_3672": 8,
+   "fastapi_14605": 16,
+   "rich_3468": 16,
+   "rich_3006": 16
+  },
+  "voted_ge_12": 7
+ },
+ "E3_D": {
+  "per_task": {
+   "requests_7309": false,
+   "requests_7205": false,
+   "fastapi_14448": false,
+   "fastapi_14301": false,
+   "httpx_3672": false,
+   "fastapi_14605": false,
+   "rich_3468": false,
+   "rich_3006": false
+  },
+  "D_true": 0,
+  "D_undefined_p1_invalid": 0,
+  "W_P1": {
+   "requests_7309": [
+    "C",
+    "C"
+   ],
+   "requests_7205": [
+    "A",
+    "A"
+   ],
+   "fastapi_14448": [
+    "A",
+    "A"
+   ],
+   "fastapi_14301": [
+    "B",
+    "B"
+   ],
+   "httpx_3672": [
+    "B",
+    "B"
+   ],
+   "fastapi_14605": [
+    "A",
+    "A"
+   ],
+   "rich_3468": [
+    "A",
+    "A"
+   ],
+   "rich_3006": [
+    "A",
+    "A"
+   ]
+  }
+ },
+ "E4_tie": {
+  "tie_rule_used": 0,
+  "stated_winner_first_actor_msg": {
+   "requests_7309": null,
+   "requests_7205": null,
+   "fastapi_14448": null,
+   "fastapi_14301": "B",
+   "httpx_3672": "B",
+   "fastapi_14605": null,
+   "rich_3468": null,
+   "rich_3006": null
+  },
+  "stated_matches_W_first_msg": 2,
+  "stated_winner_any_actor_msg_pass1": {
+   "requests_7309": null,
+   "requests_7205": null,
+   "fastapi_14448": null,
+   "fastapi_14301": "B",
+   "httpx_3672": "B",
+   "fastapi_14605": null,
+   "rich_3468": null,
+   "rich_3006": null
+  },
+  "stated_any_matches_W": 2,
+  "stated_any_mismatch_W": 0
+ },
+ "E6_F11": {
+  "proposer_final_has_issue_line": {
+   "requests_7309": true,
+   "requests_7205": true,
+   "fastapi_14448": false,
+   "fastapi_14301": true,
+   "httpx_3672": false,
+   "fastapi_14605": true,
+   "rich_3468": true,
+   "rich_3006": false
+  },
+  "issue_line_tasks": 5,
+  "voter_prompt_tokens_pass1": {
+   "requests_7309": [
+    665,
+    665
+   ],
+   "requests_7205": [
+    809,
+    809
+   ],
+   "fastapi_14448": [
+    442,
+    442
+   ],
+   "fastapi_14301": [
+    689,
+    689
+   ],
+   "httpx_3672": [
+    640,
+    640
+   ],
+   "fastapi_14605": [
+    800,
+    800
+   ],
+   "rich_3468": [
+    385,
+    385
+   ],
+   "rich_3006": [
+    702,
+    702
+   ]
+  },
+  "actor_first_msg_nonempty": 8,
+  "actor_first_prompt_tokens": {
+   "requests_7309": 12117,
+   "requests_7205": 14005,
+   "fastapi_14448": 8184,
+   "fastapi_14301": 8648,
+   "httpx_3672": 5170,
+   "fastapi_14605": 5854,
+   "rich_3468": 13267,
+   "rich_3006": 5749
+  },
+  "actor_first_over_compaction_threshold": 0
+ },
+ "E7_passes_turns": {
+  "passes": {
+   "requests_7309": 1,
+   "requests_7205": 1,
+   "fastapi_14448": 1,
+   "fastapi_14301": 1,
+   "httpx_3672": 2,
+   "fastapi_14605": 1,
+   "rich_3468": 1,
+   "rich_3006": 1
+  },
+  "tasks_more_than_one_pass": 1,
+  "harness_llm_calls": {
+   "requests_7309": 29,
+   "requests_7205": 31,
+   "fastapi_14448": 24,
+   "fastapi_14301": 24,
+   "httpx_3672": 41,
+   "fastapi_14605": 34,
+   "rich_3468": 33,
+   "rich_3006": 21
+  },
+  "trace_agent_steps": {
+   "requests_7309": 31,
+   "requests_7205": 34,
+   "fastapi_14448": 26,
+   "fastapi_14301": 28,
+   "httpx_3672": 45,
+   "fastapi_14605": 39,
+   "rich_3468": 37,
+   "rich_3006": 25
+  },
+  "max_trace_agent_steps": 45,
+  "turn_cap": 200,
+  "later_passes": {
+   "httpx_3672": [
+    {
+     "C": 0,
+     "parseable": 0,
+     "winner": "A",
+     "P1": null,
+     "D": null,
+     "lead": 0,
+     "rule": "fallback",
+     "malformed_by_bucket": {
+      "le_0.6": {
+       "n": 6,
+       "malformed": 6,
+       "absent": 0
+      },
+      "gt_0.6_le_1.0": {
+       "n": 5,
+       "malformed": 5,
+       "absent": 0
+      },
+      "gt_1.0": {
+       "n": 5,
+       "malformed": 5,
+       "absent": 0
+      }
+     }
+    }
+   ]
+  }
+ },
+ "E8_wall": {
+  "per_task_s": {
+   "requests_7309": 81.1,
+   "requests_7205": 94.4,
+   "fastapi_14448": 87.5,
+   "fastapi_14301": 70.2,
+   "httpx_3672": 82.1,
+   "fastapi_14605": 116.8,
+   "rich_3468": 93.3,
+   "rich_3006": 67.0
+  },
+  "mean_s": 86.5,
+  "median_s": 84.8,
+  "max_s": 116.8,
+  "min_s": 67.0,
+  "over_140_mean": false,
+  "tasks_past_480": 0,
+  "time_cap_hit": 0,
+  "calls_cap_hit": 0,
+  "turn_cap_hit": 0,
+  "proposer_stage_s": {
+   "requests_7309": 31.5,
+   "requests_7205": 39.2,
+   "fastapi_14448": 24.7,
+   "fastapi_14301": 29.5,
+   "httpx_3672": 15.5,
+   "fastapi_14605": 10.0,
+   "rich_3468": 55.0,
+   "rich_3006": 15.0
+  },
+  "vote_stage_first_to_last_voter_s": {
+   "requests_7309": 0.28,
+   "requests_7205": 0.44,
+   "fastapi_14448": 0.15,
+   "fastapi_14301": 0.34,
+   "httpx_3672": 0.2,
+   "fastapi_14605": 0.44,
+   "rich_3468": 0.21,
+   "rich_3006": 0.27
+  },
+  "vote_stage_proposer_final_to_last_voter_s": {
+   "requests_7309": 11.49,
+   "requests_7205": 1.44,
+   "fastapi_14448": 0.86,
+   "fastapi_14301": 1.32,
+   "httpx_3672": 1.16,
+   "fastapi_14605": 1.43,
+   "rich_3468": 0.83,
+   "rich_3006": 1.25
+  }
+ },
+ "E9": {
+  "malformed_calls": 0,
+  "counted_calls": 67,
+  "compactions_per_task": {
+   "requests_7309": 1,
+   "requests_7205": 1,
+   "fastapi_14448": 0,
+   "fastapi_14301": 0,
+   "httpx_3672": 0,
+   "fastapi_14605": 1,
+   "rich_3468": 2,
+   "rich_3006": 0
+  },
+  "compactions_total": 5,
+  "patch_nonempty": 7,
+  "max_prompt_tokens": {
+   "requests_7309": 14896,
+   "requests_7205": 14474,
+   "fastapi_14448": 23720,
+   "fastapi_14301": 14029,
+   "httpx_3672": 12222,
+   "fastapi_14605": 14626,
+   "rich_3468": 15087,
+   "rich_3006": 10046
+  }
+ },
+ "E10_resolves": {
+  "resolved": [
+   "fastapi_14301"
+  ],
+  "n": 1
+ },
+ "E11_lead": {
+  "per_task": {
+   "requests_7309": 10,
+   "requests_7205": 16,
+   "fastapi_14448": 16,
+   "fastapi_14301": 14,
+   "httpx_3672": 6,
+   "fastapi_14605": 16,
+   "rich_3468": 16,
+   "rich_3006": 4
+  },
+  "D_lead_lt_3": 0,
+  "D_lead_ge_3": 0,
+  "unanimous_all_16": 4,
+  "unanimous_with_C_ge_2": 2,
+  "counts": {
+   "requests_7309": {
+    "C": 13,
+    "B": 3
+   },
+   "requests_7205": {
+    "A": 16
+   },
+   "fastapi_14448": {
+    "A": 16
+   },
+   "fastapi_14301": {
+    "B": 15,
+    "D": 1
+   },
+   "httpx_3672": {
+    "B": 7,
+    "D": 1
+   },
+   "fastapi_14605": {
+    "A": 16
+   },
+   "rich_3468": {
+    "A": 16
+   },
+   "rich_3006": {
+    "A": 10,
+    "D": 6
+   }
+  }
+ },
+ "E12_malformed_by_bucket_pass1": {
+  "le_0.6": {
+   "n": 48,
+   "malformed": 1,
+   "absent": 0
+  },
+  "gt_0.6_le_1.0": {
+   "n": 40,
+   "malformed": 3,
+   "absent": 0
+  },
+  "gt_1.0": {
+   "n": 40,
+   "malformed": 4,
+   "absent": 0
+  }
+ },
+ "corrected_pass1": {
+  "note": "pass 1 with passes segmented as maximal runs of consecutive voter steps (defect in tally.extract_rounds, section 9)",
+  "tasks_differing_from_as_written": [
+   "httpx_3672"
+  ],
+  "per_task": {
+   "requests_7309": {
+    "C": 4,
+    "parseable": 16,
+    "W": "C",
+    "P1": "C",
+    "D": false,
+    "lead": 10,
+    "rule": "majority",
+    "counts": {
+     "C": 13,
+     "B": 3
+    },
+    "passes": 1
+   },
+   "requests_7205": {
+    "C": 4,
+    "parseable": 16,
+    "W": "A",
+    "P1": "A",
+    "D": false,
+    "lead": 16,
+    "rule": "majority",
+    "counts": {
+     "A": 16
+    },
+    "passes": 1
+   },
+   "fastapi_14448": {
+    "C": 1,
+    "parseable": 16,
+    "W": "A",
+    "P1": "A",
+    "D": false,
+    "lead": 16,
+    "rule": "majority",
+    "counts": {
+     "A": 16
+    },
+    "passes": 1
+   },
+   "fastapi_14301": {
+    "C": 4,
+    "parseable": 16,
+    "W": "B",
+    "P1": "B",
+    "D": false,
+    "lead": 14,
+    "rule": "majority",
+    "counts": {
+     "B": 15,
+     "D": 1
+    },
+    "passes": 1
+   },
+   "httpx_3672": {
+    "C": 4,
+    "parseable": 16,
+    "W": "B",
+    "P1": "B",
+    "D": false,
+    "lead": 10,
+    "rule": "majority",
+    "counts": {
+     "B": 12,
+     "D": 1,
+     "A": 2,
+     "C": 1
+    },
+    "passes": 2
+   },
+   "fastapi_14605": {
+    "C": 4,
+    "parseable": 16,
+    "W": "A",
+    "P1": "A",
+    "D": false,
+    "lead": 16,
+    "rule": "majority",
+    "counts": {
+     "A": 16
+    },
+    "passes": 1
+   },
+   "rich_3468": {
+    "C": 1,
+    "parseable": 16,
+    "W": "A",
+    "P1": "A",
+    "D": false,
+    "lead": 16,
+    "rule": "majority",
+    "counts": {
+     "A": 16
+    },
+    "passes": 1
+   },
+   "rich_3006": {
+    "C": 4,
+    "parseable": 16,
+    "W": "A",
+    "P1": "A",
+    "D": false,
+    "lead": 4,
+    "rule": "majority",
+    "counts": {
+     "A": 10,
+     "D": 6
+    },
+    "passes": 1
+   }
+  },
+  "C_ge_2": 6,
+  "voted_ge_12": 8,
+  "D_true": 0,
+  "D_undefined_p1_invalid": 0,
+  "tie_rule_used": 0,
+  "D_lead_lt_3": 0,
+  "D_lead_ge_3": 0,
+  "leads": {
+   "requests_7309": 10,
+   "requests_7205": 16,
+   "fastapi_14448": 16,
+   "fastapi_14301": 14,
+   "httpx_3672": 10,
+   "fastapi_14605": 16,
+   "rich_3468": 16,
+   "rich_3006": 4
+  },
+  "unanimous_all_16": 4,
+  "unanimous_with_C_ge_2": 2,
+  "stated_matches_W": 2,
+  "E12_malformed_by_bucket_pass1": {
+   "le_0.6": {
+    "n": 48,
+    "malformed": 0,
+    "absent": 0
+   },
+   "gt_0.6_le_1.0": {
+    "n": 40,
+    "malformed": 0,
+    "absent": 0
+   },
+   "gt_1.0": {
+    "n": 40,
+    "malformed": 0,
+    "absent": 0
+   }
+  }
+ },
+ "malformed_votes_by_voter_pass1": {
+  "httpx_3672": [
+   2,
+   7,
+   8,
+   10,
+   12,
+   13,
+   14,
+   16
+  ]
+ },
+ "cost": {
+  "kernel_log_span_s": 1135.6,
+  "gpu_h": 0.315,
+  "tasks_s": 692.4,
+  "overhead_s": 443.2
+ },
+ "paired_vs_EXP033": {
+  "n_shared": 8,
+  "ref_resolved": 2,
+  "v1_resolved": 1,
+  "both": [
+   "fastapi_14301"
+  ],
+  "ref_only": [
+   "rich_3006"
+  ],
+  "v1_only": [],
+  "ref_mean_wall_s": 56.9,
+  "v1_mean_wall_s": 86.5,
+  "per_task_wall_s": {
+   "fastapi_14301": [
+    31.3,
+    70.2
+   ],
+   "fastapi_14448": [
+    56.8,
+    87.5
+   ],
+   "fastapi_14605": [
+    90.7,
+    116.8
+   ],
+   "httpx_3672": [
+    60.4,
+    82.1
+   ],
+   "requests_7205": [
+    89.6,
+    94.4
+   ],
+   "requests_7309": [
+    27.9,
+    81.1
+   ],
+   "rich_3006": [
+    42.6,
+    67.0
+   ],
+   "rich_3468": [
+    56.2,
+    93.3
+   ]
+  },
+  "v1_slower_on": 8
+ },
+ "paired_vs_EXP038_smoke8_subset": {
+  "n_shared": 8,
+  "ref_resolved": 2,
+  "v1_resolved": 1,
+  "both": [
+   "fastapi_14301"
+  ],
+  "ref_only": [
+   "rich_3006"
+  ],
+  "v1_only": [],
+  "ref_mean_wall_s": 78.3,
+  "v1_mean_wall_s": 86.5,
+  "per_task_wall_s": {
+   "fastapi_14301": [
+    56.5,
+    70.2
+   ],
+   "fastapi_14448": [
+    71.9,
+    87.5
+   ],
+   "fastapi_14605": [
+    105.9,
+    116.8
+   ],
+   "httpx_3672": [
+    124.8,
+    82.1
+   ],
+   "requests_7205": [
+    147.2,
+    94.4
+   ],
+   "requests_7309": [
+    26.2,
+    81.1
+   ],
+   "rich_3006": [
+    36.6,
+    67.0
+   ],
+   "rich_3468": [
+    57.7,
+    93.3
+   ]
+  },
+  "v1_slower_on": 6
+ }
+}
