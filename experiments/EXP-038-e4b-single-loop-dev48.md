@@ -437,11 +437,31 @@ Whether a cancelled Kaggle batch kernel keeps any of its output is unverified he
 
 *Amended 2026-11-05 (critic re-check):* the push record states the push time in UTC, and the lead's push report gives the user two clock times, push + 1.75 h and push + 2.0 h. The decision at push + 1.75 h is the user's, made from the Kaggle UI. If no one acts, the run continues to its end, 2.0 h is not enforced, and the exposure is section 2.2's tail (scenario C 2.41 h, conditional worst case 6.66 h).
 
+
+### Push record, 2026-11-05
+
+- **Push time: 2026-11-05 19:02 UTC.** Taken with `date -u` immediately after the push returned (19:02:40).
+- **CLI output:** `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp038-e4b-dev48`
+- **Kernel:** `rainm4/gemma4-exp038-e4b-dev48`, version 1.
+- **Status, checked once right after the push:** `KernelWorkerStatus.RUNNING`. Before the push, the status command returned a `kernels.get` permission error, because the kernel did not exist yet. No earlier version was running.
+- **Source:** the pushed notebook is the one committed in ba3adaf. It is unchanged since: sha256 `e58af8388b5f5f6ba28a94ecca8abed14e1a36a79b202814f77f0926b22feb66`. The file text was committed at 7964379 and the plan at 1a695f3.
+- **Zip:** `dist/EXP-038-e4b.zip` and the embedded `SUBMISSION_B64` both have sha256 `9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0`.
+- **Checks before the push:**
+  - `git status` was clean for `experiments/EXP-038*`, `notebooks/exp038_e4b_dev48` and `experiments/cohorts`.
+  - `TASK_IDS` equals the 48 ids of `experiments/cohorts/dev-48.txt`, and `RUN_AGENT = True`.
+  - The embedded `eval_config.yaml` is 240 / 28 / 8 / 80, Arm R's values.
+  - The metadata has `enable_gpu` true and `enable_internet` false.
+- **Clock times for the stop rule (section 8, critic re-check):**
+  - push + 1.75 h = **2026-11-05 20:47 UTC**, the user's decision point, made from the Kaggle UI;
+  - push + 2.0 h = **2026-11-05 21:02 UTC**.
+  - If no one acts, the run continues to its end, and 2.0 h is not enforced.
+
 ## Status
 
 ~~BUILT, NOT PUSHED (2026-11-05). Awaiting the critic `prereg` review and the lead's word to the user on the 0.88-1.24 h point range.~~
 
-BUILT, NOT PUSHED (2026-11-05).
+~~BUILT, NOT PUSHED (2026-11-05).~~ **RUNNING since 2026-11-05 19:02 UTC**: kernel `rainm4/gemma4-exp038-e4b-dev48` v1. The stop-rule clock times are 20:47 and 21:02 UTC. Next, a separate job when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp038-e4b-dev48 -p runs/EXP-038-e4b-dev48/`, un-nest, then the section 6 analysis commands. The lines below are kept as written before the push.
+
 - The critic's four text fixes are applied (section 7, item 7).
 - The user has approved the full dev-48 at up to 2.0 GPU-h, with the section 8 stop rule.
 - Next: the critic re-checks the fixes. Then the push is a separate job: directory `notebooks/exp038_e4b_dev48`, kernel `rainm4/gemma4-exp038-e4b-dev48`.
