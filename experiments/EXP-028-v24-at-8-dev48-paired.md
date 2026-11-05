@@ -145,6 +145,27 @@ Logged 2026-11-03 at analysis time; nothing in sections 3-5 is changed by these.
 - **D4, artifact path.** The hygiene check and `.gitignore` admit only files named exactly `summary.jsonl`
   under `experiments/`, so the summaries are stored as `experiments/EXP-028/armR/summary.jsonl` and
   `experiments/EXP-028/armRH/summary.jsonl`, not `<arm>-summary.jsonl`.
+- **D5, compaction detector (added 2026-11-05, experimenter; tooling defect, not a pre-registration defect).**
+  `analyze_traces.py` counted a compaction only when a trace step had `compact` in its `event_type` or
+  `author`. ADK 1.36.1 appends the token-threshold summary straight to the session and never yields it as an
+  event, so no trace step marks it, and both arms read `compactions = 0`. The EXP-030 critic found the drops.
+  The detector now counts a drop in `metrics.prompt_tokens` between consecutive turns of the same author, right
+  after a turn at or above `R.COMPACTION_TOKEN_THRESHOLD` = 14,336. The rule is in `count_token_compactions`;
+  the test is `test_token_compaction_detected_from_prompt_drops`.
+
+  Corrected counts, from `analyze_traces.py runs/EXP-028-arm{R,RH} --cap-minutes 8 --max-calls 28`:
+
+  | Arm | Compactions | Tasks with ≥1 | Max per task | Resolved tasks | Unresolved tasks | Cap-hit tasks |
+  |---|---|---|---|---|---|---|
+  | R | 49 | 36 of 48 | 3 | 3 compactions in 3 of 9 | 46 in 33 of 39 | 26 in all 18 |
+  | RH | 49 | 35 of 48 | 3 | 4 in 4 of 10 | 45 in 31 of 38 | 26 in all 17 |
+
+  Both `experiments/EXP-028/arm{R,RH}/summary.jsonl` files were regenerated. **The only field that changed is
+  `compactions`, per task.** With line endings normalised, every line matches the 2026-11-03 file byte for
+  byte except that one value.
+  - Endpoint A reports compactions per task, and the §9.1 row reads `compactions | 0 | 0`. That row is left
+    as written and is superseded by this table.
+  - No reading in section 4 depends on compactions, so no decision changes.
 
 ## 8. Built and pushed
 

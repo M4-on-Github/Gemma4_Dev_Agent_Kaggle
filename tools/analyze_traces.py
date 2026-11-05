@@ -81,6 +81,31 @@ def canonical(name: str, args) -> str:
         return name + str(args)
 
 
+def count_token_compactions(steps: list[dict], threshold: int = R.COMPACTION_TOKEN_THRESHOLD) -> int:
+    """Token-threshold compactions inferred from the per-turn prompt token counts.
+
+    D-004 tooling 2026-11-05 (critic, EXP-030 critic.md item 3): the harness appends the compaction summary to
+    the session without yielding it, so no trace step marks it and the old `compact` marker match read 0 on
+    EXP-028 while 49 had fired. Rule: between two consecutive agent turns of the same author that carry
+    `metrics.prompt_tokens`, a drop in prompt tokens right after a turn at or above the threshold
+    (R.COMPACTION_TOKEN_THRESHOLD, the trigger in google/adk/apps/compaction.py) is one compaction.
+    """
+    last: dict[str, int] = {}
+    n = 0
+    for s in steps:
+        if s.get("source") != "agent":
+            continue
+        pt = (s.get("metrics") or {}).get("prompt_tokens")
+        if not isinstance(pt, (int, float)):
+            continue
+        author = str((s.get("extra") or {}).get("author") or "")
+        prev = last.get(author)
+        if prev is not None and prev >= threshold and pt < prev:
+            n += 1
+        last[author] = int(pt)
+    return n
+
+
 def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
     """Metrics derived from one SessionTrace."""
     steps = trace.get("steps") or []
@@ -161,6 +186,9 @@ def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
             phase = "LOCATE"
         else:
             phase = "NONE"
+    # explicit compaction steps (if a harness version ever records them) or the prompt-token drop rule,
+    # whichever is larger, so the two never double-count the same event
+    compactions = max(compactions, count_token_compactions(steps))
     fm = trace.get("final_metrics") or {}
     counted = [c for c in calls if c[0] not in R.FREE_TOOLS]
     return {

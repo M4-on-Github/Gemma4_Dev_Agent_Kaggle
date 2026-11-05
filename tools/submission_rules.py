@@ -67,6 +67,18 @@ HARNESS_DEFAULT_TIMEOUT_SECONDS = 300
 HARNESS_DEFAULT_TOOL_CALLS = 100
 HARNESS_DEFAULT_TURNS = 500
 
+# Q7 [V] HARNESS_README §7.2: the scorer's App-level EventsCompactionConfig (not settable from a submission).
+# Token-threshold compaction [V google/adk/apps/compaction.py, ADK 1.36.1]: before each model call of any LlmAgent,
+# if the most recent session event carrying usage_metadata has prompt_token_count >= the threshold, every raw event
+# older than the last COMPACTION_EVENT_RETENTION is summarized by one extra model call. Traces do not record it
+# (the summary event is appended to the session, never yielded), so analyze_traces detects it as a prompt-token
+# drop between consecutive turns of the same agent, right after a turn at or above the threshold.
+# D-004 tooling 2026-11-05: added; analyze_traces had matched only 'compact' in event_type/author and read 0.
+COMPACTION_TOKEN_THRESHOLD = 14_336
+COMPACTION_EVENT_RETENTION = 5
+COMPACTION_INTERVAL = 15             # sliding window: user-initiated invocations (1 + nudges per task)
+COMPACTION_OVERLAP = 2
+
 # VERIFY(Q9): allowed extensions and size limits (swegemma/config.py per mirror).
 ALLOWED_EXTENSIONS = frozenset({".yaml", ".yml", ".md", ".txt", ".py", ".json", ".safetensors"})
 MAX_TOTAL_SIZE_BYTES = 3 * 1024 ** 3          # unpacked, adapters included

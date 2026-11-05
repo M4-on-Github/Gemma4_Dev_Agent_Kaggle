@@ -53,3 +53,29 @@ def test_traces_only_directory(synthetic_run: Path):
     per_task, agg = A.analyze_run(synthetic_run, cap_minutes=None, max_calls=None)
     assert {r["task_id"] for r in per_task} == {"synth_good", "synth_bad"}
     assert agg["worst_case_h"] is None
+
+
+def _turn(i: int, prompt_tokens: int, author: str = "swe_agent") -> dict:
+    return {"step_id": i, "source": "agent", "message": "t", "metrics": {"prompt_tokens": prompt_tokens},
+            "extra": {"author": author, "event_type": "thinking"}}
+
+
+def test_token_compaction_detected_from_prompt_drops():
+    """D-004 2026-11-05: compaction leaves no trace step, so it is read from a prompt-token drop right after a
+    turn at or above R.COMPACTION_TOKEN_THRESHOLD (14,336), per author."""
+    thr = A.R.COMPACTION_TOKEN_THRESHOLD
+    steps = [
+        {"step_id": 0, "source": "user", "message": "task", "extra": {"event_type": "task_prompt"}},
+        _turn(1, 3000), _turn(2, 9000), _turn(3, thr + 3), _turn(4, 4700),          # 1: drop after >= thr
+        _turn(5, 9000), _turn(6, 8000),                                             # no: drop below thr
+        _turn(7, thr), _turn(8, thr - 1),                                           # 2: exactly at thr
+        _turn(9, 20000, author="localizer_a"), _turn(10, 4000, author="localizer_b"),   # no: other author
+        _turn(11, 3500, author="localizer_a"),                                      # 3: same author drop
+        _turn(12, 30000), _turn(13, 30000),                                         # no: equal is not a drop
+    ]
+    assert A.count_token_compactions(steps) == 3
+    m = A.analyze_trace({"steps": steps}, declared=set())
+    assert m["compactions"] == 3
+    # the old marker rule still counts, and the two are not summed
+    marked = steps + [{"step_id": 99, "source": "system", "message": "", "extra": {"event_type": "compaction"}}]
+    assert A.analyze_trace({"steps": marked}, declared=set())["compactions"] == 3
