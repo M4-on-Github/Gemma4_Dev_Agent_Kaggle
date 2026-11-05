@@ -74,7 +74,7 @@ user-invocable: false
   - **The test-patch diff.** It has `---`/`+++` headers with no `diff --git` line, and a created file is a lone `@@ -0,0 +1,N @@` hunk.
   - **`test_tail`.** It holds the last 1500 characters of `STDOUT:...STDERR:`. The `FAILED`/`ERROR` lines carry parametrized ids, so to check that the list is complete, count those lines against the count line; do not deduplicate them.
   - **`test_exit_code`.** 2 means collection was interrupted, -1 means the test patch did not apply, and 124 means a timeout with an empty tail.
-  - **Snapshots.** Base-commit repo snapshots for all 129 tasks are at `data/local/snapshots/<id>.tgz`.
+  - **Snapshots.** Base-commit repo snapshots for all 129 tasks are at `data/local/snapshots/<id>.tgz`. Read them in one sequential pass (`tarfile.open(p, "r|*")`, keep the members you need). Per-member `extractfile` on the random-access handle re-seeks the gzip stream, so scanning a tests tree over 15 snapshots ran over 120 s; one sequential pass took 27 s (EXP-037 `desk_checks.py`).
   - **Known gap.** In the EXP-028 grading, fastapi tests fail collection on a missing test-only package (EXP-035 §9.3).
 - Upload under any filename other than `submission.zip` returns a bare 400 and costs an attempt, not the slot (EXP-023 §6).
 - Grading time for an upload: 6 to 22+ h observed (#11 pending at 21.5 h on 2026-10-29).
