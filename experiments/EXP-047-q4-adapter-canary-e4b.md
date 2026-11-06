@@ -188,4 +188,4 @@ Written before the run.
 
 ~~2026-11-05: pre-registered. Not built, not pushed. Zero GPU spent.~~
 
-2026-11-05: renumbered EXP-046 to EXP-047, critic conditions added (4.3), built. Not pushed yet. Zero GPU spent.
+2026-11-05: renumbered EXP-046 to EXP-047, critic conditions added (4.3), built (764ae43). **Push refused by `guard_push.py`** on the one attempt (the section 6 push of `notebooks/exp047_q4canary`): the hook's message is that `RUN_AGENT` is not True and that gold controls run only from an exp000 directory. The guard admits a notebook without `RUN_AGENT` only when its metadata is CPU-only (section 8). Nothing reached Kaggle; zero GPU spent. A push needs a guard rule for zero-task GPU probes (a user or lead decision; `.claude/hooks/` is outside the experimenter's paths); the notebook is not altered to get past the guard.
