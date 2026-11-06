@@ -1,0 +1,9 @@
+# EXP-046 PROBE (validator-only, never packed, never built into a notebook): SequentialAgent[locate, edit, check].
+# Each stage carries only the tools its job needs; submit_patch is held by the last stage only.
+name: swe_agent
+agent_class: SequentialAgent
+description: Locate the code with a read-only stage, edit it with a stage that holds the edit tool, then check the diff and submit with a stage that holds the run tool.
+sub_agents:
+  - config_path: sub_agents/locate.yaml
+  - config_path: sub_agents/edit.yaml
+  - config_path: sub_agents/check.yaml
