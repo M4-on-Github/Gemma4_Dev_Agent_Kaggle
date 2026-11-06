@@ -1,12 +1,12 @@
-# EXP-046 — Q4 adapter canary on the E4B: does the harness's own vLLM start path apply an `adapters/` LoRA, and what KV cache does an adapter-bearing submission get?
+# EXP-047 — Q4 adapter canary on the E4B: does the harness's own vLLM start path apply an `adapters/` LoRA, and what KV cache does an adapter-bearing submission get?
 
 **Date:** 2026-11-05
-**Type:** zero-task GPU probe, one kernel, two vLLM boots of the E4B, no agent run, no grading. About **0.20-0.35 L4x4-h expected (point 0.26)**, worst case about 0.5 h, notebook hard cap 0.75 h (section 2.5). **Built, not pushed**: no GPU approval is open, and the push guard does not admit this notebook as it stands (section 8).
+**Type:** zero-task GPU probe, one kernel, two vLLM boots of the E4B, no agent run, no grading. About **0.20-0.35 L4x4-h expected (point 0.26)**, worst case about 0.5 h, notebook hard cap ~~0.75 h~~ 0.5 h (section 2.5; caps tightened at build, section 8). ~~**Built, not pushed**: no GPU approval is open, and the push guard does not admit this notebook as it stands (section 8).~~ 2026-11-05: GPU approved by the user (`knowledge/user-decisions.md`, D-006 item 1, 0.2 to 0.3 GPU-h); push status in section 8.
 **Cohort:** none (no task runs; the notebook has no `TASK_IDS` and no `RUN_AGENT` parameter)
 **Ladder:** stage 1 of D-006 (`knowledge/directions/D-006-e4b-role-team-and-tool-adapter.md`), the gate in front of any adapter work for C-024. Not a screen of a lever: it answers an infrastructure question that n = 8 or 48 task runs cannot read (an adapter that is silently dropped and an adapter that does nothing useful give the same resolves).
 **Pre-registered:** this file, then the notebook and the analysis script, are committed before any push. Sections 3 and 4 are written blind and are not revised; results are appended as a new section.
 **Serves:** Q4 (`experiments/README.md` §1, "LoRA zeroing in patched vLLM", OPEN), C-024 (narrow exact-copy adapter, gated on this canary), C-013 (the earlier whole-trajectory LoRA result, -10.8 points; was that adapter even applied?).
-**Relates:** EXP-006 (the E4B boot and KV figures without LoRA), EXP-047 (the desk costing of the narrow adapter that this canary gates), `research/kaggle/digests/2026-11-05-adapters.md`, `research/kaggle/threads/kg-743508-lora-wipe-host-replies.md`, `research/kaggle/threads/kg-744331-lora-kv-cache-and-loading.md`.
+**Relates:** EXP-006 (the E4B boot and KV figures without LoRA), EXP-048 (the desk costing of the narrow adapter that this canary gates), `research/kaggle/digests/2026-11-05-adapters.md`, `research/kaggle/threads/kg-743508-lora-wipe-host-replies.md`, `research/kaggle/threads/kg-744331-lora-kv-cache-and-loading.md`.
 **Tags:** [V] verified in source or by a check run here, [M] community or mirror, [I] inference.
 
 ## 1. Why this, now
@@ -22,7 +22,7 @@ D-006 puts a narrow LoRA on the E4B behind one question: does the served vLLM ap
 2. **The organisers' sample adapter is a no-op by construction** [V, counted here]. In our staged copy (`runs/EXP-028-armR/phase0/sample_submission/adapters/main_lora/`), both `lora_B` tensors are all zero (0 of 21,504 and 0 of 32,768 entries non-zero); both `lora_A` tensors are dense with standard deviation about 0.01. So "it works in the Getting Started notebook" (host, 2026-09-25) can mean that it loads, not that it changes output. Its shapes are the 31B's; it is a format example only.
 3. **The only post-fix test says loaded but no effect** [M]. The host said the zeroing fix is in wheelhouse v23 (2026-09-30). A participant (743508, 2026-10-08) reports that, under `VllmServer` with `discover_adapters`, the adapters are listed in `/v1/models` and requests route to them, but at temperature 0 the base model, a near-zero adapter and a `lora_B ~ N(0, 1)` adapter (the sample's format: rank 4, `q_proj` and `o_proj`, layer 0) give the same text with per-token logprobs within 1e-6. The same thread family reports an adapter-bearing 31B submission getting a 7,600-token KV cache at the notebook's then-default LoRA settings, against 46,048 without, and 27,696 with the submission-sized settings [M].
 
-What none of these settles: whether, on the wheelhouse we run today, a LoRA with non-zero `lora_B` changes the E4B's output, and how much KV cache the E4B keeps with one. Both are needed before a training run is costed for real (EXP-047). The E4B is used because D-006 is E4B-only and its boot is the cheapest; nothing in the harness source restricts adapters to the 31B.
+What none of these settles: whether, on the wheelhouse we run today, a LoRA with non-zero `lora_B` changes the E4B's output, and how much KV cache the E4B keeps with one. Both are needed before a training run is costed for real (EXP-048). The E4B is used because D-006 is E4B-only and its boot is the cheapest; nothing in the harness source restricts adapters to the 31B.
 
 ## 2. Design
 
@@ -66,7 +66,7 @@ Boot 0: base, twice. Boot 1: base, base again, `canary_zero`, `canary_big`, `can
 - **F, the repeat floor** = max(d(base, base repeat) on boot 1, d(base, base repeat) on boot 0).
 - **tau** = max(10 F, 1e-3), the "no change" band; **H** = max(100 F, 0.05), the "changed" bar.
 - **K0, K1** = `GPU KV cache size` tokens on boot 0 and boot 1 (the minimum if the log has several lines).
-- Recorded, not read: d(base boot 0, base boot 1) (does turning LoRA on move the base path?), greedy text equal or not per name, decode tok/s per name, the routing result, boot seconds, `build_cmd` LoRA flags, `/v1/models` names, the model's architecture, text dims and per-layer `q_proj`/`o_proj` shapes (EXP-047 needs them), wheelhouse versions (`vllm`, `adk_submission`, `swegemma`) and the vLLM wheel's sha256.
+- Recorded, not read: d(base boot 0, base boot 1) (does turning LoRA on move the base path?), greedy text equal or not per name, decode tok/s per name, the routing result, boot seconds, `build_cmd` LoRA flags, `/v1/models` names, the model's architecture, text dims and per-layer `q_proj`/`o_proj` shapes (EXP-048 needs them), wheelhouse versions (`vllm`, `adk_submission`, `swegemma`) and the vLLM wheel's sha256.
 
 ### 2.5 Cost
 
@@ -83,7 +83,7 @@ Boot 0: base, twice. Boot 1: base, base again, `canary_zero`, `canary_big`, `can
 
 ## 3. Endpoints, fixed in advance
 
-From `runs/EXP-046-q4-canary/` (the kernel output: `canary.json`, `probes.jsonl`, `boot0.log`, `boot1.log`, `adapters.json`), read by `experiments/EXP-046/analyze_canary.py`.
+From `runs/EXP-047-q4-canary/` (the kernel output: `canary.json`, `probes.jsonl`, `boot0.log`, `boot1.log`, `adapters.json`), read by `experiments/EXP-047/analyze_canary.py`.
 
 | # | Endpoint | Definition |
 |---|---|---|
@@ -106,7 +106,7 @@ Two questions, each with its own reading. First matching row wins within each ta
 | A0 | infrastructure: the wheelhouse install or imports fail, no 4 GPUs, the E4B input is missing, boot 0 fails, or the kernel ends before boot 1's logprob probes | no reading; fix the one cause and re-run once |
 | A1 | **not loadable**: boot 1 fails while boot 0 started (a failure naming the KV cache or the maximum model length is reported as A1k, the rest as A1), or a canary name is absent from `/v1/models`, or any adapter request returns non-200 | adapters do not load on this path. The adapter line (C-024 stage 2 onwards) stops until the failure is understood; the failure text class and `build_cmd` flags are reported |
 | A2 | E3 > tau | the zero-B control moves the output: the LoRA path is not a clean add, so neither "applied" nor "wiped" can be read; reported as an infrastructure finding for the lead |
-| A3 | **applied**: E1 > H and E2 > H | the adapter is applied at the thread's own dose; the 2026-10-08 null does not reproduce on this wheelhouse. Stage 2 of D-006 (EXP-047's costing, then a training kernel) may be asked for |
+| A3 | **applied**: E1 > H and E2 > H | the adapter is applied at the thread's own dose; the 2026-10-08 null does not reproduce on this wheelhouse. Stage 2 of D-006 (EXP-048's costing, then a training kernel) may be asked for |
 | A4 | **applied at the loud dose only**: E2 > H and E1 <= tau | LoRA is applied, but a layer-0 rank-4 `lora_B ~ N(0, 1)` adapter on the E4B does not move the output; the thread's null is a weak-adapter result, not a wipe. Stage 2 may be asked for, with the trained adapter's own effect measured before any agent run |
 | A5 | **wiped**: E1 <= tau and E2 <= tau, with E5 true | adapters load, are listed and route, and do nothing: the 2026-10-08 report reproduces under our path. **The adapter line stops** (C-024's training is not bought); the evidence goes to the lead for a host report |
 | A6 | anything else (for example tau < E2 <= H) | no reading; numbers reported |
@@ -124,9 +124,29 @@ These figures are the E4B's. They do not transfer to the 31B's 7,600 and 46,048,
 
 **Blind prediction.** Reading A: A3 40%, A4 10%, A5 30%, A1 12%, A2 3%, A0 or A6 5%. The host's fix claim and adk_submission 0.2.13 (newer than the 0.2.12 the 2026-10-08 participant cites) pull towards A3; the one post-fix test pulls towards A5. If A3, E1 of order 0.5 to 5 nats and the loud adapter's greedy text visibly degraded; if A5, E1 and E2 exactly 0 with F = 0. Reading B: B3 92% (EXP-006 measured K0 = 298,464 for the E4B, and rank 8 with 3 slots is small), B2 5%, B1 3%; K1/K0 between 0.6 and 0.95. Decode tok/s with an adapter 10 to 30% below base [I, from the 29% per-task slowdown reported in 755677 on the 31B].
 
+### 4.3 Amendment 2026-11-05, before any push and before any number exists: the critic's three conditions
+
+Added on the lead's instruction, from the critic's D-006 direction review (`experiments/EXP-043/critic.md`, 19a8b20 and 5ab7020). Sections 4.1 and 4.2 above stay as written; this section adds one row to reading A and states how the other two conditions are met. Reading B is unchanged.
+
+**(i) The server lists the adapter and answers under its name; a silent fall-through is a fail.** [V, wheel `adk_submission/server.py:432-439`, read 2026-11-05] `create_model_registry` binds an adapter name (and `adapter:<name>`) to that name only when the server is a `VllmServer` whose config has `enable_lora` on; otherwise it binds the name to the base model path and raises nothing. A direct HTTP request that names an unknown model gets an error from vLLM, so the direct probes cannot fall through; the registry and compile path can. The notebook therefore also records the `model` field of every response, what each registry name resolves to, and the compiled root agent's model string. New row, checked after A1 and before A2:
+
+| Row | Condition | Reading |
+|---|---|---|
+| A1f | **fall-through**: any HTTP 200 adapter response whose `model` field names something other than the requested adapter; or the registry binds `canary_big` or `adapter:canary_big` to a model string that does not end in `canary_big`; or the compiled root agent's model string does not end in `canary_big`; or the compile-path text equals boot 1's base text while the direct `canary_big` text differs | **fail**, read like A1: the adapter line stops until the routing is understood. A3 to A5 cannot be read through a fall-through |
+
+A response with no `model` field is counted and reported, not read as a mismatch. A routing check that raises an exception is not a silent fall-through: it is reported, and reading A then rests on the direct probes alone, with the compile-path half stated as not read.
+
+**(ii) At temperature 0, with and without the adapter must differ by more than two runs without it.** Already the design: every canary request sets `temperature: 0` itself (the submission's sampling file, temperature 1.0 for the E4B, is not used by these probes), F is the larger of the two base-against-base-repeat differences (2.4), and A3 and A4 need E1, E2 above H = max(100 F, 0.05), A5 needs them at or below tau = max(10 F, 1e-3). One addition, for the loud dose: a logprob that is not finite on one side only counts as an infinite difference (changed); a non-finite value in a base or base-repeat run makes F infinite and reading A is A6.
+
+**(iii) The adapter is built to have a large effect.** `canary_loud` (2.1) is that adapter: rank 8, alpha 16, `q_proj` and `o_proj` on every layer, both factors N(0, 1). Its update is (alpha / r) B A = 2 B A, whose entries have standard deviation 2 x sqrt(8), about 5.7, against base weights of order 0.01 to 0.1 [I], on every layer. If applied it cannot plausibly leave every prompt logprob within 0.05 nats of base [I]. `canary_big` is the thread's dose, kept to test the 743508 null, not to carry condition (iii).
+
+**Scope, restated.** A pass in a Kaggle notebook tests that notebook's server (`VllmServer.build_cmd` from the attached wheelhouse), not the scorer's `setup_vllm_server` in `scripts/inference.py` [I]. Section 5's last bullet and section 7 item 1 already say this.
+
+**Renumbered 2026-11-05.** This file was committed as EXP-046 in 73d369d; the screener's `experiments/EXP-046-e4b-sequential-role-team-desk-check.md` (0553ba1) was filed first, so the canary is EXP-047 (file renamed in the lead's 162c1aa, ids in the text, notebook directory, kernel slug and analysis path renumbered here). The desk costing that this file called EXP-047 is EXP-048. No reading changed in the renumber.
+
 ## 5. What this licenses
 
-- A3 or A4 with B2 or B3: the lead may ask for EXP-047's stage 2 (data generation and a training kernel). Nothing here licenses an upload, and no claim moves on this result alone beyond Q4.
+- A3 or A4 with B2 or B3: the lead may ask for EXP-048's stage 2 (data generation and a training kernel). Nothing here licenses an upload, and no claim moves on this result alone beyond Q4.
 - A5 or A1, or B1: the adapter line stops at this gate; C-024 is reported as blocked by infrastructure, not refuted.
 - Any reading: the C-013 result (-10.8 points from a 31B adapter) is not re-read here; whether that adapter was applied is a 31B question this canary does not answer.
 - Scope: the wheelhouse attached at run time, `VllmServer.build_cmd`, the E4B. Not the scorer's `setup_vllm_server`.
@@ -134,11 +154,11 @@ These figures are the E4B's. They do not transfer to the 31B's 7,600 and 46,048,
 ## 6. Exact commands
 
 ```
-python tools/build_notebook.py --src notebooks/exp046_q4canary/q4_canary.py --out notebooks/exp046_q4canary/q4_canary.ipynb
+python tools/build_notebook.py --src notebooks/exp047_q4canary/q4_canary.py --out notebooks/exp047_q4canary/q4_canary.ipynb
 # push: a later job, only after the user approves the GPU, the lead dispatches it, and the push guard admits the notebook (section 8)
 # after COMPLETE, a separate job:
-kaggle kernels output rainm4/gemma4-exp046-q4-canary -p runs/EXP-046-q4-canary/
-python -I -X utf8 experiments/EXP-046/analyze_canary.py runs/EXP-046-q4-canary
+kaggle kernels output rainm4/gemma4-exp047-q4-canary -p runs/EXP-047-q4-canary/
+python -I -X utf8 experiments/EXP-047/analyze_canary.py runs/EXP-047-q4-canary
 ```
 
 ## 7. Defects
@@ -155,8 +175,17 @@ Written before the run.
 
 ## 8. Built
 
-*(to be filled when the notebook is built)*
+2026-11-05, built (no GPU spent).
+
+- **Files.** Source `notebooks/exp047_q4canary/q4_canary.py` (py:percent), built with the section 6 command into `notebooks/exp047_q4canary/q4_canary.ipynb` (10 cells, no embedded zip, sha256 `35bd32c8c127e75a31fc477c2ca218ea3d0ce16c3feb87d2d323e1a08067bb67` of the CRLF worktree file); `notebooks/exp047_q4canary/kernel-metadata.json`; analysis `experiments/EXP-047/analyze_canary.py`.
+- **Kernel id** `rainm4/gemma4-exp047-q4-canary`. Private, GPU on (`NvidiaL4`, the eval notebooks' docker image), internet off. Inputs: dataset `metric/gemma-4-developer-agent-wheelhouse` and model `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2` only. **No competition source is attached**, so no task, snapshot or competition file is mounted in the kernel and none can leave it; the adapters are random tensors made in the kernel from the model's shapes, and the prompts are our own words.
+- **Amendment to 2.5, dated 2026-11-05 at build, before the push (the 2.5 table stands as the estimate):** the notebook's caps are tighter than 2.5 states: no new boot or probe group after 27 minutes, every wait bounded so the kernel ends near 30 minutes (0.5 h), boot 0 startup timeout 600 s and boot 1 720 s (not 900 s), request timeout 120 s. Boot 1 is not started unless 720 s remain before the 27-minute stop; that case is recorded as infrastructure (A0). So the worst case is the 0.5 h cap, and the expected 0.20 to 0.35 h (point 0.26) is unchanged. A boot that would need more than 720 s on the E4B (boot 0 measured 289 to 323 s three times) is itself a finding, recorded as A1 with its failure class.
+- **Amendment (i) wiring.** Every probe records the response's `model` field; the routing check records what each registry name resolves to (`registry_models`), the compiled root agent's model string and the compile-path response. The analysis applies row A1f and the non-finite rule of 4.3.
+- **Checks run locally (no GPU).** The adapter and shape cells ran on a synthetic checkpoint with the sample's key layout: keys matched the sample pattern, `canary_zero` has 0 non-zero `lora_B` entries, `canary_big` and `canary_loud` are dense, and the discovered ranks were 4, 4 and 8. The analysis script was run on four synthetic outputs and returned A3 (applied), A5 (wiped), A1f (registry and agent bound to the base path) and A3 (loud logprobs non-finite), each with B3 at the synthetic KV figures. These check the code paths, not the result.
+- **Push guard, read before the push.** `.claude/hooks/guard_push.py` admits a notebook with no `RUN_AGENT` parameter only when its metadata is CPU-only; this notebook has GPU metadata and no `RUN_AGENT`, so the guard is expected to refuse it (section 7 item 7). The notebook is not given a `RUN_AGENT` or `TASK_IDS` to pass the guard: it runs no agent and no task, and a fake parameter would misstate what it does.
 
 ## Status
 
-2026-11-05: pre-registered. Not built, not pushed. Zero GPU spent.
+~~2026-11-05: pre-registered. Not built, not pushed. Zero GPU spent.~~
+
+2026-11-05: renumbered EXP-046 to EXP-047, critic conditions added (4.3), built. Not pushed yet. Zero GPU spent.
