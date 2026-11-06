@@ -105,6 +105,27 @@ Estimate for three stages [I]: locate 15 to 55 s (as the proposer, with one fewe
 
 Smoke-8 kernel: 8 x 100 s + 432 to 504 s overhead = 1,232 to 1,304 s, **point 0.35 h, range 0.30 to 0.43 h** (D-006's 0.3 to 0.45). **Conditional worst case** (every task to the 495 s cap): 8 x 495 + 445 = 4,405 s = **1.22 h**, reached only if every pass restarts until the clock. 120 hidden tasks at 100 s plus the E4B's setup is about 3.5 h, inside the 10.5 h rule; the cap-only gate still reads 18 h at an 8-minute cap, as for every 8-minute arm.
 
+### 2.7 Per-stage call budget (added 2026-11-05 at the lead's request, citing `research/lit/lit-2026-11-05-small-model-adapter-and-role-split.md`; sections 3 and 4 below are not changed by it)
+
+The lit note predicts a team costs at least 1.8x the single loop's model calls (below 1.2x falsifies, above 3x puts the editor out of reach in the 28-call cap), from a non-SWE benchmark where the team cost 1.79x at nominally equal budget and showed no gain (+0.015, p = 0.80). Here is the same question from the E4B's own counts, `experiments/EXP-038/e4b/summary.jsonl` (the unchanged single loop, 48 ids). **Counted calls** are `n_calls` = `read_file + edit_file + run_command`; `get_status` and `submit_patch` are free (`n_calls_incl_free` is the sum with them) [V by the rows: fastapi_15661 histogram 7, `n_calls` 6]. **Turns** are `n_turns`.
+
+**The single loop is short.** Counted calls per task on dev-48: mean 8.85 (sum 425), median 7 to 8, max 21 (rich_4070); 10 of 48 tasks use 14 or more; **no task reaches 28**. Turns: mean 12.5 (sum 601). On smoke-8: counted calls 5, 7, 11, 12, 4, 3, 4, 8 (fastapi_14301, fastapi_14448, fastapi_14605, httpx_3672, requests_7205, requests_7309, rich_3006, rich_3468), sum 54, mean 6.75, max 12; turns sum 80, mean 10.
+
+**What the locate stage leaves.** Locate's counted calls are its reads (it has only `read_file`). The single loop's total reads per task are the nearest stand-in: smoke-8 1, 2, 3, 4, 1, 1, 1, 4 (mean 2.1, max 4); dev-48 max 11 (fastapi_5624), 10 on two more. The edit and check stages need `1 + edit calls + 2` (one re-read of the span, the edits, `git diff` and one check). From the single loop's edit counts that is at most 10 on smoke-8 (fastapi_14605: 7 edits) and **at most 15 on dev-48** (rich_4070: 12 edits). The calls left for the two later stages after locate is **28 minus locate's reads: 24 to 27 on smoke-8 at the single loop's read counts, 17 to 27 on dev-48 at its worst read count (11)**, always above the 15 they need at most.
+
+**Editor reached.** In a Sequential tree the editor runs after locate ends, so it is out of reach only if locate uses all 28 counted calls (or the 480 s clock). That needs 28 reads where the single loop used at most 11, and where EXP-040's prompt-bounded proposer used at most 13. **Editor reached: 8 of 8 on smoke-8 and 48 of 48 on dev-48** at the single loop's read counts; it would take a locate stage that reads 2.5 times as much as the worst proposer yet measured to flip one. The D-006 kill row 1 (editor reached on fewer than 6 of 8) is **not** expected to fire; the screen is not built because of section 0, not because of the call budget.
+
+**Call ratio.** Two scenarios [I], both from the EXP-038 counts, with no new run:
+
+| Scenario | Counted calls | Turns | smoke-8 |
+|---|---|---|---|
+| Floor: the edit stage trusts the plan, re-reads only the span (reads + 1 + edits + 2 per task; 3 stage-end replies for 1) | dev-48 about 464 against 425 (**1.09x**); smoke-8 61 against 54 (1.13x) | dev-48 about 736 against 601 (**1.22x**); smoke-8 103 against 80 (1.29x) | cap never near (max 13 counted) |
+| Duplicate locate: the edit stage repeats locate's reads, as EXP-040's actor did (2 x reads + edits + 3) | smoke-8 6 to 17 per task (single 3 to 12), about 1.4x to 1.5x; dev-48 one task over 28 (rich_4070, 29), the next 27 (fastapi_13207, 14459, 15800) | the 3 extra stage-end replies add a further +2 per task | cap not reached by any smoke-8 task (max 17) |
+
+The pre-run estimate for EXP-040's reader-plus-actor pair, without its 16 voters, was about 8 + 10 = 18 turns against the single loop's 9.5 (1.9x, EXP-040 section 2.3), so the lit note's 1.8x is a real possibility if the edit stage re-locates; the floor is 1.1x to 1.3x. **Neither scenario reaches the 3x line; the floor sits at or below the lit note's falsifying 1.2x (counted calls 1.09x to 1.13x, turns 1.22x to 1.29x).** The reason is the E4B's loop: a mean of 8.85 counted calls leaves the 28-call cap far away. The same split on the 31B (median 25 calls at the 8-minute cap, harness-stack skill) would be bounded by the shared counter; this E4B desk check does not carry over to it.
+
+**Limits.** The reads of the single loop are not locate's reads (the model reads only until it edits, and the team's locate has no `run_command`, so no `git grep`); both could be higher in a team. A first-stage overrun of the EXP-040 kind (13 reads) leaves 15, equal to the heaviest dev-48 need. These ratios are recorded as predictions, not readings; section 4 does not read them.
+
 ## 3. Endpoints (for the specified screen, not run)
 
 All are computed from `traces/trace_*.json` and `task_results.jsonl`, pass 1 unless stated, by `tools/analyze_traces.py` and hand counts.
