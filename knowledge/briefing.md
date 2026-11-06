@@ -13,7 +13,7 @@ updated: 2026-10-29
 ## What we learned
 
 - The cap, not the prompt wording, is the one lever with a one-variable contrast behind it: the same bundle scored 7/58 at 4.5 min and 14/58 at 8 min, and their own release says 5.5 -> 8 min took them from 0.12-0.17 to 0.18-0.24 (C-002, kg-rank3-apache). Their prompt stops on its own, so 8 min projects 9.9-10.6 h; ours ran to the cap and would project 14 h (C-003, C-008).
-- About 38% of `edit_file` calls never reached the file because the model emits an unterminated string literal and the agent then repeats the same call up to 19 times (C-004, EXP-024/026). The detector everyone would write misses it. A single-argument shell route is the mitigation under test (C-005, EXP-028).
+- About 38% of `edit_file` calls never reached the file because the model emits an unterminated string literal and the agent then repeats the same call up to 19 times (C-004, EXP-024/026). The detector everyone would write misses it. A single-argument shell route did not move the next call after a first loss (0 of 6, EXP-028 row 4; C-005).
 - One LB draw cannot see anything smaller than ~4 tasks; ten draws of prompt surgery read 4-8 with no trend (C-001, C-009). The lineage is retired (D-001).
 
 ## Open decisions
@@ -30,7 +30,7 @@ updated: 2026-10-29
 | #8 EXP-023 (v24 at 4.5) | readings in EXP-023 §4 | not asked | 0.12 = 7/58 | per EXP-023 §4 (not re-read here) |
 | EXP-025 Arm A affected tasks | risk named: near 4-6 means underpowered | not asked | 6 | the risk fired |
 | #11 EXP-027 (v24 at 8) | k ~ 10, band 6-14 | not asked | pending | |
-| EXP-028 | T1-T4, rows 1-8 | not asked | complete, unanalyzed | |
+| EXP-028 | T1-T4, rows 1-8 | not asked | T2 + T4, row 4; critic light accepted | |
 
 ## Worth your time
 

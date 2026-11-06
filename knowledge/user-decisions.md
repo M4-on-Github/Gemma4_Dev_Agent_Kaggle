@@ -154,3 +154,10 @@ Read by the lead as:
 - No upload is proposed or made while S-013 (ref 58037856) is pending. Whether Kaggle would in fact accept a second upload while one is pending is not verified [user's belief]; the lead does not test it with an upload.
 - The user asked for the state of the 31B and E4B lines and for what can still be tested. This is a question, not an approval: no GPU, no upload and no new agent is approved by it.
 - The lead's question about preparing an E4B upload proposal was not answered; it stays open.
+
+## 2026-11-06 ~01:00 UTC: new direction asked for (short role prompts, tool-call adapter, team setup, use the idle GPU)
+User, verbatim: "taking note of 31b. I think the agents don't do well with long prompts right? so instead of giving them long prompts I say we give short concise prompts to the agent (any sub agetns). and we discover failuresa nd lora the fix for tool calling (which should be easy). let's figure out on figuring out the optimal agent team setup that will make things fast and correct. since the L4 is also idle, I think we need to do multiple parallel or loop or whatever engineering context engineering etc"
+Read by the lead as:
+- A direction to plan and to start at zero GPU: D-006 is written as proposed; desk checks, builds, one lit note and one Kaggle digest go to the existing agents.
+- "the L4 is also idle" shows willingness to spend GPU but names no kernel and no number. No kernel is pushed on it. The lead asked for one ceiling covering an ordered list.
+- Not approved by this: any kernel push, adapter training, a dev-48 arm, an upload, a new agent.

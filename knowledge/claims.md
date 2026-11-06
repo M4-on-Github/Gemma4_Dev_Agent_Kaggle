@@ -40,19 +40,20 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - topics: [budget]
 - expected gain: theta ~ 10/58 for the 8-min tree vs 7/58 at 4.5 (EXP-027 §3: +3.3 after removing their best-of-N selection; their 14/58 is a maximum of >= 12 uploads)
 - sources: submissions.md row 8 (#8 = v24 at 4.5 min: 7/58); kg-rank3-apache §2-3 (v24 at 8 min: 14/58, Fisher p = 0.147 vs #8; 2-6 of their ~19 resolves per 46-task set finish after 270 s; first edits after 270 s: 0-1); EXP-023 §3 (confound stated before the score)
-- tests: EXP-027 (#11, Kaggle ref 57750294, PENDING since 2026-10-28 22:39 UTC); EXP-028 Arm R (time profile, complete, unanalyzed)
+- tests: EXP-027 (#11, Kaggle ref 57750294, PENDING since 2026-10-28 22:39 UTC); EXP-028 Arm R (time profile only, T2 at 10.04 h; not a test of the score; critic light accepted)
 - migrated-evidence: EXP-027 §4 holds the blind readings for #11 (blank -> 6.0 min next; k <= 8 -> adopt tree anyway, cap not the lever; 9-10 -> adopt as baseline; >= 11 -> adopt and re-run unchanged).
 - history: 2026-10-29 migrated as hypothesis
 
 ## C-003: The v24 tree at 8 min / 28 calls completes ~120 hidden tasks inside the 12 h scoring budget
-- status: hypothesis
+- status: supported
 - confidence: medium
 - topics: [budget]
 - expected gain: none directly; a blank costs one slot (zero for that day). Precondition for C-002 and every later arm on this tree.
 - sources: kg-rank3-apache §2-3 (v19 and v24 both completed and scored at 8 min; runs.jsonl mean 275-296 s, 15-24% at cap, proj_h@120 9.9-10.6 h with 0.7 h overhead); EXP-016 §3 (our ~10.5 h operational ceiling; #2 died at an 11.34 h projection that omitted fixed overhead); submissions.md row 2
-- tests: EXP-027 (#11 pending); EXP-028 Arm R (dev-48 time profile on our cohort, readings T1-T3)
+- tests: EXP-027 (#11 pending); EXP-028 Arm R (T2: 10.04 h from mean 297.4 s plus measured overhead, no margin, about 0.6 h per SE; one RH task ran 751.9 s against the 8-min cap; critic light accepted)
 - migrated-evidence: their prompt self-stops on 76-85% of tasks; ours ran to the cap on 79-96%, which is why `cap x 120` fit ours to 4% and overstates theirs by ~45% (EXP-027 §1c).
 - history: 2026-10-29 migrated as hypothesis
+- history: 2026-11-06 hypothesis -> supported: EXP-028 critic light accepted (b691244), T2 at 10.04 h with no margin (about 0.6 h per SE, critic's inference); #11 and #12 completed on the hidden set at this cap. The 8-minute cap is not a hard per-task bound (one RH task ran 751.9 s) and the projection does not model such overruns
 
 ## C-004: A large share of `edit_file` calls never reach the file: the model emits an unterminated string literal (the lost call's `new_string` ends in `ng:`), the harness returns "mandatory input parameters are not present: old_string", and the agent retries the identical call
 - status: hypothesis
@@ -63,15 +64,17 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - tests: EXP-024, EXP-025, EXP-026 §1 (measurements; no critic yet)
 - migrated-evidence: the `"status": "error"` envelope check missed 92 of 92 losses in E0 (EXP-024 §1.4); `analyze_traces.py` now counts the harness string directly.
 - history: 2026-10-29 migrated as hypothesis
+- history: 2026-11-06 evidence added, status unchanged: on the shipped v24 prompt Arm R lost 58 of its 175 `edit_file` calls (33.1%) across 7 of 48 tasks (critic's count, `experiments/EXP-028/critic.md`)
 
 ## C-005: A short prompt section routing every post-loss edit through a single-argument `run_command` python heredoc raises post-loss compliance (next call is `run_command`) from <5% to >= 60% without raising the empty-patch rate
-- status: hypothesis
+- status: refuted
 - confidence: medium
 - topics: [edit-reliability, prompt]
 - expected gain: on the retired lineage, each affected task lost 8-19 calls to retries; on the v24 tree the affected count is unknown. Not powered on resolves. Decides the tree for slot #12 (EXP-028 §4 rows 1-8).
 - sources: EXP-026 §1-§3 (route design, baseline 4.6% = 9 of 195 post-loss calls are `run_command`, 0/31 after a first loss); lit-2604.05407 (structured action spaces cut empty patches on small models); lit-aider2025-editformats (single-argument whole-file routes are easiest for small models)
-- tests: EXP-028 Arm RH vs Arm R (complete 2026-10-29, unanalyzed; readings in EXP-028 §4); EXP-026 Arm C (pre-registered on the retired 12.8 KB prompt, not run); submissions.md row 10 (#10, same route on the retired prompt: 6/58, uninformative at one draw)
+- tests: EXP-028 Arm RH vs Arm R (row 4 fired: next call after a first loss is `run_command` in 0 of 6 RH and 0 of 8 R tasks, Fisher p = 1.0, one-sided 95% upper bound 39%; critic light accepted); EXP-026 Arm C (pre-registered on the retired 12.8 KB prompt, not run); submissions.md row 10 (#10, same route on the retired prompt: 6/58, uninformative at one draw)
 - history: 2026-10-29 migrated as hypothesis
+- history: 2026-11-06 hypothesis -> refuted as stated, on this prompt at n = 6: EXP-028 critic light accepted (b691244), row 4; compliance 0 of 6 (RH) and 0 of 8 (R), one-sided 95% upper bound 39% against the claimed 60%
 
 ## C-006: A recovery ladder in the 12.8 KB prompt (EXP-024 editfix: long verbatim anchors, then write_file) cuts wasted identical retries after a lost edit
 - status: hypothesis
@@ -89,9 +92,10 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - topics: [budget, tools]
 - expected gain: unknown; EXP-028 T4 (>= 25% of tasks at 28 calls, none resolved) makes it the next single-variable arm.
 - sources: EXP-003 (our prompt at 8 min / 28 calls: 20 of 48 tasks ended at the call cap, 0 resolves among them; `rich_3676` stopped exactly at the cap); kg-rank3-apache §2-3 (their median 21-25 calls at 8 min; v25 raises 28 -> 40, unscored)
-- tests: EXP-028 Arm R (28-call incidence; reading T4)
+- tests: EXP-028 Arm R (T4 fired: 18 of 48 at 28 calls by the analyzer, 17 by the harness, 0 resolved; tests the premise, not the gain; critic light accepted)
 - history: 2026-10-29 migrated as hypothesis
 - history: 2026-11-05 note, status unchanged: EXP-032 arm T4 (28 -> 43 calls, same tree) is built and permitted by its pre-registration but held by the lead (knowledge/plan.md); still untested
+- history: 2026-11-06 status unchanged: the accepted EXP-028 review covers the premise only (the call cap binds, 0 resolved among capped tasks); the gain from 40 calls is untested
 
 ## C-008: The packing gate `cap x 120` is accurate only for prompts that run to the cap; the right rule is measured mean x 120 + measured overhead <= ~10.5 h, which admits 8 min for the v24 prompt and forbids it for ours
 - status: hypothesis
@@ -99,8 +103,9 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - topics: [budget]
 - expected gain: none directly; it decides which caps are uploadable without a blank.
 - sources: EXP-016 §3 (E0: 79.2% at cap, mean 258.3 s, formula 9.00 h vs actual 8.61 h; overhead setup 3.3 s/task median, grading 14.0 s/task mean, ~35 min per 120 tasks); EXP-027 §1c; submissions.md row 2 (#2 projected 11.34 h on actual time and still timed out)
-- tests: EXP-028 Arm R (measured mean and overhead on dev-48 for the v24 tree)
+- tests: EXP-028 Arm R (10.04 h from measured mean and overhead against 18.00 h from cap x 120; admits 8 min for v24; does not test the clause on our retired prompt; critic light accepted)
 - history: 2026-10-29 migrated as hypothesis; the gate in `submission_rules.py` is unchanged pending a measured rule
+- history: 2026-11-06 status unchanged: the accepted EXP-028 review covers the v24 half only
 
 ## C-009: Prompt surgery on the 12.8 KB phased-prompt lineage cannot move the public LB above 8/58
 - status: hypothesis
@@ -146,6 +151,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - sources: kg-rank3-apache §5 (v20 adapter 28.3% vs v20_base 39.1% on 46 tasks; v21 19.6% with 54.3% empty patches); EXP-016 §2c; lit-2603.13023 and lit-2512.13607 (32B gains need full fine-tunes on thousands of verified trajectories; no LoRA numbers reported); plan.md §6.2
 - tests: none of ours
 - history: 2026-10-29 migrated as hypothesis; parked
+- history: 2026-11-06 note, status unchanged: the user asked for an adapter aimed at tool-call failures only (D-006, C-024). C-013's evidence is about adapters trained on whole task trajectories; it does not test a narrow one. Q4 (whether the harness's server applies an adapter at all) is still open and gates both
 
 ## C-014: Same-model delegation (sub-agents, `agent_tool`) does not add capability here and costs the binding resource, time
 - status: hypothesis
@@ -156,7 +162,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - tests: EXP-006, EXP-007 (probes; no agent run)
 - history: 2026-10-29 migrated as hypothesis; parked
 - history: 2026-11-05 evidence added, status unchanged (no critic verdict): lit-2026-11-05-architecture-families found no source for the 12/18 -> 6/18 figure; lit-2512.08296 has every multi-agent topology at or below the single agent at equal budget (n = 20, direction only); lit-2602.03786 is mixed by model. D-005 ranks the orchestrator last and screens it only on the user's request.
-- history: 2026-11-05 evidence added, status unchanged (no critic verdict): EXP-032 arm P1 (ParallelAgent of three read-only localizers, then an editor, smoke-8 on the cap-bound ids): 21 of 24 localizer branches overspent a 5-call prompt limit, the shared 43-call budget was gone before the editor started in 7 of 8 tasks, non-empty patch 1 of 8, mean wall +72.9 s on Arm R; row e fired, parallel stage parked
+- history: 2026-11-05 evidence added, status unchanged (no critic verdict): EXP-032 arm P1 (ParallelAgent of three read-only localizers, then an editor, smoke-8 on the cap-bound ids): 21 of 24 localizer branches overspent a 5-call prompt limit, the shared 43-call budget was gone before the editor started in 7 of 8 tasks, non-empty patch 1 of 8, mean wall +72.9 s on Arm R; row e fired, parallel stage parked; not evidence on delegation capability, since the editor had 0 guaranteed calls in 7 of 8 (critic light accepted)
 
 ## C-015: Best-of-N attempts are affordable in wall-clock (88.6% idle KV capacity) but there is no selection signal without hidden tests, so N parallel editing branches cannot pay; N read-only localizers feeding one editor is the only fitting shape
 - status: hypothesis
@@ -213,8 +219,8 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - confidence: high
 - topics: [budget, rules]
 - expected gain: none claimed; opens the small-model prize at about 1 GPU-h per dev-48 arm.
-- sources: EXP-033 section 9 (8 of 8 ran, 0 malformed in 43 calls, 6 of 8 non-empty patches, mean wall 56.9 s, 423 s left under the cap; resolves 2 of 8 recorded, not read); lit-2506.03524 (fixed workflow beat a free loop below about 10B in one table)
-- tests: EXP-033 (smoke-8; critic review pending); EXP-038 (dev-48, paired with Arm R; critic `full`, accepted, `experiments/EXP-038/critic.md`, d1d78a2)
+- sources: EXP-033 section 9 (8 of 8 ran, 0 malformed in 43 calls, 6 of 8 non-empty patches, mean wall 56.9 s and 423 s left under the cap on one draw (78.3 s on the same ids in EXP-038); resolves 2 of 8 recorded, not read); lit-2506.03524 (fixed workflow beat a free loop below about 10B in one table)
+- tests: EXP-033 (smoke-8; critic light accepted); EXP-038 (dev-48, paired with Arm R; critic `full`, accepted, `experiments/EXP-038/critic.md`, d1d78a2)
 - history: 2026-11-05 added by the lead as hypothesis
 - history: 2026-11-05 note: the E4B dev-48 question is unchanged by EXP-036; any E4B number on dev-48 carries the same grading gap (C-021) and the 43 of 48 ceiling (C-022)
 - history: 2026-11-05 note: the user approved the E4B dev-48 reference arm on the condition of about 1 GPU-h (EXP-038, to be pre-registered; `knowledge/user-decisions.md`)
@@ -257,8 +263,8 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - status: hypothesis
 - confidence: low
 - topics: [architecture, budget]
-- expected gain: unknown; no bound yet. The E4B single loop leaves about 423 s under the cap (EXP-033, smoke-8), which is the room voting would spend.
-- sources: user request 2026-11-05 (`knowledge/user-decisions.md`); D-004 bounds B3 (one call counter for all agents), B5 (E4B 45.63x KV room, X(4) = 3.47); EXP-032 P1 row e (prompt-only call limits ignored, the editor starved); `research/lit/lit-2026-11-05-architecture-families.md` (majority vote over patches: no gain, ties at N of 3 or fewer; nothing on per-step voting in a repo task)
+- expected gain: unknown; no bound yet. The E4B single loop left 423 s under the cap on one smoke-8 draw (EXP-033) and 394 s on dev-48 (EXP-038); the 10.5 h rule binds first, at about 225.6 s per task (EXP-038 row T), which is the room voting would spend.
+- sources: user request 2026-11-05 (`knowledge/user-decisions.md`); D-004 bounds B3 (one call counter for all agents), B5 (E4B 45.63x KV room, X(4) = 3.47); EXP-032 P1 section 9 E6 (21 of 24 localizer branches broke a prompt-only 5-call limit; the editor had 0 guaranteed calls in 7 of 8); `research/lit/lit-2026-11-05-architecture-families.md` (majority vote over patches: no gain, ties at N of 3 or fewer; nothing on per-step voting in a repo task)
 - tests: EXP-039 (L0 desk check, zero GPU, no critic review): one vote point is expressible and enforceable, per-step voting is not enforceable; design V1 with 16 voters; no screen run yet
 - history: 2026-11-05 added by the lead as hypothesis, on the user's request; filed under D-005 as a family, no GPU approved yet
 - history: 2026-11-05 note, status unchanged: EXP-039 desk check (cc4fb18, 38a7c27). The claim's "next move" form needs a one-call-per-round rule that is prompt-only, so the first screen is one vote point (proposer, 16 tool-less voters at temperatures 0.2 to 1.4, actor; tie to the lowest-numbered voter). The lit review's finding that majority vote over patches gives no gain is a prior against it; the screen can kill or promote the design, not show that voting helps. Cost 0.31 to 0.37 GPU-h, not yet approved
@@ -267,3 +273,12 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - history: 2026-11-05 note, status unchanged: EXP-038 gives the paired E4B reference (5 of 48, mean wall 85.7 s, 0 capped) and the measured room for extra stages, 225.6 s per task on the total clock (a1365bc, not yet critic-reviewed)
 - history: 2026-11-05 note, status unchanged, citation accepted by the critic (d1d78a2): on the E4B single loop, the 10.5 h rule leaves 225.6 s per task on average for an extra stage (EXP-038 row T). This binds before the per-task cap room, mean 394 s. A voting tree's dev-48 mean task wall must stay below about 311 s. The critic also notes run-to-run drift: the 8 smoke ids took 78.3 s here against 56.9 s in EXP-033, so EXP-040's 140 s wall bar is measured against a moving reference
 - history: 2026-11-05 note, status unchanged (critic light accepted, a4cdc5b, 037eb9e): EXP-040 (a396b12, smoke-8, E4B, 0.315 GPU-h), row 2 fired: with 16 same-prompt voters at temperatures 0.2 to 1.4 at one vote point, the winner equalled voter 1's pick on 8 of 8 tasks (D = 0; D could be true on 6). V1 as specified is stopped. Two or more candidates on 6 of 8 tasks, but on 3 of those 6 the candidates were one fix in different words (experimenter's judgement); on the other 3 the vote also equalled voter 1's pick. Mean wall 86.5 s, 0 of 8 capped; resolves 1 of 8 against 2 of 8 for the single loop, recorded, not read. The claim is neither supported nor rejected: the screen tested one design at n = 8; the row names a prompt-diverse variant, not built
+
+## C-024: A LoRA adapter trained only on exact-copy edit calls (given a shown file window, emit an `edit_file` call whose old string is an exact, unique substring of it) raises the share of E4B tasks with an applied edit, without lowering resolves
+- status: hypothesis
+- confidence: low
+- topics: [lora, edit-reliability]
+- expected gain: small and unknown. Population: 8 of 48 E4B dev-48 tasks where every `edit_file` call failed (EXP-043: of 39 failed calls, 16 paraphrase, 11 exact copies matching more than once). The E4B resolved 5 of the other 40, so landing an edit on all 8 is worth about 1 task of 48 at that rate [I]. Larger only if failed edits also cost tasks that landed an edit later (not counted).
+- sources: user request 2026-11-06 (`knowledge/user-decisions.md`); EXP-043 (critic light accepted); C-013 (the only same-model adapter datum is negative, for a different kind of adapter); `experiments/README.md` Q4 (host acknowledged adapters wiped [M], open); the organisers' sample submission ships a tool-call adapter
+- tests: none. Gate before any training: an adapter canary under the harness's server (Q4)
+- history: 2026-11-06 added as hypothesis with D-006
