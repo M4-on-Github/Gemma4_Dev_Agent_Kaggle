@@ -161,3 +161,12 @@ Read by the lead as:
 - A direction to plan and to start at zero GPU: D-006 is written as proposed; desk checks, builds, one lit note and one Kaggle digest go to the existing agents.
 - "the L4 is also idle" shows willingness to spend GPU but names no kernel and no number. No kernel is pushed on it. The lead asked for one ceiling covering an ordered list.
 - Not approved by this: any kernel push, adapter training, a dev-48 arm, an upload, a new agent.
+
+## 2026-11-06: GPU approved for D-006 items 1, 2 and 4; item 3 not approved
+User, verbatim: "1,2,4 approved. what are we reporiducing before submit?"
+Against the lead's list of the same day:
+- 1: adapter canary (Q4: output change and KV cache size with an adapter loaded), about 0.2 to 0.3 GPU-h. Approved.
+- 2: EXP-044 Arm X on failed-edit-8 (0.25 to 0.56 GPU-h), and the control X0 only if X applies an edit on 5 or more of 8 as EXP-044 reads (0.25 to 0.56). Approved.
+- 3: EXP-045 reproduction before submit (0.25 to 0.45). NOT approved; the user asked what it reproduces. Not pushed.
+- 4: EXP-046 prompt-bounded sequential role team, smoke-8, E4B (0.30 to 0.43). Approved; it must be built first.
+Read by the lead as: these kernels, once each, with no per-kernel ask; the estimated total is 0.8 to 1.85 GPU-h. The lead stops and asks if any kernel errors and needs a re-run, if a kernel's measured cost passes its stated worst case, or if the running total for this list would pass 2.5 GPU-h (the ceiling the lead asked for). Not approved by this: adapter training, a dev-48 arm, an upload (none while S-013 is pending), EXP-045.
