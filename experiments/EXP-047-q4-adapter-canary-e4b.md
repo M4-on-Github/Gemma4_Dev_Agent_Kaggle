@@ -144,6 +144,32 @@ A response with no `model` field is counted and reported, not read as a mismatch
 
 **Renumbered 2026-11-05.** This file was committed as EXP-046 in 73d369d; the screener's `experiments/EXP-046-e4b-sequential-role-team-desk-check.md` (0553ba1) was filed first, so the canary is EXP-047 (file renamed in the lead's 162c1aa, ids in the text, notebook directory, kernel slug and analysis path renumbered here). The desk costing that this file called EXP-047 is EXP-048. No reading changed in the renumber.
 
+### 4.4 Amendment 2026-11-05, after the guard refused the push and before any number exists: two misreads closed
+
+Found on review after 483d448. A1, A3 to A6 and reading B stay as written; these two clauses change which row two specific outcomes land in.
+
+1. **A failure of the loud dose alone.** The loud dose can break the numerics (condition (iii) makes it large on purpose); vLLM loads an adapter on its first request, so a failure on that request can also be a load failure. As written, any adapter non-200 is A1. Now:
+   - E5's non-200 test reads the **logprob** requests only, the measure. A greedy or decode failure is recorded and not read, so an engine that dies after the loud request does not turn earlier passes into A1. Logprob requests run first for every name (the notebook's order).
+   - Suppose the logprob failures are confined to `canary_loud`, while `canary_zero` and `canary_big` return 200 and all three names are listed. Then the failure is classed by its error text:
+     - text naming the adapter or LoRA, a target module, or a missing model stays **A1** as written;
+     - text naming NaN, inf, overflow or a numerical error sets **E2 = infinity** (applied at the loud dose), and reading A proceeds on E1 to E3 as written;
+     - any other text leaves E2 unread, so A3 and A4 cannot fire and the row is A6 unless E1 and E3 decide A2 or A1f.
+2. **Every adapter logprob request skipped.** Boot 1 starts, but the 30-minute cap stops every adapter logprob request. That is "the kernel ends before boot 1's logprob probes": **A0**, not A1.
+
+`experiments/EXP-047/analyze_canary.py` applies both. It was run on seven synthetic outputs:
+
+| synthetic output | row |
+|---|---|
+| applied | A3 |
+| wiped | A5 |
+| fall-through | A1f |
+| loud non-finite | A3 |
+| loud overflow error | A3 |
+| loud LoRA load error | A1 |
+| all skipped | A0 |
+
+These test the code path, not a result.
+
 ## 5. What this licenses
 
 - A3 or A4 with B2 or B3: the lead may ask for EXP-048's stage 2 (data generation and a training kernel). Nothing here licenses an upload, and no claim moves on this result alone beyond Q4.

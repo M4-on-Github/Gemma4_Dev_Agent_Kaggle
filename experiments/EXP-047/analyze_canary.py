@@ -1,5 +1,5 @@
 """EXP-047 readings, applied exactly as pre-registered (experiments/EXP-047-q4-adapter-canary-e4b.md sections 2.4, 3, 4,
-with the 4.3 amendment of 2026-11-05: row A1f and non-finite logprobs).
+with the 4.3 and 4.4 amendments of 2026-11-05: row A1f, non-finite logprobs, a loud-only failure).
 
 Usage: python -I -X utf8 experiments/EXP-047/analyze_canary.py runs/EXP-047-q4-canary [--json out.json]
 
@@ -95,8 +95,29 @@ def main(argv: list[str] | None = None) -> int:
     listed = b1.get("v1_models") if isinstance(b1.get("v1_models"), list) else []
     adapter_reqs = [r for r in probes if r.get("boot") == "boot1" and r.get("label") in NAMES and not r.get("skipped")]
     non200 = [(r["label"], r["kind"], r.get("status")) for r in adapter_reqs if r.get("status") != 200]
-    E5 = bool(b1.get("started")) and all(n in listed for n in NAMES) and not non200 and bool(adapter_reqs)
-    out.update(E5_loadable=E5, adapter_non200=non200, names_listed={n: n in listed for n in NAMES})
+    # amendment 4.4, 2026-11-05: E5's non-200 test reads the logprob requests (the measure) only; greedy and decode
+    # failures are recorded. A logprob failure confined to canary_loud is classed by its error text.
+    lp_non200 = [x for x in non200 if x[1] == "logprob"]
+    loud_class = None
+    if lp_non200 and all(x[0] == "canary_loud" for x in lp_non200):
+        err = " ".join(str(r.get("error") or "") + " " + str((r.get("echo_attempt") or {}).get("error") or "")
+                       for r in adapter_reqs if r["label"] == "canary_loud" and r["kind"] == "logprob").lower()
+        if any(k in err for k in ("lora", "adapter", "target module", "unexpected", "not found", "does not exist")):
+            loud_class = "load_failure"
+        elif any(k in err for k in ("nan", "inf", "overflow", "numer")):
+            loud_class = "overflow"
+        else:
+            loud_class = "unclassified"
+        if loud_class == "overflow":
+            E["canary_loud"] = math.inf
+        if loud_class != "load_failure":
+            lp_non200 = []
+    adapter_lp = [r for r in adapter_reqs if r["kind"] == "logprob"]
+    E5 = bool(b1.get("started")) and all(n in listed for n in NAMES) and not lp_non200 and bool(adapter_lp)
+    all_lp_skipped = bool(b1.get("started")) and not adapter_lp
+    out.update(E5_loadable=E5, adapter_non200=non200, names_listed={n: n in listed for n in NAMES},
+               loud_failure_class=loud_class, adapter_logprob_all_skipped=all_lp_skipped,
+               E2_loud_after_4_4=E["canary_loud"])
 
     # amendment (i), 2026-11-05: the server answers under the adapter's name, and the compile path does not fall
     # through to the base model (adk_submission server.py:432-439 binds an adapter name to the base path silently
@@ -142,7 +163,7 @@ def main(argv: list[str] | None = None) -> int:
                       "text_equals_direct_canary_big": (routing.get("text") == big_q0) if "text" in routing else None}
 
     # Reading A, first match
-    infra = (not b0.get("started")) or canary.get("status") == "infrastructure" or \
+    infra = (not b0.get("started")) or canary.get("status") == "infrastructure" or all_lp_skipped or \
         (b1.get("started") and E["canary_big"] is None and E["canary_loud"] is None and E5)
     if infra:
         A = "A0"
