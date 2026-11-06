@@ -1,0 +1,10 @@
+# include_contents default, not none: on a restart pass a none window would start at the harness nudge and lose the task message (EXP-040 section 9.8, the F11 pattern).
+name: locate
+description: Reads the repository with read_file only and reports the file, span, exact strings and the change.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/locate.md
+include_contents: default
+output_key: plan
+tools:
+  - read_file
+generate_content_config: !include ../configs/sampling.yaml

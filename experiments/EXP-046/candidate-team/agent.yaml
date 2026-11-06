@@ -1,0 +1,9 @@
+# EXP-046 2026-11-06: root changes from one LlmAgent (the EXP-033 E4B single loop) to SequentialAgent[locate, edit, check] (D-006 stage 3, a prompt-bounded team: only the model ends each stage, EXP-046 section 2.2).
+# The root carries no model, tools or instruction; each LlmAgent is in sub_agents/ and carries the E4B. Each stage holds only the tools its job needs; submit_patch is held by the last stage only.
+name: swe_agent
+agent_class: SequentialAgent
+description: Locate the code with a read-only stage, edit it with a stage that holds the edit tool, then check the diff and submit with a stage that holds the run tool.
+sub_agents:
+  - config_path: sub_agents/locate.yaml
+  - config_path: sub_agents/edit.yaml
+  - config_path: sub_agents/check.yaml
