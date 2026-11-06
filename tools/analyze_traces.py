@@ -124,9 +124,12 @@ def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
         etype = str(extra.get("event_type") or "")
         if "compact" in etype.lower() or "compact" in str(extra.get("author") or "").lower():
             compactions += 1
+        # 2026-11-05 fix: the harness logs its continuation nudge as a `system` step with
+        # event_type "continuation_nudge" (9 in EXP-038's 48 traces, 4 in EXP-028-armRH's; none as `user` steps), which the
+        # user-only rule counted as 0. One count per step, whichever of the two signs it carries.
+        if etype == "continuation_nudge" or (src in ("user", "system") and any(m in msg for m in NUDGE_MARKERS)):
+            nudges += 1
         if src == "user":
-            if any(m in msg for m in NUDGE_MARKERS):
-                nudges += 1
             continue
         if src != "agent":
             continue

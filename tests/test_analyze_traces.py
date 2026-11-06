@@ -79,3 +79,20 @@ def test_token_compaction_detected_from_prompt_drops():
     # the old marker rule still counts, and the two are not summed
     marked = steps + [{"step_id": 99, "source": "system", "message": "", "extra": {"event_type": "compaction"}}]
     assert A.analyze_trace({"steps": marked}, declared=set())["compactions"] == 3
+
+
+def test_nudges_counted_from_system_continuation_steps():
+    """2026-11-05: the harness logs a nudge as a `system` step with event_type continuation_nudge; it is counted
+    once per step whether it carries the event type, a marker message, or both. Messages are synthetic."""
+    marker = A.NUDGE_MARKERS[0]
+    steps = [
+        {"step_id": 0, "source": "user", "message": "task", "extra": {"event_type": "task_prompt"}},
+        _turn(1, 1000),
+        {"step_id": 2, "source": "system", "message": marker, "extra": {"event_type": "continuation_nudge"}},
+        _turn(3, 1200),
+        {"step_id": 4, "source": "system", "message": "", "extra": {"event_type": "continuation_nudge"}},
+        {"step_id": 5, "source": "user", "message": marker, "extra": {}},
+        {"step_id": 6, "source": "system", "message": "other", "extra": {"event_type": "compaction"}},
+        _turn(7, 1300),
+    ]
+    assert A.analyze_trace({"steps": steps}, declared=set())["nudges"] == 3
