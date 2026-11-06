@@ -184,6 +184,44 @@ Built 2026-11-05 after the pre-registration commit aa40b83, with the section 6 c
 
 Control arm X0 pushed with `kaggle kernels push -p notebooks/exp044_x0` at about 00:51 UTC on 2026-11-06 (19:51 local, UTC-5; read from the mtime of a file written just after the push), repo HEAD `522c561`, output `Kernel version 1 successfully pushed`. Kernel **`rainm4/gemma4-exp044-x0` v1**, status right after: RUNNING. Zip is `dist/EXP-038-e4b.zip`, sha256 `9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0`, the tree EXP-038 ran. This push is inside the user's approval of 2026-11-06 item 2 (X0 only if X applies an edit on 5 or more of 8). Stop rule: no re-run of a failed kernel without asking. Not waited on.
 
+### 9.1 Results, arm X0 (the control), 2026-11-06. Section 4 rows 5 to 7 applied as written
+
+**Run.** `rainm4/gemma4-exp044-x0` v1, COMPLETE. 8 of 8 tasks ran, ids exactly `experiments/cohorts/failed-edit-8.txt`, no kernel error, every task called `submit_patch`. Downloaded with `kaggle kernels output rainm4/gemma4-exp044-x0 -p runs/EXP-044-X0/`, analysed at `runs/EXP-044-X0/runs/EXP-044-x0/` with `python tools/analyze_traces.py ... --cap-minutes 8 --max-calls 28`; `summary.jsonl` is copied to `experiments/EXP-044/x0/summary.jsonl`. **Measured GPU-h: kernel wall 1,253.1 s = 0.348 h** (last entry of the kernel log, includes the notebook export tail; the 8 agent walls sum to 760.1 s). Inside the 0.25 to 0.56 h range of section 2.4 (point 0.38 h).
+
+**Endpoints for X0 (counts over the 8 tasks).**
+
+| # | Endpoint | X0 result |
+|---|---|---|
+| E1 | A, applied | **7 of 8**: fastapi_15661, fastapi_14873, fastapi_14459, fastapi_14360, fastapi_13786, rich_3676, rich_3063. Not applied: rich_3935 (4 of 4 edit calls failed) |
+| E2 | N_e | **8 of 8** |
+| E3 | failed `edit_file` calls by class | Counted from the tool results in the traces: 13 failed of 24 edit calls (11 ok). **11 are the harness's "old_string not found" error** (fastapi_15661 3, fastapi_14873 1, rich_3935 4, fastapi_13786 3), **2 are the lost-argument message** (fastapi_14873 2), non-unique or other 0. `summary.jsonl` shows `n_edit_fail` 12, one lower, because it counts 2 on fastapi_13786 where the trace holds 3 error results; this does not move A (that task has 3 ok edits either way) |
+| E4 | non-empty patches | **7 of 8** (empty: rich_3935) |
+| E5 | calls and wall, recorded not read | `n_calls` 7, 15, 8, 8, 7, 11, 5, 9 (sum 70, max 15 of 28); wall 63.4, 170.2, 61.0, 63.4, 86.8, 160.6, 39.8, 114.9 s (mean 95.0 s); no task at the 28-call or 480 s cap; 5 compactions (fastapi_14873 twice, fastapi_13786 once, rich_3063 twice); 0 nudge events |
+| E6 | resolves, recorded not read | 0 of 8 |
+
+**Paired per task, arm X against arm X0** (edit calls, with failed in brackets; trace counts for X0, `summary.jsonl` counts for X).
+
+| Task | X edit calls (failed) | X applied | X0 edit calls (failed) | X0 applied |
+|---|---|---|---|---|
+| fastapi_13786 | 6 (0) | yes | 6 (3) | yes |
+| fastapi_14360 | 1 (0) | yes | 2 (0) | yes |
+| fastapi_14459 | 1 (0) | yes | 1 (0) | yes |
+| fastapi_14873 | 4 (4) | **no** | 4 (3) | **yes** |
+| fastapi_15661 | 17 (17) | **no** | 5 (3) | **yes** |
+| rich_3063 | 4 (3) | yes | 1 (0) | yes |
+| rich_3676 | 1 (0) | yes | 1 (0) | yes |
+| rich_3935 | 1 (0) | **yes** | 4 (4) | **no** |
+
+Applied in both arms: 5 (fastapi_13786, 14360, 14459, rich_3063, rich_3676). X only: 1 (rich_3935). X0 only: 2 (fastapi_14873, fastapi_15661). Resolves: 0 of 8 in both arms, recorded, not read.
+
+**Row that fired, in order: row 6.** Rows 1 to 4 were settled by arm X (row 4 fired). Row 5 needs A_X of 5 or more with A_X minus A_0 of 3 or more and A_0 of 3 or fewer: A_X is 6, A_0 is 7, so A_X minus A_0 is minus 1 and A_0 is above 3; **not met**. **Row 6: A_0 (7) is at least A_X minus 1 (5): met.** Reading as written: the unchanged tree applies as many, regression to the mean explains row 4, **kill the line as specified.** Row 7 is not reached.
+
+**What this licenses (section 5).** The screen's outcome is a kill. **No dev-48 arm is proposed**: row 5 did not fire, so the cost recomputation that section 5 reserves for a promotion is not made. The cohort was chosen because the unchanged tree failed every edit in one draw; a second draw of the same tree applied an edit on 7 of 8, so the reference of 0 of 8 was a draw, as defect 1 of section 7 warned.
+
+**Prediction check (blind, section 4), recorded not argued.** A_0 about 3 of 8, range 1 to 5: **7, outside the range** (the blind estimate of regression to the mean was too low). Row 6 had no stated probability. Failed calls by type for X0 were not predicted separately. The classes that section 4 expected to persist (lost-argument, non-unique) appeared as lost-argument on one task (fastapi_14873, 2 calls) and non-unique on none. The not-found class fell from 22 in the EXP-038 draw to 11 here with no change to the prompt. Cost: X0 0.348 h against the 0.38 h point.
+
+**Both kernels together.** 0.359 h (X) plus 0.348 h (X0) = 0.707 GPU-h, against the 0.5 to 1.1 h range (point 0.8 h) of section 2.4.
+
 ## Status
 
-2026-11-06: arm X analysed (section 9): **row 4 fired**, A 6 of 8, N_e 8 of 8, 24 of 24 failed calls typed not-found, kernel 0.36 h. **X0 pushed at about 00:51 UTC as `rainm4/gemma4-exp044-x0` v1, RUNNING.** Next, a separate job once `kaggle kernels status rainm4/gemma4-exp044-x0` says COMPLETE: `kaggle kernels output rainm4/gemma4-exp044-x0 -p runs/EXP-044-X0/`, then `python tools/analyze_traces.py` on the nested bundle with `--cap-minutes 8 --max-calls 28`, and apply rows 5 to 7 (A_X is 6, so row 5 needs A_0 at 3 or fewer and row 6 fires at A_0 of 5 or more).
+2026-11-06: **X0 analysed (section 9.1): ROW 6 FIRED, A_0 7 of 8 against A_X 6 of 8, the line is killed as specified, no dev-48 arm proposed, X0 kernel 0.348 h, X and X0 together 0.707 h.** Earlier, 2026-11-06: arm X analysed (section 9): **row 4 fired**, A 6 of 8, N_e 8 of 8, 24 of 24 failed calls typed not-found, kernel 0.36 h. **X0 pushed at about 00:51 UTC as `rainm4/gemma4-exp044-x0` v1, RUNNING.** Next, a separate job once `kaggle kernels status rainm4/gemma4-exp044-x0` says COMPLETE: `kaggle kernels output rainm4/gemma4-exp044-x0 -p runs/EXP-044-X0/`, then `python tools/analyze_traces.py` on the nested bundle with `--cap-minutes 8 --max-calls 28`, and apply rows 5 to 7 (A_X is 6, so row 5 needs A_0 at 3 or fewer and row 6 fires at A_0 of 5 or more).
