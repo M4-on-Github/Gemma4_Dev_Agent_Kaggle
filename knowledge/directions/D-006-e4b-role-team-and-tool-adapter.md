@@ -48,7 +48,7 @@ Unknown, and small on what is counted so far: landing every edit on the 8 tasks 
 | 0 | canary build, LoRA costing, sequential-team desk check, lit note, Kaggle digest | 0 | now |
 | 1 | adapter canary under the harness's server | about 0.2 to 0.3 | on the user's word |
 | 2 | EXP-044 exact-copy line and EXP-045 reproduction before submit (pre-registered, being built) | their cost sections | on the user's word |
-| 3 | sequential role team, smoke-8, E4B | 0.30 to 0.43 | killed at its desk check (EXP-046); only on the user's explicit ask |
+| 3 | sequential role team, smoke-8, E4B | 0.293 measured | killed at its desk check (EXP-046); run on the user's 2026-11-06 word as the prompt-bounded team and killed again at the screen (row 2: applied edits 5 of 8 against the 6 of 8 floor, 3 empty patches; b4d2f50) |
 | 4 | adapter training and one screen of it | not costed yet (experimenter) | only after stage 1 passes |
 | 5 | a dev-48 arm of whatever survives | about 1.3 | the user's separate approval |
 
