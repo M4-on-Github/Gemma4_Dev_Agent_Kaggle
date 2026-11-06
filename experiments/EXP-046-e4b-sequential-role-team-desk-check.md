@@ -224,6 +224,54 @@ This is a stricter reading than the section 4 row 4 ("E1 and E2 each 6 or more o
 
 The canary was renumbered (`experiments/EXP-047-q4-adapter-canary-e4b.md`, 162c1aa), `git ls-files experiments/EXP-046-*` then listed only this file, and the amendment of section 8.3 was committed first (148d384). The notebook was pushed at HEAD `148d384` at about **00:30 UTC on 2026-11-06** (local clock 19:31 on 2026-11-05, UTC-5; the clock reading is the mtime of a file written just after the push). Kernel **`rainm4/gemma4-exp046-team` version 1**, private, GPU on, `enable_internet` false, model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`. `kaggle kernels status` right after the push: RUNNING. **Concurrency:** Kaggle accepted a second GPU session; `rainm4/gemma4-exp044-x` v1 was also RUNNING at the same status check. Both are due 0.30 to 0.43 h (this) and the X arm's own estimate; worst cases 1.22 h (this) and 1.24 h (X). Stop rule: no re-run of a failed kernel without asking. The download and analysis is a separate job, applying sections 4 and 8.3 as written.
 
+## 9 Results, smoke-8 team screen (analysed 2026-11-06; sections 4 and 8.3 applied as written, nothing revised)
+
+**Run.** Kernel `rainm4/gemma4-exp046-team` v1 finished without a kernel error and ran all 8 tasks (ids equal `experiments/cohorts/smoke-8.txt`; model E4B; stages locate, edit, check present on every task; `submit_patch` called on 8 of 8). Downloaded to `runs/EXP-046-team/`, analysed with `tools/analyze_traces.py --cap-minutes 8 --max-calls 28`. Per-task summary: `experiments/EXP-046/team/summary.jsonl`. **Cost: kernel wall 1,054.1 s = 0.293 GPU-h** (last log time stamp, includes the notebook export tail), just under the 0.30 to 0.43 h estimate.
+
+**Per-task counts** (counted calls = read, edit and run calls; stage columns count every call by author, free `get_status` and `submit_patch` included, and sum to `n_calls_incl_free`).
+
+| Task | Counted | Locate | Edit | Check | Edit calls (failed) | Patch | Wall s |
+|---|---|---|---|---|---|---|---|
+| requests_7309 | 7 | 0 | 5 | 4 | 1 (0) | non-empty | 49.3 |
+| requests_7205 | 2 | 0 | 1 | 3 | 1 (1) | empty | 32.9 |
+| fastapi_14448 | 16 | 6 | 8 | 4 | 7 (6) | non-empty | 175.3 |
+| fastapi_14301 | 8 | 0 | 7 | 3 | 5 (5) | empty | 95.5 |
+| httpx_3672 | 5 | 0 | 2 | 5 | 1 (0) | non-empty | 52.8 |
+| fastapi_14605 | 7 | 3 | 2 | 4 | 2 (0) | non-empty | 54.1 |
+| rich_3468 | 8 | 6 | 0 | 3 | 0 (0) | empty | 67.7 |
+| rich_3006 | 6 | 0 | 2 | 6 | 1 (0) | non-empty | 42.9 |
+
+**Endpoints.**
+
+| Endpoint | Value | Note |
+|---|---|---|
+| E1 editor reached (8.3 A: at least 10 counted calls and 120 s left at the edit stage's first step) | **8 of 8** | locate used at most 6 counted calls (so 22 or more of 28 left) and the edit stage's first step stamp is at most 69.7 s on every task (so more than 400 s of 480 s left). rich_3468 counts as reached although the edit stage made no edit call |
+| E2 applied edit (at least one `edit_file` that succeeded) | **5 of 8** | requests_7309, fastapi_14448 (1 of 7 succeeded), httpx_3672, fastapi_14605, rich_3006. Not applied: requests_7205 (its one edit failed), fastapi_14301 (5 of 5 failed), rich_3468 (no edit call). EXP-033 reference 6 of 8; EXP-038 same tree 8 of 8, recorded beside it and not read |
+| Empty patches (`patch_empty`) | **3 of 8** | requests_7205, fastapi_14301, rich_3468. EXP-033 had 2, EXP-038 had 0 (beside it, not read) |
+| Mean wall | **69.0 s** (sum 551.5 s; median 53.5 s; longest 175.3 s) | no task at the 480 s cap, no call-limit hit. Below the 140 s concern line and the 282 s row 3 line |
+| Edit failures | 12 of 59 counted calls (20.3 %); lost-argument 0 | 12 failed edits, all in three tasks (fastapi_14448: 6, fastapi_14301: 5, requests_7205: 1) |
+| Restarts | 0 nudges, 1 compaction (fastapi_14448) | |
+| Resolved (recorded, not an endpoint) | 1 of 8 (rich_3006) | |
+
+**What the traces show, in my own words.** On 5 of 8 tasks the locate stage made no read at all and handed over a plan written from the problem statement alone, so the hand-off carried guesses, not file content. The edit stage then worked from that plan. On requests_7205 the plan's replacement was identical to its search text, the single edit failed as a no-op and the check stage submitted an empty patch. On fastapi_14301 all 5 edits failed to match. On rich_3468 locate used 6 reads, then the edit stage replied with text and no edit call. All three stages ran and handed over in order on every task, as the desk check said they would (the per-stage tool lists are by construction, and I did not audit tool kinds per stage beyond the counts above); what did not hold was that locate reads before it plans.
+
+**Rows, in order.**
+
+| # | Fired? | Why |
+|---|---|---|
+| 0 | no | 8 ids, no kernel error, E4B, all stages present |
+| 1 | no | E1 is 8 of 8 |
+| **2** | **YES** | **E2 is 5 of 8, fewer than 6 of 8: kill, floor set by EXP-033's 6 of 8** |
+| 3 | not reached; tests recorded | mean 69.0 s is not above 282 s and 0 tasks at a cap |
+| 4 (pass row, 8.3 C) | no | E1 8 of 8 holds, but E2 5 is below 7 and empty patches 3 exceed 2 |
+| 5 | no | row 2 fires first |
+
+The 140 s concern does not arise (69.0 s). **Verdict: row 2, the team screen is killed as pre-registered.** Section 5 says this screen can only kill or promote; it kills. **No dev-48 arm is recommended.** Not-evidence: n = 8, the 5-of-8 is one task below the line, and the cause (locate skipping its reads on 5 of 8) is a prompt failure that a different locate prompt could change, but that is a new claim and a new screen, not a reading of this one.
+
+**Reading, not a decision row: the lit-scout's call-ratio prediction** (not pre-registered here; ratio = team counted calls per task over the single loop's on the same ids; below 1.2x falsifies the prediction, above 3x means the editor is out of reach). Team counted calls 59 on smoke-8 (7, 2, 16, 8, 5, 7, 8, 6). Single loop, EXP-038 same tree, same ids: 3, 4, 7, 5, 12, 11, 8, 4 = 54, **ratio 1.09x**, below 1.2x. Single loop, EXP-033, same ids: 3, 6, 4, 3, 1, 15, 5, 6 = 43, ratio 1.37x, between the two bounds. Counting free calls, the team made 74 calls. Model turns: team 15, 10, 26, 17, 13, 15, 18, 14 = 128; EXP-038 same ids 6, 9, 10, 8, 15, 14, 11, 7 = 80, ratio 1.6x. Against the EXP-038 reference (the like-for-like tree) the prediction's below-1.2x branch is met; against EXP-033 it is neither. Per-task ratios swing widely (requests_7205 0.5x, fastapi_14448 2.3x, httpx_3672 0.4x), so only the aggregate is recorded and it is not read as an effect.
+
+**Blind prediction check (section 4).** E1 8 of 8: held. E2 6 or 7 of 8: missed at 5. Mean wall 90 to 120 s: missed at 69.0 s (lower). Cost 0.30 to 0.43 h: just under at 0.293 h.
+
 ## Status
 
-2026-11-06: desk check complete (premise killed as specified, Q2). The prompt-bounded team screen is built (cda78c9, zip `9a1e3454...b1ef`), amended blind (section 8.3, 148d384) and **pushed at about 00:30 UTC as `rainm4/gemma4-exp046-team` v1, RUNNING** (section 8.4). Next, a separate job once `kaggle kernels status rainm4/gemma4-exp046-team` says COMPLETE: `kaggle kernels output rainm4/gemma4-exp046-team -p runs/EXP-046-team/`, move the nested inner directory up, `python tools/analyze_traces.py runs/EXP-046-team --cap-minutes 8 --max-calls 28`, then count stages, nudge events and the E1 definition of section 8.3 from the traces.
+2026-11-06 (screen analysed, section 9): **ROW 2 FIRED, team killed as pre-registered; E1 8 of 8, E2 5 of 8, empty patches 3 of 8, mean wall 69.0 s, kernel 0.293 GPU-h; no dev-48 arm recommended.** Earlier, 2026-11-06: desk check complete (premise killed as specified, Q2). The prompt-bounded team screen is built (cda78c9, zip `9a1e3454...b1ef`), amended blind (section 8.3, 148d384) and **pushed at about 00:30 UTC as `rainm4/gemma4-exp046-team` v1, RUNNING** (section 8.4). Next, a separate job once `kaggle kernels status rainm4/gemma4-exp046-team` says COMPLETE: `kaggle kernels output rainm4/gemma4-exp046-team -p runs/EXP-046-team/`, move the nested inner directory up, `python tools/analyze_traces.py runs/EXP-046-team --cap-minutes 8 --max-calls 28`, then count stages, nudge events and the E1 definition of section 8.3 from the traces.
