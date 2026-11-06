@@ -1,0 +1,1 @@
+- After your last edit, write a short Python script that reproduces the behavior the issue reports into `/tmp/repro.py` and run it once with `python3`, both through `run_command`. It must import the code you changed, call it the way the issue does, and print the value the contract requires. This is your one check.

@@ -142,8 +142,16 @@ Written before the run.
 
 ## 8. Built
 
-Not built yet. Sections 1 to 7 are the pre-registration; the build record follows below the Status line when the tree, zips and notebooks exist.
+Built 2026-11-05 after the pre-registration commit aa40b83, with the section 6 commands. Sections 1 to 7 are unchanged.
+
+- **Diff, tree against baseline** (`diff -ru experiments/EXP-033/candidate-e4b experiments/EXP-044/candidate-x`): one hunk, `@@ -17,6 +17,7 @@` of `prompts/system.md`, one line added (the `x_insert.md` bullet, after the "Prefer `edit_file`" bullet), nothing removed. No other file differs: `agent.yaml`, `configs/sampling.yaml` and `eval_config.yaml` are byte for byte EXP-033's.
+- **Validate:** `python tools/validate_submission.py experiments/EXP-044/candidate-x --strict` gave 4 files, 1 agent, `RESULT: INVALID (1 errors, 1 warnings)`: the one error is the packing gate (`120 x (8 + 1.0) min = 18.00 h`), the warning is the 240 s timeout (VERIFY(Q2)); both are the EXP-033 situation. The inserted text has no forbidden lint word and no URL (the packer's lint passed).
+- **Pack, arm X:** `python tools/pack_submission.py --src experiments/EXP-044/candidate-x --out dist/EXP-044-x.zip --skip-budget-gate --allow-warnings` (the override stated in 2.4): 4 reachable files, `RESULT: VALID (0 errors, 2 warnings)`, 2.6 KiB. **Zip sha256 `ddcc377ada15ce67b798aae099b9ff84804084a704b92f86266a99117cd5310a`** (confirmed with `sha256sum`). Packed from LF worktree files that equal the committed blobs. Screen build, never uploaded.
+- **Control zip, arm X0:** `dist/EXP-038-e4b.zip`, **sha256 `9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0`** (confirmed with `sha256sum`; the same bytes as `dist/EXP-033-e4b.zip`), the tree EXP-038 ran.
+- **Notebooks**, parameter cells read back: `notebooks/exp044_x/kaggle_eval_l4x4.ipynb` (`EXP_ID = "EXP-044-x"`, 3,524 base64 characters) and `notebooks/exp044_x0/kaggle_eval_l4x4.ipynb` (`EXP_ID = "EXP-044-x0"`, 3,324 characters); both `RUN_GOLD_CONTROL = False`, `RUN_AGENT = True`, `N_TASKS = 8`, `MODEL_NAME = "gemma-4-e4b-it-qat-w4a16-ct"`, `TASK_IDS` = fastapi_13786, fastapi_14360, fastapi_14459, fastapi_14873, fastapi_15661, rich_3063, rich_3676, rich_3935 (the 8 ids of `experiments/cohorts/failed-edit-8.txt`).
+- `kernel-metadata.json` in each directory: copied from `notebooks/exp033_e4b/` after the build, only `id` and `title` changed (`rainm4/gemma4-exp044-x`, `rainm4/gemma4-exp044-x0`; `diff` shows those two lines only).
+- **Kernel ids: `rainm4/gemma4-exp044-x` (arm X), `rainm4/gemma4-exp044-x0` (control, only if row 4 fires).** **Not pushed.** The push is a separate job after the user approves the GPU. Push commands: `kaggle kernels push -p notebooks/exp044_x`, then if row 4 fires `kaggle kernels push -p notebooks/exp044_x0`.
 
 ## Status
 
-2026-11-05: pre-registered, not built, not pushed. Zero GPU. Arm X is not built on smoke-8 (the endpoint is at ceiling there, section 2.3); built on failed-edit-8 only, with the unchanged-tree control X0 priced alongside it.
+2026-11-05: pre-registered (aa40b83), built, not pushed. Zero GPU. Arm X is not built on smoke-8 (the endpoint is at ceiling there, section 2.3); built on failed-edit-8 only, with the unchanged-tree control X0 built and priced alongside it. Waiting for the user's word on the GPU.

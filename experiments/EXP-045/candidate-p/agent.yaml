@@ -1,0 +1,12 @@
+name: swe_agent
+# EXP-033 2026-11-05: model gemma-4-31b-it-qat-w4a16-ct -> gemma-4-e4b-it-qat-w4a16-ct, nothing else changed from experiments/EXP-027/candidate-v24-at-8 (small-model prize screen on smoke-8; the prompt was written for the 31B)
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include prompts/system.md
+tools:
+  - run_command
+  - read_file
+  - edit_file
+  - write_file
+  - get_status
+  - submit_patch
+generate_content_config: !include configs/sampling.yaml
