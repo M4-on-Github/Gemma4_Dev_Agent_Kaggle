@@ -194,6 +194,10 @@ Sections 0 to 7 and the readings of section 4 are unchanged. Readings were commi
 - **Build commit:** `cda78c9` (tree and notebook). **Notebook:** `python tools/build_notebook.py --embed dist/EXP-046-team.zip --username rainm4 --cohort experiments/cohorts/smoke-8.txt --set EXP_ID='"EXP-046-team"' --set MODEL_NAME='"gemma-4-e4b-it-qat-w4a16-ct"' --set RUN_GOLD_CONTROL=False --out notebooks/exp046_team/kaggle_eval_l4x4.ipynb`; `TASK_IDS` are the 8 smoke-8 ids, `N_TASKS = 8`. `kernel-metadata.json` is EXP-044 X's with `id` `rainm4/gemma4-exp046-team` and `title` `gemma4-exp046-team` changed (`diff` shows those two lines only).
 - **Cost:** 0.30 to 0.43 h, point 0.35 h; conditional worst case 1.22 h (section 2.6). **Stop rule:** the user's approval forbids re-running a failed kernel without asking.
 
+### 8.2 Push attempt 2026-11-06: refused by `guard_push.py`, number collision, nothing pushed
+
+`kaggle kernels push -p notebooks/exp046_team` (HEAD 398980e) was blocked before reaching Kaggle: `expected exactly one tracked experiments/EXP-046-<slug>.md, found 2`. The second file is `experiments/EXP-046-q4-adapter-canary-e4b.md` (committed 73d369d by another agent, with an untracked `notebooks/exp046_q4canary/`). No GPU used, no kernel exists. Two ways out, both outside the screener's paths or authority: the owner of the canary renumbers it (the canary file and notebook directory are not mine to move), or the lead authorises this screen re-registered under the next free number with sections 3 and 4 copied verbatim and the notebook rebuilt under that number (the zip does not change, so its sha stays `9a1e3454...b1ef`). The screener did not do the second on its own because it changes the identity of an experiment the user approved by name.
+
 ## Status
 
-2026-11-06: desk check complete (premise killed as specified, Q2); the prompt-bounded team screen built (cda78c9, zip `9a1e3454...b1ef`), push recorded in section 8.2 below if made.
+2026-11-06: desk check complete (premise killed as specified, Q2). The prompt-bounded team screen is built (cda78c9, zip `9a1e3454...b1ef`) and NOT pushed: blocked by the EXP-046 number collision (section 8.2). Waiting on the lead.
