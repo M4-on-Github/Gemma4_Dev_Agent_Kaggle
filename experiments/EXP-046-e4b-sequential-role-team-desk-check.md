@@ -198,6 +198,28 @@ Sections 0 to 7 and the readings of section 4 are unchanged. Readings were commi
 
 `kaggle kernels push -p notebooks/exp046_team` (HEAD 398980e) was blocked before reaching Kaggle: `expected exactly one tracked experiments/EXP-046-<slug>.md, found 2`. The second file is `experiments/EXP-046-q4-adapter-canary-e4b.md` (committed 73d369d by another agent, with an untracked `notebooks/exp046_q4canary/`). No GPU used, no kernel exists. Two ways out, both outside the screener's paths or authority: the owner of the canary renumbers it (the canary file and notebook directory are not mine to move), or the lead authorises this screen re-registered under the next free number with sections 3 and 4 copied verbatim and the notebook rebuilt under that number (the zip does not change, so its sha stays `9a1e3454...b1ef`). The screener did not do the second on its own because it changes the identity of an experiment the user approved by name.
 
+### 8.3 Amendment 2026-11-06, written blind before any push (the lead's instruction after the critic's D-006 review, `experiments/EXP-043/critic.md`, 19a8b20 and 5ab7020)
+
+Sections 3 and 4 above stay as written. Where this amendment differs, the amendment governs, and the difference is stated line by line. No kernel has run; nothing here was chosen after a number. **The push is held** until the canary file is renumbered by its owner and `git ls-files experiments/EXP-046-*` shows only this file.
+
+**A. Row 1 and endpoint E1, defined.** The threshold is unchanged (fewer than 6 of 8 kills). "Editor reached" now means: **the edit stage's first model step comes with at least k = 10 counted calls and s = 120 s left**, where counted calls are `read_file + edit_file + run_command` on pass 1 up to the end of the locate stage's last step (locate holds only `read_file`, so it is locate's reads), and seconds left are 480 s minus the elapsed time at that last locate step, read from the trace step stamps against the first step of the task. Why these values, from section 2.7: the edit and check stages need `1 + edit calls + 2` counted calls, **at most 10 on smoke-8** (fastapi_14605: 7 edits), so k = 10; and the two stages estimate at edit 20 to 50 s plus check 12 to 30 s plus three stage-end replies of 3 to 6 s, **at most about 98 s**, rounded up to s = 120 s. A task where the edit stage runs but starts below either line does not count as reached.
+
+**B. Row 2.** Unchanged: E2 fewer than 6 of 8 kills, floor N = 6 against EXP-033's 6 of 8. **Written beside it, not read:** the same tree's 8 of 8 in EXP-038's subset (section 4).
+
+**C. A pass row, replacing row 4's promote condition.** The team **passes its screen** only if all of: E1 (as defined in A) on **8 of 8**; E2 (applied edit) on **at least 7 of 8**; **empty patches (`patch_empty` in `summary.jsonl`) no more than the single loop's 2** on the same 8 ids (EXP-033: requests_7205 and httpx_3672; EXP-038, the same tree: 0, written beside it and not read); and row 3 not met. Then row 4 holds: **promote** to one dev-48 E4B arm, paired against EXP-038, endpoint the applied-edit share (section 5). Rows, in order, with the original row 4 split:
+
+| # | Condition | Reading |
+|---|---|---|
+| 0 to 3 | as section 4 (row 1 with the definition in A) | as section 4 |
+| 4 | the pass row above | **promote** to one dev-48 E4B arm, paired against EXP-038 |
+| 5 | rows 0 to 3 not met, and not row 4 (E1 and E2 each 6 or more of 8, but E1 under 8, or E2 6 of 8, or more than 2 empty patches) | **no promotion**; the screen did not kill but did not pass. Record the shortfall by task; the lead decides whether any dev-48 arm is bought, and the screener recommends none |
+
+This is a stricter reading than the section 4 row 4 ("E1 and E2 each 6 or more of 8"); the stricter one governs. It also prices in the blind prediction of section 4 (E1 8 of 8, E2 6 or 7 of 8): a result at E2 = 6 lands in row 5, not row 4.
+
+**D. Wall.** **No ship decision comes from smoke-8.** A tree ships only if its own dev-48 mean wall is about **311 s or less** (the lead's number from the critic's review; mean x 120 plus the E4B's measured overhead inside about 10.5 h). Row 3's smoke-8 line (mean above 282 s, or 3 or more tasks at a cap, means no dev-48 arm) is unchanged and still kills the arm. **New, not a kill:** a smoke-8 mean wall **above 140 s is recorded as a concern** (the prediction in section 4 is 90 to 120 s; the point estimate in 2.6 is 100 s), and a pass at 8 of 8 with a mean above 140 s still goes to row 4 with the concern written next to the promotion.
+
+**What this amendment does not change.** The tree, the zip (sha256 `9a1e34546c5d13067a59c8ff3fc4ab714799949abe4e3ce9abb5e8d78fb8b1ef`), the cohort (smoke-8), the cost (0.30 to 0.43 h, point 0.35 h, worst case 1.22 h), the stop rule (no re-run of a failed kernel without asking), and section 4's row 0.
+
 ## Status
 
-2026-11-06: desk check complete (premise killed as specified, Q2). The prompt-bounded team screen is built (cda78c9, zip `9a1e3454...b1ef`) and NOT pushed: blocked by the EXP-046 number collision (section 8.2). Waiting on the lead.
+2026-11-06: desk check complete (premise killed as specified, Q2). The prompt-bounded team screen is built (cda78c9, zip `9a1e3454...b1ef`), the blind amendment of section 8.3 is committed, and the kernel is NOT pushed: held by the lead until the canary's EXP-046 file is renumbered (section 8.2). Next command, when `git ls-files experiments/EXP-046-*` lists only this file: `kaggle kernels push -p notebooks/exp046_team`, then `kaggle kernels status rainm4/gemma4-exp046-team`.
