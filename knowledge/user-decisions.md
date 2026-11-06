@@ -178,3 +178,8 @@ Against the lead's numbered recommendations of the same day (after S-013 scored 
 - 3 (whether to fund dev-48 runs on the 31B for the main board): the user's answer is a direction, a pipeline that uses the idle inference memory of the L4 GPUs, with the intent to submit it. Read by the lead as: start the zero-GPU desk check and a direction proposal (D-007) now; the GPU for its screens and any dev-48 arm, and any upload, still need the user's word on a stated cost, and an upload still goes through an S-NNN the user approves by sha (plan.md section 5.8 unless an override is recorded).
 - 1 (start the paper-writer for the 2026-11-12 Writeup): not answered in this message. Still open.
 - The guard rule for the EXP-047 canary: not answered. Still open.
+
+## 2026-11-06: paper-writer not started yet; experiments first
+User, verbatim: "1. nah not yet. let's start with finishing experiments etc." and "2. ?"
+- 1 (start the paper-writer for the 2026-11-12 Writeup): not yet; finish the experiments first. The lead keeps the deadline visible and asks again when the running experiments are read.
+- 2 (the guard rule for the EXP-047 canary): the user asked what it means; the lead explains it in plain terms. Still open.

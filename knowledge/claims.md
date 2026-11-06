@@ -285,3 +285,4 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - tests: none; gated on the Q4 canary. Endpoint when tested: share of failed-edit-8 tasks with an applied edit, paired against the unchanged tree (EXP-044's design), with empty-patch rate and wall recorded.
 - history: 2026-11-06 added as hypothesis with D-006
 - history: 2026-11-06 expected gain and tests replaced with the critic's text (D-006 direction review, `experiments/EXP-043/critic.md`, 19a8b20, 5ab7020)
+- history: 2026-11-06 evidence, status unchanged (no critic verdict): EXP-044 X0 (1f8a156), the unchanged E4B tree re-run on failed-edit-8, applied an edit on 7 of 8; so the no-edit population this adapter targets is mostly one bad draw, and the ceiling of about 1 of 48 overstates it [I].
