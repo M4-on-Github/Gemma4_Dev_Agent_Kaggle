@@ -97,4 +97,45 @@ No build: the zip is the EXP-027 artifact, not repacked. `sha256sum experiments/
 
 ~~Pre-registered 2026-11-05, **not uploaded**. Waiting on: the user's decision whether to use a slot for this; if yes, the critic's `prereg` review (required for any upload), then S-013 (lead) and `approvals/S-013.txt` (user). Next command, submitter only, after approval: the §6 block.~~
 
-2026-11-05: **uploaded, score pending** (ref 58037856, 23:34:14 UTC, `submissions.md` row 13). Waiting on: the grading, which has taken 6 to 22 h. When the submitter reports the score, append §9, apply §4 as written and pool per §3, then fill the score into `submissions.md` row 13 and the README §3 row.
+~~2026-11-05: **uploaded, score pending** (ref 58037856, 23:34:14 UTC, `submissions.md` row 13). Waiting on: the grading, which has taken 6 to 22 h. When the submitter reports the score, append §9, apply §4 as written and pool per §3, then fill the score into `submissions.md` row 13 and the README §3 row.~~
+
+2026-11-06: **scored, 0.12 = 7/58, row 3 fired** (section 9). Pooled baseline 28/174. Nothing pending under this file.
+
+---
+
+## 9. Results, 2026-11-06. Section 4's readings applied as written.
+
+**Source.** `knowledge/submissions/S-013-result.md`, written by the submitter. Status COMPLETE, public score **0.12**, ref 58037856, polled 2026-11-06 with `kaggle competitions submissions gemma-4-developer-agent --csv`. The lead checked the following before this section was written:
+
+- `out/submission.zip` and `experiments/EXP-027/v24_at8.zip` both hash to `c22069db6623a07c9f133fef33a8c193393dca170c84676e708d0bd9f5077600`.
+- The zip's 4 members set the 31B, 8 min, 28 calls, 80 turns, `timeout_seconds` 240, thinking 4096, temperature 1.0 and max output 8192.
+- The tree is unchanged since de69156.
+
+**Endpoints (section 3).**
+
+- **Primary: k = 7.** The board truncates to 2 dp. 6/58 = 0.1034 shows as 0.10, 7/58 = 0.1207 shows as 0.12, and 8/58 = 0.1379 shows as 0.13. So 7 is the only integer whose k/58 truncates to 0.12.
+- **Secondary: not blank.** The slot completed and scored.
+- **Derived: pooled baseline.**
+  - By rule (a) all three draws are byte-identical (sha `c22069db...`). By rule (b) every scored draw pools, with nothing trimmed. Rule (c) does not apply, since there is no blank.
+  - By rule (d): (10 + 11 + 7) / (58 x 3) = **28/174 = 0.161**, **Wilson 95% CI 0.114 to 0.223**.
+  - Computed 2026-11-06 with a one-line Wilson formula in Python (z = 1.95996), as in section 1; no repo tool covers pooled LB draws.
+  - Before this draw the pooled figure was 21/116 = 0.181 (0.122 to 0.261).
+
+**Row 3 fires.** It is the first match, since k = 7 is in 6 to 14. Row 3's reading, applied as written:
+
+- k = 7 is consistent with theta of about 10.5.
+- 28/174 = 0.161 is the baseline estimate for the v24-at-8 zip. It lies inside row 3's band of 27/174 to 35/174.
+- No tree change.
+- **Next slot: the next candidate that has passed its screen,** read against the three-draw pooled rate of 28/174. If none has passed, another draw of this zip is permitted as filler under the same rule. It is not required.
+
+**The measured noise, recorded for the paper track.** The same bytes were drawn three times: #11 scored 10, #12 scored 11 and #13 scored 7 of 58. That is a range of **4 tasks** between the highest and lowest draw (mean 9.33, sample sd 2.08 tasks, same Python session). The prior's binomial sd was 2.9 tasks per draw (section 3). Section 5 forbids giving any reason for one draw being lower than another, and none is given here.
+
+**C-003 (completion inside 12 h at 8 min).** This tree has now completed 3 of 3 times on the hidden set (#11, #12, #13). This is one more observation, not a test (section 1).
+
+**Not read, per the binding note under section 4 and section 5:**
+
+- no effect claim from any difference among the three draws;
+- no revision of EXP-027, EXP-028 or EXP-029;
+- no E2B or E4B tree read against this baseline.
+
+**Kernel wall-clock for the GPU ledger:** none. This is an LB-only upload; 0 GPU-h.
