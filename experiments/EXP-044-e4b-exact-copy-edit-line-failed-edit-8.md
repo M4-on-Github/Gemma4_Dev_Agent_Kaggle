@@ -159,6 +159,31 @@ Built 2026-11-05 after the pre-registration commit aa40b83, with the section 6 c
 - **Arm X0 not pushed.** The user's approval (2026-11-06, `knowledge/user-decisions.md`) covers X0 only if X's analysis applies an edit on 5 or more of 8, as row 4 reads. Stop rules from the approval: no re-run of a failed kernel without asking; a kernel set to pass its stated worst case (1.24 h) is reported to the lead.
 - **Next, a separate job:** when `kaggle kernels status rainm4/gemma4-exp044-x` says COMPLETE, `kaggle kernels output rainm4/gemma4-exp044-x -p runs/EXP-044-x/`, then the section 6 analysis.
 
+## 9. Results, arm X, 2026-11-06. Section 4's readings applied as written (design, endpoints and readings above are unchanged)
+
+**Run.** `rainm4/gemma4-exp044-x` v1, COMPLETE. 8 of 8 tasks ran, ids exactly `experiments/cohorts/failed-edit-8.txt`, no kernel error. One task (fastapi_15661) ended with the harness's "Agent completed execution without calling submit_patch" after 24 calls, which is a normal agent exit, not a crash. Downloaded with `kaggle kernels output rainm4/gemma4-exp044-x -p runs/EXP-044-X/`; the bundle nests at `runs/EXP-044-X/runs/EXP-044-x/`, analysed there with `python tools/analyze_traces.py runs/EXP-044-X/runs/EXP-044-x --cap-minutes 8 --max-calls 28`; `summary.jsonl` is copied to `experiments/EXP-044/x/summary.jsonl`. **Measured GPU-h: kernel wall 1,291 s = 0.36 h** (last entry of `runs/EXP-044-X/gemma4-exp044-x.log`, which includes the notebook export tail; the 8 agent walls sum to 844 s). That is inside the 0.25 to 0.56 h range of section 2.4.
+
+**Endpoints (counts over the 8 tasks).**
+
+| # | Endpoint | Result |
+|---|---|---|
+| E1 | A, applied (at least one `edit_file` call with status ok; `n_edit_fail` below the `edit_file` count) | **6 of 8**: fastapi_14459, fastapi_14360, rich_3935, fastapi_13786, rich_3676, rich_3063. Not applied: fastapi_15661 (17 of 17 edit calls failed), fastapi_14873 (4 of 4) |
+| E2 | N_e, at least one `edit_file` call | **8 of 8** |
+| E3 | failed `edit_file` calls by class | 24 failed of 35 edit calls (11 ok). **All 24 are the harness's "old_string not found" error** (fastapi_15661 17, fastapi_14873 4, rich_3063 3); lost-argument (the "mandatory input parameters are not present" message) 0; non-unique or other 0. Reference, EXP-043 on the same 8 ids from the EXP-038 draw: 22, 5, 12. Check: per trace the count of "old_string not found" tool results equals `n_edit_fail`; the only extra text hit is in the model's own message, not a tool result |
+| E4 | non-empty patches | **6 of 8** (empty: fastapi_15661, fastapi_14873) |
+| E5 | calls and wall, recorded not read | `n_calls` 24, 9, 14, 6, 4, 15, 4, 16 (sum 92, max 24 of 28); wall 200.2, 91.8, 106.1, 54.3, 77.7, 180.0, 60.9, 73.3 s (mean 105.5 s); no task at the 28-call or 480 s cap; 3 compactions (fastapi_14459 once, fastapi_13786 twice); 0 nudge events |
+| E6 | resolves, recorded not read | 0 of 8 (3 of the 8 are gated) |
+
+**Row that fired, first match in order: row 4.** Row 0 no (no crash, tree ran); row 1 no (N_e 8 is above 5); rows 2 and 3 no (A is 6, not 4 or fewer); **row 4: A is 5 or more of 8, the bound is met, and it is not an effect (regression to the mean is not excluded): buy X0** (the unchanged tree, same 8 ids). X0 was pushed on this reading (section 8, "X0 push record" below). The share of failed calls typed "old_string not found" is 24 of 24, reported beside it as row 4 asks.
+
+**Prediction check (blind, section 4), recorded not argued.** N_e 6 or more of 8: held (8). A 4 of 8, range 2 to 6: 6, the top of the range. Row probabilities: row 4 was 30%. Non-empty patches 5 of 8: 6. Resolves 0 to 1: 0. Failed calls by type (not-found about 12, lost-argument about 5, other about 10): not held, 24, 0, 0; the failures that remain are the not-found class only, 21 of them on two tasks. The EXP-043 non-unique and lost-argument failures on rich_3063, rich_3935 and others did not recur in this draw, which fits regression to the mean on a cohort chosen because one draw failed, so the class counts are not read against the line either.
+
+**What this does and does not say.** A is 6 of 8 against 0 of 8 by construction in the reference draw; the section 2.3 confound stands in full. Two tasks (fastapi_15661, fastapi_14873) carry all 21 of the not-found failures that did not recover, and these were not-found tasks in the reference too. Whether the unchanged tree also applies 6 of 8 is exactly what X0 measures. No row licenses an upload or a claim move.
+
+### X0 push record, 2026-11-06
+
+Control arm X0 pushed with `kaggle kernels push -p notebooks/exp044_x0` at about 00:51 UTC on 2026-11-06 (19:51 local, UTC-5; read from the mtime of a file written just after the push), repo HEAD `522c561`, output `Kernel version 1 successfully pushed`. Kernel **`rainm4/gemma4-exp044-x0` v1**, status right after: RUNNING. Zip is `dist/EXP-038-e4b.zip`, sha256 `9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0`, the tree EXP-038 ran. This push is inside the user's approval of 2026-11-06 item 2 (X0 only if X applies an edit on 5 or more of 8). Stop rule: no re-run of a failed kernel without asking. Not waited on.
+
 ## Status
 
-2026-11-06: arm X pushed (`rainm4/gemma4-exp044-x`, v1, about 00:24 UTC), RUNNING at the first status check; X0 not pushed (conditional on row 4). Earlier, 2026-11-05: pre-registered (aa40b83), built, not pushed. Arm X is not built on smoke-8 (the endpoint is at ceiling there, section 2.3); built on failed-edit-8 only, with the unchanged-tree control X0 built and priced alongside it. Next: download and analysis as a separate job after COMPLETE.
+2026-11-06: arm X analysed (section 9): **row 4 fired**, A 6 of 8, N_e 8 of 8, 24 of 24 failed calls typed not-found, kernel 0.36 h. **X0 pushed at about 00:51 UTC as `rainm4/gemma4-exp044-x0` v1, RUNNING.** Next, a separate job once `kaggle kernels status rainm4/gemma4-exp044-x0` says COMPLETE: `kaggle kernels output rainm4/gemma4-exp044-x0 -p runs/EXP-044-X0/`, then `python tools/analyze_traces.py` on the nested bundle with `--cap-minutes 8 --max-calls 28`, and apply rows 5 to 7 (A_X is 6, so row 5 needs A_0 at 3 or fewer and row 6 fires at A_0 of 5 or more).
