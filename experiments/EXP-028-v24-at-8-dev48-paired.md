@@ -279,6 +279,13 @@ read, read, run (heredoc at 5, 1 `edit_file`); `fastapi_15661` 6 `write_file` lo
 Heredoc wrong-span or wrong-file harm was **not read** (it needs a per-heredoc diff against the intended target);
 only exit codes were counted. It matters only to row 5, which cannot fire here.
 
+*Note on the "non-zero exit" heredoc rows, 2026-11-05 (critic light b691244). The table rows above stay as written.* The RH "non-zero" counts are results with an error status, not all of them non-zero exits:
+- **Heredocs, 135 / 36:** of the 36, 26 have a non-zero exit, 9 were refused at the call cap and never ran, and 1 is a timeout.
+- **Template heredocs, 10 / 2 / 3:** 8 ran and exited 0. The 2 counted are call-cap refusals, so 0 template heredocs failed.
+- **Heredocs after a first loss, 13 / 3:** 1 is a non-zero exit and 2 are refusals.
+
+Arm R's 43 / 2 are 2 non-zero exits, with no refusals. My recount, classifying each heredoc's tool result by status, exit code and harness error type, agrees on every figure (`out/exp028_heredoc_classes.py`, untracked). No row moves: row 5 could not be reached.
+
 **Rows, in order.** Row 1: R has 8 first-loss events (>= 4), does not fire. Row 2: RH compliance 0% (< 60%), no.
 Row 3: not 25-60%, no. **Row 4 fires: compliance 0/6 < 25%. A prompt rule does not reach the next call on this
 prompt either. R is the tree for #12; the route is dropped from the LB lineage.** Row 7 (additive): empty patch 6
