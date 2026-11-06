@@ -35,7 +35,7 @@ Find out whether the small model (E4B) resolves more tasks when the work is spli
 Unknown, and small on what is counted so far: landing every edit on the 8 tasks is worth about 1 task of 48 at the E4B's rate [I]. Teams have no positive datum below about 20B. The case for the program is the small-model standing and the paper's comparison, not a main-board jump.
 
 ## Risks and kill criteria
-- Adapter line: killed if the canary shows no output change with an adapter loaded, or if training data cannot be made without competition data leaving the kernel (plan.md:52).
+- Adapter line: killed if the canary shows no output change with an adapter loaded (a participant reported exactly that after the host's fix, 743508, 2026-10-08 [M]), if the KV cache with an adapter loaded falls below what the single loop needs (7,600 tokens reported at notebook defaults against 46,048 without and our 14,336-token compaction threshold [M]; added 2026-11-06 from the adapter digest), or if training data cannot be made without competition data leaving the kernel (plan.md:52).
 - Team line: a tree is killed at its screen if the editor is reached on fewer than 6 of 8 tasks, or the share of tasks with an applied edit is below the single loop's on the same ids; one fix and one re-run at most.
 - The direction is killed if neither line passes its screen; the E4B single loop then stays the small-model tree.
 - Time: any tree that adds more than about 225 s per task cannot ship on 120 hidden tasks.
