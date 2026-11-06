@@ -112,11 +112,11 @@ This section reviews `knowledge/directions/D-006-e4b-role-team-and-tool-adapter.
 | 18 | E4B 5 of 48, mean 85.7 s | Holds: SD 43.6 s, SE 6.3 s. |
 | 18 | On 8 tasks no edit applied, from paraphrase or a repeated match | **Partial.** That covers 27 of the 39 failed calls (b 16, g 11). Also in the table: f 6 calls on 3 tasks (rich_3935 is class f, 4 of 4 calls), c 5, h 1. EXP-043 §9.2 and §9.7 item 7 add that 6 of the 16 b calls (fastapi_14459, rich_3676) ran past the last line read, which exact copying does not fix. |
 | 18 | 16 of 19 control losses | Holds. The 19 are the informative-27 ids that neither arm resolved (EXP-041 control). |
-| 19 | 31B 58 of 175 lost, "not a model habit" | **Numbers hold, the inference does not.** On the same server the E4B lost 9 of 156 `edit_file` calls (5.8%, 6 tasks; EXP-038 `n_edit_arg_loss`). EXP-024 found 53.5% at thinking 256 against 18.2% at 4096, confounded with the cap. Arm RH's section cut lost calls from 67 to 17. One shape, from the parser; the rate depends on what the model emits [I]. |
+| 19 | 31B 58 of 175 lost, "not a model habit" | **Numbers hold, the inference does not.** On the same server the E4B lost 9 of 156 `edit_file` calls (5.8%, 6 tasks; EXP-038 `n_edit_arg_loss`). EXP-024 found 53.5% at thinking 256 against 18.2% at 4096, confounded with the cap. One shape, from the parser; the rate depends on what the model emits [I]. Arm RH's drop from 67 lost calls to 17 is not evidence for this. It is mostly fewer retries after a first loss and fewer `edit_file` calls; tasks with a loss were 5 vs 3, p = 0.73 (my EXP-028 review). |
 | 20 | "not followed, whatever the prompt's length" | **Overstated.** No arm varied length. The proposer held on 5 of 8, and RH's section moved behaviour (heredoc edits 43 to 135). The three counts hold. |
 | 21 | EXP-032, EXP-040, lit note | Holds: EXP-040 had D = 0 of 8. The lit note's smallest positive result is gpt-oss-20B on Towers of Hanoi, not on repair. |
-| 22 | Rank up to 128, one adapter per agent, sample ships a tool adapter | Holds: `MAX_LORA_RANK`; host quote in digest 2026-11-05 line 97; sample ships `main_lora` and `tool_lora`. The local server defaults to LoRA on, `max_loras` 1 and rank 128 [V, wheel]. |
-| 22 | "the one public same-model adapter" | **Ambiguous in an E4B direction.** C-013's adapters are the rank-3 team's, on the 31B (scouting note §5). Not cited: `untrusted/boristown-e2b-lora-baseline-2026-11-05/`, an E4B with a declared adapter, self-reports 0.03 to 0.06 on the LB across versions [M]. That is inside the 4-task MDE, with prompt changes and no no-adapter control, so it settles neither Q4 nor C-024. Digest row 755677 (11-04, adapters scoring zero) is unread. |
+| 22 | Rank up to 128, one adapter per agent, sample ships a tool adapter | Holds: `MAX_LORA_RANK`; host quote in digest 2026-11-05 line 97; sample ships `main_lora` and `tool_lora`. When adapters are mounted, the wheel's server enables LoRA, sets max-loras to the number mounted and rounds the rank up from them [V, wheel]. |
+| 22 | "the one public same-model adapter" | **Ambiguous in an E4B direction.** C-013's adapters are the rank-3 team's, on the 31B (scouting note §5) [M]. Not cited: `untrusted/boristown-e2b-lora-baseline-2026-11-05/`, an E4B with a declared adapter, self-reports 0.03 to 0.06 on the LB across versions [M]. That is inside the 4-task MDE, with prompt changes and no no-adapter control, so it settles neither Q4 nor C-024. Digest row 755677 (11-04, adapters scoring zero) is unread. |
 
 ### Kill criteria and the 225 s bound
 - **Team line, the applied-edit test.** "Below the single loop's on the same ids" cannot work on smoke-8: there the single loop applied an edit on 8 of 8 (EXP-038 summary). One miss kills, and no gain is possible. It needs an absolute floor, or a reading on failed-edit-8 paired with the unchanged tree, as EXP-044 does.
@@ -144,11 +144,11 @@ Range 0 to 1. That is below both MDEs, so the endpoint is the applied-edit share
 
 ### Stage order
 - **Canary before training: right.** Put one zero-GPU read before it: the kaggle-scout reads 755677, and 755611 if that is the LoRA-fixes topic. If an adapter scored non-zero, and differently from its base, after the patch, Q4 moves without a canary.
-- **Sequential before parallel: right.** See EXP-007; the host also says ParallelAgent runs tool calls sequentially [M]. With `max_loras` 1, put the adapter on one agent.
+- **Sequential before parallel: right.** See EXP-007; the host also says ParallelAgent runs tool calls sequentially [M].
 
 ### Direction questions
 - **Weakest assumption: principle 1.**
-  - `output_schema` is not an allowed key, and ADK 1.36 runs it alongside tools anyway. So only a tool-less agent ends by construction.
+  - The wheel's agent schema forbids keys it does not list, and `output_schema` is not among them. Its callback fields resolve through a registry that swegemma never fills [V, wheel]. So only a tool-less agent ends by construction.
   - A reader or editor with tools ends only when the model stops or the shared counter runs out.
   - Test: the desk check names what ends each stage, and the screen records calls per stage.
   - Mitigation [I]: the E4B averages 8.9 of 28 calls.
@@ -167,8 +167,7 @@ misquotes; 1 escaping)". "16 of 19 control losses" -> "16 of the 19 tasks neithe
 informative 27".
 D-006 line 19, from "the lost calls arrive" -> "the loss has one shape, a missing argument from the server's
 tool-call parser, but its rate depends on what the model emits: the E4B lost 9 of 156 on the same server
-(EXP-038), the 31B 53.5% at thinking 256 against 18.2% at 4096 (EXP-024), and Arm RH's section cut lost calls
-from 67 to 17 (EXP-028) [I] (C-004)."
+(EXP-038), and the 31B 53.5% at thinking 256 against 18.2% at 4096 (EXP-024) [I] (C-004)."
 D-006 line 20: "are not followed, whatever the prompt's length:" -> "are not reliably followed (prompt length was
 never varied):".
 D-006 line 22, last sentence -> "The one public adapter with a measured effect is the rank-3 team's, on the 31B,
