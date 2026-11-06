@@ -170,3 +170,11 @@ Against the lead's list of the same day:
 - 3: EXP-045 reproduction before submit (0.25 to 0.45). NOT approved; the user asked what it reproduces. Not pushed.
 - 4: EXP-046 prompt-bounded sequential role team, smoke-8, E4B (0.30 to 0.43). Approved; it must be built first.
 Read by the lead as: these kernels, once each, with no per-kernel ask; the estimated total is 0.8 to 1.85 GPU-h. The lead stops and asks if any kernel errors and needs a re-run, if a kernel's measured cost passes its stated worst case, or if the running total for this list would pass 2.5 GPU-h (the ceiling the lead asked for). Not approved by this: adapter training, a dev-48 arm, an upload (none while S-013 is pending), EXP-045.
+
+## 2026-11-06: no more filler draws of the baseline zip; explore a full-VRAM pipeline to submit
+User, verbatim: "2. I agree" and "3. I want to explore a pipeline utilizing the full inference VRAM of the GPU L4 and submit it"
+Against the lead's numbered recommendations of the same day (after S-013 scored 0.12):
+- 2 (stop re-uploading the same zip; upload slots wait for a candidate that has passed a dev-48 test): agreed. No further filler draw of `c22069db...` under EXP-031 row 3.
+- 3 (whether to fund dev-48 runs on the 31B for the main board): the user's answer is a direction, a pipeline that uses the idle inference memory of the L4 GPUs, with the intent to submit it. Read by the lead as: start the zero-GPU desk check and a direction proposal (D-007) now; the GPU for its screens and any dev-48 arm, and any upload, still need the user's word on a stated cost, and an upload still goes through an S-NNN the user approves by sha (plan.md section 5.8 unless an override is recorded).
+- 1 (start the paper-writer for the 2026-11-12 Writeup): not answered in this message. Still open.
+- The guard rule for the EXP-047 canary: not answered. Still open.
