@@ -184,6 +184,16 @@ wc -c experiments/EXP-046/probe/prompts/locate.md experiments/EXP-046/probe/prom
 
 Not built, by section 0. The validator-only probe is `experiments/EXP-046/probe/`. No zip, no notebook, no kernel.
 
+### 8.1 Built 2026-11-06, after the user's approval (`knowledge/user-decisions.md`: the prompt-bounded team screen on smoke-8, 0.30 to 0.43 h, "it must be built first")
+
+Sections 0 to 7 and the readings of section 4 are unchanged. Readings were committed before the build (56ee168 for section 2.7 and sections 3 and 4). **The lead's decision of 2026-11-06 on row 2:** it stays at 6 of 8 (EXP-033's count), with the 8 of 8 (EXP-038's subset) recorded beside it and not read.
+
+- **Tree:** `experiments/EXP-046/candidate-team/`, the probe tree (nine files) with two dated comment headers added, in `agent.yaml` and `eval_config.yaml`, and nothing else changed. The diff against the probe is those two comment blocks only (the probe's `PROBE (validator-only)` headers replaced). `eval_config.yaml`: `timeout_seconds 240`, `max_tool_calls 28`, `max_time_minutes 8` as EXP-033; `max_turns 200` (EXP-033: 80), the one value the design needs (section 2.5). `configs/sampling.yaml` is byte for byte EXP-033's. Stages: locate (`read_file`), edit (`read_file`, `edit_file`), check (`run_command`, `get_status`, `submit_patch`), all `include_contents: default`, E4B `gemma-4-e4b-it-qat-w4a16-ct`. Role prompts 802, 807 and 718 bytes.
+- **Validate:** `python tools/validate_submission.py experiments/EXP-046/candidate-team --strict`: `RESULT: INVALID (1 errors, 2 warnings)`; the error is the packing gate (`120 x (8 + 1.0) min = 18.00 h`), the warnings the sub-agent `submit_patch` note (expected, section 2.3) and the 240 s timeout. The same as the probe.
+- **Pack:** `python tools/pack_submission.py --src experiments/EXP-046/candidate-team --out dist/EXP-046-team.zip --skip-budget-gate --allow-warnings` (gate override: this is a screen, never uploaded, as EXP-033 and EXP-040): 9 reachable files, `RESULT: VALID (0 errors, 3 warnings)`, 3.7 KiB. **Zip sha256 `9a1e34546c5d13067a59c8ff3fc4ab714799949abe4e3ce9abb5e8d78fb8b1ef`** (confirmed with `sha256sum`). Members: `agent.yaml`, `configs/sampling.yaml`, `eval_config.yaml`, `prompts/{check,edit,locate}.md`, `sub_agents/{check,edit,locate}.yaml`.
+- **Build commit:** `cda78c9` (tree and notebook). **Notebook:** `python tools/build_notebook.py --embed dist/EXP-046-team.zip --username rainm4 --cohort experiments/cohorts/smoke-8.txt --set EXP_ID='"EXP-046-team"' --set MODEL_NAME='"gemma-4-e4b-it-qat-w4a16-ct"' --set RUN_GOLD_CONTROL=False --out notebooks/exp046_team/kaggle_eval_l4x4.ipynb`; `TASK_IDS` are the 8 smoke-8 ids, `N_TASKS = 8`. `kernel-metadata.json` is EXP-044 X's with `id` `rainm4/gemma4-exp046-team` and `title` `gemma4-exp046-team` changed (`diff` shows those two lines only).
+- **Cost:** 0.30 to 0.43 h, point 0.35 h; conditional worst case 1.22 h (section 2.6). **Stop rule:** the user's approval forbids re-running a failed kernel without asking.
+
 ## Status
 
-Desk check complete 2026-11-05. Premise killed as specified (Q2). Nothing pushed, no GPU used. The screen of sections 3 and 4 is specified and not built; it needs the lead's decision and the user's GPU word.
+2026-11-06: desk check complete (premise killed as specified, Q2); the prompt-bounded team screen built (cda78c9, zip `9a1e3454...b1ef`), push recorded in section 8.2 below if made.
