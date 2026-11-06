@@ -33,6 +33,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - tests: EXP-005 and EXP-009 (no critic yet)
 - migrated-evidence: plan.md §5.5 adopted the ~4-task MDE on 2026-10-21, replacing the +/-2 assumed before; EXP-022 §1.3 adds dev-48 run-to-run phi = 0.50 (two runs share 6 of 14 distinct resolves, Fisher p = 0.0023).
 - history: 2026-10-29 migrated as hypothesis
+- history: 2026-11-06 third LB draw of the v24-at-8 zip (S-013, ref 58037856, sha c22069db) scored 7/58 (0.12); EXP-031 section 9 row 3 (6306942); pooled three-draw baseline 28/174 = 0.161, Wilson 95% 0.114 to 0.223 (was 21/116 = 0.181); identical-byte draws 10, 11, 7, a 4-task range, sample sd 2.08 tasks; no effect read from the differences (EXP-031 section 5). Status not moved: no critic verdict.
 
 ## C-002: For the rank-3 v24 prompt, raising `max_time_minutes` from 4.5 to 8 moves the hidden-set score by several tasks, because the cap at 270 s kills the check-and-repair finish rather than the first edit
 - status: hypothesis
@@ -54,6 +55,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - migrated-evidence: their prompt self-stops on 76-85% of tasks; ours ran to the cap on 79-96%, which is why `cap x 120` fit ours to 4% and overstates theirs by ~45% (EXP-027 §1c).
 - history: 2026-10-29 migrated as hypothesis
 - history: 2026-11-06 hypothesis -> supported: EXP-028 critic light accepted (b691244), T2 at 10.04 h with no margin (about 0.6 h per SE, critic's inference); #11 and #12 completed on the hidden set at this cap. The 8-minute cap is not a hard per-task bound (one RH task ran 751.9 s) and the projection does not model such overruns
+- history: 2026-11-06 the v24 tree at 8 min / 28 calls completed on the hidden set a third time (S-013, ref 58037856, COMPLETE): 3 of 3 completions; one more observation, not a test (EXP-031 sections 1 and 9, 6306942).
 
 ## C-004: A large share of `edit_file` calls never reach the file: the model emits an unterminated string literal (the lost call's `new_string` ends in `ng:`), the harness returns "mandatory input parameters are not present: old_string", and the agent retries the identical call
 - status: hypothesis
