@@ -278,7 +278,8 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - status: hypothesis
 - confidence: low
 - topics: [lora, edit-reliability]
-- expected gain: small and unknown. Population: 8 of 48 E4B dev-48 tasks where every `edit_file` call failed (EXP-043: of 39 failed calls, 16 paraphrase, 11 exact copies matching more than once). The E4B resolved 5 of the other 40, so landing an edit on all 8 is worth about 1 task of 48 at that rate [I]. Larger only if failed edits also cost tasks that landed an edit later (not counted).
+- expected gain: at most about 1 task of 48, probably less [I]: 3 of the 8 are gated (the E4B resolves 0 of 15 gated even re-graded); the other 5 at the non-gated rate (5 of 28) give 0.9; about 3 of the 5 fail the way the adapter targets; Arm R and RH resolved 0 of the 8 as run. Not measurable on resolves. (Replaced 2026-11-06 with the critic's text.)
 - sources: user request 2026-11-06 (`knowledge/user-decisions.md`); EXP-043 (critic light accepted); C-013 (the only same-model adapter datum is negative, for a different kind of adapter); `experiments/README.md` Q4 (host acknowledged adapters wiped [M], open); the organisers' sample submission ships a tool-call adapter
-- tests: none. Gate before any training: an adapter canary under the harness's server (Q4)
+- tests: none; gated on the Q4 canary. Endpoint when tested: share of failed-edit-8 tasks with an applied edit, paired against the unchanged tree (EXP-044's design), with empty-patch rate and wall recorded.
 - history: 2026-11-06 added as hypothesis with D-006
+- history: 2026-11-06 expected gain and tests replaced with the critic's text (D-006 direction review, `experiments/EXP-043/critic.md`, 19a8b20, 5ab7020)
