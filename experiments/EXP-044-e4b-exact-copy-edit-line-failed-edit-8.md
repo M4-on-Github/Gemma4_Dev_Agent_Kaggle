@@ -152,6 +152,13 @@ Built 2026-11-05 after the pre-registration commit aa40b83, with the section 6 c
 - `kernel-metadata.json` in each directory: copied from `notebooks/exp033_e4b/` after the build, only `id` and `title` changed (`rainm4/gemma4-exp044-x`, `rainm4/gemma4-exp044-x0`; `diff` shows those two lines only).
 - **Kernel ids: `rainm4/gemma4-exp044-x` (arm X), `rainm4/gemma4-exp044-x0` (control, only if row 4 fires).** **Not pushed.** The push is a separate job after the user approves the GPU. Push commands: `kaggle kernels push -p notebooks/exp044_x`, then if row 4 fires `kaggle kernels push -p notebooks/exp044_x0`.
 
+### Push record, 2026-11-06
+
+- **Arm X pushed** with `kaggle kernels push -p notebooks/exp044_x` at about 00:24 UTC on 2026-11-06 (19:24 local, read from the file clock to the minute; this shell has no clock command). Output: `Kernel version 1 successfully pushed`. Repo HEAD at the push: `73d369d90c96fa1b66bebf6a4467582c63ebb554`; the pre-registration is `aa40b83`, the notebook and zip are the section 8 build (zip sha256 `ddcc377a...310a`, unchanged).
+- **Kernel id `rainm4/gemma4-exp044-x`**, version 1. `kaggle kernels status` right after the push: `KernelWorkerStatus.RUNNING`. `notebooks/exp044_x/kernel-metadata.json` has `is_private: true`, `enable_gpu: true`, `machine_shape: NvidiaL4`, `enable_internet: false`, `model_sources` the E4B.
+- **Arm X0 not pushed.** The user's approval (2026-11-06, `knowledge/user-decisions.md`) covers X0 only if X's analysis applies an edit on 5 or more of 8, as row 4 reads. Stop rules from the approval: no re-run of a failed kernel without asking; a kernel set to pass its stated worst case (1.24 h) is reported to the lead.
+- **Next, a separate job:** when `kaggle kernels status rainm4/gemma4-exp044-x` says COMPLETE, `kaggle kernels output rainm4/gemma4-exp044-x -p runs/EXP-044-x/`, then the section 6 analysis.
+
 ## Status
 
-2026-11-05: pre-registered (aa40b83), built, not pushed. Zero GPU. Arm X is not built on smoke-8 (the endpoint is at ceiling there, section 2.3); built on failed-edit-8 only, with the unchanged-tree control X0 built and priced alongside it. Waiting for the user's word on the GPU.
+2026-11-06: arm X pushed (`rainm4/gemma4-exp044-x`, v1, about 00:24 UTC), RUNNING at the first status check; X0 not pushed (conditional on row 4). Earlier, 2026-11-05: pre-registered (aa40b83), built, not pushed. Arm X is not built on smoke-8 (the endpoint is at ceiling there, section 2.3); built on failed-edit-8 only, with the unchanged-tree control X0 built and priced alongside it. Next: download and analysis as a separate job after COMPLETE.
