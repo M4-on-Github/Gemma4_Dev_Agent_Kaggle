@@ -1,0 +1,9 @@
+# EXP-052 2026-11-07: root changes from one LlmAgent (the EXP-033 E4B single loop) to SequentialAgent[reader, ParallelAgent[5 drafters], applier] (D-007 tree T2, draft fan-out at the edit point; shape S of the EXP-052 pre-registration).
+# The root carries no model, tools or instruction; every LlmAgent is in sub_agents/ and carries its own model (gemma-4-e4b-it-qat-w4a16-ct, as EXP-033 and EXP-040).
+name: swe_agent
+agent_class: SequentialAgent
+description: Read the repository with a reader that holds read tools only by instruction, let five tool-less writers each draft one exact edit from its report, then apply the drafts in order with one applier that checks each and submits.
+sub_agents:
+  - config_path: sub_agents/reader.yaml
+  - config_path: sub_agents/draft.yaml
+  - config_path: sub_agents/applier.yaml

@@ -1,0 +1,14 @@
+# EXP-052 2026-11-07: read tools only by instruction. run_command is a free shell (swegemma execution.py:47), so "no edit tools" holds by the prompt and not by the tool list; the readings check the reader's command names.
+# include_contents default: the reader is first, so its window is the task message either way, and a default window keeps the task message if the tree is ever re-run (EXP-040 F11 lost it under none).
+# output_key plan: the final text (thought parts excluded, llm_agent.py:859-863) reaches the writers and the applier through the {plan?} template, which is rebuilt from state on every request and so survives compaction.
+name: reader
+description: Opens the code that must change and reports the issue, the file, the exact current region and the intended change.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/reader.md
+include_contents: default
+output_key: plan
+tools:
+  - read_file
+  - run_command
+  - get_status
+generate_content_config: !include ../configs/sampling.yaml
