@@ -186,6 +186,12 @@ User, verbatim: "1. nah not yet. let's start with finishing experiments etc." an
 
 ## 2026-11-07: the full-VRAM voter screen is dropped
 User, verbatim: "1. I suppose there is no point. unless otherwise drop/"
-- 1 (the 0.3 GPU-h E4B smoke-8 of prompt-diverse tool-less voters, the one shape EXP-049 left open, or close the line): dropped. Read by the lead as: the full-VRAM direction closes with EXP-049 (R1 for the 31B; the E4B voter shape unscreened); no D-007 is written and no GPU is spent on it. "unless otherwise" is read as: reopen only if new evidence argues for it, brought to the user first.
+- 1 (the 0.3 GPU-h E4B smoke-8 of prompt-diverse tool-less voters, the one shape EXP-049 left open, or close the line): dropped. ~~Read by the lead as: the full-VRAM direction closes with EXP-049 (R1 for the 31B; the E4B voter shape unscreened); no D-007 is written and no GPU is spent on it. "unless otherwise" is read as: reopen only if new evidence argues for it, brought to the user first.~~ **Retracted 2026-11-07, a misread; see the correction below.**
 - 2 (the EXP-047 canary): the user asked what it is; the lead explains it in plain terms. Still open.
+- The paper-writer start: not answered in this message. Still open.
+
+## 2026-11-07: correction: the full-VRAM direction stays open; only the naive voter screen is dropped; run the canary
+User, verbatim: "no full VRAM idea is not closed just naieve not. omg opus you are ... canary is to test lora right? do smth. and we are to engineer some agentic struct arch that possibly utilizes the full VRAm of L4 omg"
+- The previous entry's reading was wrong. Dropped: the 0.3 GPU-h smoke-8 of prompt-diverse tool-less voters only. Open: the full-VRAM direction itself. The lead writes D-007, an engineered agent architecture that uses the idle L4 memory, with EXP-049's verified facts as the design envelope rather than a verdict, and candidate trees each with a screen cost and a kill rule.
+- The EXP-047 canary (does the harness apply a LoRA adapter, and what KV cache does an adapter-bearing E4B get): run it. GPU is already approved under D-006 item 1 (0.2 to 0.3 GPU-h; 1.0 of the 2.5 GPU-h ceiling spent). The push guard refuses a zero-task GPU notebook; the guard rule for it is the user's to apply (`.claude/hooks/` is outside the lead's paths), given as one command, then the experimenter pushes once.
 - The paper-writer start: not answered in this message. Still open.
