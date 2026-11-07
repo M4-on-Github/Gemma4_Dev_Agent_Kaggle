@@ -17,6 +17,8 @@ notebooks/<dir>` passes only if:
   - the EXP file names one cohort (a `**Cohort:** <name>` line, or exactly one `experiments/cohorts/<name>.txt`
     reference) and the notebook's `TASK_IDS` equal that cohort's ids. This keeps a screen at 8 tasks and a
     dev-48 arm at 48: the GPU budget class is checked from the ids, not from the agent's label.
+A zero-task GPU probe (no RUN_AGENT and no TASK_IDS parameter, `**Cohort:** none`, no competition source) passes
+without the cohort check (added 2026-11-07 for the EXP-047 canary, on the user's decision).
 Override only by editing this file, which the pre-registration commit would show.
 """
 import ast
@@ -107,6 +109,13 @@ if run_agent is not True:
     cpu_only = (meta.get("enable_gpu") is False and meta.get("enable_tpu") is False
                 and not meta.get("machine_shape") and not meta.get("model_sources"))
     if run_agent is None and cpu_only:
+        sys.exit(0)
+    # A zero-task GPU probe (the EXP-047 LoRA canary): no RUN_AGENT and no TASK_IDS parameter, a pre-registration
+    # whose cohort line is `none`, and no competition source mounted, so no agent and no task runs. Added 2026-11-07
+    # on the user's decision (knowledge/user-decisions.md). The GPU cost is the pre-registration's to state.
+    if (run_agent is None and param("TASK_IDS") is None
+            and re.search(r"(?im)^\*\*cohort:\*\*\s*none\b", text)
+            and not meta.get("competition_sources")):
         sys.exit(0)
     block("RUN_AGENT is not True. Gold controls (RUN_AGENT = False; cell 5 then sets a 60-minute cap) run only from an exp000 directory.")
 
