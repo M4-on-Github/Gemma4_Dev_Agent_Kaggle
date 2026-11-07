@@ -1,0 +1,5 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 28
+  max_time_minutes: 4.5   # EXP-050 2026-11-07: 8 -> 4.5, so the packer's 11.0 h gate passes without an override (120 x 5.5 min = 11.0 h). Not run at 4.5: the harness task message states this value to the model, and prompts/system.md still states 8 minutes (left unchanged, one variable)
+  max_turns: 80
