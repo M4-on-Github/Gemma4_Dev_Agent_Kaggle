@@ -7,7 +7,7 @@ author_role: staff
 credibility: high
 topics: [rules, grading, budget]
 first_seen: 2026-11-03
-last_checked: 2026-11-03
+last_checked: 2026-11-07
 ---
 
 ## Summary
@@ -27,6 +27,10 @@ Host-announced $10,000 bonus for the best submission whose base model is Gemma E
 
 ## Files
 - untrusted/ryanholbrook-small-model-leaderboard/gemma-4-developer-agent-small-model-leaderboard.ipynb, 6232 bytes, SHA-256 f2feb34cb3c9d50ad3683524a5ce10a80098b7f617ebb108d96236ca785af917. Read as text only. Licence: not checked. Data input `gemma-4-small-model-data` not downloaded.
+- untrusted/ryanholbrook-small-model-board-2026-11-07/gemma-4-developer-agent-small-model-leaderboard.ipynb, 6232 bytes, SHA-256 f2feb34cb3c9d50ad3683524a5ce10a80098b7f617ebb108d96236ca785af917 (same bytes as the 11-03 copy). Read with `research/kaggle/nb_outputs.py` (python -I -X utf8).
+- untrusted/ryanholbrook-small-model-board-2026-11-07/kernel-metadata.json, 733 bytes, SHA-256 4670979d911af87b88fd1f6e3f2b4f70579f672ea584f9837b4ec2fe9e7684dd. Kernel id ryanholbrook/gemma-4-developer-agent-small-model-leaderboard (id_no 139881074); keywords "scheduled"; enable_internet false; competition_sources gemma-4-developer-agent; dataset_sources empty.
+- Stored output download (`kaggle kernels output`) was blocked by the Bash guard in the 11-07 run, so no output directory exists; the printed table is read from the notebook's own stored cell output.
 
 ## Updates
 - 2026-11-03: first read. Earlier digest listed the topic as "not read in full".
+- 2026-11-07: re-read. (a) Topic 751104 has 8 comments and no host reply after 2026-10-20; the post-10-20 comments are participant only: amunozo 2026-11-06 15:15 "Could you update the leaderboard's notebook daily?" [M], which suggests the board has not been refreshed; ZHYLAR 2026-10-21 asks for a separate competition [M]; Aditya Vishwakarma 2026-10-25 asks for the harness-readme aliases correction, no host reply [M]. No host text defines what counts as E2B/E4B (the model in agent.yaml, sub-agents or adapters): not stated in this topic [I for the gap]. (b) The board notebook's stored cell output still reads "Last Updated: 2026-10-20 19:27 UTC" (read 11-07; the data input `/kaggle/input/notebooks/ryanholbrook/gemma-4-small-model-data/last_updated.txt`). The table has 24 rows, not 100; rank 1 NullPointers 0.06; rank 3 Bart Agent 0.06; rank 10 prince22466 0.03. Ties at the top are shown at two decimals. (c) `gemma-4-small-model-data` is not in the public datasets list of ryanholbrook (`kaggle datasets list --user ryanholbrook`); it is referenced as a notebook source path, so it is not a verifiable public dataset [V for the listing; I for the reading]. (d) Context from topic 748287 (host, Ryan Holbrook, 2026-10-11): asked whether the smaller variants are scored under the same conditions as 31B, the reply was "Yes, everything is the same." [V] The same thread has the 12B `--hf-overrides` note and "The scorer has this update already." [V]
