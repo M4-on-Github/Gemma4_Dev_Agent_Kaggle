@@ -24,6 +24,7 @@ user-invocable: false
 - `python tools/pack_submission.py [--src <tree>] [--out <zip>] [--allow-warnings] [--skip-budget-gate]`: ships the closure reachable from `agent.yaml` plus `eval_config.yaml`; deterministic zip; prints sha256; refuses rejected prompt markers. Shipped set for the repo tree is exactly `{agent.yaml, eval_config.yaml, prompts/swe_coder.md, configs/sampling.yaml}` (asserted by a test).
 - Gate: `120 x (max_time_minutes + 1.0) min <= 11.0 h`; 4.5 passes at exactly 11.00 h; 5.0 is a hard error; `--skip-budget-gate` demotes it to a warning (used for #2, which timed out, and #11, override recorded in EXP-027 §2).
 - `python tools/estimate_budget.py --eval-config <eval_config.yaml> [--results <summary.jsonl>]` projects the 12 h total; with `--results` it uses the measured distribution.
+- The model sees the `eval_config` budgets: the harness task message has a "Task Budget" section with the time, call and turn allowances (`swegemma/harness/agent_runner.py:339-352,385-390`), and `get_status` returns the seconds remaining (`tools/execution.py:137-140`). Nudges carry no time figure. So a cap change is a model-visible change, and it needs its own run (EXP-050 section 2.2, 2026-11-07). The v24 prompt also states "28 tool calls and 8 minutes" itself.
 - `timeout_seconds` also bounds the hidden test run; below ~100 s a slow test module fails a correct patch (rank-3 v18 comment). 240 and 300 are both safe.
 
 ## Kaggle kernels
