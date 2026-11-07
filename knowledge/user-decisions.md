@@ -195,3 +195,8 @@ User, verbatim: "no full VRAM idea is not closed just naieve not. omg opus you a
 - The previous entry's reading was wrong. Dropped: the 0.3 GPU-h smoke-8 of prompt-diverse tool-less voters only. Open: the full-VRAM direction itself. The lead writes D-007, an engineered agent architecture that uses the idle L4 memory, with EXP-049's verified facts as the design envelope rather than a verdict, and candidate trees each with a screen cost and a kill rule.
 - The EXP-047 canary (does the harness apply a LoRA adapter, and what KV cache does an adapter-bearing E4B get): run it. GPU is already approved under D-006 item 1 (0.2 to 0.3 GPU-h; 1.0 of the 2.5 GPU-h ceiling spent). The push guard refuses a zero-task GPU notebook; the guard rule for it is the user's to apply (`.claude/hooks/` is outside the lead's paths), given as one command, then the experimenter pushes once.
 - The paper-writer start: not answered in this message. Still open.
+
+## 2026-11-07: the Writeup is not started now
+User, verbatim: "I won't be wrting it right now. what next? do we having things that are half done or smth."
+- The paper-writer is not dispatched. The Writeup (due 2026-11-12 23:59 UTC) stays open; the lead does not raise it again unless the user does or the deadline is two days out.
+- The user asked for the list of half-done work; the lead answers in chat from `knowledge/plan.md` and the experiment index.
