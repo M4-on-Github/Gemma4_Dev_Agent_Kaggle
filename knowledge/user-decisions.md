@@ -183,3 +183,9 @@ Against the lead's numbered recommendations of the same day (after S-013 scored 
 User, verbatim: "1. nah not yet. let's start with finishing experiments etc." and "2. ?"
 - 1 (start the paper-writer for the 2026-11-12 Writeup): not yet; finish the experiments first. The lead keeps the deadline visible and asks again when the running experiments are read.
 - 2 (the guard rule for the EXP-047 canary): the user asked what it means; the lead explains it in plain terms. Still open.
+
+## 2026-11-07: the full-VRAM voter screen is dropped
+User, verbatim: "1. I suppose there is no point. unless otherwise drop/"
+- 1 (the 0.3 GPU-h E4B smoke-8 of prompt-diverse tool-less voters, the one shape EXP-049 left open, or close the line): dropped. Read by the lead as: the full-VRAM direction closes with EXP-049 (R1 for the 31B; the E4B voter shape unscreened); no D-007 is written and no GPU is spent on it. "unless otherwise" is read as: reopen only if new evidence argues for it, brought to the user first.
+- 2 (the EXP-047 canary): the user asked what it is; the lead explains it in plain terms. Still open.
+- The paper-writer start: not answered in this message. Still open.
