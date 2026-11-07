@@ -2,7 +2,7 @@
 id: D-007
 title: An agent tree that turns the idle L4 memory into concurrent work inside one task, where the extra samples are checked by execution rather than by a vote
 decision: start
-status: proposed (zero-GPU stage EXP-051 dispatched 2026-11-07; the ranking below is provisional until its numbers land)
+status: proposed; ranked 2026-11-07 on EXP-051 (cec0b47): T2 open, build dispatched as EXP-052; T1 and T4 closed; T3 not opened
 track: both
 claims: [C-015, C-020, C-024]
 date: 2026-11-07
@@ -71,6 +71,27 @@ Candidate trees, provisionally ranked. EXP-051 decides the order and may close a
 | **T3** | **Read fan-out replacing serial exploration.** The actor names the files it wants; a `ParallelAgent` of single-file readers returns one short summary each | 31B (E4B possible) | K reads at once | None; the actor merges | Q2: the 31B spends at least 4 serial pre-edit turns, more than a third of its wall, on reads whose targets are known after its first look | EXP-032's starvation recurs even with raised caps; or wall per task does not fall |
 | T4 | **Two models:** the 31B as actor, E4B branches as drafters or readers | Both | E4B branches | As T2 | Q4c says one tree may name two base models (expected no) | Closed by Q4c |
 
+## Ranking after EXP-051 (2026-11-07; the opening rules in the table above are applied as written, not revised)
+Evidence: EXP-051 (cec0b47), zero GPU. Its header says the numbers were computed before its file was committed, so its section 4 is not a blind reading. The opening rules here were committed first (d9dcb29), before the lead saw any number.
+
+| # | Rule | EXP-051 answer | Verdict |
+|---|---|---|---|
+| T1 | Q3: E4B union at least a single run + 3 of 48; Q4a/b: a private tree is reachable | Union 5, single run 5, so +0. The failed-edit-8 ids are 0 of 3 runs, the six unresolved smoke-8 ids 0 of 4. A private tree exists only through `run_command`, and `submit_patch` diffs `/workspace` only | **Closed** by its own rule |
+| T2 | Q1: no-edit tasks a large share of E4B failures; Q4d: branches carry their own instruction | Q4d yes (`schema.py:277-293`). No E4B task ended at a cap; `edit_file` holds 49.3% of E4B wall in forensics (model time included). 8 of 48 never landed an edit (EXP-043) | **Open.** Weak prior, below |
+| T3 | Q2: at least 4 serial pre-edit turns and more than a third of 31B wall | Only a turn proxy (about 47% of turns before the first edit); wall before the first edit could not be computed. Every swegemma tool is a plain sync function (`workspace.py`, `execution.py`), and a sync tool in one branch stalls its siblings (EXP-007 H3, stall fraction 0.78). No per-branch budget (Q4e) on a counter the 31B hits on 37.5% of tasks | **Not opened.** The pre-edit profile the screener asked for is not commissioned unless T3 is reopened |
+| T4 | Q4c: one tree may name two base models | README says one base model per submission [M; enforcing code not on disk] | **Closed.** Adapters on one base remain, which is the canary's question |
+
+**T2's prior, stated plainly.** The one earlier attack on T2's target set, EXP-044 on the failed-edit-8, resolved 0, and those 8 tasks are 0 of 3 across every run on record. Q3 says repeated E4B attempts have added no task. What favours T2 is narrower: edit retries take the largest share of E4B wall across many tasks, not only the 8, and a tool-less drafter costs no tool call. P(T2 lifts the small-model line by 2 or more of 58) is lowered from about 0.3 to about 0.15 [I].
+
+**Correction to the T2 row.** "K drafts at about one burst's wall" assumed a shared prefix. Each drafter's `instruction` is the system prompt at the front of its request, so different framings there break the prefix for the roughly 7,170 tokens behind it, and each drafter pays its own prefill. On the E4B, with 225.6 s of room per task, this does not block; EXP-052 measures it. Drafters hold no tools, so they draw turns (cap 80, E4B mean 12.5, p90 20), not calls. K is sized against turns.
+
+**Build gates for EXP-052** (0 GPU-h; each is checked on the one-task trace inside the smoke-8 kernel):
+1. **The shape is named in the pre-registration with source file:line.** Candidate S is `SequentialAgent[reader, ParallelAgent(K drafters), applier]`, where the applier sees the drafts through shared session events or state. Candidate A is the single loop with one `agent_tool` wrapping the `ParallelAgent`; that runs in a fresh session (harness-stack `reference/serving.md:26`) and returns one output, so K-1 drafts are lost unless state carries them back. The trace must show all K drafts reaching the applier and no tree re-run after the submit.
+2. **EXP-046's kill applies to the reader.** Only the model ends a tool-holding stage, and EXP-046's locate skipped its reads on 5 of 8. The reader's prompt is written with that failure in front of it.
+3. **The caps are sized for the tree** and stated before the push, so no stage can starve the applier (EXP-032).
+4. **The process endpoint** is per task: `edit_file` attempts, successful `edit_file` calls, and a non-empty applied patch. It is read against EXP-038's traces on the same 8 ids. Resolves are reported, but n = 8 decides nothing about them.
+5. **The time kill** stays as written: an E4B mean wall above 240 s kills the upload without a dev-48.
+
 The canary (EXP-047, running on the user's word) bears on every tree. An adapter cuts the KV pool these trees need,
 and reading B measures by how much.
 
@@ -95,7 +116,7 @@ and reading B measures by how much.
 
 ## Cost
 - **Stage 0, EXP-051** (screener): 0 GPU-h. Running.
-- **Stage 1, build:** the experimenter builds the top one or two trees EXP-051 leaves open. 0 GPU-h.
+- **Stage 1, build:** ~~the experimenter builds the top one or two trees EXP-051 leaves open~~ **Corrected 2026-11-07: only T2 is left open; the screener builds it as EXP-052, since a smoke-8 is its level.** 0 GPU-h.
 - **Stage 2, smoke-8 per tree on the E4B:** about 0.3 to 0.5 GPU-h each (EXP-040 0.315, EXP-046 0.293).
   This needs the user's GPU word.
 - **Stage 3, dev-48 on the E4B:** about 1.2 to 1.6 GPU-h, only for a tree that passes its smoke-8. Needs the user's
