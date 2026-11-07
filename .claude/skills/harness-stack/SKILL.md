@@ -37,15 +37,16 @@ user-invocable: false
 - `kaggle kernels push -p notebooks/<expNNN_dir>` (the push guard always needs the committed, clean EXP file with a readings heading. On top of that, the notebook must meet one of these:
   - `RUN_AGENT = True` and a `**Cohort:**` line matching its `TASK_IDS`;
   - `RUN_AGENT = False`, from an exp000 directory;
-  - no `RUN_AGENT` parameter at all, with CPU-only metadata (`enable_gpu` and `enable_tpu` false, no `machine_shape`, empty `model_sources`). This case has no cohort check (45996cd, user decision 2026-11-05).
+  - no `RUN_AGENT` parameter at all, with CPU-only metadata (`enable_gpu` and `enable_tpu` false, no `machine_shape`, empty `model_sources`). This case has no cohort check (45996cd, user decision 2026-11-05);
+  - a zero-task GPU probe: no `RUN_AGENT` and no `TASK_IDS` parameter, a `**Cohort:** none` line, and no `competition_sources`. No cohort check; the pre-registration states the GPU cost (fad234a, user decision 2026-11-07; EXP-047 v1 was pushed this way on 2026-11-07).
 
-  `RUN_AGENT = False` outside exp000 is still blocked. A zero-task GPU probe (no `RUN_AGENT`, GPU metadata) matches none of the three and is refused; seen with EXP-047, 2026-11-05.) `kaggle kernels status rainm4/<slug>`; `kaggle kernels output rainm4/<slug> -p runs/<EXP>-<arm>/`.
+  `RUN_AGENT = False` outside exp000 is still blocked.) `kaggle kernels status rainm4/<slug>`; `kaggle kernels output rainm4/<slug> -p runs/<EXP>-<arm>/`.
 - Quota 30 L4x4 GPU-h per week; no CLI query exists, the lead keeps a ledger in `knowledge/plan.md` from kernel wall-clock. UNVERIFIED (2026-11-03, web sources disagree): whether L4x4 hours count 1x against the 30, and the reset day (Saturday 00:00 UTC per one source). Settle it by reading the quota counter in the notebook sidebar before and after a run, then replace this line. Measured: dev-48 at 4.5 min / thinking 4096 ~3.9 h; at 8 min / 28 calls with the v24 prompt 4.09-4.12 h kernel wall (EXP-028 §9.5: mean task 297 s, vLLM start 342-397 s). smoke-8 ~0.8 h. vLLM start ~0.25 h.
 - Kernel outputs: `task_results.jsonl` (one row per task) and `traces/trace_<id>.json`. Both are competition data: `runs/` is gitignored.
 - `kaggle kernels output <id> -p runs/<EXP>-<arm>/` nests the bundle as `runs/<EXP>-<arm>/runs/<EXP>-<arm>/` plus a `.zip` copy; move the inner directory up before running `analyze_traces.py`. The kernel log (`<slug>.log`, JSON list of `{time, data}`, seconds since kernel start) holds `vLLM up in N s`, one `[k/48] <id> ... agent=<s>` line per task and the kernel wall (last entry); `duration_s` already includes grading in this notebook.
 - The session timeout is not a hard per-task bound: one EXP-028 RH task ran 752 s at an 8-min cap.
 - Hygiene and `.gitignore` admit a jsonl in `experiments/` only when it is named exactly `summary.jsonl`; store per-arm copies as `experiments/EXP-NNN/<arm>/summary.jsonl`.
-- Pitfall: the push guard reads the text of every Bash command, so a heredoc, commit message or patch script whose text contains the exact push command (the three words in sequence) is blocked as if it were a push. Write such files with the Write tool, or keep the command out of the text.
+- Pitfall: the push guard reads the text of every Bash command, so a heredoc, commit message or patch script whose text contains the exact push command (the three words in sequence) is blocked as if it were a push. Write such files with the Write tool, or keep the command out of the text. Run the push itself as a bare, unchained command: chained with `;` or `&&`, the guard reads the directory argument with the separator attached and refuses with "expected exactly one .ipynb in notebooks/<dir>;, found 0" (EXP-047, 2026-11-07).
 
 ## Run analysis
 
