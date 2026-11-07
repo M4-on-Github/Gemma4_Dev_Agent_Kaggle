@@ -194,14 +194,32 @@ python tools/estimate_budget.py --eval-config experiments/EXP-050/candidate-e4b-
 
 ## 7. Defects in this pre-registration, logged after the fact
 
-None yet.
+These items were logged 2026-11-07, after the upload and **before any score exists**. They come from the critic `prereg` review (`experiments/EXP-050/critic.md`, 71b51aa, verdict ready, changes 1 and 2). They clarify how section 4.2 is applied. Section 4 is not revised.
+
+1. **Row 0 lumps a Notebook Timeout together with other scoring errors.**
+   - Row 0's time-profile clause ("it contradicts EXP-038's time profile") and its contrary observation against C-020 apply **to a Notebook Timeout only**.
+   - A scoring error of any other kind is not a time observation and leaves C-020 alone.
+   - Its next step is to **read the error first**. It does not switch the next E4B upload to B.
+2. **Row 0 names B as the next E4B upload, but section 2.2 calls B untested.** Any later upload of variant B (`1733ec54...62fd`) needs its own pre-registration. This file does not cover it.
 
 ---
 
 ## 8. Built and uploaded (filled at upload time; nothing above changes)
 
-**Built 2026-11-07.** Both zips are packed and verified as recorded in section 2.1. B's tree and builder were committed at d99a116, and this file is committed after them. Not uploaded.
+**Built 2026-11-07.** Both zips are packed and verified as recorded in section 2.1. B's tree and builder were committed at d99a116, and this file is committed after them.
+
+**The path to upload:**
+- Proposal `knowledge/submissions/S-014.md` (9f8ac79) names **variant A**, sha `9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0`. B was not chosen: its cap is model-visible and untested.
+- Critic `prereg` verdict **ready** (`experiments/EXP-050/critic.md`, 71b51aa). Its three non-blocking changes: 1 and 2 are logged in section 7, and 3 is carried by `submissions.md` row 14.
+- Approval `approvals/S-014.txt` holds the same sha (`knowledge/submissions/S-014-result.md`).
+
+**Uploaded 2026-11-07.** Recorded by the experimenter from `knowledge/submissions/S-014-result.md` (7091bbd):
+- Uploaded once by the submitter at 22:44:47 UTC (the Kaggle list timestamp). **Kaggle ref 58106393.**
+- The file uploaded was `out/submission.zip`, a byte copy of `experiments/EXP-050/variant-a-e4b-8min.zip`. `sha256sum` before the submit equalled the approved sha.
+- The CLI reported that the submission succeeded, with 0 submissions remaining today. The list entry after the submit shows status PENDING.
+- Before the submit, the list held no pending upload and none dated 2026-11-07.
+- Row: `submissions.md` row 14.
 
 ## Status
 
-PRE-REGISTERED, NOT UPLOADED (2026-11-07). Waiting on S-014, written by the lead, which names A (`9de869bd...1ac0`, override in section 2.3) or B (`1733ec54...62fd`, untested config). Then the critic `prereg`, then the user's approval. After the score: append section 9, applying section 4.2.
+UPLOADED 2026-11-07 22:44:47 UTC, Kaggle ref 58106393, variant A (`9de869bd...1ac0`); SCORE PENDING. Next: when the submitter reports the score, append section 9, applying section 4.2 with the section 7 items. Then fill `submissions.md` row 14 and the README section 3 row.
