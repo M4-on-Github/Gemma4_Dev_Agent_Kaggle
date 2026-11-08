@@ -121,3 +121,66 @@ On A5, A1, A1f or B1 the line stops here. C-024 is then blocked by infrastructur
 ## Status
 
 2026-11-05: desk note. Zero GPU. No pre-registered readings, because nothing is run; a training kernel would get its own EXP file with endpoints and readings before any push.
+
+2026-11-08: **GATE PASSED** (section "Gate check, 2026-11-08" below): EXP-047 v2 read A3 / B3, the decode check fits the spare, and the three feasibility points are cleared (point 1 [V]; point 2 by design, without `peft`; point 3 on paper, measured in the kernel). Stages 1 to 3 go to EXP-054 with their own readings. Sections 1 to 6 are unchanged.
+
+---
+
+## Gate check, 2026-11-08 (user decision 2026-11-08, df193f3; sections 1 to 6 unchanged)
+
+### G1. EXP-047 readings
+
+EXP-047 v2 read **A3 (applied) / B3**: `experiments/EXP-047-q4-adapter-canary-e4b.md` section 10. The first condition of section 6 holds.
+
+### G2. Decode check
+
+**Command:** `python -I -X utf8 experiments/EXP-048/gate_check.py runs/EXP-047-q4-canary-v2 experiments/EXP-038/e4b/summary.jsonl <scratch dir>`. All figures below are its printout.
+
+**Inputs:**
+- the EXP-047 v2 `kind == "decode"` probes: base 116.63 tok/s (n = 2, boot 0 and its repeat); with an adapter loaded 86.96 tok/s (n = 3, boot 1). The drop is **25.4%**, so seconds per token scale by 1.3412;
+- the 48 EXP-038 rows (single loop, 8 min cap): mean wall 85.7 s, max 207.3 s, mean output tokens 5,970, max 15,402, mean calls 8.9;
+- D-006's mean budget of 311 s per task, so the unchanged tree's spare is **225.3 s** per task.
+
+| Model of the slowdown | Mean wall per task | Added | Share of the spare | Max task (cap 480 s) | Tasks over the cap | E7-style projection (mean x 120 / 3600 + 445.6 s) |
+|---|---|---|---|---|---|---|
+| unchanged tree | 85.7 s | 0 | 0 | 207.3 s | 0 | 2.98 h |
+| decode component (output tokens x the per-token increase) | 103.2 s | +17.5 s (max +45.1 s) | 7.8% | 251.4 s | 0 | 3.56 h |
+| whole-wall bound (every second x 1.3412) | 115.0 s | +29.2 s | 13.0% | 278.0 s | 0 | 3.96 h |
+
+**Reading:** both models fit inside the spare, with no task over the cap and a projection far under 10.5 h. **The decode condition of section 6 holds.**
+
+**Caveats:**
+- The probes are single-stream 256-token decodes. Prefill with an adapter was not measured, and the whole-wall bound is the stand-in for it [I].
+- n = 2 and n = 3 probes; the per-task figures are a model, not a run.
+
+**Tooling pitfall.** `tools/estimate_budget.py --results` with its default decode model (25.5 tok/s, 0.6 s per call) overstates the E4B, so this check uses the E7 formula. Recorded in the harness-stack skill.
+
+### G3. The three feasibility points of section 3
+
+**Point 1, which weights: CLEARED [V].**
+- `kaggle models get google/gemma-4` (2026-11-08) lists two public BF16 E4B instances under the `transformers` framework, both Apache 2.0:
+  - `gemma-4-e4b-it-qat-q4_0-unquantized` v2, 15,914,702,139 bytes;
+  - `gemma-4-e4b-it` v1, 16,024,808,340 bytes.
+- `model_sources` takes them as `google/gemma-4/transformers/<instance>/<version>`.
+- The decompress path exists in the image:
+  - transformers 5.13.1 `quantizers/quantizer_compressed_tensors.py:74-78` decompresses when `run_compressed=False`;
+  - `:96-97` marks the decompressed model trainable;
+  - `compressed_tensors` `model_compressor.py:156-175` decompresses in place.
+- **Plan:** train on the served checkpoint decompressed to BF16. The public QAT-unquantized instance is attached as the fallback. Which weights trained is a recorded field.
+- Whether a fake-quant forward stays on the decompressed modules is [I]. The eval runs on the served checkpoint under vLLM in either case.
+
+**Point 2, training stack: CLEARED BY DESIGN, without `peft`.**
+- What is there:
+  - the wheelhouse carries transformers 5.13.1 with `models/gemma4/modeling_gemma4.py` [V];
+  - the image carries torch 2.10.0+cu128 [V, EXP-047 v2 `env.json`].
+- What is not: `peft` is not in the wheelhouse [V].
+- **Plan:** a hand-written torch LoRA on `q_proj`/`o_proj` that writes the same PEFT file layout as the EXP-047 canary writer. vLLM loaded and applied that layout (A3 [V]).
+- **Internet is not tested.** The kernel saw 4 GPUs only with the competition attached (EXP-047 v1 section 9.4 against v2 section 10), so internet installs are not needed. Whether a kernel without the competition may install from the internet stays [I].
+
+**Point 3, memory: CLEARED ON PAPER, measured in the kernel.**
+- **Weights:** about 15.9 GB BF16 (the CLI sizes above) against about 22.5 GB usable on one L4.
+- **Adapter:** rank 8 on `q_proj`/`o_proj` is about 6 MB (section 4).
+- **Activations [I]:** gradient checkpointing, batch 1, and loss only at the call positions (hidden states sliced before `lm_head`, so the 262,144-wide logits exist only for those tokens).
+- **In-kernel check:** EXP-054 stage 0 measures `torch.cuda.max_memory_allocated` over one forward and backward. If that fails, the kernel writes an infrastructure row.
+
+**Gate: PASSED.** Stage 2 is pre-registered as EXP-054 (stages 1 to 3, one kernel, zero tasks).
