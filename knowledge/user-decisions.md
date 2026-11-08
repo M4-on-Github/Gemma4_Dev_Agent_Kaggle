@@ -210,3 +210,8 @@ User, verbatim: "go ahead"
 User action: ran `apply_canary_compsource_rule.py` (the lead's scratchpad script), which patched `.claude/hooks/guard_push.py` and printed SELF-TEST OK.
 - The lead's message before it said: "Shall I go ahead with the canary re-run? If yes, apply the script first. Then the experimenter will record the change in EXP-047, attach the dataset and push once." The user applied the script and wrote no words; **read by the lead as yes to that one re-run**, the script being the stated precondition of a yes.
 - Scope: one push of `notebooks/exp047_q4canary` with `competition_sources` set to the main competition alone and nothing else changed (EXP-047 section 9 fix; reading A0's "re-run once"). GPU under D-006 item 1: 1.0 + 0.040 (v1) spent; the re-run 0.20 to 0.35 expected, capped at 0.5. No further re-run without asking.
+
+## 2026-11-08: the EXP-045 smoke-8 is approved
+User, verbatim: "go ahead with exp 045"
+- Given after the lead's EXP-052 read (row 0, T2 as built closed, D-007 open) and its recommendation: EXP-045 first (0.33 GPU-h point, 0.25 to 0.45, conditional worst case about 1.24), to learn whether the E4B runs a python check when told to, the selector any draft tree needs; a fixed tree only after.
+- Read by the lead as: one push of `notebooks/exp045_p` (kernel rainm4/gemma4-exp045-p) as built in 0762bd4, no re-run of a failed kernel without asking. It does not approve the fixed parallel tree or any dev-48 arm.
