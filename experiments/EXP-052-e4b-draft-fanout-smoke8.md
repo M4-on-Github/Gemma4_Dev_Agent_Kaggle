@@ -172,10 +172,17 @@ Built 2026-11-07, **not pushed** (the GPU word is the user's and has not been gi
 - **Notebook:** `notebooks/exp052_t2/kaggle_eval_l4x4.ipynb`, built with the command of section 6; `TASK_IDS` are the 8 smoke-8 ids in the cohort file's order (fastapi_14301, fastapi_14448, fastapi_14605, httpx_3672, requests_7205, requests_7309, rich_3006, rich_3468), `N_TASKS = 8`, `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`. `kernel-metadata.json` is EXP-046's with `id` `rainm4/gemma4-exp052-t2` and `title` `gemma4-exp052-t2` changed (`diff` shows those two lines only).
 - **Cost:** 0.35 to 0.46 GPU-h, point 0.40; conditional worst case 1.19 GPU-h (section 2.4).
 
+### 8.1 Pushed 2026-11-07, approved by the user (`knowledge/user-decisions.md`, c3ea250: "go ahead")
+
+Sections 3 and 4 are unchanged. Before the push the worktree matched the build commit c66d68a (`git status --short` on the notebook directory and this file showed nothing) and `sha256sum dist/EXP-052-t2.zip` gave `29b7f4796ed1598680b0576927d6e9f3803bd791423a816f2daa5bd464594e47`. Nothing was rebuilt.
+- **Push:** shortly before 2026-11-08 00:06 UTC (this record was written at 19:06 local, UTC-5, on 2026-11-07, read from the file mtime because `date` is not an allowed command, so the push time is a few minutes earlier than this and approximate), the bare push of `notebooks/exp052_t2`. Output: "Kernel version 1 successfully pushed." Kernel **`rainm4/gemma4-exp052-t2` version 1**, private, GPU on, `enable_internet` false, model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`. The guard did not refuse.
+- **Status seen once, right after the push:** `KernelWorkerStatus.RUNNING`.
+- **Stop rule:** no re-run of a failed kernel without the user's word. The download and analysis (E1 to E14, rows then reading Q, the first task in kernel order, fastapi_14301, read first) is a separate job, dispatched when the status says COMPLETE: `kaggle kernels output rainm4/gemma4-exp052-t2 -p runs/EXP-052-t2/`, move the nested inner directory up, `python tools/analyze_traces.py runs/EXP-052-t2 --cap-minutes 8 --max-calls 45`.
+
 ## 9. Results
 
 Not run.
 
 ## Status
 
-2026-11-07: **BUILT, PRE-REGISTERED, NOT PUSHED.** Tree `experiments/EXP-052/candidate-t2/` (shape S, K = 5, calls 45, turns 120, 8 min), zip `29b7f479...4e47`, notebook `notebooks/exp052_t2/`. Waiting on the user's GPU word for the push (0.40 GPU-h point, 1.19 worst case).
+2026-11-07: **PUSHED, RUNNING** (approved by the user 2026-11-07, c3ea250). Kernel `rainm4/gemma4-exp052-t2` version 1, status seen right after the push `KernelWorkerStatus.RUNNING`, at about 2026-11-08 00:06 UTC (see 8.1). Tree `experiments/EXP-052/candidate-t2/` (shape S, K = 5, calls 45, turns 120, 8 min), zip `29b7f479...4e47`, notebook `notebooks/exp052_t2/`. Cost 0.40 GPU-h point, 1.19 worst case. Next: when `kaggle kernels status rainm4/gemma4-exp052-t2` says COMPLETE, the lead dispatches the download and analysis as a separate job (E1 to E14, rows then reading Q, fastapi_14301 read first). No re-run of a failed kernel without the user's word.
