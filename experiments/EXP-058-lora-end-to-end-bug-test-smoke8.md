@@ -197,6 +197,13 @@ Then hand-write `kernel-metadata.json` from `notebooks/exp056_r1/`'s, with id an
 - **Local checks:** `python -m pytest`, 49 passed; repo hygiene OK.
 - **Push held.** One status call each at 21:46 UTC found `rainm4/gemma4-exp057-r1` and `rainm4/gemma4-exp057-r2` both RUNNING, so both GPU slots were in use. Per the lead's slot note there was no wait and no polling.
 
+- **Pushed 2026-11-08, 21:56 UTC**, on the lead's word that a slot was free (`rainm4/gemma4-exp057-r1` COMPLETE at 21:56, r2 still RUNNING). The push was the bare command run once from `notebooks/exp058_lora`, and the guard passed it. The CLI reported "Kernel version 1 successfully pushed." One status call right after gave `KernelWorkerStatus.RUNNING`.
+- **Cost:** the lead accepted the joint worst case, because no E4B task has passed 176 s.
+
 ## Status
 
-PRE-REGISTERED and BUILT 2026-11-08 (8cf11a8). NOT PUSHED: both kernel slots were busy at 21:46 UTC, and the push waits for the lead's word that a slot is free.
+PRE-REGISTERED and BUILT 2026-11-08 (8cf11a8). PUSHED 21:56 UTC: `rainm4/gemma4-exp058-lora` version 1, RUNNING. Next, when the lead reports COMPLETE:
+1. `kaggle kernels output rainm4/gemma4-exp058-lora -p runs/EXP-058-a/`, then move the nested `runs/EXP-058-a/` up one level.
+2. Read `adapter_check.json`.
+3. `python tools/analyze_traces.py runs/EXP-058-a --cap-minutes 8 --max-calls 28`
+4. `python tools/run_forensics.py forensics runs/EXP-058-a`
