@@ -139,6 +139,10 @@ Built 2026-11-08 after the pre-registration commit `a6df3fb` (tree, tests, readi
 
 Committed as `2111524` (hygiene OK, 5 files) before any push; the pre-registration is `a6df3fb`. On 2026-11-08 `rainm4/gemma4-exp057-r1`: "Kernel version 1 successfully pushed", first status `RUNNING`. Then `rainm4/gemma4-exp057-r2`: "Kernel version 1 successfully pushed", first status `RUNNING`; at that push the only other kernel known to be running was r1 (EXP-056 r2 `COMPLETE`, no EXP-058 notebook directory yet), so at most 2 GPU kernels. Each pushed once, not re-run, not waited on. Analysis is a separate job once each status is COMPLETE; rows 0 and 1 read from r1 alone, the rest pooled.
 
+### 8.2 Reference counts read after the push (dated 2026-11-08, no row changed)
+
+EXP-056 r2 (same defective picker, 8 task-runs; EXP-056 section 9.2) was analysed after both EXP-057 kernels were pushed, so none of it entered the prompt or the readings. As references for the later analysis: Ad 4 of 8; 3 well-formed script calls, all returning the notice line; 1 model-side `SKILL_NOT_FOUND` from literal quote characters inside the string values; 2 of 8 task-runs typed the skill call as a shell command text (not counted in Ad); 0 `load_skill` calls; tool-free endings 2 of 8; the slimmer `traces/` copy omits `run_skill_script` calls, so count them in `official/traces/`. The blind prediction of section 4 (M_x 0 to 2 calls) stands as written.
+
 ## Status
 
 **r1 and r2 PUSHED 2026-11-08, RUNNING** (`rainm4/gemma4-exp057-r1`, `rainm4/gemma4-exp057-r2`), analysis pending. Pre-registered at `a6df3fb`, built at `2111524`. Zip `e402d6dd...6362e6`.
