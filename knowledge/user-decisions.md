@@ -234,3 +234,12 @@ User, verbatim: "fix the lora. sure let's reurn one more time for the loop"
   2. **One more loop round (round 3) approved, past the stop rule:** read as the lead's recommendation the user answered "sure" to, a mechanism candidate (a skill script that picks the check command; the script itself runs nothing) on two smoke-8 runs pre-registered as one experiment, about 0.3 GPU-h each, inside the day's 4.0. If the user meant a plain re-run of the EXP-055 tree, they can redirect before the push.
   3. **Upload slot:** not answered; it lapses at 23:59 UTC unless the user says otherwise.
 
+## 2026-11-08 (about 21:25 UTC): round 4, a LoRA bug test, and raw-model experiments
+User, verbatim: "go ahead. so we know lora works but we will have to do recalculations on where and how we should use lora. for now let's make sure our lora can run with no problems or bugs, and also keep testing raw model experiments to figure out what type of agents we need to engineer"
+- Given after the lead reported EXP-054 v2 (R4, positive and costly: exact copy 0.483 to 0.708, drift gate failed) and EXP-056 r1 (row 0, infrastructure: the picker's fixed root), and recommended a round 4 with the picker fixed.
+- Read by the lead as:
+  1. **Round 4 approved** (EXP-057, screener): the EXP-056 package with the picker fixed, two smoke-8 runs over one zip, about 0.6 GPU-h.
+  2. **A LoRA bug test approved** (EXP-058, experimenter): the EXP-054 v2 adapter packed into a submission tree and run end to end through the eval notebook on smoke-8, about 0.35 GPU-h. Its readings are about whether the adapter runs without errors or bugs, not about its effect: EXP-054's R4 stands as the effect reading, and this run makes no effect claim. Where and how to use a LoRA (for example only on an edit role, D-006) is to be re-derived later, not tonight.
+  3. **Raw-model experiments continue** as a learning series on the unadapted model: the loop's stop on two keep-base rounds is lifted by this word. Each round is still one pre-registered change inside today's 4.0 ceiling, chosen to learn what agent structure the model needs; an infrastructure failure still stops a line until it is fixed.
+  4. **Upload slot:** not mentioned; it lapses at 23:59 UTC.
+
