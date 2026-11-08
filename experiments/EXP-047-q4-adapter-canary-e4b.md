@@ -220,6 +220,7 @@ Written before the v2 push. Nothing above is revised.
 - **Authority.** The user decision of 2026-11-08 in `knowledge/user-decisions.md` ("the guard admits the main competition source on a zero-task probe; the EXP-047 canary re-run is approved"). The user's guard patch is committed with it as dd8d3fc: a zero-task GPU probe may now attach the main competition source and nothing else.
 - **A section 8 property no longer holds for v2.** The 2026-11-05 build note says that no competition source is attached, so no competition file is mounted in the kernel. For v2, the competition mount is present. The notebook reads nothing under it (no path in `q4_canary.py` names it), it has no `TASK_IDS` and no `RUN_AGENT`, it runs no agent and no task, and its outputs are its own files: the canary records, the env record and the boot logs.
 - **Unchanged.** Sections 3 and 4 (with the 4.3 and 4.4 amendments) are unchanged, and so are the analysis script and the caps (27-minute stop, 0.5 h cap). The expected cost is still 0.20-0.35 L4x4-h (point 0.26). This is the one re-run A0 allows. If v2 also fails, there is no further re-run without the user's word.
+- **v2 pushed.** 2026-11-08, between 14:42:34Z and 14:42:51Z UTC, from commit 0e4b9d3 (addendum and metadata change), with the bare command from the repo root, once. The push printed "Kernel version 2 successfully pushed." Kernel `rainm4/gemma4-exp047-q4-canary` **version 2**; one `kaggle kernels status` call right after returned `KernelWorkerStatus.RUNNING`. Expected 0.20-0.35 L4x4-h (point 0.26), cap 0.5 h. The download and analysis is a separate job (section 6 commands; results appended as a v2 part of section 9).
 
 ## Status
 
@@ -230,6 +231,8 @@ Written before the v2 push. Nothing above is revised.
 2026-11-07: **pushed**, kernel `rainm4/gemma4-exp047-q4-canary` version 1, at 23:41 UTC from commit fad234a, after the user's guard rule for zero-task GPU probes (fad234a). No rebuild (section 8 addendum). Expected 0.20-0.35 L4x4-h (point 0.26), cap 0.5 h. Not analyzed; download and analysis are a separate job (section 6).
 
 2026-11-08: **ERROR, read as A0 / B0** (section 9). v1 stopped at its own GPU-count gate at 120.5 s with 2 GPUs visible, before boot 0. GPU 0.040 h (kernel-log span). Proposed fix: attach the competition source in the metadata. That needs the user to change the guard rule; nothing was rebuilt or re-pushed. Next command, only after the user approves the re-run and changes the guard: re-push `notebooks/exp047_q4canary` with the one metadata change recorded in section 8.
+
+2026-11-08: **v2 pushed** (14:42 UTC, version 2, RUNNING, from 0e4b9d3). The one A0 re-run, with the main competition source attached (section 8, v2 addendum; user decision 2026-11-08, dd8d3fc). Next, when COMPLETE: download `rainm4/gemma4-exp047-q4-canary` into `runs/EXP-047-q4-canary-v2/` and run `python -I -X utf8 experiments/EXP-047/analyze_canary.py runs/EXP-047-q4-canary-v2`. If v2 fails, there is no further re-run without the user.
 
 ---
 
