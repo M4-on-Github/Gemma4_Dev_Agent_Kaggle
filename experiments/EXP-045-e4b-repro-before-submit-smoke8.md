@@ -138,6 +138,13 @@ Built 2026-11-05 after the pre-registration commit 6a42912, with the section 6 c
 - `notebooks/exp045_p/kernel-metadata.json`: copied from `notebooks/exp033_e4b/` after the build, only `id` (`rainm4/gemma4-exp045-p`) and `title` (`gemma4-exp045-p`) changed (`diff` shows those two lines only).
 - **Kernel id: `rainm4/gemma4-exp045-p`.** **Not pushed.** The push is a separate job after the user approves the GPU. Push command: `kaggle kernels push -p notebooks/exp045_p`.
 
+### 8.1 Pushed 2026-11-08, approved by the user (`knowledge/user-decisions.md`, 86304ae: "go ahead with exp 045")
+
+Sections 1 to 7 are unchanged. Before the push, `git status --short` on `notebooks/exp045_p`, this file and `experiments/EXP-045` showed nothing, `git diff 0762bd4` over `notebooks/exp045_p` and `experiments/EXP-045` was empty, `sha256sum dist/EXP-045-p.zip` gave `6f30306a4a415d702677c56faf7e2f577cd11462e436b8a90c2b6b00c5d3e211`, and `kernel-metadata.json` attaches the competition source `gemma-4-developer-agent` (a 4-GPU kernel needs it; EXP-047 v1 saw 2 GPUs without it) and the E4B model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`. Nothing was rebuilt.
+- **Push:** at about 15:10 UTC on 2026-11-08 (read from this file's mtime, because `date` is not an allowed command, so the push itself was a few minutes earlier). Output: "Kernel version 1 successfully pushed." Kernel **`rainm4/gemma4-exp045-p` version 1**. The guard did not refuse.
+- **Status seen once, right after the push:** `KernelWorkerStatus.RUNNING`.
+- **Stop rule:** no re-run of a failed kernel without the user's word. The download and analysis is a separate job, dispatched when the status says COMPLETE: `kaggle kernels output rainm4/gemma4-exp045-p -p runs/EXP-045-p/`, move the nested directory up, `python tools/analyze_traces.py runs/EXP-045-p --cap-minutes 8 --max-calls 28`, then the section 3 endpoints and the section 4 rows as written. Row 0 first: any `err` string, in particular the compaction summarizer error seen on the EXP-052 `SequentialAgent` root, which this single-agent tree does not share.
+
 ## Status
 
-2026-11-05: pre-registered (6a42912), built, not pushed. Zero GPU. An enforcement screen only; EXP-042 gives no trace support for the lever on the E4B. Waiting for the user's word on the GPU.
+2026-11-08: **PUSHED, RUNNING** (approved by the user 2026-11-08, 86304ae). Kernel `rainm4/gemma4-exp045-p` version 1, status seen right after the push `KernelWorkerStatus.RUNNING`, at about 15:10 UTC (see 8.1). Zip `6f30306a...3e211`, notebook `notebooks/exp045_p/`. Next: when `kaggle kernels status rainm4/gemma4-exp045-p` says COMPLETE, the lead dispatches the download and analysis as a separate job. No re-run of a failed kernel without the user's word.
