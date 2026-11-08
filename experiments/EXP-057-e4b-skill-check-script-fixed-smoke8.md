@@ -143,6 +143,42 @@ Committed as `2111524` (hygiene OK, 5 files) before any push; the pre-registrati
 
 EXP-056 r2 (same defective picker, 8 task-runs; EXP-056 section 9.2) was analysed after both EXP-057 kernels were pushed, so none of it entered the prompt or the readings. As references for the later analysis: Ad 4 of 8; 3 well-formed script calls, all returning the notice line; 1 model-side `SKILL_NOT_FOUND` from literal quote characters inside the string values; 2 of 8 task-runs typed the skill call as a shell command text (not counted in Ad); 0 `load_skill` calls; tool-free endings 2 of 8; the slimmer `traces/` copy omits `run_skill_script` calls, so count them in `official/traces/`. The blind prediction of section 4 (M_x 0 to 2 calls) stands as written.
 
+## 9. Results
+
+### 9.1 r1 alone (2026-11-08, screener; r2 not opened when this was written and committed)
+
+Kernel `rainm4/gemma4-exp057-r1`, COMPLETE. Read as section 4 is written: rows 0 and 1 only, per-run thresholds. T and the pooled rows are not read here. Skill calls were counted in `official/traces/`. Per-task summary: `experiments/EXP-057/r1/summary.jsonl` (from `analyze_traces.py`).
+
+**Cost.** Kernel-log span 981.7 s (vLLM up in 322.8 s) = **0.273 GPU-h** (section 2.4 predicted 0.28 to 0.30; EXP-056 r1 0.281).
+
+| Task | wall s | calls | skill calls | edit_file calls (failed) | ending |
+|---|---|---|---|---|---|
+| requests_7309 | 18.1 | 0 | 0 | 0 | tool-free, 3 nudges, no submit |
+| requests_7205 | 70.4 | 10 | 1 | 2 (1) | submit |
+| fastapi_14448 | 47.8 | 5 | 1 | 1 (0) | submit |
+| fastapi_14301 | 46.7 | 4 | 1 | 1 (0) | submit |
+| httpx_3672 | 142.2 | 12 | 1 | 6 (4, 3 with lost arguments) | submit |
+| fastapi_14605 | 109.5 | 11 | 1 | 6 (2) | submit |
+| rich_3468 | 68.5 | 10 | 1 | 1 (0) | submit |
+| rich_3006 | 38.4 | 5 | 1 | 1 (0) | submit |
+
+**Row 0 (infrastructure): not fired.** S_s = 0 over 7 script calls: every result had status success, empty stderr, and one line of stdout. `error` is non-null in 0 of the 7 task-runs that made a tool call (the one non-null `error` is the tool-free ending, which does not count). The tree ran. **First-trace check passed:** S_p = 7 of 7, every script call returned a pick that is a pytest command naming one test file, none the notice line. This is the change from EXP-056, where every well-formed call returned the notice line.
+
+**Row 1 (harm): not fired.** A_e = 7 of 8 (threshold below 6); mean wall 67.7 s (threshold above 140); capped 0 (threshold 3); longest 142.2 s, httpx_3672 (threshold 495 s); stray file in a patch 0 (threshold 2); malformed turns 0 (threshold 2). Patches non-empty 7 of 8; the one empty patch is the tool-free task-run.
+
+**Recorded, not read.**
+
+- **Ad = 7 of 8, S_c = 7.** Every call well formed: skill name `check-picker`, the script path `scripts/pick_check.py`, `args` an empty list (7 of 7 used the newest-modified-file fallback, so the pick is a recency pick, not a pick chosen from the model's own file names). **A_p = 7 of 8.**
+- **M_x = 0** of every kind (wrong name, quote-wrapped values, rejected shape, empty args). `load_skill`, `list_skills`, `load_skill_resource` calls 0. Skill calls typed as text in a shell command 0.
+- **Printed line then run** (exact program and test file, with `run_command`): 5 of 7 (fastapi_14448, fastapi_14605, requests_7205, rich_3006, rich_3468); fastapi_14301 and httpx_3672 submitted without running it (S_m 2 of 8 by that reading). Exit codes of the 5: 0 in four (all passed), 2 in fastapi_14605 (a collection error, an ImportError, raised inside a file the model had edited). In fastapi_14605 one `edit_file` and then `submit_patch` followed, so G = 0 by definition. Observation, recorded and not read: the statement that the check's ImportError traced to is still present in the final patch (grep count 1), so a failing module may have shipped despite G = 0 by the rule as written; row 6 reads G as defined, so this is for the pooled reading to note.
+- **V1** (literal rule, a python or pytest command after the last successful edit) about 5 of 8; **G = 0**; T not read.
+- **Tool-free endings 1 of 8** (requests_7309), against 2, 2 and 1 in EXP-056 r1, EXP-056 r2 and EXP-055.
+- **Mean wall 67.7 s, longest 142.2 s.** Nudges 3, all on the tool-free task-run. Resolves 1 of 8 (rich_3006), recorded and not read.
+
+**Blind prediction against outcome (r1).** Ad 5 to 7 of 8: actual 7, top of the range. S_s 0: actual 0. M_x 0 to 2: actual 0. A_p 4 to 6: actual 7, above. V1 5 to 7: actual about 5. G 0: actual 0. Mean wall 60 to 100 s: actual 67.7. Tool-free 1 to 2: actual 1. T 3 to 5: not read.
+
+**What r1 licenses.** Rows 0 and 1 did not fire; r1 is recorded and rows 2 to 6 wait for r2. The mechanism works as built: the fixed picker runs in the harness and returns real picks, and the model calls it correctly (the EXP-056 `SKILL_NOT_FOUND` quote-wrapping did not recur in 7 of 7). Whether the picks are the right check (T) is not read. Caveat for the pooled reading: r2 is the same zip over the same 8 tasks, so the 16 task-runs are two draws over 8 clusters, not 16 independent tasks.
+
 ## Status
 
-**r1 and r2 PUSHED 2026-11-08, RUNNING** (`rainm4/gemma4-exp057-r1`, `rainm4/gemma4-exp057-r2`), analysis pending. Pre-registered at `a6df3fb`, built at `2111524`. Zip `e402d6dd...6362e6`.
+**r1 COMPLETE and ANALYSED 2026-11-08** (section 9.1): row 0 not fired, row 1 not fired, Ad 7 of 8, S_s 0, S_p 7 of 7, M_x 0, 0.273 GPU-h. **r2** (`rainm4/gemma4-exp057-r2`) COMPLETE, pooled reading pending. Pre-registered at `a6df3fb`, built at `2111524`. Zip `e402d6dd...6362e6`.
