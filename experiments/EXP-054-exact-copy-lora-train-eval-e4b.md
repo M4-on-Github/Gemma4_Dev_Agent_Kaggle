@@ -228,4 +228,79 @@ None yet. Results are appended in section 9 and apply section 4 as written.
 
 ~~2026-11-08: **PRE-REGISTERED AND BUILT, not pushed.** Zero GPU spent. Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h (`HARD_CAP_S` 3,400 s). Next: the bare push of `notebooks/exp054_copylora`, once, then section 8 records the kernel version.~~
 
-2026-11-08: **PUSHED.** Version 1 of `rainm4/gemma4-exp054-copy-lora` was pushed at 18:20 UTC from 2b89d60 and showed RUNNING. Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h. Not analyzed yet; download and analysis are a separate job, using the section 6 commands. When the kernel is COMPLETE, the next step is `kaggle kernels output rainm4/gemma4-exp054-copy-lora -p runs/EXP-054-copy-lora/`, then flatten the nested bundle and run `python -I -X utf8 experiments/EXP-054/analyze_copy_lora.py runs/EXP-054-copy-lora --json runs/EXP-054-copy-lora/analysis.json`.
+~~2026-11-08: **PUSHED.** Version 1 of `rainm4/gemma4-exp054-copy-lora` was pushed at 18:20 UTC from 2b89d60 and showed RUNNING. Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h. Not analyzed yet; download and analysis are a separate job, using the section 6 commands. When the kernel is COMPLETE, the next step is `kaggle kernels output rainm4/gemma4-exp054-copy-lora -p runs/EXP-054-copy-lora/`, then flatten the nested bundle and run `python -I -X utf8 experiments/EXP-054/analyze_copy_lora.py runs/EXP-054-copy-lora --json runs/EXP-054-copy-lora/analysis.json`.~~
+
+2026-11-08: **v1 ERROR, read as R0 (infrastructure)** (section 9).
+- It died in our own notebook code at about kernel second 495, right after the boot-0 vLLM server came up and before any request. A global helper name was shadowed by an `import` [V].
+- GPU 0.140 h (kernel-log span).
+- No pairs were built, no training ran, and no adapter was read. C-024 is unread, not refuted.
+- The proposed fix is two lines in the capture cell (section 9.4). It is not applied and not rebuilt.
+- A v2 needs the user's word. If approved, the next steps are: apply 9.4, rebuild with the section 6 command, record a section 8 addendum, then push the bare command once.
+
+---
+
+## 9. Results, v1, 2026-11-08. Section 4's readings applied as written.
+
+Kernel `rainm4/gemma4-exp054-copy-lora` version 1 ended with status `KernelWorkerStatus.ERROR` (the lead checked at 19:06 UTC, and `kaggle kernels status` showed the same at the download).
+
+- **Download.** Section 6 command, `kaggle kernels output rainm4/gemma4-exp054-copy-lora -p runs/EXP-054-copy-lora/`. The bundle nested one level, as usual, and was flattened with `cp -r`.
+- **What it holds.**
+  - `run.json`, `env.json` and `boot0.log`;
+  - the two trees `sub0/` and `sub1/` (the shipped tree; `sub1` has no adapter yet);
+  - the kernel log.
+
+  There is no `eval.jsonl`, `probes.jsonl`, `calls.jsonl` or `train.json`, and no adapter.
+- **How it was read.** Everything was read as data with `python -I -X utf8`; nothing from the bundle was run. `python -I -X utf8 experiments/EXP-054/analyze_copy_lora.py runs/EXP-054-copy-lora --json runs/EXP-054-copy-lora/analysis.json` ran (exit 0) and returned **R0**, with the conditions "run status started" and "training pairs None < 32".
+
+### 9.1 Where and why it stopped [V]
+
+Times are kernel-log seconds. The notebook's own clock runs about 9 s behind: its `rendered` stage at 149.4 s is logged at 158.7 s.
+
+| stage | kernel-log s | notebook s | record |
+|---|---|---|---|
+| wheelhouse installed (41 of 41 wheels) | 62.8 | | log |
+| env, 4 GPUs, BF16 parent found | 104.5 | 95.2 | `run.json` `installed` |
+| stage 1 items | 158.1 | 148.8 | 24 packages, 164 files, 2,222 items (404 held-out, 1,818 training); eval 120, drift 48, training 400 + 64 first-turn |
+| stage 1 rendering through the harness tools | 158.7 | 149.4 | 0 bad windows; `build_agent_prompt`, `EvalConfig`, `make_read_file` and `swegemma.edit` all from the harness |
+| boot 0: vLLM up | before 494.8 | | `boot0.log`: KV pool 298,464 tokens; engine init 137.98 s; "Application startup complete." |
+| **failure** | **494.8** | about 485 | papermill `PapermillExecutionError` at "In [8]" (the boot-0 cell) |
+| last log entry | 502.3 | | nbconvert writes the results |
+
+- **The exception.** `TypeError: 'module' object is not callable`. It was raised inside our `boot()` helper, at its first call to our HTTP helper `http(...)`, which lists `/v1/models` after the server has started.
+- **The cause.** The source shows it. The helper is defined as a function named `http` (`copy_lora.py`, the log/HTTP/boot cell). The next cell, the ADK capture cell, runs `import http.server`. That statement binds the global name `http` to the standard-library package and replaces the function. Every later `http(...)` call therefore raises this TypeError.
+- **How sure.** This is [V] on two grounds: the traceback names the line, and a scan of the source for names bound both by a `def` and by an `import` finds exactly one such name, `http` (definition and import in the same two cells). The training child's source has none.
+- **Status.** The exception escaped the cell without our `stop()` helper, so `run.json` still says `started`.
+- **Not a server failure.** The server came up and shut down cleanly when the kernel ended ("Application shutdown complete." in `boot0.log`).
+
+### 9.2 Readings
+
+- **R0 fires.** The run status is `started`, and 0 training pairs were kept. No other row is read.
+- **Stage reached.** Stage 1 finished. In D-006 terms, this kernel stopped at **boot 0, before pair building**. No base generation ran, no pair was built, no training ran, no boot 1 started, and no request was evaluated.
+- **C-024.** Unread, not refuted.
+- **Blind prediction.** It gave R0 25%. R0 came, but from a defect in our own code, not from the training or memory risks the prediction had in mind.
+
+### 9.3 The two points flagged before the push
+
+1. **BF16 lookup: no fallback [V].** The first explicit path hit: `/kaggle/input/models/google/gemma-4/transformers/gemma-4-e4b-it-qat-q4_0-unquantized/2` (`env.json` `bf16_dir`). Training would have used the BF16 parent. Nothing was walked under the competition mount.
+2. **Memory, feasibility 3: not the cause, and still unmeasured [V for "not the cause"].** The failure is a Python name error before any training process started. The kernel reported 4 x 22,563 MiB GPUs and 184.4 GiB of free host RAM. The boot-0 E4B server reserved its usual KV pool. Training memory remains on paper.
+
+### 9.4 The one cause and the fix (proposed, not applied)
+
+The fix touches two lines in the capture cell of `notebooks/exp054_copylora/copy_lora.py`, and nothing else:
+
+- `import http.server` becomes an import of `BaseHTTPRequestHandler` from `http.server` by name, which binds no global `http`;
+- the capture handler's base class, `http.server.BaseHTTPRequestHandler`, becomes `BaseHTTPRequestHandler`.
+
+A rename of the helper would work equally well. Either way, no reading, endpoint, cap, parameter or input changes. The notebook would be rebuilt with the section 6 command, its `kernel-metadata.json` kept unchanged, and pushed as version 2.
+
+- **Risk.** It is [I]. The cells after boot 0 have never run in a kernel: the capture, the request phase, pair building, training under torchrun and boot 1. A v2 can still stop at a later defect; R0 would then fire again.
+- **Cost of a v2.** As section 2.6: expected 0.75 to 0.90 L4x4-h, worst at most 0.98 h. The 3,400 s cap is unchanged.
+
+### 9.5 GPU spent
+
+**0.140 L4x4-h**: the kernel-log span, 502.3 s from kernel start to the last entry, measured as for EXP-047. This is against the 0.98 h worst case and the about 1.2 h share.
+
+### 9.6 Two deviations from section 2.1, logged after the fact (the readings are untouched)
+
+1. **The eval set was not balanced.** Section 2.1 says it is 40/40/40 over K1/K2/K3; the kernel's held-out pool gave 45/31/44 (K2 short). The 40/40/40 balance held only on this machine's 3.13 stdlib. No reading depends on the balance; by-kind rates are secondary (E4).
+2. **The `peft` package is present in the kernel** (0.19.1, `env.json`). EXP-048's feasibility point 2 said "no `peft`" of the wheelhouse, and that stays true there. The hand-written LoRA does not use `peft`, so nothing changes. The harness-stack note is updated.
