@@ -219,3 +219,39 @@ Written before the run.
 2026-11-05: renumbered EXP-046 to EXP-047, critic conditions added (4.3), built (764ae43). **Push refused by `guard_push.py`** on the one attempt (the section 6 push of `notebooks/exp047_q4canary`): the hook's message is that `RUN_AGENT` is not True and that gold controls run only from an exp000 directory. The guard admits a notebook without `RUN_AGENT` only when its metadata is CPU-only (section 8). Nothing reached Kaggle; zero GPU spent. A push needs a guard rule for zero-task GPU probes (a user or lead decision; `.claude/hooks/` is outside the experimenter's paths); the notebook is not altered to get past the guard.
 
 2026-11-07: **pushed**, kernel `rainm4/gemma4-exp047-q4-canary` version 1, at 23:41 UTC from commit fad234a, after the user's guard rule for zero-task GPU probes (fad234a). No rebuild (section 8 addendum). Expected 0.20-0.35 L4x4-h (point 0.26), cap 0.5 h. Not analyzed; download and analysis are a separate job (section 6).
+
+2026-11-08: **ERROR, read as A0 / B0** (section 9). v1 stopped at its own GPU-count gate at 120.5 s with 2 GPUs visible, before boot 0. GPU 0.040 h (kernel-log span). Proposed fix: attach the competition source in the metadata. That needs the user to change the guard rule; nothing was rebuilt or re-pushed. Next command, only after the user approves the re-run and changes the guard: re-push `notebooks/exp047_q4canary` with the one metadata change recorded in section 8.
+
+---
+
+## 9. Results, 2026-11-08. Section 4's readings applied as written.
+
+Kernel `rainm4/gemma4-exp047-q4-canary` version 1 ended with status `KernelWorkerStatus.ERROR` (`kaggle kernels status`, rechecked at the download). Downloaded with the section 6 command to `runs/EXP-047-q4-canary/`; the bundle nested one level, as usual, and was moved up. It holds `canary.json`, `env.json` and the kernel log only. No `probes.jsonl`, `boot0.log`, `boot1.log` or `adapters.json` was written. Everything was read as data with `python -I -X utf8`; nothing from the bundle was run. `python -I -X utf8 experiments/EXP-047/analyze_canary.py runs/EXP-047-q4-canary` ran (exit 0) and returned `reading_A` A0 and `reading_B` B0.
+
+### 9.1 Where and why it stopped
+
+- **Last stage reached: GPU count**, the check after install and imports. The wheelhouse installed 41 of 41 wheels with none skipped (install 119.0 s by the notebook's clock; the log line says 65 s for the copy-and-install step), and the version imports ran. The notebook's own gate then failed and recorded stage `no_gpu_or_model` at 120.5 s, with `gpu_count` **2**.
+- **Failure class.** `SystemExit` raised by the notebook's own gate, with the notebook's own message about needing 4 GPUs and the E4B input. Papermill reported it as `PapermillExecutionError` at cell In [2], which is why Kaggle shows ERROR. This is a real stop before any boot, not an exception thrown after the outputs were written. `canary.json` carries `status: infrastructure` because the gate writes it before raising.
+- **The cause.** `torch.cuda.device_count()` returned 2. The gate needs exactly 4. The gate tests the GPU count and the model's `config.json` together, and the stage record does not say whether the E4B input was mounted. So the model half is not read here; the GPU half fails on its own.
+- **Why 2 GPUs [I].** Every earlier GPU kernel of ours with the same `machine_shape` (`NvidiaL4`), docker image and model source logged 4 GPUs: 15 kernel logs under `runs/` show `tp=4, gpus=4` and none shows fewer, including EXP-038 (the same E4B, wheelhouse and image). This kernel's metadata differs from EXP-038's only in `id`, `title`, `code_file`, and **`competition_sources` empty** (EXP-038: `gemma-4-developer-agent`). `plan.md:114` records [M] that L4x4 is available to competition-attached notebooks only. The likeliest cause is therefore that a kernel with no competition source attached is given the 2-GPU L4 machine. This is an inference from one kernel; the notebook exited before its `nvidia-smi` call, so the device type was not recorded.
+- **Versions, as recorded** (`env.json`): Python 3.12.13, vllm 0.19.1, torch 2.10.0+cu128, adk_submission 0.2.13, swegemma 0.2.11, google-adk 1.36.1, litellm 1.82.4, safetensors 0.8.0. Wheel sha256: vllm `73c69bafca24fbdad44690c44d6c6446514351e6f3cc9a6057cba05e66051310`, adk_submission `f156f0bd84580ccb9334726d114d7a5481f16d3a6e2887cc4d276ced0ef8d99d`, swegemma `9ad876581f3acde8ec3c369858f0834e2b9f41a3cffce3ca42f09cb090aea9d3`. `build_cmd` flags: not recorded, because no boot started.
+
+### 9.2 Readings
+
+| Reading | Row | Why |
+|---|---|---|
+| A | **A0** (infrastructure) | first matching row: "no 4 GPUs"; the kernel ended before boot 0, so it also ended before boot 1's logprob probes. A1, A1k, A1f and the 4.4 clauses are not reached: no boot 1 started and no adapter request was sent |
+| B | **B0** (no reading) | boot 1 did not start, so K1 is not in any boot-1 log |
+
+E1 to E6: none exists. E1, E2, E3, F, tau and H are null; E5 is false only because nothing loaded (no names listed, no adapter non-200s, because no requests were sent); K0 and K1 are null. The routing check did not run. Reading A0 says nothing about whether adapters are applied. Q4 stays OPEN, and C-024's gate is unread. The blind prediction gave A0 or A6 5%.
+
+### 9.3 GPU spent
+
+Kernel-log span (last kernel-log entry, as EXP-038 E8 was measured): **144.5 s = 0.040 h**. Kaggle showed no figure. Whether the hours of a 2-GPU L4 kernel are charged against the 30 L4x4-h per week is unknown.
+
+### 9.4 A0: the one cause and the one fix (proposed, not applied)
+
+- **Cause:** the kernel saw 2 GPUs, not 4. The likeliest reason [I, 9.1] is that no competition source was attached.
+- **Fix (proposed):** add `gemma-4-developer-agent` to `competition_sources` in `notebooks/exp047_q4canary/kernel-metadata.json`, as every 4-GPU arm has it, and change nothing else. The notebook reads nothing under that mount, so no task runs and no competition file is written to the outputs. But it ends the "no competition source is attached" property of section 8. And the user's zero-task-probe rule in `guard_push.py` (fad234a) admits only a notebook with **no** competition source, so the push needs the user to change that rule first.
+- **Fallback, not proposed:** let the gate accept 2 GPUs with tp = 2. That changes the design (K0 and K1 would then be tp = 2 figures, not the 4-GPU server's), so it would need its own amendment.
+- **Not done here:** the notebook was not edited, rebuilt or pushed. A0's "re-run once" goes to the user through the lead.
