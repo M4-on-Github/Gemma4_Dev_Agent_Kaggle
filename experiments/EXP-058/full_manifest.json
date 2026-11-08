@@ -1,0 +1,15 @@
+{
+ "dropped_member": "adapters/copy_lora/adapter_model.safetensors",
+ "full_zip": "EXP-058-a.zip",
+ "full_zip_sha256": "25cf9aacefae11aa35c6fc02f12afcad03813608e214b96995d9b73af7634bbb",
+ "light_zip": "EXP-058-a-light.zip",
+ "light_zip_sha256": "73aedc886db14212ea4abfef8b0036f7c7db68250caffa859e72d2c4c6b051f0",
+ "members": {
+  "adapters/copy_lora/adapter_config.json": "cf87fdf065108e1f77f76fb706bf007cf5e5b5aebf1951310f88baecf1bdf2db",
+  "adapters/copy_lora/adapter_model.safetensors": "c4af0041176a02b7b718d6fc4f9fd8990f30c7aea1946d1da3529f5a190e6d64",
+  "agent.yaml": "2acb50942a18b307802493a0c09131799816c2d5701dc89c74649a63c80dc0c9",
+  "configs/sampling.yaml": "630056889710d27dbf17c8fde62e033b7329616b7db435987cb4607b66a7c3f6",
+  "eval_config.yaml": "916cf6cb34a6cc3de39837fa72cac681599b9ac2a3ee0b893adadfd36474c531",
+  "prompts/system.md": "57a20af4eb29bbfdab003ab8cf04f6495674887ec5ba3dd746750930179a8041"
+ }
+}
