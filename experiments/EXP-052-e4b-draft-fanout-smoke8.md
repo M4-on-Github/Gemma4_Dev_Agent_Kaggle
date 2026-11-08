@@ -161,6 +161,7 @@ python tools/build_notebook.py --embed dist/EXP-052-t2.zip --username rainm4 --c
 9. **Cost is an estimate** built from EXP-033, EXP-040 and EXP-046 stage times; no E4B five-way drafter burst was measured.
 10. **C excludes pytest by EXP-045's definition, and the applier's prompt allows a pytest check as an alternative.** A task whose applier runs only a named test counts toward I (E13) and not C (E12); that is as EXP-045 defined it, so the two screens stay comparable, and it can make Q fire although a check ran. The two numbers are both reported. The "informative" judgement on an output is by hand ([H]) where the rule is ambiguous, as in EXP-042 section 9.2; the labels of E14 are hand counts and mark ambiguous tasks.
 11. **Thinking budgets are unverified** (VERIFY(Q3): the harness may not enforce `thinking_budget`); a drafter that thinks to the output cap loses its draft, which E6 counts as cut.
+12. **Added 2026-11-08, after the run: this pre-registration did not anticipate a crash through the root agent's class (section 9.1).** Item 5 above treated compaction as harmless because the drafts also travel through state, and the row 0 text ("`err` non-empty on any task") covered the case only as a generic infrastructure row. EXP-030 section 3 had already listed `No LlmAgent model available for event compaction summarizer` as crash class (ii), and `.claude/skills/harness-stack/reference/compaction.md` did not record that the post-invocation path takes the root agent from the app. The design read section 2.1's text-ending route as "a nudge and a re-run" and did not see that, on a root that is not an `LlmAgent`, a text ending with a prompt count of 14,336 or more ends in this exception before any nudge. Section 4 is not rewritten; row 0 fired as written.
 
 ## 8. Built
 
@@ -179,10 +180,48 @@ Sections 3 and 4 are unchanged. Before the push the worktree matched the build c
 - **Status seen once, right after the push:** `KernelWorkerStatus.RUNNING`.
 - **Stop rule:** no re-run of a failed kernel without the user's word. The download and analysis (E1 to E14, rows then reading Q, the first task in kernel order, fastapi_14301, read first) is a separate job, dispatched when the status says COMPLETE: `kaggle kernels output rainm4/gemma4-exp052-t2 -p runs/EXP-052-t2/`, move the nested inner directory up, `python tools/analyze_traces.py runs/EXP-052-t2 --cap-minutes 8 --max-calls 45`.
 
-## 9. Results
+## 9. Results, 2026-11-08. Section 4's readings applied as written.
 
-Not run.
+### 9.0 Verdict: **row 0 fires. Infrastructure; no reading; no kill and no promotion.**
+
+Row 0's condition is "`err` non-empty on any task". `httpx_3672` (task 5 of 8 in kernel order) carries `err=Sandbox execution error: No LlmAgent model available for event compaction summarizer.` in the kernel log line and in the `error` field of its `task_results.jsonl` row (the other seven rows have `error` null and `err=` empty). First match wins, so rows 1 to 4 and reading Q are **not applied**, E1 to E14 were **not computed**, and the figures in 9.3 are descriptive counts from `summary.jsonl`, `aggregates.json` and the forensics tool, written down so the run is not lost, and **not read**. The other row 0 checks: exactly the 8 smoke-8 ids are present, in the cohort's order; every `model_name` in the traces is the E4B (`gemma-4-e4b-it-qat-w4a16-ct`, path `.../gemma-4-e4b-it-qat-w4a16-ct/2`); the log has `vLLM up in 331.9 s (tp=4, gpus=4)`, a decode probe of 56.2 tok/s, and no kernel error (the notebook wrote `RESOLVED 2/8` and ran to the end). **Stop rule (section 2.4): no re-run without the user's word.** Data: `runs/EXP-052-t2/` (gitignored; the output arrived nested and was copied up one level, `task_results.jsonl` and `traces/` now at the top), `python -I -X utf8 tools/analyze_traces.py runs/EXP-052-t2 --cap-minutes 8 --max-calls 45` wrote `summary.jsonl` and `aggregates.json`; a copy of `summary.jsonl` is `experiments/EXP-052/summary.jsonl` (counts and ids only).
+
+### 9.1 What the error is (source read, [V] unless marked)
+
+- The message is raised by `_ensure_compaction_summarizer` in `google/adk/apps/compaction.py:223-236` when the agent it is given is not an `LlmAgent` and no summarizer is cached yet on the shared compaction config.
+- Two callers give it an agent. The in-flow request processor (`flows/llm_flows/compaction.py:44-51`) gives the `LlmAgent` that is about to call the model, so it works in every tree, this one included (`rich_3468` shows one such compaction). The post-invocation path (`runners.py:598-610`, then `compaction.py:590` and `:475-490`) gives **`app.root_agent`**, which in this tree is the `SequentialAgent`, so it raises whenever the invocation reaches its natural end with the latest prompt count at or above 14,336 and no summarizer cached yet.
+- The trace of `httpx_3672` fits that and nothing else: the five drafters ran at about 7,270 to 7,290 prompt tokens, the **applier's only model call had a prompt count of 16,805** (the report and the five drafts reach it by the instruction and by the events, so the two copies add up), and the applier answered with text and **no tool call** (steps 14 and 15), which ended the invocation at 141.5 s. No in-flow compaction had run before that point, so no summarizer was cached; the post-invocation check then raised, and the harness reported the sandbox error, with the on-disk diff empty (no edit was ever made on this task) and no nudge or second pass.
+- Why the other seven tasks did not hit it [I]: all seven ended on `submit_patch`, which breaks the harness loop (`agent_runner.py:920-922`) before the generator reaches the code after the loop (`runners.py:598-610`), so the post-invocation path was never run. A text ending of the applier is therefore not "a nudge and a re-run" (section 2.1, row 38 of its table) on this tree: with an applier prompt this large it is **this crash**, and the nudge never happens. EXP-046's sequential tree has the same root class and did not trip it in its 8 tasks (its error fields were not re-checked here for this string; its experiment file does not mention it); whether its prompts stayed shorter was not looked at.
+- Consequence for the claim, not read as a result: the screen's question (does fan-out raise P above the single loop's) is **unanswered**, not answered. A text ending on a hidden task would be a blank slot for a tree whose root is not an `LlmAgent`.
+
+### 9.2 What this does not license
+
+No kill, no promotion, no dev-48 arm, no claim status change. A fixed tree is a new design and, if the user wants it, a new screen with its own number and its own readings; this file is not reopened. Possible fixes are **recorded, not built, and not tested** [H]: (a) keep the applier's first prompt under 14,336 (carry the drafts through state or through events, not both; ask for fewer or shorter drafts); (b) an `LlmAgent` at the root; (c) a text-ending guard in the applier prompt, which the prompt already carries and which the E4B did not obey on this task, so it should not be the only line of defence. (a) changes the tree's design and (b) the control-flow design; each is a separate claim.
+
+### 9.3 Descriptive counts, not read (row 0 fired)
+
+| item | value |
+|---|---|
+| tasks and order | the 8 smoke-8 ids, in cohort order |
+| model | E4B on every step |
+| mean wall, per task | 53.0, 83.8, 83.3, 65.8, 141.9, 60.9, 115.4, 55.9 s; **mean 82.5 s**, median 74.6 s, max 141.9 s (the crashed task); no task near the 480 s clock |
+| counted calls per task | 3, 4, 5, 4, 5, 3, 15, 6 (sum 45; EXP-038 on the same ids: sum 54); no call cap hit |
+| turns per task | 13, 14, 13, 12, 14, 16, 24, 16 (sum 122; EXP-038: sum 80); no turn cap hit |
+| `continuation_nudge` | none in any of the 8 traces (a per-file count) |
+| stage presence | the five drafters and the applier appear in all 8 traces; the reader's presence was not counted per task (it is in the two traces looked at, `fastapi_14301` and `httpx_3672`) |
+| `edit_file` calls | 1, 2, 1, 1, 0, 1, 3, 2 (sum 11); failed 0, 1, 0, 0, 0, 0, 1, 1 (3 of 11, all three the lost-argument class); the EXP-046 reference of 12 of 59 counted calls has a different denominator |
+| P, descriptive | 7 of 8 tasks have at least one `edit_file` that was not a failure and a non-empty patch; the eighth is the crashed task, with no edit and an empty patch. **Not read against 6 of 8 or 8 of 8** (row 0 first) |
+| `run_command` programs (all stages together, forensics table) | `grep` or `rg` 14, `pytest` 4, `find` or `ls` 1, `git` 1; **no python interpreter command appears at all**, so C (E12) would be 0 of 8 by program name; not read, and reading Q was not applied |
+| resolves (E3, recorded, never an endpoint) | 2 of 8: `fastapi_14301` and `rich_3006` |
+| compaction detected by `analyze_traces` | 1 task (`rich_3468`, a prompt-count drop; the in-flow path, no error) |
+| first task in kernel order, `fastapi_14301` | the reader, the five drafters and the applier all appear, one `edit_file`, one `submit_patch`, no nudge, 66 s; nothing surprising in the stage order; the applier's first call there was not looked at for its prompt count |
+
+E1 to E14 by hand count (draft usability, draft follow, the kept-draft label, the informative-run measures) were **not done**: row 0 stops the reading, and the Bash allow-list does not run an ad hoc script on the traces. If the user asks for the screen to be read anyway, that is a separate zero-GPU job on `runs/EXP-052-t2/`.
+
+### 9.4 GPU
+
+**0.309 GPU-h**: the kernel log's last entry is at 1,114.3 s (server up at 331.9 s, the eight tasks about 660 s of agent time, the rest boot, decode probe and teardown). The estimate was 0.35 to 0.46, point 0.40; EXP-040 was 0.315 and EXP-046 0.293.
 
 ## Status
 
-2026-11-07: **PUSHED, RUNNING** (approved by the user 2026-11-07, c3ea250). Kernel `rainm4/gemma4-exp052-t2` version 1, status seen right after the push `KernelWorkerStatus.RUNNING`, at about 2026-11-08 00:06 UTC (see 8.1). Tree `experiments/EXP-052/candidate-t2/` (shape S, K = 5, calls 45, turns 120, 8 min), zip `29b7f479...4e47`, notebook `notebooks/exp052_t2/`. Cost 0.40 GPU-h point, 1.19 worst case. Next: when `kaggle kernels status rainm4/gemma4-exp052-t2` says COMPLETE, the lead dispatches the download and analysis as a separate job (E1 to E14, rows then reading Q, fastapi_14301 read first). No re-run of a failed kernel without the user's word.
+2026-11-08: **COMPLETE, ROW 0 FIRED, NO READING.** Kernel `rainm4/gemma4-exp052-t2` v1 downloaded to `runs/EXP-052-t2/`, analyzed (`analyze_traces --cap-minutes 8 --max-calls 45`), 0.309 GPU-h. `httpx_3672` ended in the harness error `No LlmAgent model available for event compaction summarizer` (root `SequentialAgent`, applier prompt of 16,805 tokens, text ending, post-invocation compaction path; section 9.1). Rows 1 to 4 and reading Q not applied; the claim is neither killed nor promoted. No re-run without the user's word (section 2.4). Next command: none for this file. A redesign is a new EXP number.
