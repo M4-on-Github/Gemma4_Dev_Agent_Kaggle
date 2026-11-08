@@ -171,7 +171,7 @@ Kernel `rainm4/gemma4-exp057-r1`, COMPLETE. Read as section 4 is written: rows 0
 - **Ad = 7 of 8, S_c = 7.** Every call well formed: skill name `check-picker`, the script path `scripts/pick_check.py`, `args` an empty list (7 of 7 used the newest-modified-file fallback, so the pick is a recency pick, not a pick chosen from the model's own file names). **A_p = 7 of 8.**
 - **M_x = 0** of every kind (wrong name, quote-wrapped values, rejected shape, empty args). `load_skill`, `list_skills`, `load_skill_resource` calls 0. Skill calls typed as text in a shell command 0.
 - **Printed line then run** (exact program and test file, with `run_command`): 5 of 7 (fastapi_14448, fastapi_14605, requests_7205, rich_3006, rich_3468); fastapi_14301 and httpx_3672 submitted without running it (S_m 2 of 8 by that reading). Exit codes of the 5: 0 in four (all passed), 2 in fastapi_14605 (a collection error, an ImportError, raised inside a file the model had edited). In fastapi_14605 one `edit_file` and then `submit_patch` followed, so G = 0 by definition. Observation, recorded and not read: the statement that the check's ImportError traced to is still present in the final patch (grep count 1), so a failing module may have shipped despite G = 0 by the rule as written; row 6 reads G as defined, so this is for the pooled reading to note.
-- **V1** (literal rule, a python or pytest command after the last successful edit) about 5 of 8; **G = 0**; T not read.
+- **V1** (literal rule, a python or pytest command after the last successful edit) about 5 of 8 (corrected in 9.2 to 4 of 8: in fastapi_14605 the edit after the failing check succeeded, so no check follows the last successful edit); **G = 0**; T not read here.
 - **Tool-free endings 1 of 8** (requests_7309), against 2, 2 and 1 in EXP-056 r1, EXP-056 r2 and EXP-055.
 - **Mean wall 67.7 s, longest 142.2 s.** Nudges 3, all on the tool-free task-run. Resolves 1 of 8 (rich_3006), recorded and not read.
 
@@ -179,6 +179,72 @@ Kernel `rainm4/gemma4-exp057-r1`, COMPLETE. Read as section 4 is written: rows 0
 
 **What r1 licenses.** Rows 0 and 1 did not fire; r1 is recorded and rows 2 to 6 wait for r2. The mechanism works as built: the fixed picker runs in the harness and returns real picks, and the model calls it correctly (the EXP-056 `SKILL_NOT_FOUND` quote-wrapping did not recur in 7 of 7). Whether the picks are the right check (T) is not read. Caveat for the pooled reading: r2 is the same zip over the same 8 tasks, so the 16 task-runs are two draws over 8 clusters, not 16 independent tasks.
 
+### 9.2 r2 and the pooled reading over 16 task-runs (2026-11-08, screener; opened only after 9.1 was committed at `f6bea23`)
+
+Kernel `rainm4/gemma4-exp057-r2`, COMPLETE, same zip and same 8 tasks. Per-task summary: `experiments/EXP-057/r2/summary.jsonl`. Skill calls counted in `official/traces/`. Run settings in the downloaded `eval_config.yaml`: 28 tool calls, 8 minutes, 240 s per command.
+
+**Cost.** Kernel-log span 1101.0 s (vLLM up in 330.9 s) = **0.306 GPU-h** (r1 0.273; both runs 0.579 GPU-h; section 2.4 predicted about 0.6).
+
+| Task | wall s | calls | skill calls | edit_file calls (failed) | pick run? exit codes of the pytest runs | ending |
+|---|---|---|---|---|---|---|
+| requests_7309 | 23.2 | 0 | 0 | 0 | none | tool-free, 3 nudges, no submit |
+| requests_7205 | 53.1 | 9 | 1 | 1 (0) | not run | submit |
+| fastapi_14448 | 45.1 | 6 | 1 | 1 (0) | run, 0 | submit |
+| fastapi_14301 | 45.8 | 5 | 1 | 1 (0) | run, 0 | submit |
+| httpx_3672 | 146.5 | 14 | 1 | 8 (4) | run three times, 2, 2, 2 | submit |
+| fastapi_14605 | 186.6 | 29 | 4 | 11 (3) | run five times, all 2 | submit, 29 calls against a cap of 28 |
+| rich_3468 | 108.6 | 10 | 1 | 2 (0) | run, 0 | submit |
+| rich_3006 | 30.4 | 5 | 1 | 2 (1, arg loss) | run, 0 | submit |
+
+**r2 process counts.**
+
+- **Ad 7 of 8, S_c 10, S_s 0, M_x 0 of every kind, S_p 10 of 10, A_p 7 of 8.** All 10 calls well formed (name `check-picker`, path `scripts/pick_check.py`, `args` an empty list); all 10 results status success with empty stderr and one pytest pick on stdout, no notice line. fastapi_14605 called the script 4 times, each time returning the same pick; the other six called once. `load_skill` and `list_skills` calls 0; skill calls typed as text in a shell command 0.
+- **Pick then run:** 6 of 7 ran the printed line with `run_command` (all but requests_7205). In requests_7205 the model's own text said the check command had been executed and that it was assuming the result, then submitted: the print of the pick was taken for a run (a mechanism observation, 1 case; the same phrase was searched for in the two r1 task-runs that did not run the pick and is absent there).
+- **Last-check exit codes after the last edit:** 0 in four (fastapi_14448, fastapi_14301, rich_3468, rich_3006); 2 in httpx_3672 (a collection error, AttributeError class) and in fastapi_14605 (a collection error, NameError class, raised at a line of a file the patch changes); none in requests_7205 and requests_7309.
+- **V1** 6 of 8 (the six that ran a pytest after the last successful edit). **G = 1**: fastapi_14605 ends on a check whose output names a NameError at a patched file, then a file read, then the submit, with no edit between. httpx_3672 ends on exit 2 with an AttributeError, which is not in the G list as written (SyntaxError, IndentationError, NameError, ImportError, ModuleNotFoundError). Earlier in fastapi_14605 the same picker line was run after edits and returned ImportError and NameError collection errors in turn; the model edited, re-called the script, and ran the same line again; it spent 29 calls, one above the call cap, and shipped.
+- **Wall mean 79.9 s, longest 186.6 s** (fastapi_14605). A_e 7 of 8 (non-empty patches 7 of 8). Capped on time 0; on calls 1 (fastapi_14605). Past 495 s 0. Stray file in a patch 0. Malformed turns 0. Identical-repeat calls 5 (httpx_3672 2, fastapi_14605 3). Nudges 3, all on requests_7309.
+- **Tool-free endings 1 of 8** (requests_7309, the same task as in r1), against 2, 2 and 1 in the last three runs. **Resolves 1 of 8** (rich_3006, the same task as r1), recorded and not read.
+- **Correction to 9.1:** V1 in r1 on the literal rule is 4 of 8 (not about 5): in fastapi_14605 the edit after the failing check was successful, so no check follows the last successful edit.
+
+**Pooled counts (16 task-runs).**
+
+| count | r1 | r2 | pooled |
+|---|---|---|---|
+| Ad (task-runs with a well-formed skill call) | 7 | 7 | **14 of 16** |
+| S_c (script calls) | 7 | 10 | 17 |
+| S_s (script-side errors) | 0 | 0 | **0** |
+| M_x (model-side tool errors) | 0 | 0 | 0 |
+| S_p (picks that are not the notice line) | 7 of 7 | 10 of 10 | 17 of 17 |
+| A_p (task-runs with at least one pick) | 7 | 7 | 14 of 16 |
+| calls with empty `args` | 7 | 10 | 17 of 17 |
+| printed line then run with `run_command` | 5 of 7 | 6 of 7 | 11 of 14 |
+| **T** (last check after the last applied edit is a pytest, exit 0 or 1) | **4** | **4** | **8 of 16** |
+| V1 | 4 | 6 | 10 of 16 |
+| G | 0 | 1 | 1 |
+| A_e | 7 | 7 | 14 of 16 |
+| mean wall (s) | 67.7 | 79.9 | 73.8 |
+| longest wall (s) | 142.2 | 186.6 | 186.6 |
+| capped (time / calls) | 0 / 0 | 0 / 1 | 0 / 1 |
+| tool-free endings | 1 | 1 | 2 |
+| resolved (not read) | 1 | 1 | 2 |
+| GPU-h | 0.273 | 0.306 | 0.579 |
+
+T by task-run, the 8 that are T: fastapi_14448, rich_3468 and rich_3006 in both runs (6), requests_7205 in r1 only, fastapi_14301 in r2 only. The 8 that are not T: requests_7309 twice (tool-free); the pick printed but not run, 3 (fastapi_14301 and httpx_3672 in r1, requests_7205 in r2); the pick run with exit 2 as the last check, 3 (fastapi_14605 in r1 and in r2, httpx_3672 in r2). Exit 2 here is a collection error. In the two fastapi_14605 cases the error was raised in a file the patch changes; in httpx_3672 r2 it is an AttributeError raised at the test file's own import line, with a cause I did not trace. Those three are not T as defined whatever the cause.
+
+**Row reading, section 4, pooled over 16, first match.**
+
+- **Row 0 (infrastructure): no.** S_s 0 over 17 calls; `error` non-null in 0 of the 14 task-runs with tool calls (limit more than 4); the tree ran; the first-trace check passed over both runs (S_p 17 of 17).
+- **Row 1 (harm): no.** A_e 14 of 16 (limit below 12); mean wall 73.8 s (limit above 140); capped 1 task-run on calls and 0 on time (limit 6); none past 495 s; stray file in 0 patches (limit 4); malformed turns 0 (limit 4).
+- **Row 2 (not adopted): no.** Ad 14 of 16 (the row needs 8 or fewer).
+- **Row 3 (adopted but not a better check): fires. T = 8 of 16, the row's bound is 9 or fewer.** Under the registered readings the package is **dropped**. The reference is 6 of 16 (EXP-055 3 of 8, doubled); the pooled draw sits two above it, inside what 8 clusters over two draws can move, and the row does not ask whether it is above the reference.
+- Rows 4 to 6 are not reached.
+
+**Blind prediction against outcome (pooled).** Ad 10 to 14 of 16: actual 14, the top of the range. T 7 to 10 of 16: actual 8, inside it, row 3 as the most likely row said ("row 3 or 4"). r2's own counts sit inside the r1 prediction ranges except A_p (actual 7, above 4 to 6) and mean wall (79.9, inside 60 to 100).
+
+**Why T stayed at 8, in own words, recorded not read.** The mechanism works (S_s 0, S_p 17 of 17, 14 of 16 task-runs called it correctly, M_x 0): the EXP-056 failure is gone. The ceiling on T is behaviour after the pick: 3 of 14 did not run the printed line (one believed it had), and 3 ran it, got a collection error as the last check, and shipped (two of the three in a file the patch changes). The picker cannot help in the second group because it names a test file only; it says nothing about whether the model's edit broke an import. No resolve difference is read (2 of 16, both rich_3006).
+
+**What this licenses.** Dropped as written (row 3): `check-picker` is not kept for the loop and is not promoted to a dev-48 arm or an LB draw. It can be decided only as far as the readings go: n = 8 twice with clustered tasks, resolves not read. A fix or a re-run needs the user's word and is not proposed here.
+
 ## Status
 
-**r1 COMPLETE and ANALYSED 2026-11-08** (section 9.1): row 0 not fired, row 1 not fired, Ad 7 of 8, S_s 0, S_p 7 of 7, M_x 0, 0.273 GPU-h. **r2** (`rainm4/gemma4-exp057-r2`) COMPLETE, pooled reading pending. Pre-registered at `a6df3fb`, built at `2111524`. Zip `e402d6dd...6362e6`.
+**r1 and r2 COMPLETE and ANALYSED 2026-11-08** (sections 9.1 and 9.2). r1: rows 0 and 1 not fired, 0.273 GPU-h. Pooled over 16: row 0 no (S_s 0, first-trace check passed), row 1 no, row 2 no (Ad 14 of 16), **row 3 fires, T 8 of 16, dropped as written**; M_x 0, G 1, V1 10, 0.579 GPU-h both runs, resolves 2 of 16 (not read). Pre-registered at `a6df3fb`, built at `2111524`. Zip `e402d6dd...6362e6`.
