@@ -46,11 +46,13 @@ Unknown, and small on what is counted so far: landing every edit on the 8 tasks 
 | Stage | What | GPU-h | When |
 |---|---|---|---|
 | 0 | canary build, LoRA costing, sequential-team desk check, lit note, Kaggle digest | 0 | now |
-| 1 | adapter canary under the harness's server | about 0.2 to 0.3 | on the user's word |
+| 1 | adapter canary under the harness's server | 0.254 measured (v1 0.040, ERROR at 2 GPUs; v2 0.214) | read A3 / B3 (EXP-047 section 10, e235905): applied; KV pool 0.879 of base; decode about 25% slower |
 | 2 | EXP-044 exact-copy line and EXP-045 reproduction before submit | 0.707 measured (EXP-044 X and X0) | EXP-044 killed at row 6 (X0 applied 7 of 8 against X's 6; 1f8a156); EXP-045 not approved |
 | 3 | sequential role team, smoke-8, E4B | 0.293 measured | killed at its desk check (EXP-046); run on the user's 2026-11-06 word as the prompt-bounded team and killed again at the screen (row 2: applied edits 5 of 8 against the 6 of 8 floor, 3 empty patches; b4d2f50) |
-| 4 | adapter training and one screen of it | not costed yet (experimenter) | only after stage 1 passes |
+| 4 | adapter training and one screen of it | costed in EXP-048 section 3: training 0.3 to 0.7, offline eval 0.15 to 0.3, then a smoke-8 screen | stage 1 passed; started 2026-11-08 on the user's word, counted against that day's 4.0 GPU-h ceiling (`knowledge/user-decisions.md`) |
 | 5 | a dev-48 arm of whatever survives | about 1.3 | the user's separate approval |
+
+**Ledger 2026-11-08:** 1.000 (items 2 and 4) + 0.254 (canary) = 1.254 GPU-h of 2.5. Stage 4 is counted against the 2026-11-08 day ceiling, not this one.
 
 ## Midterm check
 By 2026-11-08: the canary result, the two E4B screens and the sequential-team screen are in, each with a critic verdict where one is required.

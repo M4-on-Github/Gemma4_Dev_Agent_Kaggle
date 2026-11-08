@@ -1,6 +1,6 @@
 ---
 id: user-decisions
-updated: 2026-10-29
+updated: 2026-11-08
 ---
 
 # Standing user decisions
@@ -215,3 +215,14 @@ User action: ran `apply_canary_compsource_rule.py` (the lead's scratchpad script
 User, verbatim: "go ahead with exp 045"
 - Given after the lead's EXP-052 read (row 0, T2 as built closed, D-007 open) and its recommendation: EXP-045 first (0.33 GPU-h point, 0.25 to 0.45, conditional worst case about 1.24), to learn whether the E4B runs a python check when told to, the selector any draft tree needs; a fixed tree only after.
 - Read by the lead as: one push of `notebooks/exp045_p` (kernel rainm4/gemma4-exp045-p) as built in 0762bd4, no re-run of a failed kernel without asking. It does not approve the fixed parallel tree or any dev-48 arm.
+
+## 2026-11-08: the E4B smoke-8 edit loop, a 4 GPU-h ceiling for today, standing push approval, EXP-048 in parallel
+User, verbatim: "1. GPU ceiling for today is 4 hours. yes you may auto push. 3. we can do it simutaneously since it is just to check if lora works right? also we can relax certian things in development (like not being able to see the repos and such) but keep in midn they have to be not changed or some way for the submission. also our score for latest submisison is 0.o5"
+- Given after the lead's plan: an edit loop on the E4B over smoke-8 in the manner of the Harness² paper (one edit per round tied to trace moments, its own EXP file with blind readings, one smoke-8 of about 0.3 GPU-h, keep / revise / drop / keep the base, one lesson per round), and three questions.
+- Read by the lead as:
+  1. **Ceiling 4.0 GPU-h for 2026-11-08**, kernel-log spans across both lines below. EXP-045 counts (it is round 0 of the loop); the EXP-047 canary v2 (0.214, approved separately under D-006) does not. The lead stops pushes once the running total would pass 4.0.
+  2. **Standing push approval within the ceiling** for smoke-8 rounds of the loop and for the EXP-048 kernels. Not covered: any dev-48 arm, any upload, a re-run of a kernel that failed; each needs the user's word.
+  3. **EXP-048 runs beside the loop.** Lead's correction, given to the user: whether a LoRA works at all was EXP-047 (A3 / B3: the adapter is applied; decode about 25% slower; KV pool 0.879 of base). EXP-048 trains one (the narrow exact-copy adapter). Its three feasibility points (EXP-048 section 3) are cleared at 0 GPU first; then its training kernel is pre-registered and pushed inside the ceiling.
+  4. **Development relaxation.** When diagnosing a run, an editor may read the full trace, the task's repo snapshot and the task's tests locally. Nothing changes for what enters git (`plan.md:52`, the hygiene line) or the zip (lint, repo-agnostic prompts). An edit may be found from a repo-specific moment but is written repo-agnostically before its smoke-8, and must cite moments on at least 2 of the 8 tasks.
+  5. **S-014 scored 0.05** (= 3/58; confirmed by the lead's `kaggle competitions submissions` query, ref 58106393 COMPLETE).
+
