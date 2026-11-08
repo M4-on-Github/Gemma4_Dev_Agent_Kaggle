@@ -79,3 +79,9 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
 - **Confidence:** [V] for the counts (EXP-057 sections 9.1, 9.2); [I] for lessons 2 to 5.
 - **Outcome:** **row 3, dropped** as written. Two draws over 8 clusters, so T 8 against 6 is inside what the draw moves. Loop spend 1.972 GPU-h with EXP-056 r2 (0.281) and EXP-057 (0.579).
 
+## Addendum 2026-11-08: EXP-059 trace count (zero GPU, 6042bfc) on round 4's lessons 3 and 5
+
+- **Lesson 3, revised:** acting on a failing check is half there, and the larger gap is upstream. Over 72 task-runs in 9 runs, a failing check named a file the model had edited 8 times in the skill trees (3 tasks; 5 on fastapi_14605) and once each in the base references and EXP-055. After those 8, the next action was an edit to the named file 4 times (one rejected), a read or skill call 2, a submit 2; post hoc, 5 of 8 reached an applied edit to the file before the next check or the end. On the base trees 15 of 18 failing checks named only files the model had not edited (collection and setup errors of the test environment, full-suite assertions, a scratch path that does not exist). So on the base trees the check rarely tests the edit at all, and a verifier stage would first need a check that does.
+- **Lesson 5, confirmed per task:** requests_7309 made 4 to 7 calls and submitted in all 5 non-skill runs (EXP-033, 038, 045, 052, 055) and made 0 calls with 3 nudges in all 4 skill-tree runs. One task, 9 runs [I].
+- **Confidence:** [V] for the counts (hand counts by grep and file reads, EXP-059 section 9); events are few and clustered, no intervals.
+
