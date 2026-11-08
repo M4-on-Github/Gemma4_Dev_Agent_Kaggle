@@ -193,6 +193,8 @@ The bundle usually nests one level, and is flattened with `cp -r`. Everything in
 
 None yet. Results are appended in section 9 and apply section 4 as written.
 
+Pointer, added 2026-11-08 after the runs (the line above is kept as written): v1 is in section 9 (R0, infrastructure); v2 is in section 10 (**R4, positive, costly**).
+
 ## 8. Built
 
 2026-11-08, built (no GPU spent before the push).
@@ -265,13 +267,14 @@ Written before the v2 push. Nothing above is revised.
 - The proposed fix is two lines in the capture cell (section 9.4). It is not applied and not rebuilt.
 - A v2 needs the user's word. If approved, the next steps are: apply 9.4, rebuild with the section 6 command, record a section 8 addendum, then push the bare command once.
 
-2026-11-08: **v2 PUSHED** at 19:37 UTC, version 2, RUNNING, from e539a13. This is the one re-run the user approved ("fix the lora", about 19:15 UTC) and carries the two-line fix of section 9.4 (section 8, v2 addendum). Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h. Next, when COMPLETE:
-- `kaggle kernels output rainm4/gemma4-exp054-copy-lora -p runs/EXP-054-copy-lora-v2/`;
-- flatten the bundle with `cp -r`;
-- `python -I -X utf8 experiments/EXP-054/analyze_copy_lora.py runs/EXP-054-copy-lora-v2 --json runs/EXP-054-copy-lora-v2/analysis.json`;
-- append the results as section 10.
+~~2026-11-08: **v2 PUSHED** at 19:37 UTC, version 2, RUNNING, from e539a13. This is the one re-run the user approved ("fix the lora", about 19:15 UTC) and carries the two-line fix of section 9.4 (section 8, v2 addendum). Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h. Next, when COMPLETE: download to `runs/EXP-054-copy-lora-v2/`, flatten with `cp -r`, run the section 6 analysis, append the results as section 10. If v2 fails, there is no further re-run without the user.~~
 
-If v2 fails, there is no further re-run without the user.
+2026-11-08: **v2 COMPLETE, read as R4 (positive, costly)** (section 10).
+- Exact copy on 120 paired held-out windows: base1 0.483, adapter 0.708, Δ +0.225, discordant 30 against 3, McNemar p 1.4e-6 (X+).
+- The drift gate failed on **G1** (first-tool agreement 0.625, against 0.70 and against the boot floor 0.958 minus 0.10) and **G4** (logprob mean |Δ| 0.72, against 0.15). G2, G3 and G5 held. Decode drop 0.168 (under 0.35). The adapter beat base0 on the same ids (0.708 against 0.500).
+- Trained on the BF16 parent (no w4a16 fallback), 4 ranks, 67 of 116 planned steps, stopped by the 660 s cap; peak 11.98 GiB per rank at 6,695 tokens (feasibility 3, measured).
+- GPU 0.645 h (kernel-log span 2,322.9 s); the line's total with v1 is 0.785 h.
+- What follows (section 4, R4): no stage 4 on this adapter. One revision (more anchors, fewer steps, or q only) could be pre-registered; the lead decides. No re-run without the user. C-024's status moves only on a critic verdict.
 
 ---
 
@@ -340,3 +343,115 @@ A rename of the helper would work equally well. Either way, no reading, endpoint
 
 1. **The eval set was not balanced.** Section 2.1 says it is 40/40/40 over K1/K2/K3; the kernel's held-out pool gave 45/31/44 (K2 short). The 40/40/40 balance held only on this machine's 3.13 stdlib. No reading depends on the balance; by-kind rates are secondary (E4).
 2. **The `peft` package is present in the kernel** (0.19.1, `env.json`). EXP-048's feasibility point 2 said "no `peft`" of the wheelhouse, and that stays true there. The hand-written LoRA does not use `peft`, so nothing changes. The harness-stack note is updated.
+
+## 10. Results, v2, 2026-11-08. Section 4's readings applied as written.
+
+Kernel `rainm4/gemma4-exp054-copy-lora` version 2, reported COMPLETE by the lead (checked 20:31 UTC).
+
+- **Download.** `kaggle kernels output rainm4/gemma4-exp054-copy-lora -p runs/EXP-054-copy-lora-v2/`. The bundle nested one level and was flattened with `cp -r runs/EXP-054-copy-lora-v2/runs/EXP-054-copy-lora/. runs/EXP-054-copy-lora-v2/`.
+- **What it holds.** `run.json`, `env.json`, `eval.jsonl`, `probes.jsonl`, `calls.jsonl`, `train.json`, the training child's stdout and stderr, `boot0.log`, `boot1.log`, the trees `sub0/` and `sub1/` (with `sub1/adapters/copy_lora/`: `adapter_config.json`, 645 bytes, and `adapter_model.safetensors`, 6,676,712 bytes), and the kernel log. The adapter and `calls.jsonl` stay under `runs/`, which is gitignored.
+- **How it was read.** As data, with `python -I -X utf8`; nothing from the bundle was run. `python -I -X utf8 experiments/EXP-054/analyze_copy_lora.py runs/EXP-054-copy-lora-v2 --json runs/EXP-054-copy-lora-v2/analysis.json` exited 0 and printed `READING R4`, with the reasons "delta +0.225, McNemar p 0.0000; drift gate failed (G1, G4); decode drop 0.168; adapter >= base0 on the same ids: True". Every number below is from `analysis.json`, `run.json`, `train.json` or the kernel log.
+
+### 10.1 Run [V]
+
+`status` complete, notebook clock 2,302.2 s. Stage times (seconds from `T0`, `run.json` `stages`):
+
+| stage | t (s) | notes |
+|---|---|---|
+| installed | 96.8 | 4 GPUs; BF16 parent found at `/kaggle/input/models/google/gemma-4/transformers/gemma-4-e4b-it-qat-q4_0-unquantized/2` |
+| items | 150.1 | 2,222 items from 24 stdlib packages (164 files); 404 held out, 1,818 for training; 120 eval, 48 drift, 400 training, 64 first-turn anchors |
+| rendered | 150.7 | 0 bad windows |
+| captured | 487.6 | boot 0 up in 314.4 s, KV pool 298,464 tokens; request path `adk_capture` |
+| render check | 499.2 | `/tokenize` equals the chat request's prompt ids (2,222 ids) |
+| boot 0 done | 923.7 | 632 jobs in 412.3 s |
+| training data | 925.1 | 294 pairs, 106 read anchors, 64 first-turn anchors = 464 sequences; length median 3,025, max 6,695; 58.6 target tokens per sequence |
+| trained | 1,728.5 | 67 steps, weights `bf16` |
+| done | 2,302.2 | boot 1 up in 283.4 s with `--enable-lora`, `--max-loras`, `--max-lora-rank`, `--lora-modules`; KV pool 263,280 tokens; 456 jobs in 267.6 s |
+
+The section 9.4 fix held: the capture cell, the request phase, pair building, training under torchrun, and boot 1 all ran for the first time, and none stopped. The two section 9.6 deviations carry over unchanged (eval kinds 45/31/44).
+
+### 10.2 Readings, first match wins
+
+| row | condition, as written | value | fires? |
+|---|---|---|---|
+| R0 | status missing, `started` or `infrastructure`; fewer than 32 pairs; fewer than 60 paired edit prompts | status `complete`; 294 pairs; 120 paired | no |
+| R1 | boot 1 failed; `copy_lora` absent from `/v1/models`; more than half the adapter requests non-200; compiled agent model not naming `copy_lora`; adapter responses naming another model | boot 1 started; `/v1/models` lists the base and `copy_lora`; non-200 share 0.0; the compiled agent model is `openai/copy_lora` (the registry binds `copy_lora` and `adapter:copy_lora` to `openai/copy_lora`); 228 of 228 adapter responses name `copy_lora` | no |
+| R2 | 0 steps; B norm 0; or both logprob drift ≤ max(2 × floor, 0.005) and class disagreement ≤ 0.05 | 67 steps; B norm 3.537; logprob drift 0.7215 against the bound 0.005 (floor 0.0); class disagreement 0.283 | no |
+| X+ | Δ exact ≥ +0.10 with McNemar p < 0.05 | Δ +0.225, p 1.40e-6 | **yes** |
+| R3 | X+, and the drift gate passes, and decode drop ≤ 0.35, and adapter ≥ base0 on the base0 ids | gate **failed** (G1, G4); decode drop 0.168 (holds); adapter 0.708 against base0 0.500 (holds) | no |
+| **R4** | X+, but some R3 condition fails | the drift gate fails, on G1 and G4 | **yes** |
+
+**Reading R4, positive, costly** (section 4): "Copying improves, but with drift, decode cost or a boot effect that the clean reading excludes." The failed condition is **drift**, on G1 and G4. The decode cost and the boot comparison both pass.
+
+### 10.3 Endpoints
+
+**E1 and E2, exact copy** (120 paired prompts, both arms HTTP 200):
+
+| | base1 | adapter |
+|---|---|---|
+| exact rate (Wilson 95%) | **0.483** (0.396 to 0.572) | **0.708** (0.622 to 0.782) |
+
+Δ **+0.225**. Discordant pairs: 30 adapter-only and 3 base1-only. Exact two-sided McNemar p = 1.40e-6.
+
+**E3, boot 0.** base0 answered all 120 ids. base0 exact 0.500; the adapter on the same ids 0.708. The base0-base1 agreement on exact is 0.933.
+
+**E4, classes:**
+
+| | E | b | g | c | f | w | x | edit-call rate | `correct_ast` | `correct_strict` | exact given an edit call |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| base1 | 58 | 3 | 4 | 18 | 2 | 0 | 35 | 0.708 | 0.500 | 0.492 | 0.682 |
+| adapter | 85 | 1 | 5 | 2 | 0 | 0 | 27 | 0.775 | 0.700 | 0.692 | 0.914 |
+
+- Exact by kind: K1 0.311 to 0.422 (n 45); K2 0.742 to 0.935 (n 31); K3 0.477 to 0.841 (n 44).
+- Class disagreement 0.283.
+- Most of the gain is in class c (no match), which falls from 18 to 2. Class x (no call, or another tool) falls from 35 to 27.
+
+**E5, the drift gate** (48 paired first-turn prompts, all also answered by base0):
+
+| gate | measure | value | bound | holds? |
+|---|---|---|---|---|
+| G1 | first-tool agreement, adapter against base1 | **0.625** | ≥ 0.70, and ≥ 0.958 − 0.10 = 0.858 (base0-base1 agreement) | **no** |
+| G2 | no-call share, pooled over edit and drift | 0.0 base1, 0.0 adapter | rise ≤ 0.10 | yes |
+| G3 | completion tokens, adapter ÷ base1 | 0.994 | [0.67, 1.5] | yes |
+| G3 | call tokens, adapter ÷ base1 (48 prompts with a call in both) | 0.855 | [0.8, 1.25] | yes |
+| G4 | mean per-token \|Δ logprob\|, two own-words texts | **0.7215** (max 6.189) | ≤ 0.15; floors 0.0 (base1 repeat) and 0.0 (base0 repeat) | **no** |
+| G5 | `correct_ast`, adapter against base1 | 0.700 against 0.500 | ≥ base1 − 0.05 | yes |
+
+First tools on the drift prompts: base1 `read_file` 30, `run_command` 18; adapter `read_file` 46, `run_command` 2. The adapter almost stops opening a task with `run_command`.
+
+**E6, decode** (idle boot-1 server, two probes per arm): base1 104.49 tok/s, adapter 86.93 tok/s, drop **0.168**.
+
+**E7, training** (`train.json`):
+- Source **BF16**, the public `gemma-4-e4b-it-qat-q4_0-unquantized` v2 parent; no fallback to the served w4a16 checkpoint. 4 ranks under torchrun, gradient checkpointing on.
+- 84 LoRA modules (q and o on 42 layers), 3,325,952 parameters, 168 tensors written; B norm 3.537.
+- The memory probe ran once, at the longest sequence's own length, 6,695 tokens, so nothing was cut or dropped (464 sequences and 294 pairs fit).
+- **Peak 11.98 GiB per rank** at 6,695 tokens, against 4 × 22,563 MiB GPUs. 8.65 GiB was allocated after the offload, before training. This is feasibility point 3 of EXP-048, now **measured** [V].
+- 67 of 116 planned steps; 536 sequences seen (about 1.2 passes over the 464, not the planned two epochs); stopped by the 660 s optimisation cap (`train_s` 660.4, stop `deadline`), before the kernel-second-2,050 bound.
+- Loss, mean of the first five steps against the last five: pair 0.1829 to 0.0265; anchor 0.0860 to 0.0807.
+
+**E8, recorded, not read.**
+- T = 1 subset: n 60, exact base1 0.400, adapter 0.717, McNemar p 2.1e-5.
+- Render check: `/tokenize` equals the chat request's prompt ids (2,222).
+- Request path `adk_capture`.
+- Data counts as in 10.1.
+
+### 10.4 What R4 says, and what it does not [I]
+
+- **The copy effect is large and clean as a per-call measure.** Δ +0.225 is more than twice the +0.10 threshold, the discordant split is 30 to 3, and the adapter beats both bases. The T = 1 subset moves the same way. Almost all the gain is the "no match" class: after training, the first edit call that the model makes nearly always matches the file exactly.
+- **The drift is a behaviour shift, not noise.** The boot floor is tight (base0 and base1 agree on 0.958 of first tools, and both logprob floors are 0.0), so 0.625 agreement and 0.72 nats of mean prose drift are effects of the adapter. The training sequences all have a `read_file` call before the target, and the first-turn anchors did not hold the first-tool choice: the anchor loss barely moved while the first tool shifted. That is a guess about the cause, not a measurement.
+- **G4 says the adapter moves the model's probability of ordinary prose**, by 0.72 nats per token on average, which is about five times the bound. That is the C-013 risk: the adapter would act on every turn of the single loop, not just on edits.
+- **Not measured here.** Whether the shift from `run_command` to `read_file` first helps or hurts a real task; any resolve rate; later calls in a trajectory; the content of thoughts (section 5, limits 1, 2 and 8).
+- **Dose.** Training stopped at about 1.2 passes, by the time cap (section 5, limit 9). It did not stop short of an effect: the copy effect is large. A smaller dose or a stronger anchor might still keep the copy gain and cut the drift, but this run cannot say so.
+
+### 10.5 What follows (section 4, R4, as written)
+
+"No stage 4 on this adapter. One revision (more anchors, fewer steps, or q only) could be pre-registered; the lead decides."
+- No smoke-8 or other agent run with this adapter is licensed by this reading.
+- No re-run of this kernel without the user's word.
+- C-024: this is positive evidence for the exact-copy mechanism, offline and per call, together with negative evidence on drift. Its status in `knowledge/claims.md` moves only on a critic verdict; the evidence line is handed to the lead.
+
+**Blind prediction against the outcome.** R4 had 15% (R0 25%, R5 25%, R3 20%). Point guesses were base about 0.5 and adapter about 0.6. The outcome was base1 0.483 (base0 0.500) and adapter 0.708, a larger move than guessed.
+
+### 10.6 GPU spent
+
+**0.645 L4x4-h**: the kernel-log span, 2,322.9 s from kernel start to the last entry, measured as for v1 and EXP-047. That is under the 0.75 to 0.90 h expectation and the 0.98 h worst case; the request phases and the boot-1 start were shorter than estimated in section 2.6. The line's total over v1 and v2 is 0.140 + 0.645 = **0.785 L4x4-h**.

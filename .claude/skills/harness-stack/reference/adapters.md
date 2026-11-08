@@ -1,6 +1,6 @@
 # Adapters (LoRA) on the harness's vLLM path
 
-Read from the wheelhouse source on 2026-11-05 (`adk_submission` 0.2.13, vLLM 0.19.1); described in our own words. EXP-047 carries the same facts. Whether the served model actually applies an adapter is not settled here: that is Q4, tested by EXP-047.
+Read from the wheelhouse source on 2026-11-05 (`adk_submission` 0.2.13, vLLM 0.19.1); described in our own words. EXP-047 carries the same facts. Q4 is settled for the E4B [V]: EXP-047 v2 (2026-11-08) showed the served model applies `adapters/` canaries with no fall-through, and EXP-054 v2 (2026-11-08) served a trained rank-8 `q_proj`/`o_proj` adapter in this layout (keys `base_model.model.<module>.lora_{A,B}.weight`, module names from the served checkpoint's index) through `VllmServer`: listed in `/v1/models`, 228 of 228 requests HTTP 200 and answered under the adapter name, and the compiled agent model ended in the adapter name.
 
 - **Discovery** [V] `adk_submission/discovery.py:384-500` (`discover_adapters`).
   - A PEFT directory under `adapters/<name>/` (an `adapter_config.json` beside `adapter_model.safetensors`) becomes one adapter, named after the directory.
