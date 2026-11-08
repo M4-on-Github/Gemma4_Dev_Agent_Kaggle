@@ -215,7 +215,17 @@ None yet. Results are appended in section 9 and apply section 4 as written.
 
   These check code paths, not results. Training and both boots run only in the kernel.
 - **Push guard.** It reads this as a zero-task GPU probe: no `RUN_AGENT` and no `TASK_IDS` parameter, `**Cohort:** none`, and the main competition source alone (rule dd8d3fc). Model sources are not restricted by the rule.
+- **Pushed 2026-11-08 (addendum written after the push; nothing above is revised).**
+  - Authority: the user's request of 2026-11-08, about 18:19 UTC, relayed by the lead ("prep and push the lora training test exp"). Also the standing approval within the day's 4.0 GPU-h ceiling (`knowledge/user-decisions.md`, 2026-11-08).
+  - Ledger at the push, as the lead stated it: 0.83 of 4.0 (EXP-045 0.248, EXP-053 0.281, EXP-055 about 0.30 and running). With this kernel's 0.98 worst case, that is about 1.81. EXP-055 is the only other kernel running.
+  - Pre-push checks: this file is tracked once and clean, and the directory holds one `.ipynb`.
+  - The push: the bare command from the repo root, once, between 18:20:42Z and 18:20:54Z UTC, from commit 2b89d60. It printed "Kernel version 1 successfully pushed." The guard did not refuse.
+  - Kernel `rainm4/gemma4-exp054-copy-lora` **version 1**. One `kaggle kernels status` call right after returned `KernelWorkerStatus.RUNNING`.
+  - Expected 0.75 to 0.90 L4x4-h; worst case at most 0.98 h.
+  - If the kernel fails, there is no re-run without the user's word.
 
 ## Status
 
-2026-11-08: **PRE-REGISTERED AND BUILT, not pushed.** Zero GPU spent. Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h (`HARD_CAP_S` 3,400 s). Next: the bare push of `notebooks/exp054_copylora`, once, then section 8 records the kernel version.
+~~2026-11-08: **PRE-REGISTERED AND BUILT, not pushed.** Zero GPU spent. Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h (`HARD_CAP_S` 3,400 s). Next: the bare push of `notebooks/exp054_copylora`, once, then section 8 records the kernel version.~~
+
+2026-11-08: **PUSHED.** Version 1 of `rainm4/gemma4-exp054-copy-lora` was pushed at 18:20 UTC from 2b89d60 and showed RUNNING. Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h. Not analyzed yet; download and analysis are a separate job, using the section 6 commands. When the kernel is COMPLETE, the next step is `kaggle kernels output rainm4/gemma4-exp054-copy-lora -p runs/EXP-054-copy-lora/`, then flatten the nested bundle and run `python -I -X utf8 experiments/EXP-054/analyze_copy_lora.py runs/EXP-054-copy-lora --json runs/EXP-054-copy-lora/analysis.json`.
