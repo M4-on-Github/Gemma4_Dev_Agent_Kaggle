@@ -135,6 +135,10 @@ Built 2026-11-08 after the pre-registration commit `a6df3fb` (tree, tests, readi
 - **`kernel-metadata.json`** in each directory: the EXP-056 r1 file with only `id` (`rainm4/gemma4-exp057-r1`, `rainm4/gemma4-exp057-r2`) and `title` changed (`diff` confirms), written after each build (the builder does not create it).
 - **Kernel ids:** `rainm4/gemma4-exp057-r1`, `rainm4/gemma4-exp057-r2`.
 
+### 8.1 Push
+
+Committed as `2111524` (hygiene OK, 5 files) before any push; the pre-registration is `a6df3fb`. On 2026-11-08 `rainm4/gemma4-exp057-r1`: "Kernel version 1 successfully pushed", first status `RUNNING`. Then `rainm4/gemma4-exp057-r2`: "Kernel version 1 successfully pushed", first status `RUNNING`; at that push the only other kernel known to be running was r1 (EXP-056 r2 `COMPLETE`, no EXP-058 notebook directory yet), so at most 2 GPU kernels. Each pushed once, not re-run, not waited on. Analysis is a separate job once each status is COMPLETE; rows 0 and 1 read from r1 alone, the rest pooled.
+
 ## Status
 
-**BUILT 2026-11-08, not yet pushed.** Pre-registered at `a6df3fb`. Zip `e402d6dd...6362e6`. r1 push and r2 push are recorded in section 8.1 when done; analysis is a separate job.
+**r1 and r2 PUSHED 2026-11-08, RUNNING** (`rainm4/gemma4-exp057-r1`, `rainm4/gemma4-exp057-r2`), analysis pending. Pre-registered at `a6df3fb`, built at `2111524`. Zip `e402d6dd...6362e6`.
