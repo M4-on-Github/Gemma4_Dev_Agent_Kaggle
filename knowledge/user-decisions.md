@@ -226,3 +226,11 @@ User, verbatim: "1. GPU ceiling for today is 4 hours. yes you may auto push. 3. 
   4. **Development relaxation.** When diagnosing a run, an editor may read the full trace, the task's repo snapshot and the task's tests locally. Nothing changes for what enters git (`plan.md:52`, the hygiene line) or the zip (lint, repo-agnostic prompts). An edit may be found from a repo-specific moment but is written repo-agnostically before its smoke-8, and must cite moments on at least 2 of the 8 tasks.
   5. **S-014 scored 0.05** (= 3/58; confirmed by the lead's `kaggle competitions submissions` query, ref 58106393 COMPLETE).
 
+## 2026-11-08 (about 19:15 UTC): EXP-054 v2 and one more loop round
+User, verbatim: "fix the lora. sure let's reurn one more time for the loop"
+- Given after the lead reported EXP-054 v1 ERROR (R0, our helper `http` shadowed by a later `import http.server`, 0.140 GPU-h) and the loop's stop on two keep-base rounds (EXP-053, EXP-055), with three questions: EXP-054 v2, the loop's next design, today's upload slot.
+- Read by the lead as:
+  1. **EXP-054 v2 approved:** the two-line import fix only, one push; readings unchanged. A further re-run needs the user's word.
+  2. **One more loop round (round 3) approved, past the stop rule:** read as the lead's recommendation the user answered "sure" to, a mechanism candidate (a skill script that picks the check command; the script itself runs nothing) on two smoke-8 runs pre-registered as one experiment, about 0.3 GPU-h each, inside the day's 4.0. If the user meant a plain re-run of the EXP-055 tree, they can redirect before the push.
+  3. **Upload slot:** not answered; it lapses at 23:59 UTC unless the user says otherwise.
+
