@@ -234,6 +234,8 @@ Written before the v2 push. Nothing above is revised.
 
 2026-11-08: **v2 pushed** (14:42 UTC, version 2, RUNNING, from 0e4b9d3). The one A0 re-run, with the main competition source attached (section 8, v2 addendum; user decision 2026-11-08, dd8d3fc). Next, when COMPLETE: download `rainm4/gemma4-exp047-q4-canary` into `runs/EXP-047-q4-canary-v2/` and run `python -I -X utf8 experiments/EXP-047/analyze_canary.py runs/EXP-047-q4-canary-v2`. If v2 fails, there is no further re-run without the user.
 
+2026-11-08: **v2 COMPLETE, read as A3 / B3** (section 10): the adapters load, route and apply on the E4B (E1 5.221, E2 26.331, E3 0.0, F 0, H 0.05), and K1 = 262,368. 4 GPUs. 0.214 GPU-h; D-006 total 1.254 of 2.5 h. The lead may ask for EXP-048 stage 2 (section 5). No further kernel from this file.
+
 ---
 
 ## 9. Results, 2026-11-08. Section 4's readings applied as written.
@@ -267,3 +269,64 @@ Kernel-log span (last kernel-log entry, as EXP-038 E8 was measured): **144.5 s =
 - **Fix (proposed):** add `gemma-4-developer-agent` to `competition_sources` in `notebooks/exp047_q4canary/kernel-metadata.json`, as every 4-GPU arm has it, and change nothing else. The notebook reads nothing under that mount, so no task runs and no competition file is written to the outputs. But it ends the "no competition source is attached" property of section 8. And the user's zero-task-probe rule in `guard_push.py` (fad234a) admits only a notebook with **no** competition source, so the push needs the user to change that rule first.
 - **Fallback, not proposed:** let the gate accept 2 GPUs with tp = 2. That changes the design (K0 and K1 would then be tp = 2 figures, not the 4-GPU server's), so it would need its own amendment.
 - **Not done here:** the notebook was not edited, rebuilt or pushed. A0's "re-run once" goes to the user through the lead.
+
+## 10. Results, v2, 2026-11-08. Section 4's readings applied as written.
+
+Kernel `rainm4/gemma4-exp047-q4-canary` version 2 (the one A0 re-run, section 8 v2 addendum), reported COMPLETE by the lead. Downloaded with `kaggle kernels output rainm4/gemma4-exp047-q4-canary -p runs/EXP-047-q4-canary-v2`. The bundle nested one level and was flattened with `cp -r`. It holds `canary.json`, `env.json`, `probes.jsonl`, `boot0.log`, `boot1.log`, `adapters.json`, `model_shapes.json`, the two in-kernel test submissions and the kernel log. Everything was read as data with `python -I -X utf8`; nothing from the bundle was run. `python -I -X utf8 experiments/EXP-047/analyze_canary.py runs/EXP-047-q4-canary-v2` ran (exit 0) and returned `reading_A` A3 and `reading_B` B3. The v1 bundle stays in `runs/EXP-047-q4-canary/`.
+
+### 10.1 Run
+
+- **4 GPUs this time** (`env.json` `gpu_count` 4, and the same figure in the log at 108.5 s). The section 9 cause, the missing competition source, is confirmed by the fix. Every stage completed: install and imports, shapes, adapters built, boot 0, base probes, boot 1, adapter probes, routing check and write-out (`status: complete`, notebook clock 749.4 s).
+- **Boots.** Boot 0 took 316.4 s; boot 1 took 282.4 s with the LoRA flags shown below.
+- **Versions** (`env.json`): vllm 0.19.1, adk_submission 0.2.13, swegemma 0.2.11, the same builds as v1.
+- **`build_cmd` LoRA flags on boot 1:** `--enable-lora`, `--max-loras 3`, `--max-lora-rank 8`, and `--lora-modules` for the three canary names.
+- **Shapes, for EXP-048** (`model_shapes.json`): architecture `Gemma4ForConditionalGeneration`, 42 layers, hidden size 2,560. `q_proj` is 2,048 x 2,560 on 35 layers and 4,096 x 2,560 on the 7 full-attention layers; `o_proj` is the transpose of each. No shape mismatch. Discovered ranks were 4, 4 and 8 (zero, big, loud).
+
+### 10.2 Endpoints
+
+| # | Endpoint | Value |
+|---|---|---|
+| E1 | d(canary_big, base), boot 1 | **5.221** nats |
+| E2 | d(canary_loud, base), boot 1 | **26.331** nats (finite; the 4.4 clauses did not apply: no loud failure) |
+| E3 | d(canary_zero, base), boot 1 | **0.0** |
+| E4 | F, tau, H | F = 0.0 (both boots), so tau = 0.001 and H = 0.05 |
+| E5 | Loadable | **true**: boot 1 started, all three names listed in `/v1/models`, no adapter request returned non-200 |
+| E6 | K0, K1, K1/K0 | K0 = 298,464, K1 = 262,368, K1/K0 = 0.879 |
+
+**Routing (4.3 (i)).** Every adapter response named the requested adapter: 0 mismatches and 0 responses without a `model` field. The registry binds `canary_big` and `adapter:canary_big` to the `canary_big` model string, and the compiled root agent's model string ends in `canary_big`. The compile-path text equals the direct `canary_big` text. No fall-through.
+
+**Recorded, not read (E7).**
+- The base path on boot 0 against boot 1 differs by d = 0.659 nats, and boot 0's base greedy text differs from boot 1's. So turning LoRA on moves the base model's own outputs, with no adapter selected.
+- Greedy text equals boot 1 base for `canary_zero`, and differs for `canary_big` and `canary_loud`.
+- Decode tok/s: base 116.52 and 116.74; each adapter about 86.9, which is 25.4 to 25.5% below the base mean.
+
+### 10.3 Readings
+
+| Reading | Row | Why (first matching row) |
+|---|---|---|
+| A | **A3 (applied)** | A0 does not match: all stages ran with 4 GPUs. A1 does not match: boot 1 started, all names listed, no non-200. A1f does not match: no mismatch, the registry and the agent bind to `canary_big`, and the compile text equals the direct text. A2 does not match: E3 = 0.0 <= tau 0.001. **A3 matches: E1 5.221 > H 0.05 and E2 26.331 > H 0.05.** |
+| B | **B3** | K1 = 262,368 >= 32,768: with an adapter of this size, context is not a constraint for the E4B |
+
+**Against the blind prediction.**
+- A3 was the modal prediction (40%).
+- E1 was predicted at 0.5 to 5 nats; it was 5.221, just above that range.
+- F = 0 as predicted.
+- K1/K0 = 0.879, inside the predicted 0.6 to 0.95.
+- The decode drop of about 25% is inside the predicted 10 to 30%.
+- B3 was predicted at 92%.
+
+**Q4 answer, within this scope:** on the attached wheelhouse, through `VllmServer.build_cmd` and the harness's registry and compile path, an `adapters/` LoRA on the E4B is loaded, listed, routed and applied. It is applied at the 743508 thread's own dose, so that thread's null does not reproduce here. Section 5's scope stands: this is the notebook's server, not the scorer's `setup_vllm_server`.
+
+### 10.4 GPU spent
+
+- **v2:** kernel-log span (last entry) 769.0 s = **0.214 h**, 42.7% of the v2 cap of 0.5 h, inside the expected 0.20 to 0.35 h.
+- **D-006 ceiling:** with 1.040 h spent before v2, the total is now 1.254 h of 2.5 h, leaving 1.246 h.
+
+### 10.5 What it means for EXP-048
+
+A3 with B3 is the section 5 case in which the lead may ask for EXP-048's stage 2 (data generation and a training kernel): the adapter gate is open on this path. Three facts for its costing:
+- the decode cost of about 25% with any adapter;
+- the move of the base path when LoRA is enabled (recorded, not read);
+- the measured shapes in 10.1, including the seven 4,096-wide full-attention layers.
+
+Nothing here licenses an upload or moves C-024 beyond the gate.
