@@ -128,6 +128,10 @@ Built 2026-11-08 with the section 6 commands. Sections 1 to 7 are unchanged.
 - `notebooks/exp053_r/kernel-metadata.json`: copied from `notebooks/exp045_p/`, only `id` (`rainm4/gemma4-exp053-r`) and `title` (`gemma4-exp053-r`) changed (`diff` shows those two lines).
 - **Kernel id: `rainm4/gemma4-exp053-r`.** Push command: `kaggle kernels push -p notebooks/exp053_r`.
 
+### 8.1 Push
+
+Committed as `69092da` (hygiene OK, 9 files) before the push; the worktree files are LF, so the zip sha is the one of the committed blobs. `kaggle kernels push -p notebooks/exp053_r` on 2026-11-08 after that commit: "Kernel version 1 successfully pushed", kernel `rainm4/gemma4-exp053-r` (version 1), and the first `kaggle kernels status` read `RUNNING`. Pushed once, not re-run. Analysis is a separate job once the status is COMPLETE.
+
 ## Status
 
-2026-11-08: **BUILT, committed, push follows** (standing approval, `knowledge/user-decisions.md` 2026-11-08). Zip `9f467adc...34cb8`.
+2026-11-08: **PUSHED** (kernel `rainm4/gemma4-exp053-r`, version 1, status RUNNING at first check, standing approval of `knowledge/user-decisions.md` 2026-11-08), analysis pending. Zip `9f467adc...34cb8`.
