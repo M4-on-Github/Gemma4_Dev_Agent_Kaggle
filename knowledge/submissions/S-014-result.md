@@ -1,8 +1,8 @@
 ---
 id: S-014
 date: 2026-11-07
-status: pending
-public_score: null
+status: scored
+public_score: 0.05
 kaggle_ref: 58106393
 submitted_utc: 2026-11-07 22:44:47 (Kaggle list timestamp)
 sha256: 9de869bd2cd8853b72d653d06b9acef3e03794c8b588c26494435774dda11ac0
@@ -39,5 +39,9 @@ Successfully submitted to Google - The Gemma 4 Developer Agent Competition
 58106393,submission.zip,2026-11-07 22:44:47.313000,S-014 EXP-050 E4B single loop variant A 9de869bd,SubmissionStatus.PENDING,,
 ```
 
-## Status
-pending. Grading has taken 6 to 22 hours. Poll only when asked; then set `status: scored | error` and `public_score`.
+## Score (polled 2026-11-08)
+Polled once with `kaggle competitions submissions gemma-4-developer-agent --csv` on 2026-11-08. List entry as the CLI printed it:
+```
+58106393,submission.zip,2026-11-07 22:44:47.313000,S-014 EXP-050 E4B single loop variant A 9de869bd,SubmissionStatus.COMPLETE,0.05,
+```
+status: scored, public_score: 0.05 (the board shows two decimals; the lead reads this as 3 of 58).
