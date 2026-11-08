@@ -56,3 +56,40 @@ The constants are mirrored in `tools/submission_rules.py` (`COMPACTION_*`).
   - per-agent `generate_content_config.max_output_tokens`;
   - `include_contents: none` on a sub-agent, so it is not sent the earlier session history (an allowed `LlmAgent` key, `adk_submission/schema.py:284`; its exact scope is unverified);
   - topology: whether a `ParallelAgent` exists.
+
+## Hazard: a root that is not an `LlmAgent` can crash post-invocation compaction (EXP-052, source read 2026-11-08)
+
+Read from `data/src/` (ADK 1.36.1, swegemma 0.2.11). EXP-052 recorded it as [I] in its section 7 item 12; this section settles it. The error is the ADK's fixed `ValueError` text "No LlmAgent model available for event compaction summarizer." The harness catches it as a sandbox execution error and harvests the on-disk diff (`agent_runner.py:1039-1043`) [V].
+
+**(a) It is not raised whenever the root is not an `LlmAgent` and the prompt passes 14,336.** [V] It is raised by `_ensure_compaction_summarizer` (`apps/compaction.py:223-236`), and only the post-invocation path hands that function `app.root_agent`: the token path at `:589-590` and `:475-490`, the sliding-window path at `:683`. All of these must hold:
+1. the `run_async` invocation runs to its end (`runners.py:598-610`);
+2. no in-flow token compaction fired during that invocation. A successful in-flow compaction sets `token_compaction_checked` (`flows/llm_flows/compaction.py:52-53`), which the runner passes as the skip flag (`runners.py:609`);
+3. the latest `prompt_token_count` in the session is at least `token_threshold`. That count is read from any branch or author (`apps/compaction.py:156-173`, `:448`);
+4. there are events to compact (`:451-456`);
+5. no summarizer is cached on the compaction config yet (`:227-228`);
+6. the root is not an `LlmAgent` (`:231-234`).
+
+The sliding-window path reaches the same check only after 15 new invocations (`:632-633`), which a task does not reach [I].
+
+**The summarizer is cached across tasks.** [V for the code; the same-object point rests on pydantic's default handling of a model instance passed as a field, not run.]
+- `:236` stores the summarizer on the config object, and the harness hands the same `EvalConfig.events_compaction_config` object to every task's `App` (`agent_runner.py:694-695`).
+- Our eval notebook builds one `EvalConfig` per run (`notebooks/kaggle_eval_l4x4.py:331-345`, `:399`). So in our notebook the hazard can fire only before the first token compaction of the whole run. After that, the cached summarizer (the first compacting agent's model) serves the root.
+- EXP-052 fits this: its one compaction, `rich_3468`, came after `httpx_3672` in kernel order.
+- Whether the scorer shares one config across tasks or shards is not on disk [I]. So on the hidden set the hazard is order-dependent, and a clean dev run does not rule it out.
+
+**(b) Two triggers, neither of them per event.** [V]
+- **In-flow:** a request processor in `SingleFlow` (`flows/llm_flows/single_flow.py:49`, `flows/llm_flows/compaction.py:32-54`) runs before each model call of each `LlmAgent`. It passes that `LlmAgent`, so it cannot raise this error.
+- **Post-invocation:** this runs once per `runner.run_async` invocation, after the last event is yielded (`runners.py:598-610`; the source comment says it never compacts mid-invocation). Each task is one invocation, plus one per nudge (`agent_runner.py:788-806`).
+- **What only the post-invocation path sees:** the in-flow check reads the count left by the previous model call. So a prompt over the threshold on the invocation's last model call is seen only by the post-invocation path.
+
+**(c) A `submit_patch` call does not itself end the loop.** [V] It only sets the flag (`tools/execution.py:111-112`).
+- **The breaks that leave the loop early:** the harness breaks out of the event loop at the first final text event after the flag is set (`agent_runner.py:854-864`), and on the session timeout (`:866-874`). Such a break leaves `run_async` suspended before `runners.py:598`, and the compaction there is not in a `finally`, so it is never reached [V source; generator semantics].
+- **Why `:920-922` does not protect:** that check comes after the loop has ended, so the post-invocation path has already run by then.
+- **Consequence:** a stage that calls `submit_patch` and then answers in text is safe. An invocation that ends naturally is exposed. That covers a text ending before any submit, which is EXP-052's applier on `httpx_3672`, and every nudge re-run of the tree. An invocation that ends after a submit with no final text event would also be exposed [I, not seen].
+
+**(d) Shapes that avoid it.**
+- **An `LlmAgent` root** [V]: the post-invocation path then builds the summarizer from that agent's model (`apps/compaction.py:229-236`).
+- **`agent_tool`** [V]: it runs its inner tree in its own `Runner` with no `App` (`tools/agent_tool.py:241-249`). Neither compaction path runs inside it (`runners.py:601`, `:1429`), so a Sequential or Parallel tree there is never compacted. Its prompts are then bounded only by the 32k window.
+- **A ParallelAgent in `sub_agents` of an `LlmAgent` root** runs only if the root's model transfers to it [I]. The root stays an `LlmAgent`, so this error cannot occur.
+- **No `agent.yaml` key can set a summarizer** [V]: `EventsCompactionConfig` is an `App` argument the harness takes from `EvalConfig` (`agent_runner.py:687-697`), and no `agent.yaml` key reaches it (section "What a submission controls").
+- **Mitigation on a non-`LlmAgent` root** [I]: keep the last model call of every invocation below 14,336 prompt tokens, and make the final stage submit and then end in text, so the break at `:854-864` applies. Nudge re-runs stay exposed.

@@ -55,6 +55,7 @@ user-invocable: false
   - Before each model call of any agent, sub-agents included, if the latest prompt count is ≥ 14,336, everything but the last 5 events is summarized by one extra model call. That call counts on the task clock but not as a turn.
   - It fired 49 times in EXP-028 Arm R. `compactions` before 2026-11-05 read 0 and is wrong in every older `summary.jsonl`.
   - `agent.yaml` cannot set it. Details, including the ParallelAgent issue 7324 risk, are in `reference/compaction.md`.
+  - Hazard [V] (2026-11-08, EXP-052): on a root that is not an `LlmAgent`, an invocation that ends naturally with a prompt of 14,336 tokens or more raises the summarizer `ValueError` and the task ends as a sandbox error. Submit-then-text breaks out first and is safe; nudge re-runs are exposed; no yaml key sets a summarizer. The summarizer is cached on the shared compaction config, so only tasks before the run's first compaction are exposed [I for the scorer]. See `reference/compaction.md` § Hazard.
 - **ParallelAgent sub-agent steps in a trace** (EXP-040, 2026-11-05):
   - They appear in completion order, not agent order, and they are stamped when the stage emits them. All 16 voters of one burst fall within 0.15-0.44 s, so stamp spreads are not generation times.
   - Segment passes as maximal runs of consecutive sub-agent steps, not by the first agent's name. Keying on voter_01 misfiled 8 restart-pass votes in EXP-040 (§7 item 8).
