@@ -793,14 +793,14 @@ def boot(label: str, sub: Path, manifest, startup_timeout: int):
 # The agent is compiled from the shipped tree by the official compile path; each synthetic history is sent through
 # the agent's own LiteLlm (with the adk_submission reasoning patch) to a local capture endpoint, and the captured
 # HTTP body is what is then sent to vLLM, with only the model name, temperature and return_token_ids changed.
-import http.server
+from http.server import BaseHTTPRequestHandler
 import socketserver
 
 CAP_PORT = 8011
 CAPTURED: list = []
 
 
-class _CapHandler(http.server.BaseHTTPRequestHandler):
+class _CapHandler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802
         n = int(self.headers.get('Content-Length', 0) or 0)
         raw = self.rfile.read(n)

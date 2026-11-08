@@ -224,6 +224,31 @@ None yet. Results are appended in section 9 and apply section 4 as written.
   - Expected 0.75 to 0.90 L4x4-h; worst case at most 0.98 h.
   - If the kernel fails, there is no re-run without the user's word.
 
+### v2, an infrastructure fix, 2026-11-08
+
+Written before the v2 push. Nothing above is revised.
+
+- **Authority.** The user approved it at about 19:15 UTC, relayed by the lead ("fix the lora"). The approval covers one push of version 2; any further re-run needs the user's word again.
+- **The one change.** This is the two-line fix proposed in section 9.4, applied to the capture cell of `copy_lora.py`, and nothing else:
+  - `import http.server` is replaced by `from http.server import BaseHTTPRequestHandler`;
+  - the capture handler's base class changes from `http.server.BaseHTTPRequestHandler` to `BaseHTTPRequestHandler`.
+
+  The global helper `http()` is therefore no longer shadowed.
+- **Rebuilt with the section 6 command.** The diff of the new `copy_lora.ipynb` against the v1 file is the same two lines.
+  - New notebook sha256 (worktree file): `289d4cdd66ff8d59d3d840ab79b1cb0411fdff1933a3ecb9ff2a004a817557b4`. v1's was `db4667666ede62f7521aaee51cc59b9f03fc929ea11f769b4a47d0e7f1495a50`.
+  - The embedded zip still decodes to `9de869bd...1ac0`.
+  - There are 13 code cells. There is no `RUN_AGENT` or `TASK_IDS` line, and no path names the competition mount.
+- **Unchanged.** `kernel-metadata.json` is byte-identical: the same id, inputs and machine. Also unchanged:
+  - sections 1 to 7 (design, endpoints and readings);
+  - every parameter and cap (`HARD_CAP_S` 3,400 s);
+  - the analysis script.
+- **Pre-push checks.**
+  - The source parses, and so does the training child's source.
+  - The crude unbound-name check is clean on both.
+  - The new check for a name bound both by a `def` or `class` and by an `import` or `from` finds none in either source (v1 had exactly one, `http`).
+- **Risk, as in section 9.4 [I].** Everything after boot 0 runs in a kernel for the first time, so a later defect would read R0 again.
+- **Cost.** Expected 0.75 to 0.90 L4x4-h, worst at most 0.98 h. The day ledger at dispatch was 0.971 of 4.0, so it reaches about 1.95 at the v2 worst case. The screener's loop kernel is the other slot.
+
 ## Status
 
 ~~2026-11-08: **PRE-REGISTERED AND BUILT, not pushed.** Zero GPU spent. Expected 0.75 to 0.90 L4x4-h, worst case at most 0.98 h (`HARD_CAP_S` 3,400 s). Next: the bare push of `notebooks/exp054_copylora`, once, then section 8 records the kernel version.~~
