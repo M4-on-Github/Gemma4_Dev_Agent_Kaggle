@@ -243,3 +243,12 @@ User, verbatim: "go ahead. so we know lora works but we will have to do recalcul
   3. **Raw-model experiments continue** as a learning series on the unadapted model: the loop's stop on two keep-base rounds is lifted by this word. Each round is still one pre-registered change inside today's 4.0 ceiling, chosen to learn what agent structure the model needs; an infrastructure failure still stops a line until it is fixed.
   4. **Upload slot:** not mentioned; it lapses at 23:59 UTC.
 
+
+## 2026-11-08 (about 23:45 UTC): an LlmAgent root over the EXP-052 pipeline, uploaded today, then a smoke-8
+User, verbatim: "yes just make a model and let it only call the sequential agent or smth fix it and then submit for today's slot. and also run 8 smoke run after that. how abt that"
+- Given after the user declined a fourth baseline draw (S-015 withdrawn: "sampling for noise seems useless") and asked how to make the voting agents useful; the lead pointed to EXP-052 (draft fan-out, row 0 on the `SequentialAgent` root's compaction crash).
+- Read by the lead as:
+  1. **Build EXP-061:** the EXP-052 tree with one change, an `LlmAgent` root (E4B, no tools) whose only action is to transfer to the `SequentialAgent` pipeline.
+  2. **Upload it in today's slot (S-016), as the user's explicit plan.md §5.8 override:** no dev-48 run and no clean smoke-8 of this exact tree; the critic `prereg` is skipped on the user's word for the slot. The approval file is still the user's.
+  3. **Smoke-8 of the same zip after the upload approved** (about 0.31 GPU-h; day total about 3.4 of 4.0 if pushed today).
+  4. If the build misses 23:59 UTC, the upload would take the 2026-11-09 slot; the lead then recommends running the smoke-8 first.
