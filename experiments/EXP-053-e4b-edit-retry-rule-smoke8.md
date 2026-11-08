@@ -134,4 +134,48 @@ Committed as `69092da` (hygiene OK, 9 files) before the push; the worktree files
 
 ## Status
 
-2026-11-08: **PUSHED** (kernel `rainm4/gemma4-exp053-r`, version 1, status RUNNING at first check, standing approval of `knowledge/user-decisions.md` 2026-11-08), analysis pending. Zip `9f467adc...34cb8`.
+2026-11-08: **ANALYSED, ROW 3 FIRED: the bullet is dropped** (kernel `rainm4/gemma4-exp053-r`, version 1, COMPLETE, 0.281 GPU-h by kernel log span). Section 9 below. Zip `9f467adc...34cb8`. Nothing further runs from this experiment.
+
+---
+
+## 9. Results, 2026-11-08. Section 4's readings applied as written.
+
+Kernel `rainm4/gemma4-exp053-r` version 1, COMPLETE. Output downloaded with `kaggle kernels output rainm4/gemma4-exp053-r -p runs/EXP-053-r` (the CLI nests the bundle under `runs/EXP-053-r/runs/EXP-053-r/`; analysed there, nothing moved). `python -I -X utf8 tools/analyze_traces.py runs/EXP-053-r/runs/EXP-053-r --cap-minutes 8 --max-calls 28`. Copy of the summary: `experiments/EXP-053/r/summary.jsonl`.
+
+### 9.1 Numbers
+
+- **Cost:** kernel log span 1,012.5 s = **0.281 GPU-h** (vLLM up in 338.9 s, task agent times 31.9 to 150.5 s). Inside the 0.25-0.33 expectation.
+- **Per task** (wall s, calls, `n_edit_fail`, resolved): requests_7309 31.9, 4, 0, no; requests_7205 150.5, 4, 0, no; fastapi_14448 57.6, 4, 0, no; fastapi_14301 45.2, 8, 0, yes; httpx_3672 91.1, 9, 3, no; fastapi_14605 69.1, 12, 4, no; rich_3468 42.4, 9, 0, no; rich_3006 46.6, 5, 1 (one argument loss), yes.
+- **Aggregates:** resolved 2 of 8 (the same two as in all four base runs; reported, not an endpoint); empty patches 0; `error` non-null 0 of 8; malformed turns 0; nudges 0; compactions 0; time or call cap hit 0; scratch in patch 0 of 8; `submit_patch` called 8 of 8. Wall mean **66.8 s**, median 0.87 min, longest 150.5 s.
+- **E3, A_e and P:** every one of the 8 patches is non-empty and each task has at least one applied `edit_file`, so A_e = 8 and P = 8 (references 6, 8, 7, 8). Tasks whose patch is in a gold-patch file: 7 of 8 (httpx_3672 again edits `src/httpx/`, not `src/ahttpx/`), references 5, 6, 6, 7. fastapi_14448 is in the right file this time (it was not in 3 of the 4 base runs; recorded, one task, not read).
+- **E2, N_f:** 0 + 0 + 0 + 0 + 3 + 4 + 0 + 1 = **8** (references 7, 10, 3, 5). Row 2's floor of 3 is passed.
+- **E1, R_x, counted by the section 2.2 rule (same first 90 characters as an earlier failed `edit_file` on the same file in the same task) from the traces [H]:**
+  - fastapi_14605: the four failed calls are steps 8, 9, 10, 11. Step 8 is a one-line `old_string` (occurs 4 times), step 9 starts at a line that occurs twice, steps 10 and 11 both start at the same line (occurs 2 times) and share their first 330 characters. Step 11 repeats step 10: **1**. Step 12 (applied, `allow_multiple` true on the one-line `old_string` that failed at step 8) is not a failed call and is not counted; that is the escape the bullet itself allows.
+  - httpx_3672: edit calls at steps 9 (applied), 10, 11, 13; failed 10, 11, 13. Steps 10 and 11 share their first 104 characters. Step 11 repeats step 10: **1**. Step 13 starts elsewhere.
+  - rich_3006: one failed call (argument loss): **0**.
+  - **R_x = 2** (references 3, 4, 0, 2).
+- **E5, recorded, not read:** T (3 or more failed edits in a row) = 1 strictly by step (fastapi_14605, 4 in a row), 2 if httpx_3672's 10, 11, 13 are counted as consecutive among its edit calls (references 1, 2, 0, 1). M (mechanism): of the 6 failed calls followed by another `edit_file` on the same file, 4 changed `old_string` (fastapi_14605 8 to 9, 9 to 10, 11 to 12 where it became the one-line `allow_multiple` form; httpx_3672 11 to 13) and 2 resent the same text (fastapi_14605 10 to 11, httpx_3672 10 to 11).- **E6:** F and nudges 0 (references 0, 1, 0, 0). D (no run after the last applied edit): 2 of 8 tasks (fastapi_14448, httpx_3672), against 2 to 4 of 8 in the references; three tasks (requests_7309, requests_7205, rich_3468) ran a command after their edit.
+
+### 9.2 Readings applied, in order
+
+- **Row 0:** not fired (no `error` in any row, every stage ran).
+- **Row 1:** not fired (A_e 8, mean wall 66.8 s, no cap hit, longest 150.5 s, no stray file, malformed turns 0).
+- **Row 2:** not fired (N_f = 8, at least 3).
+- **Row 3: FIRED, R_x = 2 (2 or more).** The bullet is **dropped as measured**: the rule did not stop the resend in either of the two tasks where it had a chance, one non-unique (fastapi_14605 step 11) and one not found (httpx_3672 step 11), each right after an error text that the bullet answers.
+- Rows 4 and 5 are not reached.
+
+**Blind prediction (N_f = 5, R_x = 1, rows 5 or 3 most likely):** N_f was higher than predicted (8, inside the reference range 3 to 10), R_x was higher by one (2); the row range held (row 3). Wall mean was predicted at 60 to 80 s and was 66.8 s.
+
+### 9.3 What it does and does not say
+
+It kills this bullet for the loop (the next round starts from the EXP-033 tree again). It does not say the rule can never work: with a null prior on the not-found half (EXP-044) and a non-unique half that fired once in two tasks, n = 8 and R_x of 0 to 4 per run mean the reading is a bound, as section 4 says. Two things are worth carrying: (a) in 4 of 6 retries the model did change its `old_string`, so there is a partial effect that a count of resends at the 90-character level cannot reward; (b) the two resends sit exactly on the two tasks that dominate the base-set failures in class B, so a second arm on the same lever would need a mechanism, not more wording. Whether a tool-side change (a harness answer that names the line numbers of the other occurrences) could do it is not testable from `submission/`: it is a harness fact, not a config.
+
+The run was short: 4 of 8 tasks ended in 4 or 5 calls and the mean was 66.8 s, so the loop's cost per round stays near 0.28 GPU-h.
+
+### 9.4 Cost and ledger
+
+0.281 GPU-h (log span 1,012.5 s). Loop ledger today: EXP-045 0.248 + EXP-053 0.281 = 0.529 h of about 2.8 h (about 2.27 h left under the loop's share; the day's 4.0 h ceiling is the lead's to count).
+
+### 9.5 Report line
+
+Row 3 fired (R_x = 2, N_f = 8): bullet dropped; a keep-base round, the first in a row (round 0 does not count, per the lead).
