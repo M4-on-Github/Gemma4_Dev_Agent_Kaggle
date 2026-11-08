@@ -189,6 +189,8 @@ Then hand-write `kernel-metadata.json` from `notebooks/exp056_r1/`'s, with id an
 - **Sandbox.** It is the Kaggle `subprocess` sandbox, as in every E4B smoke run, not the scorer's Docker.
 - **A gap in check B (found before the push; the readings are unchanged).** Suppose `compile_submission` raises an exception whose class name is not adapter-, model- or validation-related. Cell B then records `compile_error`, skips B4 and B5, and leaves `failures` empty, so P would read true with the routing checks not evaluated. If `adapter_check.json` carries `compile_error`, the analysis reports B4 and B5 as not evaluated. Row 1 then rests on F and E, which cover the same routing at run time through the traces and the task errors.
 
+- **Logged after the fact (2026-11-08, analysis):** cell A's A5 record reads the adapter count from the wrong attribute (`adapters`; the field is `adapter_files`), so that count is unread. A5's pass condition, that the validator does not raise, is unaffected (section 9.4).
+
 ## 8. Built
 
 - **Commit 8cf11a8:** this file, `experiments/EXP-058/make_candidate.py`, `make_nb_src.py`, `full_manifest.json`, `notebooks/exp058_lora/` (the source `kaggle_eval_adapter.py`, the notebook and `kernel-metadata.json`) and the README row.
@@ -200,10 +202,97 @@ Then hand-write `kernel-metadata.json` from `notebooks/exp056_r1/`'s, with id an
 - **Pushed 2026-11-08, 21:56 UTC**, on the lead's word that a slot was free (`rainm4/gemma4-exp057-r1` COMPLETE at 21:56, r2 still RUNNING). The push was the bare command run once from `notebooks/exp058_lora`, and the guard passed it. The CLI reported "Kernel version 1 successfully pushed." One status call right after gave `KernelWorkerStatus.RUNNING`.
 - **Cost:** the lead accepted the joint worst case, because no E4B task has passed 176 s.
 
+---
+
+## 9. Results, 2026-11-08. Section 4's readings applied as written.
+
+**Source.** Kernel `rainm4/gemma4-exp058-lora` version 1 was COMPLETE at 22:15 UTC. It was downloaded to `runs/EXP-058-a/` and the nested bundle moved up one level. The analysis read the following files with `-I -X utf8`, and copied `summary.jsonl` to `experiments/EXP-058/a/summary.jsonl`:
+- `adapter_check.json`;
+- `python tools/analyze_traces.py runs/EXP-058-a --cap-minutes 8 --max-calls 28`;
+- `python tools/run_forensics.py forensics runs/EXP-058-a`;
+- the kernel log;
+- the per-trace counts from `out/exp058_tasks.py` (names and counts only).
+
+### 9.1 Pre-task checks (from `adapter_check.json`; `failures` is empty, and there is no `compile_error`)
+
+| check | result |
+|---|---|
+| A1 light zip sha | `73aedc88...b051f0`, equal to the recorded value |
+| A2 mount and weights | one mount, `/kaggle/input/notebooks/rainm4/gemma4-exp054-copy-lora`; 1 candidate per file, both sha-matched; the config came from the light zip, the weights were copied in from `sub1/adapters/copy_lora/` |
+| A3 tree equals the full manifest | true (6 files) |
+| A4 `discover_adapters` | `{copy_lora: rank 8, safetensors, 6,676,712 bytes}` |
+| A5 `validate_directory` | did not raise; returned `SubmissionDirectory`. Its adapter count is **unread** (section 9.4 item 1) |
+| B1 `/v1/models` | the base model path and `copy_lora` |
+| B2 LoRA flags | `--enable-lora`, `--max-loras 1`, `--max-lora-rank 8`, `--lora-modules copy_lora=<AGENT_DIR>/adapters/copy_lora`. The notebook passed 8 and 128, and the manifest sizing won, as the source says (section 1) |
+| B3 compile | `swegemma.create_tools` with stub context; registry without the adapter (`registry_has_adapter` false), so the `model_copy` branch ran |
+| B4 root model | `openai/copy_lora`; `api_base` is the server's |
+| B5 live call | `model_version` `copy_lora` |
+| B6 decode probes | adapter 87.2 tok/s (400 tokens in 4.59 s); base 56.2 tok/s (400 in 7.11 s) |
+
+KV pool: 263,360 tokens, max concurrency 40.26. vLLM came up in 392.5 s.
+
+**P is true.** All of A1 to A5 and B1 to B5 passed and were evaluated. None were skipped.
+
+### 9.2 Served model per trace
+
+Each of the 8 traces has 2 unnamed steps (non-model steps). Every model-named step and every tool-call `model_version` was `copy_lora`.
+
+| task | adapter steps | other | share | call versions adapter / other |
+|---|---|---|---|---|
+| fastapi_14301 | 9 | 0 | 1.000 | 7 / 0 |
+| fastapi_14448 | 6 | 0 | 1.000 | 4 / 0 |
+| fastapi_14605 | 14 | 0 | 1.000 | 11 / 0 |
+| httpx_3672 | 16 | 0 | 1.000 | 14 / 0 |
+| requests_7205 | 11 | 0 | 1.000 | 5 / 0 |
+| requests_7309 | 14 | 0 | 1.000 | 9 / 0 |
+| rich_3006 | 13 | 0 | 1.000 | 11 / 0 |
+| rich_3468 | 12 | 0 | 1.000 | 6 / 0 |
+| total | 95 | 0 | 1.000 | 67 / 0 |
+
+The in-kernel cell C gave the same totals (95, 0, 16; 67, 0). **F = 0, and the routing is read.** For contrast, the EXP-033 base traces on the same ids have 76 named steps, all served by the base path.
+
+### 9.3 Endpoints and the reading
+
+| endpoint | EXP-058 | same-tree base (EXP-033 + EXP-038 subset, 16 runs) |
+|---|---|---|
+| E (error tasks) / E_ad | 0 / 0 | 0 |
+| M (malformed-call tasks) | 0 | 0 |
+| Z (tool-free endings: zero calls or no `submit_patch`) | 0 (8 of 8 submitted) | 0 |
+| K (time or call caps) | 0 | 0 |
+| W (over 495 s) | 0; longest 136.8 s | longest 147.2 s |
+
+- **Row 1, Infrastructure:** no. P is true, the routing is read, and F = 0.
+- **Row 2, Bug:** no. Every trigger is zero.
+- **Row 3, Clean: fires.** An adapter-bearing E4B submission runs end to end without an attributable bug, on 8 tasks. The path covered the eval notebook, the runner's `model_copy` routing, the sandbox and the grader.
+
+As section 5 says, this licenses no upload, no dev-48 arm and no effect claim.
+
+### 9.4 Recorded, not read
+
+| field | EXP-058 | EXP-033 (same tree, base model, same ids) |
+|---|---|---|
+| edit_file calls / not found or failed / applied | 20 / 10 / 10 | 17 / 7 / 10 |
+| per task, failed of edit calls | fastapi_14605 3 of 6, httpx_3672 4 of 5, rich_3006 3 of 4, other five 0 of 1 | fastapi_14605 4 of 9, requests_7205 3 of 3, httpx_3672 no edit call, other five 0 of 1 |
+| arg-loss | 0 | 0 |
+| first tool | `run_command` 8 of 8 | `run_command` 6, `read_file` 2 |
+| write_file calls | 0 | 0 |
+| identical repeats | 2 | 4 |
+| compactions | 2 | 1 |
+| resolves | 1 of 8 (fastapi_14301) | 2 of 8 |
+| mean / median / longest wall | 75.7 / 69.1 / 136.8 s | 56.9 / n.r. / 90.7 s |
+| mean calls | 7.25 | n.r. |
+
+- EXP-038 subset edit fails on these ids: 10. "n.r." means not computed for the reference here.
+- **Decode speed.** The adapter probe ran 87.2 tok/s against 56.2 for the base. That is the opposite of the 45 to 50 predicted, but **the order confounds it**. The base probe is the first request after boot in every eval kernel, and it has read 55.6 to 56.4 in all four prior E4B kernels. The adapter probe ran second, after warm-up. EXP-054's 0.168 drop was measured under matched conditions, and this run neither replaces nor reads against it.
+- **Server start.** 392.5 s here, against 322.9 to 348.5 s in the four prior E4B eval kernels: about 44 to 70 s longer with LoRA enabled. That is one boot, not per task.
+
+**Check-cell defect, A5 (found here; it does not change P).** Cell A read the adapter count from `getattr(_sd, 'adapters', [])`. The field of `SubmissionDirectory` is `adapter_files` (`adk_submission/discovery.py:50`), so the recorded 0 is a wrong attribute, not a count. A5 tests that `validate_directory` does not raise, and it did not.
+
+### 9.5 Cost and prediction
+
+- **GPU-h:** the last kernel-log entry is at 1,136.1 s, so **0.316 h**. That is inside the 0.30 to 0.36 point estimate. The 8 tasks took 9.5 min of agent wall (`run_forensics`).
+- **Prediction.** Clean was the most likely row (0.65) and it fired. Resolves landed inside the predicted 1 to 3. The adapter-decode prediction was wrong in direction, and it is not interpretable here (section 9.4).
+
 ## Status
 
-PRE-REGISTERED and BUILT 2026-11-08 (8cf11a8). PUSHED 21:56 UTC: `rainm4/gemma4-exp058-lora` version 1, RUNNING. Next, when the lead reports COMPLETE:
-1. `kaggle kernels output rainm4/gemma4-exp058-lora -p runs/EXP-058-a/`, then move the nested `runs/EXP-058-a/` up one level.
-2. Read `adapter_check.json`.
-3. `python tools/analyze_traces.py runs/EXP-058-a --cap-minutes 8 --max-calls 28`
-4. `python tools/run_forensics.py forensics runs/EXP-058-a`
+COMPLETE 2026-11-08. Pre-registered and built at 8cf11a8; pushed 21:56 UTC; kernel COMPLETE at 22:15 UTC. **Row 3, Clean.** GPU-h 0.316. No follow-up is queued. Where and how to use a LoRA is to be re-derived, and an adapter-zip upload needs the user's decision on verification (section 5).

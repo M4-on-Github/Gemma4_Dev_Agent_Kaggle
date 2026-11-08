@@ -10,6 +10,7 @@ Read from the wheelhouse source on 2026-11-05 (`adk_submission` 0.2.13, vLLM 0.1
   - `--enable-lora` is passed only when at least one adapter mounts.
   - `--max-loras` is the number mounted. The notebook's `max_loras=8` is overridden.
   - `--max-lora-rank` is the largest detected rank rounded up to a vLLM bucket, from 1, 8, 16, 32, 64, 128, 256, 320, 512 (`server.py:58`, round-up at `:62-67`).
+  - Confirmed in a run [V] (EXP-058, 2026-11-08). The notebook passed `max_loras=8, max_lora_rank=128` and one rank-8 adapter. The `build_cmd()` that was run gave `--max-loras 1 --max-lora-rank 8` and one `--lora-modules copy_lora=<AGENT_DIR>/adapters/copy_lora`.
   - Each adapter is passed as `--lora-modules name=path`.
   - A submission without adapters boots with LoRA off.
   - The scorer's own `scripts/inference.py` is not in the wheelhouse. Its README describes `max_loras = max(1, n)` and a rank of the maximum detected, without the bucket [M as to the scorer].
@@ -17,6 +18,8 @@ Read from the wheelhouse source on 2026-11-05 (`adk_submission` 0.2.13, vLLM 0.1
   - An adapter name and `adapter:<name>` resolve to the adapter as the request's model.
   - That holds only when the server is a `VllmServer` with `enable_lora` on (`server.py:432-439`). Otherwise the name resolves to the base model path, with no error: a **silent fall-through**.
   - A direct HTTP request naming an unknown model gets an error from vLLM. Only the registry path can fall through.
+  - **The eval notebook's path, run end to end [V]** (EXP-058, 2026-11-08, E4B, smoke-8). The notebook registers only the base aliases, so `resolve_swegemma_adapter` takes its `model_copy(update={'model': 'openai/<name>'})` branch (`agent_runner.py:75-85`). The copy keeps `api_base`. All 95 model-named trace steps and all 67 tool-call `model_version` values were the adapter name, with none from the base, across 8 tasks through the `Evaluator` and the grader. A trace shows the serving model in `steps[].model_name` and `tool_calls[].extra.model_version`.
+  - **Transport without committing weights** (EXP-058). The adapter's `.safetensors` file is gitignored and fails hygiene, and a 6.7 MB adapter is over the 5 MiB file limit. So the test kernel embedded a zip without the weights and attached the training kernel's output as `kernel_sources`. That output mounts at `/kaggle/input/notebooks/rainm4/<slug>/`, and the kernel copied the file in after a sha256 check (`experiments/EXP-058/make_nb_src.py`).
 - **Model side** [V] vLLM 0.19.1.
   - `Gemma4ForCausalLM` (`gemma4.py:1439-1441`) and `Gemma4ForConditionalGeneration` (`gemma4_mm.py:883-889`) declare LoRA support.
   - `q/k/v` pack into `qkv_proj` and `gate/up` into `gate_up_proj`.
