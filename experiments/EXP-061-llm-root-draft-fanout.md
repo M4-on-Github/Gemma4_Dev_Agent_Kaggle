@@ -87,6 +87,11 @@ The upload itself is the submitter's, after an S-NNN proposal and the user's app
 - **sha256** `98bd942fe17aea64d8aa7211e28b4590207c69f6308a27a0caf3b5aa94947a05`. `experiments/EXP-061/exp061_r.zip` and `out/submission.zip` both give it (`sha256sum`, 2026-11-08 about 23:47 UTC).
 - **Tests:** `python -m pytest -q`, 51 passed.
 
+- **Uploaded** as S-015 (`knowledge/submissions/S-015-result.md`): Kaggle ref 58143906, 2026-11-08 23:57:43 UTC, sha `98bd942f...947a05`, status pending.
+- **Smoke-8 notebook:** `notebooks/exp061_r/` (commit 6065f0d), built with the EXP-052 smoke-8 command; the only changes are `EXP_ID` "EXP-061-r" and the embedded zip, whose base64 decodes to sha `98bd942f...947a05`. `kernel-metadata.json` is EXP-052's with `id` and `title` changed to `rainm4/gemma4-exp061-r`. Pushed 2026-11-08 about 23:58 UTC, after S-015 landed (the user's order): "Kernel version 1 successfully pushed"; first status RUNNING.
+
 ## Status
 
-2026-11-08: built and packed, not uploaded. The smoke-8 notebook `notebooks/exp061_r/` is not built yet. Next: an S-NNN proposal (lead), the approval file (user), the upload (submitter); then build the notebook and push it on the lead's word.
+~~2026-11-08: built and packed, not uploaded. The smoke-8 notebook `notebooks/exp061_r/` is not built yet. Next: an S-NNN proposal (lead), the approval file (user), the upload (submitter); then build the notebook and push it on the lead's word.~~
+
+2026-11-08 23:58 UTC: uploaded (S-015, ref 58143906, score pending); smoke-8 kernel `rainm4/gemma4-exp061-r` v1 RUNNING. Next, when COMPLETE: `kaggle kernels output rainm4/gemma4-exp061-r -p runs/EXP-061-r/`, flatten, `python tools/analyze_traces.py runs/EXP-061-r --cap-minutes 8 --max-calls 45`, `python tools/run_forensics.py forensics runs/EXP-061-r`, apply the smoke-8 rows of section 4.
