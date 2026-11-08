@@ -1,0 +1,16 @@
+name: swe_agent
+# EXP-033 2026-11-05: model gemma-4-31b-it-qat-w4a16-ct -> gemma-4-e4b-it-qat-w4a16-ct, nothing else changed from experiments/EXP-027/candidate-v24-at-8 (small-model prize screen on smoke-8; the prompt was written for the 31B)
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include prompts/system.md
+tools:
+  - run_command
+  - read_file
+  - edit_file
+  - write_file
+  - get_status
+  - submit_patch
+# EXP-056 2026-11-08: skills added (first time any tree declares one). The skill dir holds only SKILL.md and scripts/pick_check.py, a read-only script that prints one check command. Declaring a skill makes the harness add four skill tools and a fixed paragraph about skills to every request (EXP-056 section 2.3).
+# EXP-057 2026-11-08: same skill, script fixed (workspace root found at run time, both argument shapes, newest-file fallback for empty arguments) and the prompt names the exact call shape (EXP-057 section 2.1).
+skills:
+  - skills/check-picker
+generate_content_config: !include configs/sampling.yaml
