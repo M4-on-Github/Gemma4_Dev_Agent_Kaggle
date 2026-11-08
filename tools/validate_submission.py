@@ -407,6 +407,18 @@ def check_adapter(root: Path, where: str, adapter: Any, report: Report) -> None:
     report.warn(f"adapters/{adapter}: shipping an adapter; VERIFY(Q4) logprob canary must pass on the scorer stack")
 
 
+def _reachable_llm_tool_names(tree: AgentTree) -> set[str]:
+    """Union of the plain tool names declared by every LlmAgent in the tree (EXP-061 2026-11-08)."""
+    out: set[str] = set()
+    for a in tree.agents:
+        if a.config.get("agent_class", "LlmAgent") != "LlmAgent":
+            continue
+        tools = a.config.get("tools")
+        if isinstance(tools, list):
+            out.update(t for t in tools if isinstance(t, str))
+    return out
+
+
 def check_agents(tree: AgentTree, report: Report) -> None:
     root = tree.root_dir
     names: dict[str, str] = {}
@@ -508,9 +520,16 @@ def check_agents(tree: AgentTree, report: Report) -> None:
                 if t in instr and not cfg.get("skills"):
                     report.warn(f"{where}: instruction mentions {t} but the agent declares no skills")
         if node.via == "root":
-            if "submit_patch" not in tool_names:
+            # EXP-061 2026-11-08: a root LlmAgent that declares sub_agents is checked over the union of the
+            # tool lists of every reachable LlmAgent, not its own list only, so a root that only hands off
+            # to a pipeline passes; a tree in which no reachable agent can modify files still errors. The
+            # official validator has no such rule (lead check, 2026-11-08).
+            checked = set(tool_names)
+            if cfg.get("sub_agents"):
+                checked = _reachable_llm_tool_names(tree)
+            if "submit_patch" not in checked:
                 report.warn(f"{where}: root agent lacks submit_patch (harness falls back to git diff)")
-            if not ({"edit_file", "write_file", "run_command"} & set(tool_names)):
+            if not ({"edit_file", "write_file", "run_command"} & checked):
                 report.error(f"{where}: root agent has no way to modify files")
         elif "submit_patch" in tool_names:
             report.warn(f"{where}: sub-agent with submit_patch can end the session from inside a sub-call")

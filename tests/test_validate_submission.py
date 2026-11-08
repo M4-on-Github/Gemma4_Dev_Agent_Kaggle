@@ -213,3 +213,31 @@ def test_zero_byte_member_is_error(tmp_path: Path, minimal_submission: Path):
         zf.writestr("prompts/empty.md", "")
     rep = V.validate_zip(z)
     assert any("0-byte member" in e for e in rep.errors)
+
+
+def _delegating_tree(sub: Path, worker_tools: str) -> None:
+    # EXP-061 2026-11-08: an LlmAgent root with tools [] that only hands off to a SequentialAgent pipeline.
+    (sub / "sub_agents").mkdir()
+    (sub / "prompts" / "root.md").write_text("Call transfer_to_agent with agent_name pipeline.\n")
+    (sub / "agent.yaml").write_text(
+        "name: root\nmodel: gemma-4-31b-it-qat-w4a16-ct\ninstruction: !include prompts/root.md\n"
+        "tools: []\nsub_agents:\n  - config_path: sub_agents/pipeline.yaml\n")
+    (sub / "sub_agents" / "pipeline.yaml").write_text(
+        "name: pipeline\nagent_class: SequentialAgent\ndescription: runs the worker\n"
+        "sub_agents:\n  - config_path: sub_agents/worker.yaml\n")
+    (sub / "sub_agents" / "worker.yaml").write_text(
+        "name: worker\nmodel: gemma-4-31b-it-qat-w4a16-ct\ndescription: does the work\n"
+        "instruction: !include ../prompts/system.md\n" + worker_tools)
+
+
+def test_delegating_root_checked_over_reachable_tools(minimal_submission: Path):
+    _delegating_tree(minimal_submission, "tools:\n  - run_command\n  - read_file\n  - edit_file\n"
+                     "  - write_file\n  - get_status\n  - submit_patch\n")
+    rep = V.validate_dir(minimal_submission)
+    assert not any("no way to modify files" in e for e in rep.errors), rep.errors
+    assert not any("root agent lacks submit_patch" in w for w in rep.warnings), rep.warnings
+
+
+def test_delegating_tree_without_editor_still_errors(minimal_submission: Path):
+    _delegating_tree(minimal_submission, "tools:\n  - read_file\n  - get_status\n")
+    assert any("no way to modify files" in e for e in errors_of(minimal_submission))
