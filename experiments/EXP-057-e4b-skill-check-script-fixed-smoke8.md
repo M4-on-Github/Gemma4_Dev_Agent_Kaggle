@@ -124,3 +124,17 @@ Analysis (separate jobs): `kaggle kernels output rainm4/gemma4-exp057-r1 -p runs
 8. **Seen before:** EXP-056 r1's traces were read before this prompt and script were written; EXP-056 r2's traces were not, and the lead allowed its call-shape counts as reference if they came first. None was used.
 9. **Stray untracked directories** (`experiments/EXP-053-candidate-tmp/`, `experiments/EXP-032-t4-tmp/`, the `.keep` files, `out/exp056_dry/`) are not part of this experiment and are not committed.
 10. **A cached `__pycache__`** appeared in the candidate directory when the tests ran (git-ignored); the zip is built from a clean copy.
+
+## 8. Built
+
+Built 2026-11-08 after the pre-registration commit `a6df3fb` (tree, tests, readings, README row). Sections 1 to 7 are unchanged except one line-range citation in section 1 (`810-814` to `810-820`, a numbering correction made before the commit).
+
+- **Clean pack source:** `out/exp057_pack/` (6 files copied from `experiments/EXP-057/candidate-f/` with `cp`, no `__pycache__`; the files are byte for byte the committed ones). `validate_submission.py --strict` on it: one error, the 18.00 h packing gate, plus 2 warnings.
+- **Validate / pack:** `pack_submission.py --src out/exp057_pack --out dist/EXP-057-f.zip --skip-budget-gate --allow-warnings`: 6 reachable files, `RESULT: VALID (0 errors, 3 warnings)`, 7.2 KiB. The 3 warnings: skill scripts rely on `run_skill_script` (VERIFY(Q1)), the packing gate (`120 x (8 + 1.0) min = 18.00 h`), the 240 s timeout. Members: `agent.yaml`, `configs/sampling.yaml`, `eval_config.yaml`, `prompts/system.md`, `skills/check-picker/SKILL.md`, `skills/check-picker/scripts/pick_check.py`. **Zip sha256 `e402d6dd68338b098858d5baf6d9270f32cd2722bb4bb9ec89860b72346362e6`** (`sha256sum` agrees). Screen build, never uploaded.
+- **Notebooks:** `notebooks/exp057_r1/kaggle_eval_l4x4.ipynb` (`EXP_ID = "EXP-057-r1"`) and `notebooks/exp057_r2/kaggle_eval_l4x4.ipynb` (`EXP_ID = "EXP-057-r2"`); both `RUN_GOLD_CONTROL = False`, `N_TASKS = 8`, `MODEL_NAME = "gemma-4-e4b-it-qat-w4a16-ct"`, `TASK_IDS` = the 8 smoke ids, 9,804 base64 characters each, same zip.
+- **`kernel-metadata.json`** in each directory: the EXP-056 r1 file with only `id` (`rainm4/gemma4-exp057-r1`, `rainm4/gemma4-exp057-r2`) and `title` changed (`diff` confirms), written after each build (the builder does not create it).
+- **Kernel ids:** `rainm4/gemma4-exp057-r1`, `rainm4/gemma4-exp057-r2`.
+
+## Status
+
+**BUILT 2026-11-08, not yet pushed.** Pre-registered at `a6df3fb`. Zip `e402d6dd...6362e6`. r1 push and r2 push are recorded in section 8.1 when done; analysis is a separate job.
