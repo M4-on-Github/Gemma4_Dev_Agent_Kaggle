@@ -169,6 +169,8 @@ Built 2026-11-08 after the pre-registration commit `8e40ffc` (tree, readings and
 
 Committed as `9a51a11` (hygiene OK, 5 files) before the push; the pre-registration is `8e40ffc`. `kaggle kernels push -p notebooks/exp056_r1` on 2026-11-08: "Kernel version 1 successfully pushed", kernel `rainm4/gemma4-exp056-r1`, first status `RUNNING`. Pushed once, not re-run, not waited on. r2 (`rainm4/gemma4-exp056-r2`) is built and committed, not pushed: EXP-054 v2 holds the other kernel slot. Analysis is a separate job once each status is COMPLETE; the T reading needs both runs.
 
+**r2 push (lead's job, 2026-11-08 after 20:31 UTC, r1 and EXP-054 v2 both COMPLETE):** `kaggle kernels push -p notebooks/exp056_r2`: "Kernel version 1 successfully pushed", kernel `rainm4/gemma4-exp056-r2`, first status `RUNNING`. Pushed once under the standing approval for round 3's two runs, not re-run, not waited on.
+
 ## Status
 
-2026-11-08: **r1 PUSHED (`rainm4/gemma4-exp056-r1`, version 1, RUNNING), r2 built and unpushed, analysis pending.** Zip `1a591945...a33126`. r2 push command, for the lead when a kernel slot is free: `kaggle kernels push -p notebooks/exp056_r2`.
+2026-11-08: **r1 PUSHED and COMPLETE (`rainm4/gemma4-exp056-r1`); r2 PUSHED (`rainm4/gemma4-exp056-r2`, version 1, RUNNING), analysis of r2 pending.** Zip `1a591945...a33126`. r2 push command, for the lead when a kernel slot is free: `kaggle kernels push -p notebooks/exp056_r2`.
