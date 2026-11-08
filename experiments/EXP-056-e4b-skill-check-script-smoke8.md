@@ -158,8 +158,17 @@ Analysis (separate jobs): `kaggle kernels output rainm4/gemma4-exp056-r1 -p runs
 
 ## 8. Built
 
-(recorded below after the build; sections 1 to 7 are unchanged)
+Built 2026-11-08 after the pre-registration commit `8e40ffc` (tree, readings and README row). Sections 1 to 7 are unchanged.
+
+- **Validate / pack:** `pack_submission.py --skip-budget-gate --allow-warnings`: 6 reachable files, `RESULT: VALID (0 errors, 3 warnings)`, 5.7 KiB. The 3 warnings: skill scripts rely on `run_skill_script` (VERIFY(Q1), the ToolNotFoundError report), the packing gate (`120 x (8 + 1.0) min = 18.00 h`), and the 240 s timeout (the EXP-033 situation). Members: `agent.yaml`, `configs/sampling.yaml`, `eval_config.yaml`, `prompts/system.md`, `skills/check-picker/SKILL.md`, `skills/check-picker/scripts/pick_check.py` (both skill files are in the zip). **Zip sha256 `1a591945dc582d00d86bd64e91f2a545155b2617612180da230fa01c96a33126`.** Screen build, never uploaded.
+- **Notebooks:** `notebooks/exp056_r1/kaggle_eval_l4x4.ipynb` (`EXP_ID = "EXP-056-r1"`) and `notebooks/exp056_r2/kaggle_eval_l4x4.ipynb` (`EXP_ID = "EXP-056-r2"`); both `RUN_GOLD_CONTROL = False`, `N_TASKS = 8`, `MODEL_NAME = "gemma-4-e4b-it-qat-w4a16-ct"`, `TASK_IDS` = the 8 smoke ids, 7,844 base64 characters each, same zip.
+- **`kernel-metadata.json`** in each directory: copied from `notebooks/exp055_v/`, only `id` (`rainm4/gemma4-exp056-r1`, `rainm4/gemma4-exp056-r2`) and `title` changed, written after each build (the builder overwrites it).
+- **Kernel ids:** `rainm4/gemma4-exp056-r1`, `rainm4/gemma4-exp056-r2`.
+
+### 8.1 Push
+
+(r1 push record below)
 
 ## Status
 
-2026-11-08: **PRE-REGISTERED, not yet built.**
+2026-11-08: **BUILT. r1 push pending (this commit), r2 built and unpushed.** Zip `1a591945...a33126`. r2 push command, for the lead when a kernel slot is free: `kaggle kernels push -p notebooks/exp056_r2`.
