@@ -171,6 +171,54 @@ Committed as `9a51a11` (hygiene OK, 5 files) before the push; the pre-registrati
 
 **r2 push (lead's job, 2026-11-08 after 20:31 UTC, r1 and EXP-054 v2 both COMPLETE):** `kaggle kernels push -p notebooks/exp056_r2`: "Kernel version 1 successfully pushed", kernel `rainm4/gemma4-exp056-r2`, first status `RUNNING`. Pushed once under the standing approval for round 3's two runs, not re-run, not waited on.
 
+---
+
+## 9. Results
+
+### 9.1 r1 alone (2026-11-08, screener; r2 not read)
+
+Sections 1 to 8 are unchanged. Applied: the "if only r1 has landed" paragraph of section 4, rows 0 and 1 only, at the per-run thresholds as written. Source: `rainm4/gemma4-exp056-r1` version 1, output downloaded to `runs/EXP-056-r1/` (nested one level), `tools/analyze_traces.py --cap-minutes 8 --max-calls 28`; per-task rows committed at `experiments/EXP-056/r1/summary.jsonl`.
+
+**Cost.** Kernel log span 1010 s (last entry 1010.97 s; vLLM up at 465.9 s after a 348.5 s start) = **0.281 GPU-h**. Agent phase about 528 s.
+
+**Per-task (8 ids).**
+
+| Task | calls | wall s | edit applied | patch | script calls | resolved |
+|---|---|---|---|---|---|---|
+| requests_7309 | 0 | 16.0 | no | empty | 0 | no |
+| requests_7205 | 11 | 67.4 | yes | yes | 2 | no |
+| fastapi_14448 | 6 | 84.3 | yes | yes | 0 | no |
+| fastapi_14301 | 6 | 32.7 | yes | yes | 1 | yes |
+| httpx_3672 | 11 | 113.6 | yes | yes | 1 | no |
+| fastapi_14605 | 0 | 15.5 | no | empty | 0 | no |
+| rich_3468 | 16 | 152.8 | yes | yes | 1 | no |
+| rich_3006 | 6 | 38.3 | yes | yes | 1 | yes |
+
+Resolved 2 of 8 (recorded, not read). Mean wall 65.1 s, longest 152.8 s, no task capped, none past 495 s, `error` in 2 of 8 (both the tool-free endings below), stray file in 0 patches, malformed turns 0.
+
+**Row 0 (infrastructure, r1 alone): FIRED as written, through the S_x clause.** S_x = 2 of 6 script calls returned `status: error` (an error object with an error code): one `SKILL_NOT_FOUND` (fastapi_14301) and one `INVALID_ARGUMENTS` (requests_7205). `error` was 2 of 8, which is not more than 2, so that clause did not fire; the tree ran. A mechanism result: it decides nothing about the package, and the T reading is not made from r1.
+
+**Row 1 (harm, r1 alone): did not fire.** A_e = 6 (threshold: below 6), mean wall 65.1 s (above 140), capped 0 (3 or more), longest 152.8 s (past 495), stray file 0 (2 or more), malformed 0 (2 or more). A_e is 6 not 7 because both tool-free endings made no edit.
+
+**Process counts (recorded, not read).**
+
+- Ad = 5 of 8 task-runs called the script (blind prediction: 12 to 14 of 16, i.e. 6 to 7 of 8). S_c = 6 calls (requests_7205 made two). S_x = 2.
+- Of the 4 script calls that did not error: 2 were made with no arguments (httpx_3672 and rich_3006) and 2 with an argument list that carried workspace paths (rich_3468, and the second call in requests_7205); all 4 returned the notice line, the picker's "no pick" output.
+- S_m: not countable as designed (no check line was ever printed).
+- `load_skill`, `list_skills`, `load_skill_resource` calls: 0 across the 8 traces (the injected paragraph's "MUST `load_skill` first" was not followed, as the prompt asked).
+- Tool-free endings: 2 (requests_7309 and fastapi_14605, 0 calls, 3 nudges, no `submit_patch`, error "completed without calling submit_patch"). No fenced-text endings otherwise. EXP-055 had 1 (fastapi_14448, which this time made calls).
+- T = 0 of 8 (reference 3). The last `python` or `pytest` after the last edit: rich_3006 ran a pytest on a path that does not exist (exit 4, does not count); requests_7205 ran a `python` print of the notice line (not a test, not an import of an edited module); httpx_3672 ran the script name as a shell command (exit 127); fastapi_14448 ran the repo's `scripts/test.sh` (exit 2, collection errors from test-only packages, not a `python` or `pytest` command by the text rule); rich_3468 and fastapi_14301 ran no check after the edit.
+- V1 = 2 of 8 by the literal rule (reference 7): requests_7205 (the print) and rich_3006 (the exit-4 pytest). Neither tested the edit. G = 0 (no run ended with exit 0 or 1).
+
+**Why the script gave nothing (found by reading the traces and the harness sandbox source, not by a kernel experiment).**
+
+1. The picker's root is the fixed string `/workspace`. In the Kaggle subprocess sandbox the commands' working directory is a per-task temp workspace and the literal `/workspace` is rewritten only inside command strings, so the script saw no files and printed the notice line every time, including on well-formed calls (rich_3468, requests_7205 second call). The pytest rootdir in the traces is a temp workspace path, consistent with this. Neither the local dry run (section 2.4) nor the importability filter exercised this; the dry run used a workspace laid out at `/workspace`. This is an inference from the source; the kernel did not print the script's root.
+2. The model called the skill by a name other than the declared `check-picker` (fastapi_14301, `SKILL_NOT_FOUND`) and passed `args` in a shape the tool rejects (requests_7205, `INVALID_ARGUMENTS`: a list together with another argument field), and twice called with no arguments. The harness side is fine: the skill is found when named right, the script runs, and error responses are well formed. No ToolNotFoundError and no "script not found" in any trace (VERIFY(Q1) for the skill path is answered: it runs, through `run_skill_script`).
+
+**Blind prediction against outcome.** Ad 5 of 8 against 6 to 7; T 0 against 4 to 5.5 per run; G 0 as predicted; mean wall 65.1 s against 70 to 100 s (inside the harm bound, below); S_x 2 against 0 (the miss). The compliance prediction missed because the arguments the model had to supply were often wrong or absent, and the outcome the package exists to change did not occur because the picker returns the notice. This is a defect of the build, not a result about the idea.
+
+**What r1 licenses.** Nothing on T. The package as built cannot test the hypothesis: every pick is the notice line. **r2 runs the identical zip (`1a591945...a33126`) and carries the same defect;** its T would be read against the same cause, so it is a second mechanism sample (script-call shapes, skill-name errors, tool-free rate), not a T test. Rows 2 to 6 are applied only if r2's analysis is run, and then with the caveat that the picker returned the notice. A fixed script (derive the root from the process working directory or `PYTHONPATH` rather than a constant; accept both argument shapes; name the skill exactly in the prompt) is a new tree and a new round, which needs the user's word (`knowledge/lessons-e4b-loop.md`). Not committed or built here.
+
 ## Status
 
-2026-11-08: **r1 PUSHED and COMPLETE (`rainm4/gemma4-exp056-r1`); r2 PUSHED (`rainm4/gemma4-exp056-r2`, version 1, RUNNING), analysis of r2 pending.** Zip `1a591945...a33126`. r2 push command, for the lead when a kernel slot is free: `kaggle kernels push -p notebooks/exp056_r2`.
+2026-11-08: **r1 PUSHED, COMPLETE and ANALYSED (`rainm4/gemma4-exp056-r1`, 0.281 GPU-h): section 4 row 0 fired as written (S_x = 2: `SKILL_NOT_FOUND`, `INVALID_ARGUMENTS`), row 1 did not; Ad 5 of 8, T 0 of 8, G 0, resolved 2 of 8 not read; mechanism result, the picker returned the notice line every time (fixed root `/workspace` against the sandbox temp workspace).** r2 PUSHED (`rainm4/gemma4-exp056-r2`, version 1, RUNNING), same zip and same defect, analysis pending and not a T test. Zip `1a591945...a33126`. See section 9.1.
