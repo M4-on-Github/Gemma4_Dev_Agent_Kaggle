@@ -145,6 +145,50 @@ Sections 1 to 7 are unchanged. Before the push, `git status --short` on `noteboo
 - **Status seen once, right after the push:** `KernelWorkerStatus.RUNNING`.
 - **Stop rule:** no re-run of a failed kernel without the user's word. The download and analysis is a separate job, dispatched when the status says COMPLETE: `kaggle kernels output rainm4/gemma4-exp045-p -p runs/EXP-045-p/`, move the nested directory up, `python tools/analyze_traces.py runs/EXP-045-p --cap-minutes 8 --max-calls 28`, then the section 3 endpoints and the section 4 rows as written. Row 0 first: any `err` string, in particular the compaction summarizer error seen on the EXP-052 `SequentialAgent` root, which this single-agent tree does not share.
 
+## 9. Results, 2026-11-08. Section 4's readings applied as written, row 0 first, nothing above this line revised.
+
+Run: `rainm4/gemma4-exp045-p` v1, downloaded to `runs/EXP-045-p/` (gitignored), `python -I -X utf8 tools/analyze_traces.py runs/EXP-045-p --cap-minutes 8 --max-calls 28`. Per-task summary committed as `experiments/EXP-045/summary.jsonl`.
+
+### 9.0 Verdict: **row 5 fires. C = 3 of 8, no decision.** Not killed, not promoted; the edit is not kept (row 4 not met), so round 1 starts from the EXP-033 tree.
+
+Rows in order: **row 0** no (all 8 `error` fields null, E4B model, tree ran, 8 of 8 ended on `submit_patch`); **row 1** no (stray file in 1 of 8 patches, `rich_3006`; 0 empty patches); **row 2** no (C = 3, above 2); **row 3** no (mean wall 54.4 s, 0 of 8 capped, longest 84 s); **row 4** no (C below 6); **row 5** yes (C 3 to 5).
+
+### 9.1 Endpoints (section 3)
+
+| id | wall s | last `edit_file` step | after it | class |
+|---|---|---|---|---|
+| fastapi_14301 | 41 | 5 | `python3 -c` step 6, exit 1, `ImportError` on the script's own first import line | E3 (uninformative) |
+| fastapi_14448 | 51 | 10 | `python3 -c` step 11, exit 0 | **C** |
+| fastapi_14605 | 83 | 8 (steps 9 to 13 are five failed `edit_file` calls, same "occurs 2 times" error) | no run | none |
+| httpx_3672 | 84 | 6 | `python3 -c` step 7, exit 1, `SyntaxError` raised inside the edited module (the file imported by the script), then `submit_patch` step 8 | **C** (see sensitivity) |
+| requests_7205 | 30 | 5 | `submit_patch` step 6, no run | none |
+| requests_7309 | 34 | 5 | `write_file /tmp/repro.py` step 6 refused, `python3 /tmp/repro.py` steps 7 and 8 exit 2 | E3 |
+| rich_3006 | 50 | 6 | `python3 /tmp/repro.py` step 7 exit 2, `write_file` of the same path step 8 refused, `write_file repro.py` (workspace) step 9 ok, `python3 repro.py` step 10 exit 0 | **C**, and the stray file |
+| rich_3468 | 62 | 9 | `python3 /tmp/repro.py` step 10 exit 2, `write_file` step 11 refused | E3 |
+
+- **E1 (C) = 3 of 8** (fastapi_14448, httpx_3672, rich_3006). Blind prediction was 4 (3 to 5).
+- **E2 (I) = 3 of 8.** No pytest, unittest or `tests/` run after any last edit (the 17 `run_command` calls were 8 python, 9 grep or git grep), so I = C. References: 2 of 8 (EXP-038), 1 to 2 of 8 (EXP-033).
+- **E3 (executed, uninformative) = 3 of 8** (fastapi_14301, requests_7309, rich_3468); recorded, not read. **Attempted a python run after the last edit: 6 of 8.** Ran nothing after the last edit: 2 of 8 (requests_7205, fastapi_14605).
+- **E4:** mean wall 54.4 s (EXP-033 56.9 s, EXP-038 78.3 s on the same ids), median 0.84 min, p90 1.38 min, no task capped, none past 495 s, 0 nudges, 0 compactions.
+- **E5:** stray files in patches 1 of 8 (`rich_3006`, the workspace `repro.py`), empty patches 0 of 8, applied-edit tasks 8 of 8.
+- **E6 (recorded, not read):** resolves 2 of 8 (fastapi_14301, rich_3006), the same two as the references. Malformed turns 0%, edit failures 9.4% of calls (all five of fastapi_14605's), spin 5.7%.
+
+**Sensitivity, stated because one task decides the row.** httpx_3672 is counted in C because a `SyntaxError` raised in the edited module is not one of the environment or launcher failures that EXP-042 section 2's sharpened rule excludes (`ModuleNotFoundError` or `ImportError` collection errors, `command not found`, a missing target file, `no tests ran`), and the run did show a defect in the edit. If it is read as uninformative, C = 2 and row 2 would fire (killed as a prompt-only lever). The row is applied as written, with the task in. The reading does not turn on it for the loop, since the run ended in `submit_patch` regardless: the agent ran the check, saw the module fail to import, and submitted.
+
+### 9.2 Findings outside the readings (new, none revises section 2 or 4)
+
+1. **The `/tmp` location of the bullet is infeasible through `write_file`.** At 3 of 8 tasks (requests_7309 step 6, rich_3468 step 11, rich_3006 step 8) the agent wrote the reproduction with `write_file` instead of `run_command` (the bullet said both through `run_command`) and the tool refused the path as escaping the workspace root; the following `python3 /tmp/repro.py` failed with exit 2 (file absent). Two of these three (requests_7309, rich_3468) ended with no informative run; rich_3006 recovered by writing into the workspace, which left the stray file. This is a defect of the EXP-045 wording (section 7 did not list it), not of the lever.
+2. **Enforcement bound, not an effect:** the agent attempted the reproduction in 6 of 8 tasks, against 1 to 2 of 8 informative runs of any kind in the references; the rule is acted on, and the loss is in the path and the script, not in refusal.
+3. **Edit mechanics, the other cost:** fastapi_14605 made five consecutive failed `edit_file` calls (steps 9 to 13) on one non-unique match and then submitted; it is one of the three tasks that Part B of the round-1 diagnosis (EXP-053 section 1) counts.
+
+### 9.3 What this licenses
+
+It does not kill the lever as a prompt-only one (row 2 not met) and does not promote it (row 4 not met). A repair of the path (script written by `run_command` into `/tmp`, or a workspace-excluded location) would be a second pre-registered smoke-8, not an amendment to this one. Not proposed for round 1: EXP-042 gave no trace support that a check helps on the E4B, and C here is a compliance count.
+
+### 9.4 GPU
+
+Kernel log span 892.9 s (last log entry, the `__results__.html` write) = **0.248 GPU-h**, below the 0.25 to 0.45 h estimate. Counts against the 2026-11-08 ceiling of 4.0 GPU-h (`knowledge/user-decisions.md`).
+
 ## Status
 
-2026-11-08: **PUSHED, RUNNING** (approved by the user 2026-11-08, 86304ae). Kernel `rainm4/gemma4-exp045-p` version 1, status seen right after the push `KernelWorkerStatus.RUNNING`, at about 15:10 UTC (see 8.1). Zip `6f30306a...3e211`, notebook `notebooks/exp045_p/`. Next: when `kaggle kernels status rainm4/gemma4-exp045-p` says COMPLETE, the lead dispatches the download and analysis as a separate job. No re-run of a failed kernel without the user's word.
+2026-11-08: **ANALYSED, ROW 5 FIRED: C = 3 of 8, no decision** (see 9.0; C = 2 and row 2 on the one-task sensitivity in 9.1). Kernel `rainm4/gemma4-exp045-p` v1 COMPLETE, 0.248 GPU-h. Not killed, not promoted, not kept (round 1 of the E4B edit loop starts from the EXP-033 tree). Finding 9.2 item 1: the `/tmp` wording is infeasible through `write_file`.
