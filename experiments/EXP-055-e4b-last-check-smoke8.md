@@ -121,4 +121,46 @@ Committed as `9601dd0` (hygiene OK, 9 files) before the push. Before it, no othe
 
 ## Status
 
-2026-11-08: **PUSHED** (kernel `rainm4/gemma4-exp055-v`, version 1, RUNNING at first check; standing approval of `knowledge/user-decisions.md` 2026-11-08), analysis pending. Zip `9d9b1914...8b124f`.
+2026-11-08: **ANALYSED, ROW 3 FIRED: no decision, keep-base** (kernel `rainm4/gemma4-exp055-v`, version 1, COMPLETE, 0.302 GPU-h by kernel log span; V1 = 7, G = 0). Section 9 below. Zip `9d9b1914...8b124f`. Nothing further runs from this experiment.
+
+---
+
+## 9. Results, 2026-11-08. Section 4's readings applied as written.
+
+Kernel `rainm4/gemma4-exp055-v` version 1, COMPLETE. Output downloaded with `kaggle kernels output rainm4/gemma4-exp055-v -p runs/EXP-055-v` (the CLI nests the bundle under `runs/EXP-055-v/runs/EXP-055-v/`; analysed there, nothing moved). `python -I -X utf8 tools/analyze_traces.py runs/EXP-055-v/runs/EXP-055-v --cap-minutes 8 --max-calls 28`. Copy of the summary: `experiments/EXP-055/v/summary.jsonl`.
+
+### 9.1 Numbers
+
+- **Cost:** kernel log span 1,088.8 s = **0.302 GPU-h**. Inside the 0.25-0.33 expectation.
+- **Per task** (wall s, calls, `n_edit_fail`, resolved): requests_7309 137.9, 4, 0, no; requests_7205 166.5, 4, 1, no; fastapi_14448 17.3, 0, 0, no; fastapi_14301 44.8, 7, 0, yes; httpx_3672 69.0, 10, 0, no; fastapi_14605 88.5, 10, 3, no; rich_3468 43.1, 5, 0, no; rich_3006 36.2, 3, 0, yes.
+- **Aggregates:** resolved 2 of 8 (the same two as in every earlier E4B run; recorded, not read); empty patches 1 (fastapi_14448); `error` non-null 1 of 8 (fastapi_14448, "completed without calling submit_patch"); malformed turns 0; compactions 0; time or call cap hit 0; scratch in patch 0 of 8; `submit_patch` called 7 of 8. Nudges: 3 on fastapi_14448, 2 on fastapi_14301, 0 elsewhere. Wall mean **75.4 s**, longest 166.5 s.
+- **E1, V1 (section 2.2 rule, from tool order) [H]:** **7 of 8.** Every task that made calls ran a `python` or `pytest` command after its last applied `edit_file` and before `submit_patch`; the one task without it is fastapi_14448, which made no tool call at all. Reference maximum 6.
+- **E2, G:** **0.** No check output named a SyntaxError, IndentationError, NameError, ImportError or ModuleNotFoundError in a patched file; Rp (repairs after such an error) is therefore 0 and not applicable.
+- **E3, A_e and P:** A_e = 7 (every task with calls has an applied edit), P = 7. Patches in a gold-patch file: 6 of 8 (httpx_3672 `src/httpx/` and rich_3468 `rich/live.py` are wrong-file landings again; fastapi_14448 has no patch).
+- **E4, W:** mean 75.4 s, longest 166.5 s (requests_7205), no task near 495 s, no cap hit.
+- **E5, recorded:** calls per task 4, 4, 0, 7, 10, 10, 5, 3 (mean 5.4).
+- **E6, recorded:** malformed 0; stray file 0 of 8; resolves not read.
+- **Check quality, recorded [H]:** of the 7 checks, 3 ran no tests (exit 4 on httpx_3672, exit 5 on fastapi_14605 and rich_3468, each a wrong path or working directory) and 1 stopped at a collection error that was there before the edit (fastapi_14301, exit 2). Three checks gave a usable signal.
+- **Format failure on fastapi_14448 [H]:** 0 tool calls. Four of its `final` messages (steps 4, 7, 10 and 13) each contained a fenced JSON block holding a `tool_call`, written as text; the harness nudged at steps 5, 8 and 11 and the run ended with an empty patch and `error` set. This is class F in a form not seen before: 1 of 8 here, 0 in about 46 earlier E4B traces searched with the escaped `"tool_call"` string. It occurs before any check, so the check sentence is not an evident cause, but a tree effect cannot be excluded at n = 1 [I].
+
+### 9.2 Readings applied, in order
+
+- **Row 0:** not fired (1 `error` in 8, not more than 2; the tree ran and every stage started).
+- **Row 1:** not fired (A_e 7 is not below 6, mean wall 75.4 s is not above 140 s, no task capped, none past 495 s, no stray file, malformed 0).
+- **Row 2:** not fired (V1 = 7 is above 6).
+- **Row 3: FIRED, V1 = 7.** Partly enforced: **no decision, keep-base.**
+- Rows 4 and 5 are not reached.
+
+**Blind prediction (V1 = 7, range 6 to 8, G = 0, mean wall 65 to 85 s, rows 3 or 4):** V1 = 7, G = 0 and wall 75.4 s all landed on the prediction; the row was one of the two named.
+
+### 9.3 What it does and does not say
+
+The sentence is obeyed by every task that made calls (7 of 7), and the 8th task never reached it. Against a reference maximum of 6 the count is 7, which section 4 reads as no decision: 7 is above the base rate by one task, and n = 8 cannot tell that from noise. The tree is not kept. Two things are worth carrying: (a) 3 of the 7 checks ran no tests, so compliance with the wording is not the same as a check that tests the edit; more wording on whether to run a check is unlikely to be the next gain; (b) G was 0 and, with a base rate of 1 in 32, a 0 in 8 shows nothing about the repair half. The fastapi_14448 failure is a new class F form with one observation; the base rate across more runs is unknown.
+
+### 9.4 Cost and ledger
+
+0.302 GPU-h (log span 1,088.8 s). Loop ledger today: EXP-045 0.248 + EXP-053 0.281 + EXP-055 0.302 = 0.831 h of about 2.8 h (about 1.97 h left under the loop's share; the day's 4.0 h ceiling is the lead's to count).
+
+### 9.5 Report line
+
+Row 3 fired (V1 = 7, G = 0): no decision, keep-base; the second keep-base round in a row (EXP-053 row 3, EXP-055 row 3), so the loop stops by its rule. No round 3 is pre-registered in this job; the next design is the lead's.
