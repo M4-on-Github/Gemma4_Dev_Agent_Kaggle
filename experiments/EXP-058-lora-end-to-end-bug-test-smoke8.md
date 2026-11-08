@@ -187,11 +187,16 @@ Then hand-write `kernel-metadata.json` from `notebooks/exp056_r1/`'s, with id an
 - **One tree, one adapter, root agent only.** The per-sub-agent case is a desk fact (section 1), not tested.
 - **Small n.** 8 tasks cannot detect a rare bug. Row 3 bounds only frequent failures.
 - **Sandbox.** It is the Kaggle `subprocess` sandbox, as in every E4B smoke run, not the scorer's Docker.
+- **A gap in check B (found before the push; the readings are unchanged).** Suppose `compile_submission` raises an exception whose class name is not adapter-, model- or validation-related. Cell B then records `compile_error`, skips B4 and B5, and leaves `failures` empty, so P would read true with the routing checks not evaluated. If `adapter_check.json` carries `compile_error`, the analysis reports B4 and B5 as not evaluated. Row 1 then rests on F and E, which cover the same routing at run time through the traces and the task errors.
 
 ## 8. Built
 
-Pending at writing: the commit, the push and the kernel id are recorded below after the push.
+- **Commit 8cf11a8:** this file, `experiments/EXP-058/make_candidate.py`, `make_nb_src.py`, `full_manifest.json`, `notebooks/exp058_lora/` (the source `kaggle_eval_adapter.py`, the notebook and `kernel-metadata.json`) and the README row.
+- **Kernel:** id `rainm4/gemma4-exp058-lora`, kernel_sources `rainm4/gemma4-exp054-copy-lora`, model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`, NvidiaL4, no internet.
+- **Notebook:** embeds the light zip, sha `73aedc88...b051f0`, which the check read back from the built notebook. The parameter cell has `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`, `EXP_ID = "EXP-058-a"` and `TASK_IDS` = the 8 smoke-8 ids.
+- **Local checks:** `python -m pytest`, 49 passed; repo hygiene OK.
+- **Push held.** One status call each at 21:46 UTC found `rainm4/gemma4-exp057-r1` and `rainm4/gemma4-exp057-r2` both RUNNING, so both GPU slots were in use. Per the lead's slot note there was no wait and no polling.
 
 ## Status
 
-PRE-REGISTERED and BUILT 2026-11-08; not yet pushed.
+PRE-REGISTERED and BUILT 2026-11-08 (8cf11a8). NOT PUSHED: both kernel slots were busy at 21:46 UTC, and the push waits for the lead's word that a slot is free.
