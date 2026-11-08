@@ -205,3 +205,8 @@ User, verbatim: "I won't be wrting it right now. what next? do we having things 
 User, verbatim: "go ahead"
 - Given after the lead's plain explanation of EXP-052 (D-007 tree T2: reader, five tool-less drafters in parallel, applier; E4B; smoke-8; never uploaded) with its cost (0.40 GPU-h point, 0.35 to 0.46, conditional worst case 1.19) and its limits (a feasibility screen; the edit-landing floor is EXP-033's 6 of 8, so it can show only "not worse"; P of a board gain about 0.1 [I]).
 - Read by the lead as: one push of `notebooks/exp052_t2` (kernel rainm4/gemma4-exp052-t2) as built in c66d68a, with no re-run of a failed kernel without asking (EXP-052 section 2.4 stop rule). It does not approve the dev-48 arm that row 4 would recommend; that needs a separate word.
+
+## 2026-11-08: the guard admits the main competition source on a zero-task probe; the EXP-047 canary re-run is approved
+User action: ran `apply_canary_compsource_rule.py` (the lead's scratchpad script), which patched `.claude/hooks/guard_push.py` and printed SELF-TEST OK.
+- The lead's message before it said: "Shall I go ahead with the canary re-run? If yes, apply the script first. Then the experimenter will record the change in EXP-047, attach the dataset and push once." The user applied the script and wrote no words; **read by the lead as yes to that one re-run**, the script being the stated precondition of a yes.
+- Scope: one push of `notebooks/exp047_q4canary` with `competition_sources` set to the main competition alone and nothing else changed (EXP-047 section 9 fix; reading A0's "re-run once"). GPU under D-006 item 1: 1.0 + 0.040 (v1) spent; the re-run 0.20 to 0.35 expected, capped at 0.5. No further re-run without asking.
