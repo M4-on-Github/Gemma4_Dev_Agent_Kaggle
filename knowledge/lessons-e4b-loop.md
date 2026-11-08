@@ -30,13 +30,26 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
 - **Confidence:** [V] for the refusal; the check-rate reading is row 5, no decision.
 - **Outcome:** not kept (row 5). Round 1 starts from the EXP-033 tree.
 
-## Round 1: EXP-053 (pre-registered 69092da, pushed 29d9035, kernel `rainm4/gemma4-exp053-r` v1)
+## Round 1: EXP-053 (pre-registered 69092da, pushed 29d9035, analysed bdea22a)
 
 - **Diagnosis first (zero GPU, 32 task-runs, EXP-053 section 1):** over the 24 unresolved runs, class C (right file, wrong fix) 12, A (wrong file) 8, B (an edit failing at one place) 4; no check after the last edit in 12 of 24; a prose action in 1 of 32 (2 counting the EXP-052 compaction-crash ending). Failed `edit_file` calls by run 7, 10, 3, 5; resends of the same `old_string` 3, 4, 0, 2, which `n_identical_repeats` does not count.
 - **Edit (Arm R):** one prompt bullet. After a failed edit, never resend the same `old_string`; on not-found, re-read the lines and copy them exactly; on more-than-once, start at a unique line above the change with at least three whole lines; after two failures at one place, make a smaller edit.
 - **Cue:** a failed `edit_file` followed by a resend of the same `old_string` (requests_7205 EXP-033 steps 8 to 10; httpx_3672 EXP-038 steps 7 to 9; fastapi_14605 EXP-038 steps 9 to 11, EXP-045 steps 10 to 12, EXP-033 steps 14 to 15).
-- **Lesson (pending):** an edit that fails and is resent unchanged wastes turns; whether a prompt rule stops the resend on the E4B is what EXP-053 reads (resends R_x; failed edits N_f).
+- **Lesson:** a prompt line against resending a failed `old_string` does not stop it on the E4B. The model changed its string in 4 of 6 retries and resent in the 2 that mattered (fastapi_14605 step 11, httpx_3672 step 11), so more wording on this is the wrong next move. A harness reply naming the other occurrences would be a tool-side change, not reachable from `submission/`.
+- **Measured:** R_x 2 (base 3, 4, 0, 2); N_f 8 (base 7, 10, 3, 5); non-empty patches 8 of 8; mean wall 66.8 s, longest 150.5 s; no errors, nudges, caps or stray files; resolves 2 of 8, the same two, not read. 0.281 GPU-h (kernel-log span). R_x is a hand count by EXP-053 section 2.2.
 - **Evidence:** base resends 3, 4, 0, 2 over 3 tasks. The not-found half has a null prior (EXP-044's control X0).
-- **Confidence:** [I] until the run is read.
-- **Outcome:** pending. Readings as written in EXP-053 section 3: row 0 infrastructure; row 1 harm, dropped; row 2 N_f below 3, not exercised; row 3 R_x 2 or more, dropped; row 4 R_x 0 with N_f 3 or more, kept; row 5 otherwise, keep-base. Blind prediction N_f 5, R_x 1. Expected 0.27 GPU-h (0.25 to 0.33).
+- **Confidence:** [V] for the counts.
+- **Outcome:** **dropped, row 3** (first keep-base round in a row; round 0 does not count). Readings as written in EXP-053 section 3: row 0 infrastructure; row 1 harm, dropped; row 2 N_f below 3, not exercised; row 3 R_x 2 or more, dropped; row 4 R_x 0 with N_f 3 or more, kept; row 5 otherwise, keep-base. Blind prediction N_f 5, R_x 1. Expected 0.27 GPU-h (0.25 to 0.33).
 - **Named for a later round (Arm L, not built):** edit where the behaviour is decided, not where it is called (fastapi_14448 EXP-033 step 5, EXP-038 step 7, EXP-052 step 13; rich_3468 EXP-033 step 6). Its process endpoint has references 5, 6, 6, 7 of 8, so one step of room at n = 8.
+
+## Round 2: EXP-055 (pre-registered 9601dd0, pushed 3be1b7d, kernel `rainm4/gemma4-exp055-v` v1)
+
+- **Base tree:** EXP-033 (round 1 dropped).
+- **Edit (Candidate V):** three hunks in section 4 of the prompt. A new bullet makes the last call before `submit_patch` a one-command check after the last edit (the named test file or an import of the changed module; no scratch file, after the round 0 `/tmp` finding), with one repair when the output shows a syntax, indentation, name or import error pointing into an edited file. Two phrases that licensed skipping the check or ignoring an import error are removed.
+- **Cue:** D, the run ends on an edit with no command after it (fastapi_14448 and httpx_3672 in EXP-053; fastapi_14605 in EXP-038 and EXP-045; requests_7205 in EXP-052). G, a failing check pointing into the edited file and submitted anyway (httpx_3672 in EXP-045, steps 7 to 8).
+- **Evidence (base):** D 14 of 30 non-resolving runs; G 1 of 32; tasks with a check after the last edit at most 6 of 8 in any reference run.
+- **Readings (EXP-055 section 4, blind):** row 0 infrastructure; row 1 harm, dropped; row 2 V1 (tasks with a check after the last edit) 6 or fewer, dropped; row 3 V1 = 7, no decision; row 4 V1 = 8 and G = 0, kept; row 5 V1 = 8 and G 1 or more, no decision. Blind prediction V1 = 7. Expected 0.30 GPU-h.
+- **Confidence:** [I] until the run is read.
+- **Outcome:** pending. Rows 1, 2, 3 or 5 make it the second keep-base round in a row, which stops the loop.
+- **Considered and not built:** Arm L (edit where the behaviour is decided). Its target tasks already land in the gold file on 2 of 5 base runs (fastapi_14448) and 4 of 5 (rich_3468), so a smoke-8 has no kept row beyond chance (screener, 2026-11-08); no GPU spent.
+
