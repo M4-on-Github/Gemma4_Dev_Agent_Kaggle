@@ -200,3 +200,8 @@ User, verbatim: "no full VRAM idea is not closed just naieve not. omg opus you a
 User, verbatim: "I won't be wrting it right now. what next? do we having things that are half done or smth."
 - The paper-writer is not dispatched. The Writeup (due 2026-11-12 23:59 UTC) stays open; the lead does not raise it again unless the user does or the deadline is two days out.
 - The user asked for the list of half-done work; the lead answers in chat from `knowledge/plan.md` and the experiment index.
+
+## 2026-11-07: the EXP-052 smoke-8 is approved
+User, verbatim: "go ahead"
+- Given after the lead's plain explanation of EXP-052 (D-007 tree T2: reader, five tool-less drafters in parallel, applier; E4B; smoke-8; never uploaded) with its cost (0.40 GPU-h point, 0.35 to 0.46, conditional worst case 1.19) and its limits (a feasibility screen; the edit-landing floor is EXP-033's 6 of 8, so it can show only "not worse"; P of a board gain about 0.1 [I]).
+- Read by the lead as: one push of `notebooks/exp052_t2` (kernel rainm4/gemma4-exp052-t2) as built in c66d68a, with no re-run of a failed kernel without asking (EXP-052 section 2.4 stop rule). It does not approve the dev-48 arm that row 4 would recommend; that needs a separate word.
