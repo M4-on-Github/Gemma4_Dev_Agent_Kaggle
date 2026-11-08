@@ -222,4 +222,52 @@ These items were logged 2026-11-07, after the upload and **before any score exis
 
 ## Status
 
-UPLOADED 2026-11-07 22:44:47 UTC, Kaggle ref 58106393, variant A (`9de869bd...1ac0`); SCORE PENDING. Next: when the submitter reports the score, append section 9, applying section 4.2 with the section 7 items. Then fill `submissions.md` row 14 and the README section 3 row.
+~~UPLOADED 2026-11-07 22:44:47 UTC, Kaggle ref 58106393, variant A (`9de869bd...1ac0`); SCORE PENDING. Next: when the submitter reports the score, append section 9, applying section 4.2 with the section 7 items. Then fill `submissions.md` row 14 and the README section 3 row.~~
+
+2026-11-08: **SCORED 0.05 = 3/58, COMPLETE; section 4.2 row 2 fired** (section 9). `submissions.md` row 14 and the README section 3 row are filled. This file is closed; the next E4B tree is read against this draw.
+
+---
+
+## 9. Results, 2026-11-08. Section 4.2's readings applied as written, with the section 7 items.
+
+**Source.** `kaggle competitions submissions -c gemma-4-developer-agent --csv`, run by the experimenter on 2026-11-08: ref 58106393, `submission.zip`, uploaded 2026-11-07 22:44:47 UTC, description naming S-014, EXP-050 and `9de869bd`, status `SubmissionStatus.COMPLETE`, public score **0.05**, private score blank. The lead's query the same day gave the same. The board shows two decimals: 2/58 shows as 0.03, 3/58 as 0.05 and 4/58 as 0.07, so **k = 3**.
+
+### 9.1 Endpoints
+
+| # | Endpoint | Value |
+|---|---|---|
+| 1 | k, resolved of 58 | **3** |
+| 2 | Completion | **scored** (COMPLETE, no Notebook Timeout, no scoring error) |
+| 3 | Against the prediction (4.1) | predicted k = 5, 80% interval 2 to 9: **inside**, 2 below the point |
+| 3 | Against the 31B per-draw mean of 9.33 (28 of 174) | 6.33 below, more than the MDE of about 4 |
+| 4 | Pooling | this zip's count opens at 3 of 58 and pools only with later draws of `9de869bd`; variant B was not uploaded |
+
+### 9.2 Reading
+
+| Row | Matches? | Why |
+|---|---|---|
+| 0 | no | the upload scored; section 7 item 1 does not arise |
+| 1 | no | k = 3 > 1 |
+| **2** | **yes, governs** | **2 <= 3 <= 5** |
+
+**Row 2 as written:** inside the predicted interval, and at least the MDE below the 31B's per-draw mean of 9.33. On one draw the E4B trails the 31B by at least the MDE on the board, which agrees in direction with dev-48 (4-0). **This is the small-model baseline:** any later E4B tree is read against it, and against later draws of the same bytes pooled under section 3 item 4. Whether it holds a final-selection slot is a user decision, given section 1.
+
+**Against the blind prediction.** Row 2 was given 50%, the modal row. The point prediction of 5 missed by 2, inside the 80% interval. No account is offered of why the draw sits below the scaled dev-48 figure of 5: it is one draw, and section 4.1 puts the binomial sd on 58 at about 2.2 tasks.
+
+### 9.3 What section 5 licenses here, and what it does not
+
+**Licensed:**
+- one board draw of the E4B zip `9de869bd`: 3 of 58;
+- a scored entry on the small-model line, which is now the small-model baseline;
+- one completion of the E4B tree on the hidden set within the 12 h limit, recorded against C-020 as a completion, with no wall-clock figure (the board gives none);
+- for A, the first board figure for a config measured on dev-48 (EXP-038, 5/48);
+- the next small-model step per row 2: later E4B trees are read against this draw.
+
+**Not licensed:**
+- a claim that the E4B and the 31B differ by any particular amount, or a claim from a single-draw gap smaller than the MDE. Row 2 records only that this draw sits more than one MDE below the 31B pool's mean;
+- any claim about why the draw is 3 rather than 5;
+- any use of this draw as a measure of variant B, which is untested and opens its own count;
+- changing any reading in EXP-038 or EXP-031;
+- the final-selection decision, which is the user's.
+
+GPU: 0 GPU-h. One upload slot (2026-11-07 UTC) was spent.
