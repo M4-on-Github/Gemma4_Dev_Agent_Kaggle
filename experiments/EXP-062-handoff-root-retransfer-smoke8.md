@@ -118,6 +118,7 @@ Analysis, a separate job:
 
 1. **(Known at pre-registration.)** `analyze_traces.py` counted a `submit_patch` call that the ADK had refused as a submit. This affected EXP-061 `fastapi_14301`. Fixed in this commit: a call whose observation carries "Tool 'submit_patch' not found" no longer sets `submit_patch_called`. The fix is covered by `tests/test_analyze_traces.py::test_refused_submit_patch_is_not_a_submit`. Re-running on `runs/EXP-061-r` (output to `out/`) gives `fastapi_14301` `submit_patch_called` false and a run rate of 87.5% instead of 100%. The committed `experiments/EXP-061/summary.jsonl` keeps the old value.
 2. **(Known at pre-registration.)** The tree was built by `cp -r` plus one replaced file, not by a hash-verifying tool. Section 2 records the `diff -r` result instead.
+3. **(Found at analysis, 2026-11-09.)** The binding note on compaction asks only whether any prompt reaches 14,336 tokens. It does not separate the two compaction paths. The EXP-052 crash comes from the post-invocation path (`harness-stack/reference/compaction.md` § Hazard, conditions 1-6). The in-flow path passes the calling `LlmAgent` and cannot raise that error. The three compactions in this run are in-flow drops inside an invocation. An in-flow compaction sets the skip flag for the post-invocation path (condition 2), so the crash path was not reached [I from source]. Section 9 applies the note as written and states this limit next to it.
 
 ## 8. Built and pushed (below the line; nothing above changes)
 
@@ -136,4 +137,96 @@ Analysis, a separate job:
 
 ~~2026-11-09: notebook built and committed; push follows this commit. Kernel `rainm4/gemma4-exp062-r`. Next, when COMPLETE: the analysis commands in section 6.~~
 
-2026-11-09 00:44 UTC: pushed after 3f79d7d ("Kernel version 1 successfully pushed"); first status RUNNING. Kernel `rainm4/gemma4-exp062-r` v1. Next, when COMPLETE: the analysis commands in section 6, then apply section 4.
+~~2026-11-09 00:44 UTC: pushed after 3f79d7d ("Kernel version 1 successfully pushed"); first status RUNNING. Kernel `rainm4/gemma4-exp062-r` v1. Next, when COMPLETE: the analysis commands in section 6, then apply section 4.~~
+
+2026-11-09: COMPLETE (lead, 16:18 UTC), downloaded and analysed (section 9). **Row 3 fires: not exercised, no task nudged, no decision.** 0.323 GPU-h. Nothing running.
+
+---
+
+## 9. Results, 2026-11-09. Section 4 readings applied as written.
+
+**Run.**
+- Kernel `rainm4/gemma4-exp062-r` v1: the lead reported it COMPLETE at 16:18 UTC 2026-11-09.
+- Downloaded with `kaggle kernels output rainm4/gemma4-exp062-r -p runs/EXP-062-r/`, and the nested `runs/EXP-062-r/` was moved up one level.
+- `python -I -X utf8 tools/analyze_traces.py runs/EXP-062-r --cap-minutes 8 --max-calls 45` and `python -I -X utf8 tools/run_forensics.py forensics runs/EXP-062-r`.
+- Per-stage counts from `traces/` with the scratch counter `out/exp062_mech.py` (untracked; it prints ids, agent names, tool names and token counts only).
+- `summary.jsonl` is copied to `experiments/EXP-062/summary.jsonl`.
+
+**GPU cost.**
+- Kernel wall **1161.8 s = 0.323 GPU-h** (the last entry of the kernel log).
+- vLLM came up in 325.9 s.
+
+### 9.1 Per task
+
+| task | root's first step | nudges | reader runs | how the session ended | patch chars | max prompt (agent) | inferred compactions | wall s | EXP-061 patch |
+|---|---|---|---|---|---|---|---|---|---|
+| fastapi_14301 | step 3, transfer to `pipeline` | 0 | 1 | applier `submit_patch` ok, then text | 637 | 11,545 (applier) | 0 | 68.5 | empty |
+| fastapi_14448 | step 3, transfer to `pipeline` | 0 | 1 | applier `submit_patch` ok | 811 | 14,657 (applier) | 1 (applier) | 141.9 | non-empty |
+| fastapi_14605 | step 3, transfer to `pipeline` | 0 | 1 | applier `submit_patch` ok, then text | 342 | 8,420 (applier) | 0 | 49.7 | non-empty |
+| httpx_3672 | step 3, transfer to `pipeline` | 0 | 1 | applier `submit_patch` ok, no text after it | 1,419 | 19,482 (applier) | 1 (applier) | 169.6 | non-empty |
+| requests_7205 | step 3, transfer to `pipeline` | 0 | 1 | applier `submit_patch` ok twice, no edit made, then text | **0** | 7,969 (applier) | 0 | 58.8 | non-empty |
+| requests_7309 | step 3, transfer to `pipeline` | 0 | 1 | applier `submit_patch` ok, then text | 529 | 8,600 (applier) | 0 | 53.5 | empty |
+| rich_3006 | step 3, transfer to `pipeline` | 0 | 1 | applier `submit_patch` ok, then text | 558 | 8,406 (applier) | 0 | 53.9 | non-empty |
+| rich_3468 | step 3, transfer to `pipeline` | 0 | 1 | applier `submit_patch` ok | 1,009 | 15,852 (reader) | 1 (reader) | 118.1 | non-empty |
+
+### 9.2 Mechanism counts
+
+**(a) First transfer: 8 of 8.**
+- On every task, the root's only step is step 3, the first agent step. It is a `transfer_to_agent` call naming `pipeline`. It comes as a `thinking` event, and the model's reasoning is attached to it.
+- The root never produced a `final` text event and never called any other tool.
+- The two EXP-061 tasks that called `read_file` first (`fastapi_14301`, `fastapi_14605`) transferred directly this time.
+- The stages ran in order once on 8 of 8: reader, five drafters, applier.
+
+**(b) Nudges: N = 0.**
+- No `continuation_nudge` step on any task (`analyze_traces`: nudges 0), so T, P2 and S are all 0.
+- Every session ended on the applier, after a `submit_patch` that returned ok, in the first and only pass. None of these calls was refused.
+- No session ended on a cap or on the empty-diff fallback.
+
+**(c) Errors and compaction.**
+- **Errors:** `err` is empty on all 8 tasks (`task_results.jsonl`, and the kernel log `[k/8]` lines). The kernel log holds no `Traceback`, no `ValueError` and no sandbox execution error.
+- **Prompt size:** prompts reached 14,336 tokens on 3 tasks: `httpx_3672` 19,482 (applier), `rich_3468` 15,852 (reader) and `fastapi_14448` 14,657 (applier).
+- **Compactions:** `analyze_traces` infers 3, one on each of those tasks, all within the invocation:
+  - `fastapi_14448` applier, 14,657 to 5,853;
+  - `httpx_3672` applier, 15,649 to 8,883;
+  - `rich_3468` reader, 15,852 to 5,915.
+- **The `httpx_3672` invocation:** its last model call carried 19,482 prompt tokens. It ended on a `submit_patch` with no text after it. The task finished without error.
+
+**(d) Harm.**
+- **Caps:** 0 time-cap, 0 call-cap and 0 turn-cap hits; 0 overflow.
+- **Patches:** the two EXP-061 empties (`fastapi_14301`, `requests_7309`) are non-empty here. One EXP-061 non-empty task is empty here: `requests_7205`. It was not nudged; its applier made no edit and submitted twice.
+- **Walls:**
+  - mean **89.2 s**, against 89.5 s in EXP-061;
+  - median 63.6 s, max 169.6 s (`httpx_3672`);
+  - total agent wall 714.0 s.
+- **Projection:** `analyze_traces` projects **2.98 h** for 120 tasks.
+- **Dirty workspace:** none seen. The diff fallback was never used, and every patch came from a `submit_patch` that returned ok.
+
+### 9.3 Readings applied, first match governs
+
+- **Row 1, infrastructure: does not match.** No `err` on any task, with no traceback, sandbox execution error or compaction error. The tree ran on 8 of 8, and the root transferred to `pipeline` in its first invocation on 8 of 8.
+- **Row 2, harm: does not match.** There were no cap hits, and no task was nudged, so no nudged task ended empty.
+- **Row 3, not exercised: FIRES.** N = 0. **The mechanism was not exercised: no decision, not "the fix works".**
+  - First-transfer behaviour: 8 of 8 at the first agent step, with no refused calls before it. EXP-061 had 2 tasks with refused calls first.
+  - Mean wall 89.2 s against 89.5 s, recorded and not read as an effect.
+  - Whether to spend another smoke is the user's call.
+- **Rows 4-6:** not reached.
+
+**Binding notes, applied.**
+- **`requests_7205`:** it was non-empty in EXP-061, is empty here and was not nudged. It is recorded as **sampling variation, not harm from the fix**.
+- **The compaction note:** "If no prompt reaches 14,336 tokens, the compaction fix is recorded as untested again". Its condition is false: prompts reached 14,336 on 3 tasks, and all 3 tasks compacted and finished without error. So "untested again" is not recorded.
+- **What that does not cover:** these were in-flow compactions, which cannot raise the EXP-052 error (section 7 item 3). So this run shows compaction under the `LlmAgent` root without a crash. It does not exercise the post-invocation path that crashed EXP-052. That path was never reachable with this root: from the source, an `LlmAgent` root supplies the summarizer [V, `reference/compaction.md` (d)].
+- **Mean wall:** recorded above, against 89.5 s.
+
+**Prediction check.**
+- N = 0 fell in the predicted 0-1, given probability 0.7.
+- Row 3 fired; it was predicted at about 0.45.
+- The root transferred on its first message on 8 of 8, as predicted.
+- The two EXP-061 `read_file`-first tasks transferred directly; this was predicted at 0.6.
+- The prediction held.
+
+**Resolves, recorded and not read:** 1 of 8 (`rich_3006`, as in EXP-061). n = 8, and resolves are not an endpoint.
+
+**Not licensed:**
+- Any verdict on the re-transfer prompt after a nudge.
+- Any resolve or LB claim.
+- Any upload or dev-48 run.
