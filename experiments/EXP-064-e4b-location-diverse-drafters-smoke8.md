@@ -152,6 +152,6 @@ The kernel push is released by the lead and is not run in this job. Analysis, a 
 
 ## Status
 
-2026-11-09: pre-registered (380685e), candidate packed and the sha reproduced, notebook built and committed. **Not pushed.** The lead releases the push. Next, when COMPLETE: the analysis commands in section 6, then apply section 4.
+2026-11-09: pre-registered (380685e), candidate packed and the sha reproduced, notebook built and committed (dfa1d47). **Pushed 2026-11-09 on the lead's release**: kernel version 1, `rainm4/gemma4-exp064-loc`, first status QUEUED. Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp064-loc -p runs/EXP-064-loc/`, then the analysis commands in section 6, then apply section 4.
 
 ---
