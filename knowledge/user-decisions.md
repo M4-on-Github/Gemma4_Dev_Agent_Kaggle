@@ -252,3 +252,12 @@ User, verbatim: "yes just make a model and let it only call the sequential agent
   2. **Upload it in today's slot (S-016), as the user's explicit plan.md §5.8 override:** no dev-48 run and no clean smoke-8 of this exact tree; the critic `prereg` is skipped on the user's word for the slot. The approval file is still the user's.
   3. **Smoke-8 of the same zip after the upload approved** (about 0.31 GPU-h; day total about 3.4 of 4.0 if pushed today).
   4. If the build misses 23:59 UTC, the upload would take the 2026-11-09 slot; the lead then recommends running the smoke-8 first.
+
+## 2026-11-09 (about 00:40 UTC): one more round on the EXP-061 tree
+User, verbatim: "okay let's do 1 more loop"
+- Given after the lead reported EXP-061 smoke-8 row S1 (fastapi_14301: a nudge re-ran the session at the transfer-only root, which never transferred again; empty patch) and proposed a one-line root-prompt fix plus one smoke-8 of about 0.32 GPU-h, noting the new UTC day had no ceiling set.
+- Read by the lead as:
+  1. **Approved:** one new tree, EXP-062, the EXP-061 tree with the root prompt changed so that every message it receives (a nudge included) is answered with `transfer_to_agent` to `pipeline`, and it is told it has no other tools; a zero-GPU desk check of where a nudge re-run starts and the harness's nudge bound first; then one smoke-8 push, about 0.32 GPU-h, as 2026-11-09's approved spend (2026-11-08's 4.0 does not carry over).
+  2. **Not approved:** any upload, dev-48, or re-run of a failed kernel; those need the user's word. EXP-061's S1 blocks a further upload of that tree; EXP-062 needs its own smoke reading before any upload is proposed.
+  3. If the user meant a round of the E4B edit loop instead, they can redirect before the push.
+
