@@ -1,8 +1,8 @@
 ---
 id: S-015
 date: 2026-11-08
-status: pending
-public_score: null
+status: complete
+public_score: 0.05
 kaggle_ref: 58143906
 submitted_utc: 2026-11-08 23:57:43 (Kaggle list timestamp)
 landed_before_midnight_utc: yes (2026-11-08 slot)
@@ -44,3 +44,6 @@ Successfully submitted to Google - The Gemma 4 Developer Agent Competition
 
 ## Status
 pending. It landed at 23:57:43 UTC on 2026-11-08, before 00:00 UTC, so it took the 2026-11-08 slot. Grading has taken 6 to 22 hours. Poll only when asked; then set `status: scored | error` and `public_score`.
+
+## Score (lead, 2026-11-09)
+`kaggle competitions submissions -c gemma-4-developer-agent --csv`: ref 58143906, SubmissionStatus.COMPLETE, publicScore 0.05. On 58 tasks 0.05 is k = 3 (2/58 = 0.034 and 4/58 = 0.069 round elsewhere) [I]. EXP-061 LB row **L3** (k 3 to 5): same level as S-014's 3/58, no effect; the tree completes on the hidden set, one observation.
