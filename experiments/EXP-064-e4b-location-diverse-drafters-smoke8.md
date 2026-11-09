@@ -152,6 +152,73 @@ The kernel push is released by the lead and is not run in this job. Analysis, a 
 
 ## Status
 
-2026-11-09: pre-registered (380685e), candidate packed and the sha reproduced, notebook built and committed (dfa1d47). **Pushed 2026-11-09 on the lead's release**: kernel version 1, `rainm4/gemma4-exp064-loc`, first status QUEUED. Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp064-loc -p runs/EXP-064-loc/`, then the analysis commands in section 6, then apply section 4.
+2026-11-09: pre-registered (380685e), candidate packed and the sha reproduced, notebook built and committed (dfa1d47). **Pushed 2026-11-09 on the lead's release**: kernel version 1, `rainm4/gemma4-exp064-loc`, first status QUEUED. Kernel COMPLETE, downloaded to `runs/EXP-064-loc/`, analyzed, section 9 written. **Row 3 fired (not exercised): the reader listed fewer than 2 locations on 6 of 8 tasks. No decision.** Measured 0.353 GPU-h (kernel wall 1270.2 s, last log entry). Next: the lead's call (stronger forcing of several locations, or the fused round with EXP-063's selector).
+
+---
+
+## 9. Results, 2026-11-09. Section 4's readings applied as written.
+
+Source: `runs/EXP-064-loc/` (flattened with `cp -r`), `analyze_traces.py --cap-minutes 8 --max-calls 45`, `run_forensics.py forensics`, then greps over `traces/` for L, F, R and G (no script is allowed to this agent). `summary.jsonl` is copied to `experiments/EXP-064/loc/summary.jsonl`.
+
+**Cost.** Kernel wall 1270.2 s (last entry of the kernel log) = **0.353 GPU-h**. All 8 tasks ran; `err` is empty on 8 of 8.
+
+### 9.1 Section 3 endpoints, per task
+
+Drafts d1 to d5 are listed by drafter number. A draft's target is read from its FILE line; R is counted from the drafters' assigned locations (a fallback to location 1 repeats that location), not from the OLD blocks, which were not read.
+
+| task | L (END present on all) | locations (file, lines) | d1 d2 d3 d4 d5 target file | F | R | G any | G first-gold | resolved | wall s | calls | patch files |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| requests_7309 | 1 | `src/requests/utils.py` 502-518 | same file x5 | 1 | 1 | yes | yes | no | 53.7 | 4 | utils.py |
+| requests_7205 | 1 | `src/requests/utils.py` 233-237 | same file x5 | 1 | 1 | yes | yes | no | 64.6 | 5 | utils.py |
+| fastapi_14448 | 1 | `fastapi/routing.py` 80-100 | same file x5 | 1 | 1 | **no** | no | no | 71.5 | 7 | routing.py |
+| fastapi_14301 | 1 | `fastapi/dependencies/utils.py` 131-133 | same file x5 | 1 | 1 | yes | yes | **yes** | 66.6 | 7 | dependencies/utils.py |
+| httpx_3672 | 4 | `src/httpx/_server.py` 99-101; `src/httpx/_parsers.py` 447-473; `_server.py` 37-46; `_parsers.py` 300-350 | _server, _parsers, _server, _parsers, _server (d5 fell back to location 1) | **2** | **4** | yes (`_parsers.py`) | no | no | 115.9 | 16 | `_parsers.py` and `_server.py` |
+| fastapi_14605 | 2 | `fastapi/utils.py` 1-10; `fastapi/temp_pydantic_v1_params.py` 36-41 | utils, temp_pydantic, utils, utils, utils (d3 to d5 fell back to location 1) | **2** | **2** | yes (both are gold files) | no | no | 156.0 | 15 | `fastapi/utils.py` only |
+| rich_3468 | 1 | `rich/console.py` 1627-1710 | same file x5 | 1 | 1 | yes | yes | no | 208.6 | 19 | none (empty) |
+| rich_3006 | 1 | `rich/repr.py` 67-70 | same file x5 | 1 | 1 | yes | yes | **yes** | 63.0 | 6 | repr.py |
+
+Aggregates against the references (EXP-061, EXP-062, EXP-052):
+- **L.** L >= 2 on 2 of 8 tasks (fastapi_14605, httpx_3672); L = 1 on 6; no task without a report. The prompt allowed up to 5.
+- **F.** Mean 1.25 (10 distinct target files over 8 tasks); F >= 2 on 2 of 8 (httpx_3672, fastapi_14605). The references' F was not recomputed here.
+- **R.** Mean 1.5; R >= 2 on 2 of 8.
+- **G, any gold file.** 7 of 8 (the miss is fastapi_14448). References 6, 7, 7. **G, first gold file.** 5 of 8 (references 5, 5, 5). So G is at the reference level.
+- **Duplicates.** Not read.
+- **Harm.** Time, call or turn cap hits 0. Empty patches 1 of 8 (rich_3468; base maximum 2). Mean wall 100.0 s (sum 799.9 s; references 89.5 s and 89.2 s), longest 208.6 s (rich_3468, under 240 s). Edit failures 15 (fastapi_14605 8, rich_3468 6, requests_7205 1) of 79 tool calls (19.0 percent) and of 25 edit_file calls.
+- **Errors.** `err` empty on 8 of 8. `transfer_to_agent` called once on each task.
+- **Compaction.** 2 in-flow compactions (fastapi_14605 and rich_3468), neither raising an error. Largest single prompt 22,124 tokens (rich_3468) against 14,336; fastapi_14605 peaked at 15,204. The effect of the longer report on compaction is therefore tested, and its cost is the two tasks with the most edit failures.
+
+### 9.2 Row that fired
+
+- Row 1: no. `err` is empty on 8 of 8, no traceback, the root transferred on 8 of 8, every drafter built its request.
+- Row 2: no. Caps 0, empty patches 1 (below 3), mean wall 100.0 s (below 150 s).
+- **Row 3: fired.** L < 2 on 6 of 8 tasks (requirement: 5 or more). Reading as written: the reader does not produce diverse locations. **No decision, not "diversity does not help"**, and not a kill of the idea. Whether to try the stronger forcing (a required minimum of 3 in the prompt, or a separate localizer stage per location) is the lead's call.
+- Rows 4 to 6 are not reached (first match governs). For the record, row 4 (kept) did not match anyway: F >= 2 on 2 of 8 tasks (needs 5) and G is 7 of 8, not 8 of 8. Its reading, "promotes the arm to a dev-48 pair", would also have needed the user's word before any dev-48 run, and the lead's next step on a keep would be the fused round with EXP-063's selector; neither is in play. F >= 2 on 2 of 8 is inside row 5's count, but row 3 fires first, so "dropped" is not the reading.
+
+On the two tasks where the reader listed several locations, the drafters did follow their locations: httpx_3672 drafts split 3 and 2 across the two files, fastapi_14605 had d2 on its location 2 and d3 to d5 fell back to location 1. The applier's kept patch on httpx_3672 touches both files (edits from drafts in both locations reached the patch); on fastapi_14605 it tried the location-2 file and 8 edit calls failed, leaving only `fastapi/utils.py` in the patch.
+
+### 9.3 Movable tasks, reported on their own
+
+- **fastapi_14448.** L = 1, `fastapi/routing.py` lines 80-100 (not a gold file; the gold files are `dependencies/models.py` and `utils.py`). All 5 drafts on that file, so no draft on a gold file and no change against the references. Patch `fastapi/routing.py`, not resolved, 7 calls, 71.5 s.
+- **rich_3468.** L = 1, `rich/console.py` (a gold file) lines 1627-1710. The reference regions were not compared. All 5 drafts on that file and region. The applier made 6 edit calls, all failed, and the task ended with an empty patch after 19 calls, 208.6 s, one compaction and a largest prompt of 22,124 tokens. Not resolved.
+
+### 9.4 Resolves, recorded and not an endpoint
+
+2 of 8 (fastapi_14301, rich_3006). EXP-061 and EXP-062 had 1 of 8 each (rich_3006); EXP-052 had 2 of 8, the same two. n = 8, six of eight must flip the same way, and 14301 alone flipped against EXP-061 and EXP-062.
+- **fastapi_14301** (resolved here and in EXP-052, not in EXP-061 or EXP-062): the reader gave one location, the gold file's lines 131-133, all 5 drafts on it, the patch on it. The kept draft did not move on this task, since there was one location.- **rich_3006** (resolved in all four runs): one location in the gold file, 5 drafts on it, patch on that file. The kept-draft number was not read, and with one location it cannot have moved to another place.
+
+### 9.5 Text-form tool calls, EXP-065's definition (recorded, not a row)
+
+Tasks with at least 1 text-form call: 0 of 8. Tool-free tasks: 0 of 8 (every trace carries native `tool_calls`). No agent made one.
+### 9.6 Prediction check
+
+- L >= 2 on at least 5 of 8 (predicted about 0.6): did not hold, 2 of 8.
+- Row 3 (about 0.3): fired. Row 2 (about 0.1) and row 1 (about 0.05): did not fire.
+- Mean wall about 110 s (95 to 135): held, 100.0 s. Mean F about 1.6: did not hold, 1.25.
+
+### 9.7 Defects found in the reading
+
+1. F and R come from FILE lines and the drafters' assigned locations only. The OLD blocks were not read, so R counts a draft that fell back to location 1 as sharing d1's location, and "followed its location" means the FILE line matches. Duplicates were not counted.
+2. G counts any non-test gold file, which is lenient on fastapi_14605 and httpx_3672 (7 files each); the first-gold-file column is the strict reading and sits at 5 of 8 like the references.
+3. The tool-call count in `summary.jsonl` counts `transfer_to_agent` once per task; the 8 reported above are the per-task `n_calls` field, which excludes it.
 
 ---
