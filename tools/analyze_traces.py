@@ -155,7 +155,12 @@ def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
                 identical += 1
             last_calls.append(key)
             if name == "submit_patch":
-                submit_called = True
+                # EXP-062 2026-11-09: a call the ADK refused because the calling agent does not hold the tool
+                # (EXP-061 fastapi_14301: the handoff root, "Tool 'submit_patch' not found") is not a submit.
+                obs_s = s.get("observation")
+                obs_c = str(obs_s.get("content") or "") if isinstance(obs_s, dict) else ""
+                if "Tool 'submit_patch' not found" not in obs_c:
+                    submit_called = True
             if name == "edit_file":
                 edit_ids.add(str(tc.get("tool_call_id")))
             if name == "read_file" and isinstance(args, dict) and not args.get("start_line") and not args.get("end_line"):

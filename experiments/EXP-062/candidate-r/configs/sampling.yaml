@@ -1,0 +1,8 @@
+# EXP-052 2026-11-07: the EXP-033 sampling file, unchanged, shared by the reader and the applier (only the drafters differ, inline in their own YAML).
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+max_output_tokens: 8192
+thinking_config:
+  thinking_budget: 4096
+  include_thoughts: true

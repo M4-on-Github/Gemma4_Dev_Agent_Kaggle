@@ -96,3 +96,15 @@ def test_nudges_counted_from_system_continuation_steps():
         _turn(7, 1300),
     ]
     assert A.analyze_trace({"steps": steps}, declared=set())["nudges"] == 3
+
+
+def test_refused_submit_patch_is_not_a_submit():
+    """EXP-062 2026-11-09: a submit_patch call refused with the ADK 'not found' error does not set submit_patch_called."""
+    refused = {"step_id": 1, "source": "agent", "message": "", "extra": {},
+               "tool_calls": [{"tool_call_id": "c1", "function_name": "submit_patch", "arguments": {}}],
+               "observation": {"content": json.dumps({"status": "error", "error": "Tool 'submit_patch' not found."})}}
+    ok = {"step_id": 2, "source": "agent", "message": "", "extra": {},
+          "tool_calls": [{"tool_call_id": "c2", "function_name": "submit_patch", "arguments": {}}],
+          "observation": {"content": '{"status": "ok"}'}}
+    assert A.analyze_trace({"steps": [refused]}, declared=set())["submit_patch_called"] is False
+    assert A.analyze_trace({"steps": [refused, ok]}, declared=set())["submit_patch_called"] is True
