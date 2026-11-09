@@ -1,0 +1,10 @@
+# EXP-061 2026-11-08: the EXP-052 T2 root moved here unchanged except its name (swe_agent -> pipeline), so an LlmAgent root can hand off to it. The config paths stay relative to the tree root.
+# EXP-063 2026-11-09: stages reader, draft, applier -> reader, reproducer, draft, applier (the one variable of EXP-063: a test-writing stage whose test the applier uses to pick a draft).
+name: pipeline
+agent_class: SequentialAgent
+description: Read the repository with a reader that holds read tools only by instruction, let five tool-less writers each draft one exact edit from its report, then apply the drafts in order with one applier that checks each and submits.
+sub_agents:
+  - config_path: sub_agents/reader.yaml
+  - config_path: sub_agents/reproducer.yaml
+  - config_path: sub_agents/draft.yaml
+  - config_path: sub_agents/applier.yaml

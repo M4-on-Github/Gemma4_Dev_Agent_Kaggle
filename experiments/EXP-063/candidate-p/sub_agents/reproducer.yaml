@@ -1,0 +1,16 @@
+# EXP-063 2026-11-09: new stage between the reader and the drafters (D-008 revision, rank 2). It writes one test at test_issue_repro.py in the workspace root, runs it once on the unfixed code, and reports the result; the applier runs the same test after each applied draft.
+# The name matters: the harness drops every diff section whose file name starts with test_ and ends in .py (swegemma harness/verification.py:80-81), at submit_patch (tools/execution.py:104-110) and again before grading (verification.py:436-441), so the file never reaches the graded patch.
+# Same tools as the reader plus write_file only; no edit_file. run_command is a free shell, so "no source edits" holds by the prompt; the readings count the stage's write paths.
+# include_contents default, as the reader: it needs the task message and sees the reader's reads. output_key repro reaches the applier through the {repro?} template.
+name: reproducer
+description: Writes one small test that shows the issue on the unfixed code, runs it once, and reports whether it fails.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/reproducer.md
+include_contents: default
+output_key: repro
+tools:
+  - read_file
+  - run_command
+  - get_status
+  - write_file
+generate_content_config: !include ../configs/sampling.yaml

@@ -1,0 +1,11 @@
+# EXP-052 2026-11-07: five drafters in parallel (K = 5, within the 4 to 6 of the dispatch). Each has its own framing at the front of its instruction, so no prefill is shared, and its own temperature (0.3, 0.5, 0.7, 0.9, 1.0; chosen, not tuned).
+# Each writes one exact edit to session state under draft_N; the drafters see the reader's report (the {plan?} template) and nothing else (include_contents none, as the EXP-040 voters).
+name: draft
+agent_class: ParallelAgent
+description: Five independent tool-less writers, each with its own angle and temperature, each drafts one exact edit and writes it to session state.
+sub_agents:
+  - config_path: sub_agents/drafter_1.yaml
+  - config_path: sub_agents/drafter_2.yaml
+  - config_path: sub_agents/drafter_3.yaml
+  - config_path: sub_agents/drafter_4.yaml
+  - config_path: sub_agents/drafter_5.yaml
