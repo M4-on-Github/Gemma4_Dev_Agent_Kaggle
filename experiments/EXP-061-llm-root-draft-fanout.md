@@ -77,6 +77,9 @@ The upload itself is the submitter's, after an S-NNN proposal and the user's app
 ## 7. Defects in this pre-registration, logged after the fact
 
 1. Built by hand, not with a hash-verifying tool: `cp -r` of EXP-052 `candidate-t2` plus three hand-written files, all LF (no CR byte, checked with grep). The departure from the protocol was made for the slot deadline.
+2. (Logged 2026-11-09, after the smoke-8.) Row S1's "`err` is non-empty" does not separate a crash from the harness's own label for a session that ended without `submit_patch`. In this run the only non-empty `err` is that label. S1 is applied as written in section 9, and the mechanism is reported beside it.
+3. (Logged 2026-11-09.) The readings assumed the smoke-8 would exercise the compaction path. That path needs a request at or above 14,336 prompt tokens. No request in this run reached it (the maximum was 11,611), so the run does not test the fix against the EXP-052 crash.
+4. (Logged 2026-11-09.) Section 1 did not ask what happens when the pipeline ends without a submit: a nudge re-run starts at the root, and the root holds only `transfer_to_agent`. Section 9 shows this happening.
 
 ## 8. Built (below the line; nothing above changes)
 
@@ -94,4 +97,88 @@ The upload itself is the submitter's, after an S-NNN proposal and the user's app
 
 ~~2026-11-08: built and packed, not uploaded. The smoke-8 notebook `notebooks/exp061_r/` is not built yet. Next: an S-NNN proposal (lead), the approval file (user), the upload (submitter); then build the notebook and push it on the lead's word.~~
 
-2026-11-08 23:58 UTC: uploaded (S-015, ref 58143906, score pending); smoke-8 kernel `rainm4/gemma4-exp061-r` v1 RUNNING. Next, when COMPLETE: `kaggle kernels output rainm4/gemma4-exp061-r -p runs/EXP-061-r/`, flatten, `python tools/analyze_traces.py runs/EXP-061-r --cap-minutes 8 --max-calls 45`, `python tools/run_forensics.py forensics runs/EXP-061-r`, apply the smoke-8 rows of section 4.
+~~2026-11-08 23:58 UTC: uploaded (S-015, ref 58143906, score pending); smoke-8 kernel `rainm4/gemma4-exp061-r` v1 RUNNING.~~
+
+2026-11-09: smoke-8 COMPLETE and analysed (section 9). **Row S1 fired on `fastapi_14301`**, because its `err` is non-empty. That `err` is the harness label for a session that ended without `submit_patch`; it is not a crash. 0.324 GPU-h. S-015's score is pending; when it lands, append the LB reading. Next, when COMPLETE: `kaggle kernels output rainm4/gemma4-exp061-r -p runs/EXP-061-r/`, flatten, `python tools/analyze_traces.py runs/EXP-061-r --cap-minutes 8 --max-calls 45`, `python tools/run_forensics.py forensics runs/EXP-061-r`, apply the smoke-8 rows of section 4.
+
+---
+
+## 9. Smoke-8 results, 2026-11-09. Section 4's smoke-8 readings applied as written.
+
+**Source.** Kernel `rainm4/gemma4-exp061-r` v1, COMPLETE (lead, 00:29 UTC). Downloaded with `kaggle kernels output rainm4/gemma4-exp061-r -p runs/EXP-061-r/` and flattened. Commands run:
+- `python -I -X utf8 tools/analyze_traces.py runs/EXP-061-r --cap-minutes 8 --max-calls 45`
+- `python -I -X utf8 tools/run_forensics.py forensics runs/EXP-061-r`
+- a scratch counter over `traces/` (untracked `out/exp061_mech.py`) that prints only ids, agent names, tool names, step numbers and counts.
+
+`summary.jsonl` is copied to `experiments/EXP-061/summary.jsonl`.
+
+**GPU-h: 0.324**, from the last kernel-log entry at 1,167.0 s. vLLM was up in 327.9 s.
+
+### 9.1 Row applied
+
+**Row S1 (infrastructure) fires, on `fastapi_14301`**, because its `err` is non-empty. As written, S1 also requires naming the task and the step:
+- **The `err` text** is the harness label for a session that ended without `submit_patch` ("Agent completed execution without calling submit_patch.").
+- **Where it went wrong:**
+  - **step 16:** the applier ended in text without making any edit;
+  - **step 17:** a nudge;
+  - **step 18:** the re-run started at the root (`swe_agent`), not at the pipeline. The root called `submit_patch` and got the ADK `ValueError` "Tool ... not found", with `transfer_to_agent` as the only tool available;
+  - **steps 19-29:** three more nudges (steps 21, 24, 27), each answered by the root in text, with no second transfer;
+  - the session ended with patch 0 characters.
+- **The other two S1 triggers did not occur:** the root transferred to `pipeline` on 8 of 8 tasks, and the tree ran on all 8.
+
+S1 reads "the root fix is not working". The run shows something narrower:
+- the handoff works on 8 of 8;
+- the compaction path was never exercised (section 9.2 (c); section 7 item 3);
+- one new route fails: a nudge re-run lands on the root, which can only transfer, and it did not transfer again (section 7 item 4).
+
+S1 is applied as written: **no further upload of this tree until fixed.** The candidate fix is outside this experiment.
+
+### 9.2 Mechanism, per task
+
+**(a) Root handoff.**
+- **Transfer calls:** 8, one per task, all naming `pipeline`.
+- **Turn of the transfer:**
+  - Trace step 3, the root's first model turn, on 6 tasks: `fastapi_14448`, `httpx_3672`, `requests_7205`, `requests_7309`, `rich_3006`, `rich_3468`.
+  - Step 5, the root's third turn, on `fastapi_14301` and `fastapi_14605`. On both, the root first called `read_file` twice. Each call returned the ADK error "Tool 'read_file' not found", with only `transfer_to_agent` available.
+- **Before the transfer:** the root emitted no final text event. Its turns carry thought text only.
+- **Nudges and tool-free endings at the root:**
+  - 7 tasks: no nudges, and the root never ran again after the handoff.
+  - `fastapi_14301`: 4 nudges (one after the applier, three after root text endings), 1 failed `submit_patch` call at the root, 4 tool-free root endings.
+- **Undeclared tools are refused:** `tools: []` gave the root `transfer_to_agent` only, and nothing was supplied by default [V, this run].
+
+**(b) Stage order.**
+- On 8 of 8 tasks the order is `swe_agent` > `reader` > the five drafters > `applier`, with all 5 drafters run and all 5 drafts non-empty (40 of 40).
+- The drafters finish in a different order on each task (ParallelAgent completion order).
+- `fastapi_14301` alone continues past the applier back to `swe_agent`.
+
+**(c) Compaction.**
+- No "No LlmAgent model available for event compaction summarizer" error and no other compaction error or traceback appears in `task_results.jsonl`, the kernel log or the 8 per-task logs.
+- Compaction did not fire: `compactions` is 0 on every task.
+- The largest single-request prompt is 11,611 tokens (forensics `max_prompt_tok`), below the 14,336 trigger. So no summarizer was built, and the run cannot show which model it would take. By the source it would be the root's E4B (section 1).
+
+**(d) Endings, draft kept, walls.**
+
+| task | ending | patch chars | applier `edit_file` (failed) | draft matching the applied edit | wall s |
+|---|---|---|---|---|---|
+| fastapi_14301 | no submit (err above), empty | 0 | 0 (0) | none, no edit | 83.2 |
+| fastapi_14448 | `submit_patch` by applier | 727 | 1 (0) | drafter_1 | 71.4 |
+| fastapi_14605 | `submit_patch` by applier | 593 | 1 (0) | drafter_1 | 63.5 |
+| httpx_3672 | `submit_patch` by applier | 411 | 2 (1) | drafter_4 | 99.1 |
+| requests_7205 | `submit_patch` by applier | 759 | 1 (0) | drafter_1 | 165.1 |
+| requests_7309 | `submit_patch` by applier, empty patch | 0 | 4 (4; 3 arg loss) | none applied | 79.9 |
+| rich_3006 | `submit_patch` by applier | 558 | 2 (1; 1 arg loss) | drafters 1-4 (identical text) | 70.6 |
+| rich_3468 | `submit_patch` by applier | 555 | 1 (0) | drafters 1 and 3 (identical text) | 82.9 |
+
+- **How the draft was matched:** a draft counts when it contains both the old and the new text of the edit that applied.
+- **Totals:** `edit_file` 12 calls, 6 failed, 4 by arg loss (`analyze_traces`).
+- **Caps:** 0 time, 0 calls, 0 overflow.
+- **Empty patches:** 2 of 8.
+- **Walls:**
+  - mean **89.5 s** against EXP-052's 82.5 s, median 81.4 s, max 165.1 s;
+  - total agent wall 715.7 s;
+  - `analyze_traces` projects 2.98 h.
+- **Analyzer artifact:** `analyze_traces` marks `submit_called` true on all 8 tasks. For `fastapi_14301` that counts the root's refused call.
+
+**Resolves, recorded and not read:** 1 of 8 (`rich_3006`). n = 8, and resolves are not an endpoint.
+
+**Not read:** no effect claim. The LB reading (rows L1-L4) waits for S-015's score.
