@@ -85,3 +85,19 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
 - **Lesson 5, confirmed per task:** requests_7309 made 4 to 7 calls and submitted in all 5 non-skill runs (EXP-033, 038, 045, 052, 055) and made 0 calls with 3 nudges in all 4 skill-tree runs. One task, 9 runs [I].
 - **Confidence:** [V] for the counts (hand counts by grep and file reads, EXP-059 section 9); events are few and clustered, no intervals.
 
+## Restart 2026-11-09 under D-008 (user's word about 16:30 UTC)
+
+- **Base tree:** the EXP-062 pipeline. A reader, five tool-less drafters in parallel and an applier under an `LlmAgent` hand-off root. It read row 3, not exercised, with no harm or infrastructure row (e49eb9a). The two-keep-base count resets.
+- **Order after the critic's needs-work (experiments/EXP-062/critic.md):**
+  - EXP-064, location-diverse drafters (the screener; 380685e, dfa1d47, zip 3b9aea15, push released).
+  - EXP-063, a reproducer stage as the applier's selector (the experimenter, being built).
+  - The two fused, later.
+  - The copy adapter on the applier is parked (D-008 revision).
+- **Zero-GPU finding (screener, 2026-11-09), requests_7309 in the skill trees:**
+  - **What happens:** in all 4 skill-tree runs the model never makes a native tool call. On each of 4 turns it writes the call as a fenced JSON block in its final text, naming `run_command` or `read_file`. The harness counts that turn as having no tool call and nudges, until the session ends.
+  - **Base tree:** in EXP-045 the first turn makes a native `run_command` call.
+  - **What differs:** the first-turn prompt is 3,284 tokens in the skill tree against 2,378 in the base, and the skill tree adds the skill tools and the injected protocol. The first-turn reasoning is nearly the same in both; only the output format differs.
+  - **Cause:** untested [I]. The cross-run count of text-form calls is dispatched.
+  - **Lesson:** the E4B's tool-call format is fragile to a longer system prompt and more tool declarations. A tree that adds tools or protocol text must count text-form calls as a harm signal.
+- **Reference fact (EXP-064 section 1):** across the 5 drafts, distinct target files are structurally 1 on every reference task, and some draft targets the gold file on 6 to 7 of 8. So EXP-064 is a screen for diversity and harm, with 1 to 2 tasks of room.
+
