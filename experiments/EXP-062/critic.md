@@ -39,8 +39,8 @@ The two kill rules fire on noise from the base runs alone. The top-ranked mechan
 
 - **(a) Does the evidence support the ranking? No: on the tasks that can move, rank 1 targets the empty class.**
   - Of the 24 unresolved runs in EXP-053 §1, 12 are on the three tasks the gold patch fails (httpx_3672, requests_7205, requests_7309).
-  - Only fastapi_14448 and rich_3468 can still change: fastapi_14605 is gated, and the other two always resolve. On those two tasks the classes are A 4, C 4, B 0.
-  - Rank 1's cue sites are two gold-fail tasks and one task that always resolves.
+  - Only fastapi_14448 and rich_3468 can still change: fastapi_14605 is gated, and the other two (fastapi_14301, rich_3006) are the only tasks that ever resolve. On those two tasks the classes are A 4, C 4, B 0.
+  - Rank 1's cue sites are two gold-fail tasks and rich_3006, which resolved in 12 of the 13 runs.
 - **(c) Gains, and whether the harness binds.**
   - All three mechanisms kept would add at most 1.5 tasks; the final check needs 4. Say that the realistic product is the finding that the model is the ceiling.
   - Cite the stronger evidence for the harness argument. 13 E4B runs on the smoke-8 ids, from EXP-033 to EXP-062 and spanning every tree, resolved only fastapi_14301 and rich_3006 (from the committed `summary.jsonl` files).
