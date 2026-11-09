@@ -101,3 +101,9 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
   - **Lesson:** the E4B's tool-call format is fragile to a longer system prompt and more tool declarations. A tree that adds tools or protocol text must count text-form calls as a harm signal.
 - **Reference fact (EXP-064 section 1):** across the 5 drafts, distinct target files are structurally 1 on every reference task, and some draft targets the gold file on 6 to 7 of 8. So EXP-064 is a screen for diversity and harm, with 1 to 2 tasks of room.
 
+- **EXP-064 (8612b02, §10 1f37a93): row 3, not exercised, 0.353 GPU-h.** The reader listed fewer than 2 locations on 6 of 8.
+  - Of those 6, 4 saw one candidate file only and 2 saw several but listed one. The reader was not budget-bound (2 to 11 calls; no task reached its 8 reads).
+  - 7 of its 21 `run_command` searches hit one malformed `head` argument (a count detached from its flag), all on L < 2 tasks. Candidate reason, untested.
+  - **Lesson:** a mechanism that needs several candidates inherits the search defect. A "list at least 3" prompt would pad with regions of one file on 4 of 6. Any localizer form must fix the search command form first; the graph tools are not the route (C-012: they lose to grep at every k).
+  - rich_3468, a movable task, went empty after 6 applier `edit_file` calls, all "old_string not found", none arg-lost. Its failures now include class B.
+  - **Tooling:** `analyze_traces.py` counts text-form calls (`n_text_form_calls`, `tool_free`; 2f9de11), cross-checked against EXP-065 over 13 runs.
