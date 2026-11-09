@@ -127,6 +127,11 @@ Analysis, a separate job:
 - **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK. **sha256 `0fefd79d3d37a4cd7ca7de084a669ff19152e4f78e0320291bedb184db6faa12`.** The tree has no CR byte.
 - **Tests:** `python -m pytest -q`, 52 passed.
 
+- **Pre-registration commit:** d1286b5. Repacking from `git -c core.autocrlf=false archive HEAD` gives the same sha `0fefd79d...6faa12`.
+- **Notebook:** `notebooks/exp062_r/`, built with the section 6 command. Against `notebooks/exp061_r/` it differs in only 2 lines, both in cell 1: `EXP_ID` and `SUBMISSION_B64`. The embedded base64 decodes to sha `0fefd79d...6faa12`. `kernel-metadata.json` is EXP-061's with only `id` and `title` changed, to `rainm4/gemma4-exp062-r`. Nothing was copied to `out/submission.zip`.
+
 ## Status
 
-2026-11-09: pre-registered and packed; the notebook is not built yet. Next: verify that the sha reproduces from committed blobs, build `notebooks/exp062_r/`, push.
+~~2026-11-09: pre-registered and packed; the notebook is not built yet. Next: verify that the sha reproduces from committed blobs, build `notebooks/exp062_r/`, push.~~
+
+2026-11-09: notebook built and committed; push follows this commit. Kernel `rainm4/gemma4-exp062-r`. Next, when COMPLETE: the analysis commands in section 6.
