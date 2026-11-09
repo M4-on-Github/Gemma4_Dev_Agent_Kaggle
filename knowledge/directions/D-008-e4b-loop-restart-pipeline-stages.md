@@ -2,7 +2,7 @@
 id: D-008
 title: Restart the E4B smoke-8 harness loop on the pipeline tree, with mechanisms (a copy adapter on the applier, location-diverse drafters, a reproducer stage) and no prompt wording
 decision: continue
-status: proposed; the restart itself is the user's word (2026-11-09, `knowledge/user-decisions.md`); the ranking below is the lead's, open to the user and the critic's `direction` review
+status: proposed, revised 2026-11-09 after the critic's `direction` review (needs-work; `experiments/EXP-062/critic.md`, ff8654b, 81c907d). The restart is the user's word (2026-11-09, `knowledge/user-decisions.md`); the ranking is the lead's.
 track: main
 claims: [C-023, C-024]
 date: 2026-11-09
@@ -37,6 +37,24 @@ showed that wording moves nothing on this model (EXP-053 row 3, EXP-055 row 3, E
 - The temperature vote gave no second opinion: D = 0 of 8 (EXP-040).
 - The copy adapter (EXP-054 v2) raised exact copy from 0.483 to 0.708 (McNemar p 1.4e-6), but it failed the free-agent drift gate. Its integration test was clean (EXP-058 row 3).
 - The public frontier's design is a 31B single loop (briefing, dated 2026-10-29: about 0.24 = 14/58). The board has not been re-checked since.
+
+## Revision 2026-11-09 after the critic (read first; the original ranking below is kept as written)
+- **New order:**
+  1. Location-diverse drafters (EXP-064, the screener).
+  2. A reproducer stage used as the applier's selector (EXP-063, the experimenter). It writes one test at a path the harness strips from the patch, and the applier keeps the first draft that passes it.
+  3. The two fused, in a later round.
+  
+  The copy adapter on the applier is **parked** for three reasons:
+  - of the 16 failed applier edits in EXP-061 and EXP-062, 5 lost an argument and 7 were exact copies of drafts whose text did not match the file, so exact copying fixes at most about 4;
+  - the adapter's one agent run, EXP-058, failed 10 of 20 edits against the base's 7 of 17;
+  - it would override EXP-054 §10.5, and the drift gate's G4 (prose drift on every token) is not answered by changing the role.
+- **Harm row, restated:** empty patches above the base maximum of 2 of 8, or any cap hit, or mean wall over about 150 s. The original "non-empty in EXP-061 or EXP-062" fires on any empty patch, since every task is non-empty in at least one base run; EXP-062 itself would have fired it, on requests_7205.
+- **Kill rules are per EXP** and set in each pre-registration against the pooled EXP-061 and EXP-062 reference.
+- **Each smoke-8 here is a screen, not a decision.** Even a perfect result gives p of about 0.10 against the pooled base (critic).
+- **Only fastapi_14448 and rich_3468 can still change outcome on smoke-8.** Their failed runs split into wrong file 4, wrong fix 4, failed edit 0 (EXP-053 §1), which is why diversity and selection rank first. Both are reported separately in each EXP.
+- **Final check, restated:** three kept mechanisms at 0.3 to 0.5 task each make at most about 1.5 tasks, against the 4 that one LB draw can see. The honest final state is therefore one of two:
+  - a package of kept process endpoints, put to the LB once on the user's word, read as one draw;
+  - a written finding that on smoke-8, 13 E4B runs resolved only fastapi_14301 and rich_3006 (critic), so the ceiling here is the model, not the harness. That finding is paper-track material.
 
 ## What's new in our approach?
 Each stage of the pipeline is a place to put one mechanism, with a process endpoint readable at n = 8:
@@ -74,7 +92,8 @@ Each stage of the pipeline is a place to put one mechanism, with a process endpo
 - **C: stop E4B work and spend on the 31B main line.** The loop does not serve the 31B: at 8 min it has 13.8 s of room
   per task, and every parallel shape failed there (EXP-049 R1, EXP-032 P1). If "the solution" means the main-track
   score, only C funds it.
-- Critic's dissent: pending the `direction` review, dispatched 2026-11-09.
+- **Critic's dissent (needs-work, 2026-11-09, verbatim):** "Rank 1 belongs below ranks 2 and 3. Of the 16 failed applier edits in EXP-061 and EXP-062, 5 lost an argument and 7 copied a draft exactly whose text did not match the file, so exact copying fixes at most 4. The adapter's one agent run, EXP-058, failed 10 of 20 edits against the base's 7 of 17. The harm row and the rank-1 kill must be restated before any pre-registration, because the unchanged base fires both. Three kept mechanisms at 0.3 to 0.5 tasks each make at most 1.5 against the 4 the final check needs."
+  - **Lead's response:** accepted in full; see the revision section above. The critic also recommended fusing ranks 2 and 3, because the applier took draft 1 on 5 of 6 matched tasks, so diverse drafts need a selector; that is now the order. The critic's claim that a `test_*.py` name is stripped from the patch is to be confirmed in EXP-063's desk check.
 
 ## Expected score impact
 - About 0.3 to 0.5 task of 58 per kept mechanism, P(success) about 0.2 to 0.3 each [I].
