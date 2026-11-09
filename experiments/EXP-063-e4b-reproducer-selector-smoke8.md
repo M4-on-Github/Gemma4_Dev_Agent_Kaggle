@@ -154,3 +154,14 @@ This job does not run the kernel push; the lead releases it. The analysis is a s
 ## 8. Built (below the line; nothing above changes)
 
 ---
+
+- **Changed files vs EXP-062 `candidate-r`:** new `prompts/reproducer.md` and `sub_agents/reproducer.yaml`; edited `prompts/applier.md` (team paragraph, `{repro?}` block, section 1), `sub_agents/pipeline.yaml` (one comment line, one stage line), `sub_agents/applier.yaml` (one comment line). `diff -ru` shows nothing else. No CR byte in the tree.
+- **Validator** (`--official --strict`): 1 error, the 18.00 h gate, which `--skip-budget-gate` demotes to a warning. 2 warnings, both carried by EXP-061 and EXP-062: the applier's `submit_patch` and `timeout_seconds` 240. The official validator could not be imported (no `adk_submission` locally). 11 agents, 22 files.
+- **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 22 files, 15.7 KiB. **sha256 `48dfee068198201f8ada36ce91e045ef3d3d0641ad5362b70e2115fd3420e7af`.**
+- **Pre-registration commit:** 6b605cf. `git ls-files --eol` on the candidate tree: all 22 blobs `i/lf`, worktree `w/lf`. The committed tree exported with `git -c core.autocrlf=false archive HEAD` and repacked to `out/exp063_repack.zip` gives the same sha `48dfee06...20e7af`.
+- **Notebook:** `notebooks/exp063_p/`, built with the section 6 command; the embedded zip decodes to sha `48dfee06...20e7af`. Against `notebooks/exp062_r/` the code cells differ only in `EXP_ID` and `SUBMISSION_B64`; `TASK_IDS` is the 8 smoke-8 ids, `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`. `kernel-metadata.json` is EXP-062's with only `id` and `title` changed, to `rainm4/gemma4-exp063-p`.
+- **Kernel id for the push:** `rainm4/gemma4-exp063-p`, directory `notebooks/exp063_p`. Expected about 0.40 GPU-h; worst case about 1.3 h.
+
+## Status
+
+BUILT 2026-11-09, push not run: the lead releases it. No upload, no dev-48.
