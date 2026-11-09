@@ -222,3 +222,61 @@ Tasks with at least 1 text-form call: 0 of 8. Tool-free tasks: 0 of 8 (every tra
 3. The tool-call count in `summary.jsonl` counts `transfer_to_agent` once per task; the 8 reported above are the per-task `n_calls` field, which excludes it.
 
 ---
+
+## 10. Lead-requested follow-up count, 2026-11-09. Changes no reading; row 3 stands.
+
+Question: why did row 3 fire (L < 2 on 6 of 8), and which of section 5's two stronger forms (a required minimum of 3 locations in the prompt, or a separate localizer stage) does the cause point to. Zero GPU. Method: greps over `runs/EXP-064-loc/traces/` for each trace's reader tool calls (function name, `filepath` and `command` arguments, author) and line-number reads of the reader's result lines. No script was run, no text is copied here, and only ids, counts, paths and error kinds are written. "Named" means a file appears in a search result or in a command argument; "opened" means a `read_file` call. A reader step is a trace step authored by the reader; each reader has 2 steps beyond its tool calls (the report steps).
+
+### 10.1 Per task: what the reader saw before it listed locations
+
+| task | reader calls (run_command / read_file) | reader steps | files opened | files named by searches or command arguments | seen (union) | L | gold file among seen | group |
+|---|---|---|---|---|---|---|---|---|
+| requests_7309 | 2 (1 / 1) | 4 | 1 (`src/requests/utils.py`) | 1 (same) | 1 | 1 | yes | (i) |
+| requests_7205 | 2 (1 / 1) | 4 | 1 (`src/requests/utils.py`) | 2 (`sessions.py`, `utils.py`) | 2 | 1 | yes | (ii) |
+| fastapi_14448 | 5 (4 / 1) | 7 | 1 (`fastapi/routing.py`) | 1 (same) | 1 | 1 | **no** | (i) |
+| fastapi_14301 | 5 (3 / 2, both reads of one file) | 7 | 1 (`fastapi/dependencies/utils.py`) | 1 (same) | 1 | 1 | yes | (i) |
+| rich_3468 | 10 (4 / 6) | 12 | 2 (`rich/console.py` 5 reads, `rich/logging.py` 1) | 1 (`rich/console.py`, by command argument) | 2 | 1 | yes | (ii) |
+| rich_3006 | 4 (3 / 1) | 6 | 1 (`rich/repr.py`) | 0 | 1 | 1 | yes | (i) |
+| httpx_3672 | 11 (4 / 7) | 13 | 2 (`_parsers.py` 6 reads, `_server.py` 1) | 4 (`__init__.py`, `_parsers.py`, `_pool.py`, `_server.py`) | 4 | 4 | yes | L >= 2 |
+| fastapi_14605 | 4 (1 / 3) | 6 | 3 (`fastapi/exceptions.py`, `temp_pydantic_v1_params.py`, `utils.py`) | 0 | 3 | 2 | yes | L >= 2 |
+
+Gold file among the seen files is read against the gold list in section 1: fastapi_14448 lists `dependencies/models.py` and `dependencies/utils.py`, and the reader saw only `routing.py`; every other task has a gold file in its seen set.
+
+### 10.2 The split of the 6 tasks with L < 2
+
+- **Group (i), the reader saw one candidate file only: 4 of 6** (requests_7309, fastapi_14448, fastapi_14301, rich_3006). A second location was only possible as another region of the same file, and in fastapi_14448 the one file seen is not a gold file.
+- **Group (ii), it saw several files and listed one: 2 of 6** (requests_7205, rich_3468). requests_7205: the second file was named by 4 hit lines of one search result and was never opened (the section 2 rule requires a location to have been opened). rich_3468: the second file was opened (one read) and the reader still listed only `rich/console.py`, a file it read 5 times.
+
+### 10.3 A search failure recorded in the same traces
+
+7 of the 21 reader `run_command` calls (7 of the 16 on the six L < 2 tasks) ended in the same error kind: a `head` invocation with the count detached from its flag, which `head` rejects as a missing file. They fall on fastapi_14448 (3 of its 4 searches), fastapi_14301 (2 of 3), rich_3468 (1 of 4) and rich_3006 (1 of 3). None fell on a task with L >= 2. In fastapi_14448 2 of the 3 failed searches named one function and the third was aimed at `fastapi/dependencies/` (where both gold files live); the only search that ran returned one hit, in `fastapi/routing.py`. In fastapi_14605 the one search ran against a directory path that returned nothing (exit 1, empty), and the reader listed 2 locations from 3 file reads without any search result. This is a defect of the reader's searching, not of the prompt wording, and it is a candidate reason the reader saw one file on 3 of the 4 group (i) tasks (fastapi_14448, fastapi_14301 and rich_3006 each had searches fail; requests_7309 had a single search that ran and a single file named). Whether the searches would have found a second file was not tested.
+
+### 10.4 Reader budget before its report
+
+| task | reader calls | reader `read_file` calls (prompt limit 8) | reader share of the task's tool calls | reader steps |
+|---|---|---|---|---|
+| requests_7309 | 2 | 1 | 2 of 4 | 4 |
+| requests_7205 | 2 | 1 | 2 of 5 | 4 |
+| fastapi_14448 | 5 | 1 | 5 of 7 | 7 |
+| fastapi_14301 | 5 | 2 | 5 of 7 | 7 |
+| rich_3468 | 10 | 6 | 10 of 19 | 12 |
+| rich_3006 | 4 | 1 | 4 of 6 | 6 |
+| httpx_3672 | 11 | 7 | 11 of 16 | 13 |
+| fastapi_14605 | 4 | 3 | 4 of 15 | 6 |
+
+No reader reached its stated `read_file` limit of 8 (most reads 7, httpx_3672). The task-wide caps (`max_tool_calls` 45, `max_turns` 120) were never near: the reader used 2 to 11 calls. Reader calls total 43 of the 79 task calls. The reader stopped early on the L < 2 tasks and was not budget-bound: the four tasks with 2 to 5 calls (requests_7309, requests_7205, fastapi_14448, fastapi_14301) stopped with unused read allowance of 7, 7, 7 and 6.
+
+### 10.5 rich_3468, the 6 failed `edit_file` calls
+
+All 6 applier `edit_file` calls on `rich/console.py` returned the same error kind, `FileEditError` with "old_string not found". None lost its arguments (the arg-loss marker count is 0 for the task, as `summary.jsonl` has it). So 6 of 6 are the old-string-not-in-file kind and 0 of 6 are lost-argument. The applier made 2 `read_file` calls on the file between attempts (after the second and the fifth failure) and the patch stayed empty. Whether the old strings differ from the file by whitespace or by content was not compared; the harness error does not say which.
+
+### 10.6 What the count bears on (not a reading)
+
+- Of the 6 tasks, 4 had one candidate file in view, so a prompt-level minimum of 3 locations would ask the reader for locations it had not seen; on 3 of those 4 its searches had mostly failed. A minimum can be met by padding with other regions of the same file (the section 2 rule requires an opened file).
+- Only 2 of 6 (requests_7205, rich_3468) had a second file in view; in one of those two it had not been opened.
+- A separate localizer stage with its own searches would address the shortage of candidates, but the search defect in 10.3 appears in this reader's own searches and would need its own guard, for example a shorter command form in the prompt.
+- n = 6 and the counts are descriptive. The choice between the two forms is the lead's.
+
+Limits: the count of files named reads only each search's first-seen output (results capped by the reader's own `head` or a single-file search); the in-file searches in rich_3468 name their file only through the command argument; fastapi_14605 and httpx_3672 were counted but not part of the split.
+
+---
