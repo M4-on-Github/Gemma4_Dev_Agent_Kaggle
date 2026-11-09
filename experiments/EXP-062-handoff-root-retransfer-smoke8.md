@@ -134,4 +134,6 @@ Analysis, a separate job:
 
 ~~2026-11-09: pre-registered and packed; the notebook is not built yet. Next: verify that the sha reproduces from committed blobs, build `notebooks/exp062_r/`, push.~~
 
-2026-11-09: notebook built and committed; push follows this commit. Kernel `rainm4/gemma4-exp062-r`. Next, when COMPLETE: the analysis commands in section 6.
+~~2026-11-09: notebook built and committed; push follows this commit. Kernel `rainm4/gemma4-exp062-r`. Next, when COMPLETE: the analysis commands in section 6.~~
+
+2026-11-09 00:44 UTC: pushed after 3f79d7d ("Kernel version 1 successfully pushed"); first status RUNNING. Kernel `rainm4/gemma4-exp062-r` v1. Next, when COMPLETE: the analysis commands in section 6, then apply section 4.
