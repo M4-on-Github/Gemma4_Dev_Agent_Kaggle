@@ -146,8 +146,12 @@ The kernel push is released by the lead and is not run in this job. Analysis, a 
 - **Validator** (`--official --strict`): 1 error, the 18.00 h gate, which `--skip-budget-gate` demotes to a warning. 2 warnings, both carried by EXP-061 and EXP-062: the applier's `submit_patch` and `timeout_seconds` 240. The official validator could not be imported.
 - **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 20 files. **sha256 `3b9aea1592178bbbd131c8ac5c0fa10ddfdd8fdbd567a629b346688b0c25ea5e`.**
 
+- **Pre-registration commit:** 380685e. `git ls-files --eol` on the candidate tree: all 20 blobs `i/lf`, worktree `w/lf`, so a repack from the committed blobs is byte-identical to the worktree. A repack to `out/exp064_repack.zip` gives the same sha `3b9aea15...25ea5e`.
+- **Notebook:** `notebooks/exp064_loc/`, built with the section 6 command. Against `notebooks/exp062_r/` the notebook differs only in `EXP_ID` and `SUBMISSION_B64`. `kernel-metadata.json` is EXP-062's with only `id` and `title` changed, to `rainm4/gemma4-exp064-loc`. Nothing was copied to `out/submission.zip`.
+- **Kernel id for the push:** `rainm4/gemma4-exp064-loc`, directory `notebooks/exp064_loc`.
+
 ## Status
 
-2026-11-09: pre-registered, candidate packed. Notebook not built yet. Push is the lead's to release. Next: verify that the sha reproduces from committed blobs, build `notebooks/exp064_loc/`.
+2026-11-09: pre-registered (380685e), candidate packed and the sha reproduced, notebook built and committed. **Not pushed.** The lead releases the push. Next, when COMPLETE: the analysis commands in section 6, then apply section 4.
 
 ---
