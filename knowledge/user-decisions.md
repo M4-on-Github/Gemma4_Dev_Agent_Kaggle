@@ -269,4 +269,4 @@ User, verbatim: "what agentic experiments should we make to the solution? let's 
   2. **Ranking:** the question "what experiments" is answered by D-008, the lead's ranking: a copy adapter on the applier, then location-diverse drafters, then a reproducer stage, with no prompt wording. The base is the EXP-062 pipeline tree. The user can reorder it or pick Option C, 31B work, instead.
   3. **GPU terms (assumed by the lead, not stated by the user):** those of the 2026-11-08 loop, a 4.0 GPU-h ceiling for 2026-11-09 counting EXP-062's 0.323, with standing push approval for smoke-8 rounds inside it. Not approved: any dev-48, upload or re-run of a failed kernel. The user can change the ceiling before any push.
   4. **Asked of the user:** the sidebar quota figure, its reset day, and whether L4x4 counts 1x (plan.md:25).
-
+- 2026-11-09 ~23:50 UTC: "submit smth for today to the competition". The lead proposed S-016, the EXP-064 tree (zip 3b9aea15, the 8-min override as S-014 and S-015). The user wrote `approvals/S-016.txt` about 23:52. The submitter uploaded at 23:56:17 UTC, ref 58178151, the 2026-11-09 slot.
