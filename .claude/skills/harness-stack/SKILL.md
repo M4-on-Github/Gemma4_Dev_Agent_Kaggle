@@ -61,6 +61,7 @@ user-invocable: false
   - They appear in completion order, not agent order, and they are stamped when the stage emits them. All 16 voters of one burst fall within 0.15-0.44 s, so stamp spreads are not generation times.
   - Segment passes as maximal runs of consecutive sub-agent steps, not by the first agent's name. Keying on voter_01 misfiled 8 restart-pass votes in EXP-040 (§7 item 8).
 - The harness records a nudge as a `source: "system"` step with `extra.event_type == "continuation_nudge"`. `analyze_traces.py` counts those since 522c561 (2026-11-05); `summary.jsonl` files made before it show `nudges` 0 (EXP-038 has 9, EXP-028-armRH 4).
+- Nudge routing [V] (2026-11-09, EXP-061/062): a nudge re-run lands on the root unless the last author's whole parent chain is transfer-capable LlmAgents (Sequential/Parallel parents block it); a re-entered SequentialAgent restarts at index 0; a cap hit still ships the on-disk diff. See `reference/routing.md`.
 - Run directories hold each trace twice (`traces/` and `official/traces/`); a recursive glob over the run dir double-counts. Read `traces/` only, as `analyze_traces.py` does.
 - `python tools/run_forensics.py forensics runs/<EXP>` (where wall-clock went, first-edit turn); `python tools/run_forensics.py compare runs/<A> runs/<B>` (paired 2x2 on shared ids).
 - `python tools/regrade_patches.py` re-grades collected patches at 0 GPU-h. It runs only on a Kaggle CPU kernel: `swegemma` and the pinned image are not available locally.
