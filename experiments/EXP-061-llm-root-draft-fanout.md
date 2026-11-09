@@ -182,3 +182,11 @@ S1 is applied as written: **no further upload of this tree until fixed.** The ca
 **Resolves, recorded and not read:** 1 of 8 (`rich_3006`). n = 8, and resolves are not an endpoint.
 
 **Not read:** no effect claim. The LB reading (rows L1-L4) waits for S-015's score.
+
+---
+
+## 10. LB result, 2026-11-09. Section 4 LB rows applied as written.
+
+- **Score:** S-015, Kaggle ref 58143906, COMPLETE, publicScore **0.05**. The lead checked it at about 01:00 UTC 2026-11-09 with the CLI submissions csv (knowledge/submissions/S-015-result.md, e879561). On 58 tasks 0.05 is k = **3**, because 2/58 and 4/58 round to other values [I].
+- **Row that fires:** L1 does not match, since the tree finished on the hidden set and was scored. L2 does not match, since k is not 0 to 2. **L3 fires (k 3 to 5).** As written, this is the same level as S-014 (3/58, a difference of 0, under 4), so no effect is read. The tree completes on the hidden set: one observation.
+- **Not read:** this is one draw, below the ~4-task MDE. It says nothing about the root fix or the compaction crash, which the smoke-8 left untested (section 9). The smoke-8 row S1 still stands: no further upload of this tree until the nudge path is fixed (EXP-062).
