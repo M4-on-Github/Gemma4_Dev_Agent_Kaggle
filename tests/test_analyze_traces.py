@@ -108,3 +108,46 @@ def test_refused_submit_patch_is_not_a_submit():
           "observation": {"content": '{"status": "ok"}'}}
     assert A.analyze_trace({"steps": [refused]}, declared=set())["submit_patch_called"] is False
     assert A.analyze_trace({"steps": [refused, ok]}, declared=set())["submit_patch_called"] is True
+
+
+def _write_trace(d: Path, task_id: str, steps: list[dict]) -> None:
+    (d / f"trace_{task_id}.json").write_text(json.dumps({"steps": steps}), encoding="utf-8")
+
+
+def test_text_form_calls_and_tool_free(tmp_path: Path):
+    """EXP-065 2026-11-09: a final or text turn with no tool_calls whose message holds a call-shaped JSON value is a
+    text-form call; a task with 0 native calls and at least 1 is tool_free. Messages are synthetic."""
+    fence = "```"
+    traces = tmp_path / "traces"
+    traces.mkdir()
+    call_msg = f'I will look.\n{fence}json\n{{"tool_name": "read_file", "parameters": {{"filepath": "a.py"}}}}\n{fence}\n'
+    flat_msg = f'{fence}json\n[{{"tool": "read_file", "filepath": "a.py"}}]\n{fence}\n'
+    edit_msg = 'Edit below.\n{"filepath": "a.py", "old_string": "x", "new_string": "y"}\n' + fence
+    nudge = {"source": "system", "message": "", "extra": {"event_type": "continuation_nudge"}}
+    _write_trace(traces, "synth_text", [
+        {"step_id": 1, "source": "agent", "message": call_msg, "extra": {"event_type": "final"}},
+        dict(nudge, step_id=2),
+        {"step_id": 3, "source": "agent", "message": flat_msg, "extra": {"event_type": "text"}},
+        dict(nudge, step_id=4),
+        {"step_id": 5, "source": "agent", "message": edit_msg, "extra": {"event_type": "final"}},
+        # a call-shaped block in a thinking step is not a text-form call
+        {"step_id": 6, "source": "agent", "message": call_msg, "extra": {"event_type": "thinking"}},
+    ])
+    _write_trace(traces, "synth_native", [
+        {"step_id": 1, "source": "agent", "message": call_msg, "extra": {"event_type": "final"},
+         "tool_calls": [{"tool_call_id": "c1", "function_name": "read_file", "arguments": {"filepath": "a.py"}}],
+         "observation": {"content": "ok"}},
+    ])
+    status_msg = f'Done.\n{fence}json\n{{"status": "ok", "files_changed": 1}}\n{fence}\n'
+    errors_msg = f'{fence}json\n[{{"action": "edit", "error_message": "no match"}}]\n{fence}\n'
+    _write_trace(traces, "synth_nocall", [
+        {"step_id": 1, "source": "agent", "message": status_msg, "extra": {"event_type": "final"}},
+        {"step_id": 2, "source": "agent", "message": errors_msg, "extra": {"event_type": "text"}},
+    ])
+    per_task, agg = A.analyze_run(tmp_path, cap_minutes=None, max_calls=None)
+    by = {r["task_id"]: r for r in per_task}
+    assert by["synth_text"]["n_text_form_calls"] == 3 and by["synth_text"]["tool_free"] is True
+    assert by["synth_native"]["n_text_form_calls"] == 0 and by["synth_native"]["tool_free"] is False
+    assert by["synth_nocall"]["n_text_form_calls"] == 0 and by["synth_nocall"]["tool_free"] is False
+    assert agg["text_form_calls_total"] == 3 and agg["text_form_call_tasks"] == 1
+    assert agg["tool_free_tasks"] == 1 and abs(agg["tool_free_rate"] - 1 / 3) < 1e-9

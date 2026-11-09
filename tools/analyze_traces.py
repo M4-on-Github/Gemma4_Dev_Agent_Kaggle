@@ -15,7 +15,8 @@ Trace steps (observed format, VERIFY against a real trace): {"step_id", "source"
 Per-task output columns (summary.jsonl): task_id, repo, resolved, patch_empty, submit_patch_called, wall_s,
     setup_s, n_calls, n_turns, n_malformed, n_identical_repeats, n_undeclared_tool, overflow_400, nudges,
     compactions, phase_reached, output_tokens, prompt_tokens, thinking_tokens, timeout_hit, calls_cap_hit,
-    time_cap_hit, n_edit_fail, n_edit_arg_loss, n_whole_file_reads, scratch_in_patch, error.
+    time_cap_hit, n_edit_fail, n_edit_arg_loss, n_whole_file_reads, scratch_in_patch, n_text_form_calls,
+    tool_free (0 native calls and at least 1 text-form call; EXP-065), error.
 Aggregates (aggregates.json): resolve rate with Wilson 95% CI, rates of the failure modes, median/p90 wall,
     projected 12 h total = sum(wall+setup) * (120/N), worst case = 120 * (cap + setup).
 
@@ -106,12 +107,65 @@ def count_token_compactions(steps: list[dict], threshold: int = R.COMPACTION_TOK
     return n
 
 
+# EXP-065 2026-11-09: a text-form tool call is a model turn (event_type final or text, no `tool_calls` on the
+# step) whose message holds a call-shaped JSON value. Shapes seen in EXP-065's 12 runs: a `tool_name` (or
+# `function_name`) key with flat or nested arguments; a name key (`name`, `tool`, `function`) plus an argument
+# key; a string `tool` key with flat arguments; a `tool_calls` / `tool_call` wrapper; and bare edit arguments (`filepath` plus `old_string`). A list is
+# a call when any element is. Status objects and error-list arrays match none of these and are not counted.
+# A candidate JSON value starts a line or follows a fence opener; one E4B edit object (EXP-038 rich_3521)
+# has a closing fence but no opener, so fenced-only matching would miss it.
+TEXT_TURN_EVENTS = ("final", "text")
+_CALL_NAME_KEYS = ("name", "tool", "function")
+_CALL_ARG_KEYS = ("args", "arguments", "parameters", "params", "input")
+_JSON_START_RE = re.compile(r"(?m)^[ \t>]*([\[{])|```[A-Za-z0-9_-]*[ \t]*\n?[ \t]*([\[{])")
+_DECODER = json.JSONDecoder()
+
+
+def is_call_shaped(obj, depth: int = 0) -> bool:
+    if depth > 3:
+        return False
+    if isinstance(obj, list):
+        return any(is_call_shaped(v, depth + 1) for v in obj)
+    if not isinstance(obj, dict):
+        return False
+    if "tool_name" in obj or "function_name" in obj:
+        return True
+    if any(k in obj for k in _CALL_NAME_KEYS) and any(k in obj for k in _CALL_ARG_KEYS):
+        return True
+    if isinstance(obj.get("tool"), str) and len(obj) > 1:   # `tool` with flat arguments (EXP-056 r2 rich_3468)
+        return True
+    for wrap in ("tool_calls", "tool_call"):
+        v = obj.get(wrap)
+        if isinstance(v, dict) or (isinstance(v, list) and v):
+            return True
+    return "filepath" in obj and "old_string" in obj
+
+
+def has_text_form_call(msg: str) -> bool:
+    """True when the message holds a JSON value of a call shape (see the EXP-065 note above)."""
+    if not msg or ("{" not in msg and "[" not in msg):
+        return False
+    done_to = -1
+    for m in _JSON_START_RE.finditer(msg):
+        pos = m.start(1) if m.group(1) is not None else m.start(2)
+        if pos < done_to:
+            continue
+        try:
+            obj, end = _DECODER.raw_decode(msg, pos)
+        except ValueError:
+            continue
+        done_to = end
+        if is_call_shaped(obj):
+            return True
+    return False
+
+
 def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
     """Metrics derived from one SessionTrace."""
     steps = trace.get("steps") or []
     calls: list[tuple[str, dict]] = []
     n_turns = n_malformed = n_undeclared = nudges = compactions = n_edit_fail = n_whole_reads = 0
-    n_edit_arg_loss = 0
+    n_edit_arg_loss = n_text_form = 0
     submit_called = False
     phase = None
     last_calls: list[str] = []
@@ -134,6 +188,8 @@ def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
         if src != "agent":
             continue
         n_turns += 1
+        if etype in TEXT_TURN_EVENTS and not s.get("tool_calls") and has_text_form_call(msg):
+            n_text_form += 1
         if TOOL_CALL_START in msg:
             n_malformed += 1   # a call vLLM could not parse stayed in the content
         for m in LEDGER_RE.finditer(msg):
@@ -207,6 +263,7 @@ def analyze_trace(trace: dict, *, declared: set[str]) -> dict:
         "thinking_tokens": fm.get("total_thinking_tokens"),   # not in the observed format; stays null
         "n_edit_fail": n_edit_fail, "n_edit_arg_loss": n_edit_arg_loss,
         "n_whole_file_reads": n_whole_reads,
+        "n_text_form_calls": n_text_form, "tool_free": not calls and n_text_form > 0,
         "tool_histogram": dict(Counter(c[0] for c in calls)),
     }
 
@@ -253,7 +310,8 @@ def analyze_run(run_dir: Path, *, cap_minutes: float | None, max_calls: int | No
             "calls_cap_hit": None, "time_cap_hit": bool(cap and wall >= cap * 60 - 5),
             "n_edit_fail": None, "n_edit_arg_loss": None, "n_whole_file_reads": None,
             "scratch_in_patch": bool(isinstance(patch, str) and SCRATCH_RE.search(patch)),
-            "submit_patch_called": None, "error": err[:200] or None, "trace": None,
+            "submit_patch_called": None, "n_text_form_calls": None, "tool_free": None,
+            "error": err[:200] or None, "trace": None,
         }
         tp = find_trace(run_dir, task_id, row.get("trace"))
         if tp is not None:
@@ -309,6 +367,10 @@ def aggregate(rows: list[dict], *, cap_minutes: float | None, n_hidden: int = R.
         "mean_calls": _mean(rows, "n_calls"), "mean_output_tokens": _mean(rows, "output_tokens"),
         "nudges_total": sum(r["nudges"] or 0 for r in rows), "compactions_total": sum(r["compactions"] or 0 for r in rows),
         "phase_histogram": dict(Counter(str(r.get("phase_reached")) for r in rows)),
+        "text_form_calls_total": sum(r.get("n_text_form_calls") or 0 for r in rows),
+        "text_form_call_tasks": sum(1 for r in rows if (r.get("n_text_form_calls") or 0) > 0),
+        "tool_free_tasks": sum(1 for r in rows if r.get("tool_free")),
+        "tool_free_rate": _rate(rows, "tool_free"),
         "setup_s_used": setup_s, "setup_source": "measured" if setups else "assumed",
         "projected_12h_total_h": (total * n_hidden / n / 3600) if n else None,
         "worst_case_h": (n_hidden * (cap_minutes * 60 + setup_s) / 3600) if cap_minutes else None,
@@ -349,6 +411,8 @@ def render(per_task: list[dict], agg: dict) -> str:
     if agg["median_wall_s"] is not None:
         lines.append(f"wall median {agg['median_wall_s']/60:.2f} min, p90 {agg['p90_wall_s']/60:.2f} min; "
                      f"nudges {agg['nudges_total']}, compactions {agg['compactions_total']}; phases {agg['phase_histogram']}")
+    lines.append(f"text-form calls {agg['text_form_calls_total']} on {agg['text_form_call_tasks']} tasks; "
+                 f"tool-free tasks {agg['tool_free_tasks']}")
     if agg["projected_12h_total_h"] is not None:
         wc = f"{agg['worst_case_h']:.2f} h" if agg["worst_case_h"] is not None else "n/a (no cap)"
         lines.append(f"projected hidden-run total {agg['projected_12h_total_h']:.2f} h (setup {agg['setup_s_used']:.0f} s "

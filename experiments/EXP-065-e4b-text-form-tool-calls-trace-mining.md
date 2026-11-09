@@ -77,3 +77,37 @@ Zero GPU. No push.
 ## Status
 
 2026-11-09: counts written, committed. Open: the tool-declaration cause (needs a one-task GPU probe, not requested).
+
+---
+
+## 9. Cross-check against the analyze_traces.py counter, 2026-11-09
+
+`tools/analyze_traces.py` now writes `n_text_form_calls` and `tool_free` per task, and `text_form_calls_total`, `text_form_call_tasks`, `tool_free_tasks` and `tool_free_rate` in `aggregates.json`. The rule is section 2's, restated in code:
+- A turn counts when it is an agent step with event_type final or text, has no `tool_calls`, and holds a call-shaped JSON value. Such a value starts a line or follows a fence opener.
+- Call-shaped means one of these: a `tool_name` or `function_name` key; a name key (`name`, `tool`, `function`) plus an argument key (`args`, `arguments`, `parameters`, `params`, `input`); a string `tool` key with flat arguments; a non-empty `tool_calls` or `tool_call` wrapper; or `filepath` plus `old_string`. A list counts when any element counts.
+- `tool_free` means 0 native calls (free tools included) and at least 1 text-form turn.
+
+Command: `analyze_trace` over each run's `traces/` (scratch driver `out/exp065_xcheck.py`, untracked). Test: `tests/test_analyze_traces.py::test_text_form_calls_and_tool_free`.
+
+| Run | task-runs | tasks with at least 1 text-form call | tool-free | text-form turns | section 3 |
+|---|---|---|---|---|---|
+| EXP-033 | 8 | 1 (fastapi_14301) | 0 | 1 | match |
+| EXP-038 | 48 | 3 (fastapi_13537, rich_3521, rich_3934) | 1 (fastapi_13537) | 6 (4, 1, 1) | match |
+| EXP-045 | 8 | 0 | 0 | 0 | match |
+| EXP-055 | 8 | 1 (fastapi_14448) | 1 | 4 | match |
+| EXP-058 | 8 | 0 | 0 | 0 | match |
+| EXP-056 r1 | 8 | 2 (fastapi_14605, requests_7309) | 2 | 8 (4, 4) | tasks match; turns differ, item 1 |
+| EXP-056 r2 | 8 | 2 (requests_7309, rich_3468) | 2 | 8 (4, 4) | match |
+| EXP-057 r1 | 8 | 1 (requests_7309) | 1 | 4 | match |
+| EXP-057 r2 | 8 | 1 (requests_7309) | 1 | 4 | match |
+| EXP-052 | 8 | 1 (httpx_3672) | 0 | 1 | match |
+| EXP-061 | 8 | 1 (fastapi_14301) | 0 | 1 | match |
+| EXP-062 | 8 | 2 (fastapi_14301, requests_7205) | 0 | 2 | match |
+| EXP-064 (extra) | 8 | 0 | 0 | 0 | matches the screener's 0 (8612b02) |
+
+The group totals reproduce section 3: base flat 80 task-runs, 5 with a text-form call, 2 tool-free; skill trees 32, 6, 6; pipeline trees 24, 4, 0. Neither of the two non-call fences of section 2 (EXP-038 fastapi_14512 step 20, EXP-057 r1 fastapi_14605 step 16) is counted.
+
+Mismatches and notes:
+1. **EXP-056 r1 fastapi_14605: 4 turns, against 5 in section 3.** The fifth call-shaped block is at step 12, which is a thinking step, not a final or text turn. So section 2's own definition gives 4, and section 3's 5 counted the grep hit in the thinking step. The task-level counts (text-form, tool-free) are unchanged.
+2. **EXP-038 rich_3521 step 7 has no fence opener.** Its edit object sits on its own lines, with a closing fence after it and no opening fence. A fenced-only detector misses it, so the counter also takes a JSON value that starts a line. Section 2 counted it through the key grep.
+3. **EXP-056 r2 rich_3468 steps 7 and 10 use a list of `tool` objects with flat arguments.** A name-plus-args rule alone gives 2 turns there, not 4. The string `tool` rule was added so all four count, as section 3 counts them.

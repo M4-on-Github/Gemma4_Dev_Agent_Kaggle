@@ -10,7 +10,7 @@ user-invocable: false
 
 ## Environment
 
-- Python 3.13 (miniconda) is `python` in the Bash tool; the repo needs >= 3.12 with `pyyaml` and `pytest`. `python -m pytest -q` runs 49 tests (2026-11-05) in seconds on synthetic data; run it after touching `submission/`, `tools/` or adding a tracked file (two tests check the live tree and every tracked file).
+- Python 3.13 (miniconda) is `python` in the Bash tool; the repo needs >= 3.12 with `pyyaml` and `pytest`. `python -m pytest -q` runs 53 tests (2026-11-09; the repo addopts hide the count line, `-o addopts=""` shows it) in seconds on synthetic data; run it after touching `submission/`, `tools/` or adding a tracked file (two tests check the live tree and every tracked file).
 - Anything that reads downloaded or third-party files (`untrusted/`, run bundles, notebooks) runs as `python -I -X utf8 ...` so nothing is imported from the data's directory and encoding is stable.
 - `core.autocrlf=true`: the zip sha256 reproduces only from committed LF blobs. Pack from a clean export of the committed tree, compare `sha256sum` with the recorded value before any upload. Export with `git -c core.autocrlf=false archive HEAD <tree> | tar -x -C out/<dir>`: plain `git archive` applies autocrlf and writes CRLF, so the repack differs even when the worktree is LF (EXP-038, 2026-11-05). `git ls-files --eol <tree>` showing `i/lf w/lf` means the worktree pack already matches.
 - User-level hook blocks any `git commit` message carrying a Claude co-author or "Generated with" line. Commit without attribution lines.
@@ -51,7 +51,7 @@ user-invocable: false
 
 ## Run analysis
 
-- `python tools/analyze_traces.py runs/<EXP> --cap-minutes <cap> --max-calls <calls>` -> `summary.jsonl` + `aggregates.json`. Counts arg-loss failures by the harness string `mandatory input parameters are not present` (the `"status": "error"` envelope misses them ~10x).
+- `python tools/analyze_traces.py runs/<EXP> --cap-minutes <cap> --max-calls <calls>` -> `summary.jsonl` + `aggregates.json`. Counts arg-loss failures by the harness string `mandatory input parameters are not present` (the `"status": "error"` envelope misses them ~10x). Since 2026-11-09 it also writes `n_text_form_calls` (final or text turns with no native call that hold a call-shaped JSON value) and `tool_free` (0 native calls, at least 1 text-form turn); a task with `n_calls` 0 is a text-form ending when `tool_free` is true (EXP-065 section 9).
 - Compaction is live in the scorer, and no trace step records it (Q7, 2026-11-05).
   - Before each model call of any agent, sub-agents included, if the latest prompt count is ≥ 14,336, everything but the last 5 events is summarized by one extra model call. That call counts on the task clock but not as a turn.
   - It fired 49 times in EXP-028 Arm R. `compactions` before 2026-11-05 read 0 and is wrong in every older `summary.jsonl`.
