@@ -261,3 +261,12 @@ User, verbatim: "okay let's do 1 more loop"
   2. **Not approved:** any upload, dev-48, or re-run of a failed kernel; those need the user's word. EXP-061's S1 blocks a further upload of that tree; EXP-062 needs its own smoke reading before any upload is proposed.
   3. If the user meant a round of the E4B edit loop instead, they can redirect before the push.
 
+## 2026-11-09 (about 16:30 UTC): restart the harness improvement loop
+User, verbatim: "what agentic experiments should we make to the solution? let's restart the harness improvement loop"
+- Given after S-015 scored 0.05 (k 3, EXP-061 row L3) and while EXP-062's analysis was in flight.
+- Read by the lead as:
+  1. **The E4B smoke-8 loop restarts** under the rules in `knowledge/lessons-e4b-loop.md`. The two-keep-base stop count resets to zero, and a kept edit still counts only after an LB draw or a dev-48 arm.
+  2. **Ranking:** the question "what experiments" is answered by D-008, the lead's ranking: a copy adapter on the applier, then location-diverse drafters, then a reproducer stage, with no prompt wording. The base is the EXP-062 pipeline tree. The user can reorder it or pick Option C, 31B work, instead.
+  3. **GPU terms (assumed by the lead, not stated by the user):** those of the 2026-11-08 loop, a 4.0 GPU-h ceiling for 2026-11-09 counting EXP-062's 0.323, with standing push approval for smoke-8 rounds inside it. Not approved: any dev-48, upload or re-run of a failed kernel. The user can change the ceiling before any push.
+  4. **Asked of the user:** the sidebar quota figure, its reset day, and whether L4x4 counts 1x (plan.md:25).
+
