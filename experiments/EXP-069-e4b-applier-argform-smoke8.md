@@ -137,8 +137,10 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE: `kaggle k
 - **Changed files vs EXP-064 `candidate-loc`:** `prompts/applier.md` only (2 hunks).
 - **Validator** (`--official --strict`): 1 error, the 18.00 h gate, demoted by `--skip-budget-gate`; 2 warnings carried; no new warning. The official validator could not be imported.
 - **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 20 files, `dist/EXP-069-argform.zip` (gitignored). **sha256 `3892b1cd3278d7a10dbeee8d18e0f8fa75551a27de63b705f3bc462b1d1b7f60`.**
-- **Kernel id for the push:** `rainm4/gemma4-exp069-argform`, directory `notebooks/exp069_argform` (to be built after this commit).
+- **Pre-registration commit:** 1a3cf75 (this file, the candidate tree, the README row).
+- **Notebook:** `notebooks/exp069_argform/` (commit 19d9914), built with the section 6 command; `kernel-metadata.json` is EXP-068's with only `id` and `title` changed, to `rainm4/gemma4-exp069-argform`. Nothing was copied to `out/submission.zip`.
+- **Kernel id for the push:** `rainm4/gemma4-exp069-argform`, directory `notebooks/exp069_argform`. Kernel version 1.
 
 ## Status
 
-2026-11-10: pre-registered, candidate packed with sha `3892b1cd...b7f60`. Notebook and push to follow in a separate commit.
+2026-11-10: pre-registered (1a3cf75), candidate packed with sha `3892b1cd...b7f60`, notebook built (19d9914). **Pushed 2026-11-10**: kernel version 1, `rainm4/gemma4-exp069-argform`, first status RUNNING. Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp069-argform -p runs/EXP-069-argform/`, flatten, then the analysis in section 6, then apply section 4.
