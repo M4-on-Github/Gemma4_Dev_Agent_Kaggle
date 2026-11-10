@@ -124,3 +124,16 @@ neither does, this direction ends, by the same rule that stopped the loop on 202
 ## Final check
 A package of kept mechanisms whose dev-48 or LB reading, on the user's word, beats 3/58 by 4 or more tasks. Or a
 written finding that the E4B's ceiling here is the model, not the harness, which is also paper-track material.
+
+## Note 2026-11-10: the user's "tweak the agents" and the midterm rule
+- **User's word:** "no writeup let's tweak the agents" (`knowledge/user-decisions.md`, 323abfe). The lead reads it as a request to go on changing the pipeline's agents.
+- **Reconciliation:** the midterm rule above still governs the stage mechanisms; it is not rewritten here.
+  - EXP-064 did not move its endpoint (row 3).
+  - If EXP-063 also reads dropped or not exercised, ranks 2 and 3 end as written. EXP-066 (the reader's search form) is the follow-up that EXP-064 §10 named.
+  - Whatever those read, the user's word keeps the loop going on a **new target: edit reliability**.
+- **Lead's count (zero GPU) behind the new target:** across EXP-061-r, EXP-062-r and EXP-064-loc, 31 of the applier's 57 `edit_file` calls failed. Only 6 were argument loss. The harness matcher already forgives whitespace, indentation and JSON escaping (edit.py:401-454), so the rest are content mismatches. Two of the 24 task-runs ended with an empty patch because every edit failed.
+- **Next steps:**
+  - EXP-067 (screener, zero GPU) finds which stage corrupts `old_string`: the reader's REGION copy, the drafter's OLD, or the applier's paste.
+  - The class that dominates picks the one variable for the next smoke-8.
+  - That direction change, a pivot to edit reliability, goes to the critic at the `direction` tier once EXP-067's count is in.
+- **Honest scope:** EXP-053 put class B (an edit failing at one place) at 4 of 24 unresolved runs, behind C (right file, wrong fix) 12 and A (wrong file) 8. This target saves budget and fills empty patches; it does not by itself make fixes correct.
