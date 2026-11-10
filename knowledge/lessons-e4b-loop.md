@@ -107,3 +107,17 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
   - **Lesson:** a mechanism that needs several candidates inherits the search defect. A "list at least 3" prompt would pad with regions of one file on 4 of 6. Any localizer form must fix the search command form first; the graph tools are not the route (C-012: they lose to grep at every k).
   - rich_3468, a movable task, went empty after 6 applier `edit_file` calls, all "old_string not found", none arg-lost. Its failures now include class B.
   - **Tooling:** `analyze_traces.py` counts text-form calls (`n_text_form_calls`, `tool_free`; 2f9de11), cross-checked against EXP-065 over 13 runs.
+
+## Round 5 diagnosis: EXP-067 (zero GPU, c36c64a, a6c09bb), edit failures by stage
+- **Cue:** 31 of 57 applier `edit_file` calls failed over EXP-061-r, EXP-062-r and EXP-064-loc. 6 were argument loss.
+- **What the count found:** the 31 split as 6 A, 2 S, 11 R1, 8 E, 3 M and 1 O. There are 23 classified failures in 4 task-runs. Drafters never altered a correct REGION (D 0), and the applier never mis-pasted a draft (P 0).
+  - R1 (reader mis-copy): 11, all in EXP-064-loc on rich_3468 and fastapi_14605. Lines were skipped, a line was completed, extra indentation was added, and a comma was added.
+  - E (stale old_string): 8, only in the same-location trees. After an inconclusive check, the applier went on to drafts 2 to 5, whose OLD the first applied draft had already replaced.
+  - S (quote-wrapped `filepath`): 2, in EXP-061-r.
+  - M (ambiguous match): 3, a correct block that recurs 8 times in its file.
+  - O (applier's own edit): 1.
+- **Lesson:** the copy defect sits in the stage that copies from furthest back: the reader, after several reads. When the applier re-read the file, it still pasted the reader's defect (2 of 2), because the defective text was also in its context. So a fresh read helps only where the defective copy is absent.
+- **Endpoint with room:** first-edit-applies is 17 of 24, and 6 of 8 on EXP-064-loc. "Tasks with at least 1 applied edit" is 7 of 8 and has no room.
+- **Confidence:** [V] for the counts. Drafters seeing the reader's tool results is [I], from one trace.
+- **Outcome:** EXP-068 is built on the EXP-064 tree. Each drafter reads its own lines and copies OLD from that result, and the reader gives no REGION.
+
