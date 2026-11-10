@@ -274,3 +274,6 @@ User, verbatim: "what agentic experiments should we make to the solution? let's 
   - EXP-063 is re-pushed unchanged as version 2.
   - EXP-066 (the reader's search command form, after EXP-064 §10) is built at zero GPU.
   - Assumed terms for 2026-11-10 are the same as 11-09: a 4.0 GPU-h ceiling with smoke-8 pushes inside it; no dev-48, and no upload without the user's word.
+- 2026-11-10 ~13:45 UTC: asked whether to start the paper-track Writeup (due 2026-11-12 23:59 UTC), the user answered "no writeup let's tweak the agents". The lead reads this as:
+  1. **No paper-track Writeup.** The paper-writer is not dispatched, and `paper/` stays as it is. The paper track is dropped unless the user reopens it before the deadline.
+  2. **"Tweak the agents" means the submission's pipeline agents** (root, reader, drafters, applier) under D-008, inside the assumed 11-10 terms. It does not mean the `.claude/agents/` research team. Both GPU slots are taken (EXP-063 v2, EXP-066), so the next tweaks are built and screened at zero GPU first and pushed when a slot frees.
