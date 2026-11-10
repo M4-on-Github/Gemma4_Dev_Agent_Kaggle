@@ -2,72 +2,78 @@
 id: D-009
 title: E4B pipeline edit reliability, one stage defect per round
 decision: pivot
-status: proposed (the user's word "tweak the agents", 2026-11-10; critic `direction` review pending, experiments/EXP-067/critic.md)
+status: proposed, revised 2026-11-10 after the critic's `direction` review (needs-work; experiments/EXP-067/critic.md, d372a76, 53be9fb). The pivot is on the user's word "tweak the agents" (2026-11-10); the user's choice between this and option B is open.
 track: main
 claims: []
 date: 2026-11-10
 ---
 
+## Revision 2026-11-10 after the critic (read first)
+All four required fixes are accepted.
+1. **The accounting covers all 5 runs** (EXP-061, 062, 063, 064, 066; 62 failed edits over 40 task-runs). This is the critic's text-match count, not a chain diff:
+
+   | Class | Failed edits | Task-runs | Empties caused |
+   |---|---|---|---|
+   | A + S, the applier's argument form (argument loss, quote-wrapped `filepath`) | 22 | 9 | 3 |
+   | Reader stage (R1) | 17 to 18 | 3 | 2, both rich_3468 |
+   | E, a stale old_string | 12 | 4 | 0 |
+   | M, an ambiguous match | 9 | 2 | 0 |
+
+   The rounds are ordered by empties caused. **S is round 2 unconditionally**: it already recurred on the EXP-064 tree (4 in EXP-066). EXP-068, the reader-stage form, was pushed before this review and stays round 1.
+2. **The midterm is restated** on content-class first-edit failures (reference 2 of 40) and on drafter copy mismatches, with EXP-068's thresholds. "R1 = 0" holds by construction once REGION is gone, and first-edit ≥ 7 of 8 passes by noise about a quarter of the time (critic's estimate).
+3. **A not-exercised EXP-068 ends only that form** (a drafter that chooses to call `read_file`), not the direction. That is EXP-068's own §5.
+4. **What a success feeds:** only an E4B package upload, which so far draws 0.05 and 0.01 against the 31B's 0.18.
+   - Little ports to the 31B: S does not occur there (0 quoted paths in 284 edits); the reader class has no counterpart in a single loop; and A occurs there, but its one prompt mitigation is refuted (C-005).
+   - So D-009 is a process direction for the E4B carrier. Option B below is restated on time-neutral terms.
+
 ## What are we trying to do?
-Make the pipeline's edits land on the file. Today, over 24 task-runs of three pipeline runs, 31 of the applier's 57
-`edit_file` calls fail (EXP-067). In 5 of the 40 task-runs since EXP-061, every edit failed and the patch came out empty:
-requests_7309 in EXP-061, rich_3468 in EXP-064, fastapi_14301 and rich_3468 in EXP-063, and fastapi_14448 in EXP-066.
+Make the E4B pipeline's edits land on the file. Over 40 task-runs of five pipeline runs, 62 `edit_file` calls failed, and 5 task-runs ended empty because every edit failed.
 
 ## How is it done today?
-- The tree is a reader, then five tool-less drafters, then an applier. The reader copies a REGION of each file, the
-  drafters copy OLD out of that REGION, and the applier pastes OLD as `old_string`.
-- The harness matcher already forgives trailing whitespace, indentation, regex-level drift and JSON escaping
-  (edit.py:401-454).
-- EXP-067's classes over 31 failures:
-  - A, argument loss: 6.
-  - S, a quote-wrapped `filepath`: 2. EXP-066 adds 4 more.
-  - R1, the reader mis-copied lines it read: 11, all in EXP-064-loc.
-  - E, a stale `old_string` after an earlier applied draft: 8, only in the same-location trees.
-  - M, an ambiguous match: 3.
-  - O, the applier's own edit: 1.
-  - D (drafter drift) and P (paste drift): 0 each.
-- First-edit-applies: 17 of 24 task-runs; 6 of 8 on EXP-064-loc.
-- Applier wording against resends was tried and did not work (EXP-053).
+- **The tree:** a reader, then five tool-less drafters, then an applier. The reader copies a REGION, the drafters copy OLD from it, and the applier pastes OLD.
+- **The harness matcher** already forgives whitespace, indentation, regex-level drift and JSON escaping (edit.py:401-454).
+- **Where failures come from:** EXP-067's chain diff on three runs found drafter drift and paste drift at 0. The classes are in the table above.
+- **First-edit-applies:** 17 of 24 task-runs in EXP-067.
+- **Applier wording against resends** was tried and did not work (EXP-053).
 
 ## What's new in our approach?
-- Each round removes one copy hop or one argument-form defect, picked by the class that dominates on the current tree.
-- Round 1 is EXP-068: each drafter reads its own FILE and LINES with `read_file` and copies OLD from that result, and
-  the reader no longer copies a REGION.
-- Round 2 is chosen by EXP-068's reading. Candidates: class S, if it recurs on the EXP-064 tree; class M, OLD widened
-  to a unique anchor; the E4B's argument loss, already parked as C-024.
+- Each round removes one copy hop or one argument-form defect.
+  - **Round 1 is EXP-068** (pushed; RUNNING). Each drafter reads its own FILE and LINES and copies OLD from that read, and the reader gives no REGION.
+  - **Round 2 is S**, the quote-wrapped `filepath`. Its form is to be designed so it does not rest on wording alone (the EXP-053 lesson). A desk check comes first: where the quotes enter, whether it is a drafter FILE line or the applier's own argument.
+- Each round carries a first-turn tool-call row (the EXP-063 lesson).
 
 ## Options
-- **A (recommended): one stage defect per smoke-8 round on the EXP-064 tree,** as above, each round with its own
-  first-turn tool-call row (the EXP-063 lesson).
-  - Strongest argument against: this edit-failure class was 4 of 24 unresolved runs in EXP-053, behind "right file,
-    wrong fix" (12) and "wrong file" (8). Edits that apply are necessary but not sufficient, so the LB gain may be zero.
-- **B: stop E4B work and spend on the 31B main line** (our best is 0.18, S-012). There are 13.8 s of room per task at
-  the 8-min cap, and every parallel shape failed there (EXP-049, EXP-032).
-- **C: hold all development and keep the current best for the final pair.** This costs nothing but learns nothing.
-- Critic's dissent: pending.
+- **A: D-009 as revised.** Two smoke-8 rounds, about 0.7 GPU-h.
+  - Strongest argument against: a success feeds only the E4B carrier, whose LB draws are 0.05 and 0.01. The edit-failure class was 4 of 24 unresolved runs in EXP-053, behind "right file, wrong fix" (12) and "wrong file" (8). The LB gain may be zero.
+- **B: the 31B single loop.** Our best is 0.18 (S-012).
+  - Time-neutral prompt changes cost no wall time there. The room to the 11 h gate is 28.8 s per task at the measured mean, and 13.8 s to our own 10.5 h ceiling.
+  - The 31B's edit defect is A: 58 of 175 calls lost (C-004). Its one prompt fix failed (C-005), so a new form would need a mechanism, not wording.
+  - This is the only carrier that has competed on the LB.
+- **C: hold development and keep the current best for the final pair.** Fairly dismissed: it learns nothing.
+- **Lead's recommendation:**
+  - Finish EXP-068, already spent. Then put the question to the user: round 2 (S) on the E4B, or B.
+  - On LB value alone, B ranks higher. A's case rests on the user's "tweak the agents" and on cheap smoke-8 reads.
+- **Critic's dissent (needs-work, 2026-11-10, verbatim):** "Round 1 targets the cause of only 2 of the 5 edit-failure empties, and both are rich_3468, which has never resolved in 13 E4B runs. The applier's quote-wrapped filepath (S), together with argument loss (A), caused the other 3 empties on three tasks. The same pair caused 8 of the 12 first-edit misses over 40 task-runs, and S already recurred on the EXP-064 tree (EXP-066). The midterm's first-edit ≥7 of 8 passes about a quarter of the time on noise alone. R1 = 0 holds by construction once REGION is gone. The final check is out of reach without an argument-form fix. Little of this ports to the 31B tree, the only carrier that competes on the LB: S does not occur there (0 quoted paths in 284 edits), the reader class has no counterpart in a single loop, and A does occur there but its one prompt mitigation is refuted (C-005). D-009 must therefore say what a success feeds. Make S round 2 unconditionally, restate the midterm on content-class failures and drafter copy mismatches, and let a not-exercised EXP-068 end only this form."
+  - **Lead's response:** accepted in full (Revision above).
 
 ## Expected score impact
-- At most about 5 of 40 task-runs (12%) end empty because no edit applied. Turning an empty patch into an applied
-  edit resolves only when the drafted fix is right. On the pipeline base, resolves are 2 fixed tasks of 8 (fastapi_14301,
-  rich_3006), so the conditional rate on the other tasks is near 0.
-- So 0 to 1 task of 58 for the direction, P about 0.2 [I]. That is under the 4-task MDE, so no LB draw can read it.
-  It is a process gain that a later package might carry.
+- 0 to 1 task of 58 for the whole direction, P about 0.2 [I], and only through an E4B package upload.
+- Round 1 alone touches the causes of 2 of the 5 edit-failure empties, both on one task that has never resolved.
+- All of it is under the 4-task MDE, so no LB draw can read it.
 
 ## Risks and kill criteria
-- **EXP-068 is not exercised:** at most 20 of 40 drafter turns open with `read_file`. The direction ends: the E4B will
-  not run a tool step in a tool-holding stage reliably (EXP-063).
-- **EXP-068 harm:** any tool_free task, a fabricated OLD on 3 or more tasks, 3 or more empty patches, a cap hit, or a
-  mean wall over 150 s. The variant is dropped and round 2 is reconsidered.
-- **Two rounds in a row without a kept reading:** the direction ends, under the loop's rule.
-- No upload slot and no dev-48 without the user's word.
+- **EXP-068 not exercised** (at most 20 of 40 drafter turns open with `read_file`): this form ends, the direction does not, and round 2 goes ahead.
+- **EXP-068 harm (its row 3 binds):** fabricated OLD on 8 or more of 40 drafter turns, 3 or more empties, a cap hit, mean wall over 150 s, a tool_free task, or a drafter text-form call. The form is dropped.
+- **Two rounds in a row with nothing kept:** the direction ends.
+- No upload slot or dev-48 without the user's word.
 
 ## Cost
-About 0.35 GPU-h per smoke-8 round, so about 0.7 for two rounds. Zero-GPU desk work between rounds. No upload slots.
+About 0.35 GPU-h per round, so about 0.7 for two. No upload slots.
 
 ## Midterm check
-After EXP-068: is first-edit-applies above 6 of 8 with R1 at 0, and no harm row?
+- **After EXP-068:** content-class first-edit failures not above the reference 2 of 40 (scaled to 8: 0 to 1), drafter copy mismatches (OLD not in the drafter's own read) of 2 or fewer, and no gate row.
+- **After round 2:** fewer A+S first-edit misses than the reference (8 of 12 misses over 40, about 1.6 per 8).
 
 ## Final check
-A tree whose first-edit-applies is at least 7 of 8 on two smoke-8 runs, with no empty patch caused by edit failure.
-It goes forward only in a package, on the user's word. Otherwise, a written finding of which copy and argument
-defects the E4B cannot be prompted out of.
+- A tree with no edit-failure empty patch on two smoke-8 runs and first-edit-applies of at least 7 of 8 on both. It goes forward only in a package, on the user's word.
+- Otherwise, a written finding of which copy and argument defects the E4B cannot be prompted out of.
