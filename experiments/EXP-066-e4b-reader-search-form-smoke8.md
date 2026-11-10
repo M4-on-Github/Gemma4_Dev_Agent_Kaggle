@@ -118,8 +118,13 @@ The kernel push is released by the lead and is not run in this job. Analysis, a 
 
 ---
 
-Not yet built. Next: validate, pack, build the notebook (section 6), record the sha and the Status line.
+- **Changed files vs EXP-064 `candidate-loc`:** `prompts/reader.md` and `sub_agents/reader.yaml` (one comment line). No CR byte in either.
+- **Validator** (`--official --strict`): 1 error, the 18.00 h gate, which `--skip-budget-gate` demotes to a warning. 2 warnings, both carried from EXP-064 (the applier's `submit_patch`, `timeout_seconds` 240). The official validator could not be imported. No new warning.
+- **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 20 files, `dist/EXP-066-srch.zip` (gitignored). **sha256 `fab2dd152923686ae4bd27b53564d6b753573de13fee04bb732c7afeef2a805d`.**
+- **Pre-registration commit:** 39a1421 (this file and the candidate tree). `git ls-files --eol` on the candidate tree: all 20 blobs `i/lf`, worktree `w/lf`, so a repack from the committed blobs is byte-identical to the worktree pack (the same argument as EXP-064; `tar` is outside this agent's commands, so no `git archive` repack was run).
+- **Notebook:** `notebooks/exp066_srch/`, built with the section 6 command. Against `notebooks/exp064_loc/` the notebook differs in exactly two lines: `EXP_ID` and `SUBMISSION_B64`. `kernel-metadata.json` is EXP-064's with only `id` and `title` changed, to `rainm4/gemma4-exp066-srch`. Nothing was copied to `out/submission.zip`.
+- **Kernel id for the push:** `rainm4/gemma4-exp066-srch`, directory `notebooks/exp066_srch`. Expected cost about 0.35 GPU-h.
 
 ## Status
 
-2026-11-10: pre-registered, candidate tree committed with this file. Not packed, not pushed.
+2026-11-10: pre-registered (39a1421), candidate packed with sha `fab2dd15...a805d`, notebook built. **Not pushed**: the lead releases the push. Next, when released and the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp066-srch -p runs/EXP-066-srch/`, flatten, then the analysis commands in section 6, then apply section 4.
