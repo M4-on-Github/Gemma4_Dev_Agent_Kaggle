@@ -280,3 +280,13 @@ All 6 applier `edit_file` calls on `rich/console.py` returned the same error kin
 Limits: the count of files named reads only each search's first-seen output (results capped by the reader's own `head` or a single-file search); the in-file searches in rich_3468 name their file only through the command argument; fastapi_14605 and httpx_3672 were counted but not part of the split.
 
 ---
+
+## 11. LB draw, recorded only, 2026-11-10.
+
+The EXP-064 tree was uploaded as S-016 (zip `3b9aea15`, ref 58178151) and came back COMPLETE with a public score of **0.01**. S-014 and S-015 scored 0.05 (3 of 58 each).
+
+- Kaggle shows the score to 2 decimals, so 0.01 means k = 0 or k = 1 of 58 resolved; the displayed value does not fix k. The delta against S-015 (k = 3) is therefore 2 tasks down (k = 1) or 3 tasks down (k = 0).
+- Both are under the measured MDE of about 4 tasks (plan.md section 5.5), so no effect is read. This is one draw of 58 and it is not an endpoint of EXP-064, whose own readings (section 4, row 3 fired) are unchanged.
+- S-016's tree is the EXP-064 tree (EXP-062's root plus the location prompts, section 2); S-015's is the EXP-061 tree. The smoke-8 record is the source for what the location prompts do; this draw adds none.
+
+---
