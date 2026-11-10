@@ -121,3 +121,25 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
 - **Confidence:** [V] for the counts. Drafters seeing the reader's tool results is [I], from one trace.
 - **Outcome:** EXP-068 is built on the EXP-064 tree. Each drafter reads its own lines and copies OLD from that result, and the reader gives no REGION.
 
+## EXP-063 v2 (de6848f, 0.401 GPU-h): reproducer stage as the applier's selector
+- **Outcome:** row 3, not exercised. W 0, Rf 0 of 8.
+- **Cue:** on 8 of 8 tasks the reproducer, which held `read_file`, `run_command`, `get_status` and `write_file`, made 0 tool calls. In the same tree the reader called `run_command` on 8 of 8.
+  - On each task the reproducer named its test file, wrote the test body in a python fence, and gave a verdict label: "RESULT: FAILS" on 6.
+  - The applier trusted the label and ran the missing file: exit 4, 8 times.
+- **Lesson:** an E4B stage that holds tools can answer entirely in text and make up the result of a command it never ran.
+  - `n_text_form_calls` does not catch this, because the fenced body is not call-shaped.
+  - A tool-holding stage needs a first-turn tool-call row in its readings.
+  - A downstream stage must not trust a verdict whose file or command it cannot see.
+- **Cause:** untested [I]. The screener desk-checks it under EXP-068: the reproducer's prompt shape and include_contents against the reader's.
+- **Confidence:** [V] for the counts; [I] for the cause.
+
+## EXP-066 (7eed5a8, 0.350 GPU-h): the reader's search command form
+- **Outcome:** row 6, no decision.
+- **Measured:** failed searches 0 of 20 (reference 7 of 21) and pipes 0. `git grep -l` ran 8 times on 5 tasks with no error.
+  - L >= 2 on 3 of 8 (reference 2 of 8); by distinct files still 2 of 8.
+  - Of the 5 tasks with L < 2, the reader saw several files on 3 and listed one.
+  - G 6 of 8, G1 4 of 8. 1 empty patch, mean wall 99.8 s, 0 tool_free tasks.
+- **Lesson:** an exact command recipe fixes the command form (as with the skill-call shape in EXP-057). But the reader's single location is its choice, not a search failure, so a diversity mechanism needs a chooser, not better search.
+- **Also seen:** fastapi_14448 had 6 failed edits, 4 of them a double-quote-wrapped `filepath` ("Source path not found", EXP-067's class S), and ended with an empty patch. Class S is now 6 edit calls over 2 runs.
+- **Confidence:** [V] for the counts.
+

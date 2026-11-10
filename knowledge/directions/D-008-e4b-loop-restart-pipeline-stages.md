@@ -1,7 +1,7 @@
 ---
 id: D-008
 title: Restart the E4B smoke-8 harness loop on the pipeline tree, with mechanisms (a copy adapter on the applier, location-diverse drafters, a reproducer stage) and no prompt wording
-decision: continue
+decision: continue (midterm fired 2026-11-10: ranks 2 and 3 end; see the last note)
 status: proposed, revised 2026-11-09 after the critic's `direction` review (needs-work; `experiments/EXP-062/critic.md`, ff8654b, 81c907d). The restart is the user's word (2026-11-09, `knowledge/user-decisions.md`); the ranking is the lead's.
 track: main
 claims: [C-023, C-024]
@@ -145,3 +145,21 @@ written finding that the E4B's ceiling here is the model, not the harness, which
   - Drafter drift D and paste drift P: 0 each.
   - The reading is "mixed, plurality reader". First-edit-applies is 17 of 24 (EXP-064-loc 6 of 8).
 - **Next:** EXP-068 (screener) builds the one variable. Each drafter reads its own FILE and LINES with `read_file` and copies OLD from that result, and the reader gives no REGION. Base tree EXP-064. Push when a kernel slot frees.
+
+## Midterm check applied, 2026-11-10
+- **The rule:** after the first two rounds, if neither mechanism moved its process endpoint past its reference with no harm row, this direction ends.
+- **EXP-064** (location-diverse drafters): row 3, not exercised. F >= 2 on 2 of 8.
+- **EXP-063** (reproducer as selector, de6848f): row 3, not exercised. Rf 0 of 8, and W 0 of 8.
+  - The reproducer stage made no tool call on any task. Each time it wrote a test in text and, on 6 of 8, claimed "RESULT: FAILS".
+  - The applier then ran a file that did not exist (exit 4).
+  - There was no harm: 0 caps, 2 empty patches (the base maximum), and a mean wall of 119.5 s. 0.401 GPU-h.
+- **EXP-066** (the reader's search command form, 7eed5a8): row 6, no decision.
+  - Failed reader searches went from 7 of 21 to 0 of 20, with no pipes. L >= 2 went from 2 to 3 of 8, and by distinct files it is still 2 of 8.
+  - So the search defect was not what held the reader to one location.
+  - There was no harm: 1 empty patch, mean wall 99.8 s, 0 tool_free tasks. 0.350 GPU-h.
+- **Result:** neither mechanism moved, so **ranks 2 and 3 end by this direction's own rule.** Both were *not exercised* rather than refuted: the diversity and the selector never engaged.
+  - Rank 1, the copy adapter on the applier, stayed parked under the revision and is not reopened here.
+  - The loop's own stop rule (two rounds in a row with nothing kept) has also fired: EXP-064, EXP-063 and EXP-066.
+- **Why work continues:** the user's word "tweak the agents" (2026-11-10) keeps the loop going on the edit-reliability target in the note above. That work is proposed as D-009. EXP-068 is its first round, dispatched under the user's word before these readings landed.
+- **The fabricated stage result is also a lesson for any tool-holding stage.** A stage can skip its tools and write a made-up result, which the applier then trusts. Any future stage needs a row that counts its first-turn tool calls.
+
