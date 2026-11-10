@@ -167,3 +167,105 @@ This job does not run the kernel push; the lead releases it. The analysis is a s
 PUSHED 2026-11-09, released by the lead: kernel `rainm4/gemma4-exp063-p` version 1, first status QUEUED. No upload, no dev-48. Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp063-p -p runs/EXP-063-p/`, move the nested bundle up, then the section 6 commands.
 
 2026-11-10: v1 cancelled by the user after about 20 h QUEUED, never ran; v2 pushed 2026-11-10 (kernel version 2, first status RUNNING at 13:30 UTC). Next command unchanged.
+
+2026-11-10: version 2 COMPLETE (lead, 16:24 UTC), downloaded and analysed (section 9). **Row 3 fires: not exercised (Rf 0 of 8; the reproducer made no tool call on any task), no decision.** 0.401 GPU-h. Nothing running.
+
+---
+
+## 9. Results, 2026-11-10. Section 4's readings applied as written.
+
+**Row 3 fires: not exercised.** Rf = 0 of 8, below 3. The reproducer made **no tool call on any task**: no `write_file`, no `run_command`, no `read_file`. On each task its stage was one model call, a thinking step and a final turn. In the final turn it named `test_issue_repro.py` as its test without having written it, and it gave the RESULT label FAILS on 6 tasks. W = 0, Rf = 0, U = 0, D = 0. **No decision** on D-008 item 2. Whether to release a stronger form is the lead's call (section 4 row 3).
+
+### 9.1 Run
+
+- Kernel `rainm4/gemma4-exp063-p`, version 2. Version 1 was cancelled by the user after about 20 h QUEUED and never ran. Version 2 was pushed 2026-11-10 and was COMPLETE by 16:24 UTC (lead).
+- Downloaded with `kaggle kernels output rainm4/gemma4-exp063-p -p runs/EXP-063-p/`. The nested `runs/EXP-063-p/runs/EXP-063-p/` was copied up one level.
+- **Kernel wall 1441.9 s = 0.401 GPU-h**, from the last entry of the kernel log. vLLM was up in 345.9 s (tp 4, 4 GPUs).
+- The shipped `agent/` copy in the bundle matches the committed tree: `sub_agents/reproducer.yaml` sha `292c3cd1...` and `prompts/reproducer.md` sha `49a2fff9...` are identical. The reproducer was declared with `read_file`, `run_command`, `get_status` and `write_file`.
+- Commands, as in section 6:
+  - `python -I -X utf8 tools/analyze_traces.py runs/EXP-063-p --cap-minutes 8 --max-calls 45`
+  - `python -I -X utf8 tools/run_forensics.py forensics runs/EXP-063-p`
+  - `python -I -X utf8 experiments/EXP-063/refs.py runs/EXP-063-p`
+- The section 3 counts per task were read from `traces/` with an untracked scratch driver (`out/exp063_wrfud.py`, `out/exp063_facts.py`) that uses refs.py's helpers.
+- `summary.jsonl` is copied to `experiments/EXP-063/p/summary.jsonl`.
+
+### 9.2 Section 3 endpoints per task
+
+Columns:
+- **W:** the reproducer wrote `test_issue_repro.py`.
+- **Rf:** the reproducer's last run of the file exited 1.
+- **U (in Rf / all 8):** the applier ran the file after an applied draft.
+- **D:** a departure made by the test.
+
+The applier checks are listed in order (program, exit code). Every one named `test_issue_repro.py`; requests_7309's second check named it under `tests/`. The kept draft is refs.py's label.
+
+| task | W | repro RESULT label | Rf | applied drafts | applier checks of the file | U (in Rf / all) | D | kept | patch |
+|---|---|---|---|---|---|---|---|---|---|
+| fastapi_14301 | 0 | FAILS | 0 | none (6 `edit_file`, all failed) | `python3 -m pytest` (4), after no applied draft | 0 / 0 | 0 | none | empty |
+| fastapi_14448 | 0 | FAILS | 0 | 1, then 3 (no undo between) | `pytest` (4) after draft 1; `pytest` (4) after draft 3 | 0 / 1 | 0 | 3 | `fastapi/routing.py` |
+| fastapi_14605 | 0 | FAILS | 0 | 1 | `python3 -m pytest` (4) | 0 / 1 | 0 | 1 | `fastapi/_compat/__init__.py` |
+| httpx_3672 | 0 | FAILS | 0 | 5, then one unmatched edit | `pytest` (4) after draft 5 | 0 / 1 | 0 | ? | `src/httpx/_parsers.py` |
+| requests_7205 | 0 | none of the three | 0 | 1 | `python3` on the file (2) | 0 / 1 | 0 | 1 | `src/requests/utils.py` |
+| requests_7309 | 0 | FAILS | 0 | 1 (after one arg-loss failure) | `python3 -m pytest` (4), twice | 0 / 1 | 0 | 1 | `src/requests/utils.py` |
+| rich_3006 | 0 | FAILS | 0 | 1 | `python3 -m pytest` (4) | 0 / 1 | 0 | 1 | `rich/repr.py` |
+| rich_3468 | 0 | none of the three | 0 | none (7 `edit_file`, all failed) | none | 0 / 0 | 0 | none | empty |
+| **total** | **0** | FAILS 6 | **0** | | 9 checks, 8 after an applied draft | **0 / 6** | **0** | | 2 empty |
+
+- **Exit codes.** No reproducer or other agent wrote the file, so every applier check ran a file that did not exist. Exit 4 is pytest's usage-error exit and 2 is the interpreter's cannot-open exit [I, from the absent file]. No check exited 0 or 1.
+- **Ignored verdict:** 0, since no run exited 1.
+- **What the applier did.** On 6 of 8 tasks it acted on the report's FAILS label and ran the named file after an applied draft. On requests_7205 it ran the file although the report had no FAILS label.
+- **Reproducer writes:** none. It made no `run_command` at all.
+- **Stray path:** none. Every final-patch path was touched by an applier `edit_file`.
+- **Leak:** `test_issue_repro.py` is in no final patch.
+- **Text-form calls** (analyze_traces 2f9de11): `n_text_form_calls` 0 on all 8 and `tool_free` false on all 8. On 6 tasks the reproducer's final turn held a python-fenced test body. That is a written test, not a call-shaped JSON value, so it is not a text-form call by the EXP-065 rule.
+
+### 9.3 Harm inputs and errors
+
+- **Caps.** No time, call or turn cap was hit: the most calls on a task was 19 of 45, and the most turns was 29 harness LLM calls (30 agent steps by the analyzer), against 120.
+- **Empty patches:** 2 of 8 (fastapi_14301, rich_3468), equal to the base maximum of 2.
+- **Wall.** Mean 119.47 s against 89.5 s (EXP-061) and 89.2 s (EXP-062). The median was 1.96 min and the maximum 164.0 s (fastapi_14448).
+- **Errors.** `err` is empty on all 8; all 8 have status SUCCESS and submitted.
+- **Compactions:** 2 (fastapi_14448, httpx_3672). The largest single-request prompt was 25,472 on rich_3468, against 14,336. No compaction error.
+- **Edit failures:**
+  - by task: requests_7309 1, fastapi_14448 2, fastapi_14301 6, rich_3468 7, the rest 0;
+  - 16 in all, 1 of them an argument loss (requests_7309).
+
+### 9.4 Rows applied in order
+
+1. **Infrastructure, does not fire.**
+   - No traceback, sandbox error or compaction error.
+   - The tree ran on all 8, and the root transferred to the pipeline at step 3 on every task.
+   - The reproducer stage ran on all 8: it produced a turn each time, but no tool call.
+   - There was no leak.
+   - Whether the E4B was offered the reproducer's tools cannot be read from a trace, because tool declarations are not recorded. The shipped yaml declares them, and the reader in the same tree used `run_command` on every task [I: not a registry fault].
+2. **Harm, does not fire.** No cap hit; empty patches 2, not 3 or more; mean wall 119.47 s, not over 150; no stray path.
+3. **Not exercised, fires.** Rf = 0 < 3.
+
+Rows 4 to 6 are not reached.
+
+### 9.5 Movable tasks
+
+- **fastapi_14448.** W 0, Rf 0; the report gave FAILS. The applier applied draft 1 and ran the absent file (pytest, exit 4). It then made two failed `edit_file` attempts at draft 1 and applied draft 3 on top of draft 1 with no undo. It ran the absent file again (exit 4) and submitted. The patch has `fastapi/routing.py`; not resolved; wall 164.0 s; 1 compaction. Draft 3 was kept, but not because of a test: under the binding note in section 4 it is recorded, not counted as D.
+- **rich_3468.** W 0, Rf 0; the report gave none of the three RESULT labels. All 7 applier `edit_file` calls on `rich/console.py` failed, so no draft applied and no check ran. `submit_patch` was called twice; the patch is empty. Not resolved; wall 155.4 s; largest prompt 25,472.
+
+### 9.6 Resolves, recorded only
+
+1 of 8 (rich_3006).
+- **Against EXP-061 and EXP-062:** no resolve lost or gained on fastapi_14301 (unresolved in all three) or rich_3006 (resolved in all three).
+- **On rich_3006** the selector did not move the kept draft. Draft 1 was kept, after a check of the absent file.
+
+### 9.7 Prediction against outcome
+
+- **Rows.** Row 3 was the modal prediction (0.35), and it fired.
+- **W.** The prediction was 7 or 8 of 8; the outcome was 0. The predicted failure route was tests that error at collection or pass on the unfixed code. That is not what happened: the stage never called a tool.
+- **Mean wall.** Predicted about 125 s (range 105 to 160); observed 119.47 s.
+- **U.** The prediction said U would be close to Rf. The applier did run the named file on 6 of 8 tasks, but Rf was 0.
+
+### 9.8 What this bears on (not a reading)
+
+- The applier took a FAILS label at face value on 6 tasks and ran a file that did not exist. The selector as built has no check that the test exists.
+- The reproducer's failure is a single-call stage that answers in text without using its tools. It is not the predicted failure, a test that does not fail.
+- Any stronger form has to make the write happen, for example:
+  - a stage whose final answer is only accepted after a `write_file`;
+  - or a check of the file inside the applier's rule.
+- Both are design choices for the lead. This screen did not test them.
