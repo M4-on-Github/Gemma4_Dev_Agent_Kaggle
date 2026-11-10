@@ -277,3 +277,7 @@ User, verbatim: "what agentic experiments should we make to the solution? let's 
 - 2026-11-10 ~13:45 UTC: asked whether to start the paper-track Writeup (due 2026-11-12 23:59 UTC), the user answered "no writeup let's tweak the agents". The lead reads this as:
   1. **No paper-track Writeup.** The paper-writer is not dispatched, and `paper/` stays as it is. The paper track is dropped unless the user reopens it before the deadline.
   2. **"Tweak the agents" means the submission's pipeline agents** (root, reader, drafters, applier) under D-008, inside the assumed 11-10 terms. It does not mean the `.claude/agents/` research team. Both GPU slots are taken (EXP-063 v2, EXP-066), so the next tweaks are built and screened at zero GPU first and pushed when a slot frees.
+- 2026-11-10 (evening UTC): the lead asked, after the critic's D-009 review, "1. round 2 on the E4B (the quoted-filepath fix, one more smoke-8 of about 0.35 GPU-h), or 2. move to the 31B". The lead had recommended 2. The user answered "1.". The lead reads this as:
+  1. **D-009 continues on the E4B. Round 2 targets class S, a quote-wrapped `filepath`.** The zero-GPU desk check comes first, then one smoke-8 inside the assumed 4.0 ceiling for 11-10.
+  2. The 31B line (option B) is not started.
+  3. Unchanged: no dev-48, and no upload without the user's word.
