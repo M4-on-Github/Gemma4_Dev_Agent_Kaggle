@@ -165,6 +165,102 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 - **Notebook:** `notebooks/exp068_read/` (commit 3874589), built with the section 6 command. Against `notebooks/exp066_srch/` the notebook differs in exactly two lines: `EXP_ID` and `SUBMISSION_B64`. `kernel-metadata.json` is EXP-066's with only `id` and `title` changed, to `rainm4/gemma4-exp068-read`. Nothing was copied to `out/submission.zip`.
 - **Kernel id for the push:** `rainm4/gemma4-exp068-read`, directory `notebooks/exp068_read`.
 
+## 9. Results (analysis job, 2026-11-10; sections 1 to 8 above are unchanged)
+
+Kernel `rainm4/gemma4-exp068-read` v1, COMPLETE. Kernel wall about 22.8 min (last log stamp 1369 s, so about 0.38 GPU-h); agent wall 882.6 s over the 8 tasks. Output in `runs/EXP-068-read/` (gitignored); `summary.jsonl` copied to `experiments/EXP-068/read/summary.jsonl`; traces stay out of git. Commands as section 6, `analyze_traces.py --cap-minutes 8 --max-calls 45`, `run_forensics.py forensics` and `compare runs/EXP-064-loc runs/EXP-068-read`; A, E1 to E3, window and the applier counts by Grep and line reads of `traces/`.
+
+### 9.1 Per task
+
+| task | wall s | calls | compactions | nudges | edit fails | applier first / max prompt tok | E1 | resolved |
+|---|---|---|---|---|---|---|---|---|
+| requests_7309 | 72.1 | 8 | 0 | 0 | 0 | 3,033 / 9,780 | ok | no |
+| requests_7205 | 59.2 | 10 | 0 | 0 | 0 | 7,272 / 9,193 | ok | no |
+| fastapi_14448 | 88.4 | 13 | 0 | 0 | 0 | 10,411 / 13,200 | ok | no |
+| fastapi_14301 | 64.5 | 12 | 0 | 0 | 0 | 8,843 / 13,075 | ok | **yes** |
+| httpx_3672 | 203.9 | 17 | 3 | 0 | 2 (applier-own) | 20,709 / 24,519 | ok | no |
+| fastapi_14605 | 111.3 | 17 | 1 | 0 | 3 (A) | 10,343 / 14,390 | **fail (A)** | no |
+| rich_3468 | 155.3 | 21 | 1 | 0 | 8 (S 1, R1-type 5, applier-own 2) | 14,392 / 14,392 | **fail (S)** | no (empty patch) |
+| rich_3006 | 127.9 | 12 | 0 | **5** | 0 | 10,708 / at least 14,079 | ok | no |
+
+Resolved 1 of 8 (EXP-064-loc 2 of 8; the compare shows rich_3006 as the only paired difference, McNemar p = 1.0; recorded, never an endpoint). Mean wall 110.3 s (median 99.85 s; EXP-064-loc 100.0 s, EXP-066 99.8 s); httpx_3672 at 203.9 s is the longest (under the 240 s naming line). Largest call count 21 (rich_3468). `n_undeclared_tool` is 1 on every task (2 on rich_3006): the root's `submit_patch` ValueError "Tool 'submit_patch' not found" after the transfer, the known root artifact, not a compaction error.
+
+### 9.2 A: drafter adherence (40 turns)
+
+- **A (a), first event is a `read_file` call: 36 of 40.** All 5 drafters on 7 tasks read first in pass 1 (35), plus requests_7309 drafter_2 (it read the directory `src/requests/`, "Is a directory"). The 4 that did not: requests_7309 drafters 1, 3, 4 wrote a compliant `NO DRAFT` (the reader's report had no FILE or LINES, section 9.5) and requests_7309 drafter_5 wrote a text line `read_file(filepath="src/requests/utils.py", start_line=1, end_line=100)` as its final text (see row 3, section 9.7). On rich_3006 the root transferred a second time; all 5 drafters of pass 2 wrote `NO DRAFT` with no read (the reader had no FILE or LINES); they are legitimate and are not in the 40 of pass 1.
+- **A (b), exactly one `read_file`: 36 of 36 that read** (35 + drafter_2).
+- **A (c), the read was on the location's FILE: 35 of 36** (drafter_2 read a directory; no FILE existed).
+- **A (d), fabricated OLD (an OLD block with no `read_file` call earlier in its own events): 0 of 40.**
+- **OLD written after a failed or empty read (item 6): 0.** requests_7309 drafter_2 wrote `NO DRAFT` after the directory error.
+- **Drafter read errors by kind (item 6): 1**, kind other (directory, not quote-wrapped, not nonexistent). Quote-wrapped 0; not found 0. **Stray absolute path outside /workspace: 0.**
+
+### 9.3 Descriptive: OLD blocks that are not in the drafter's own read
+
+This is not A (d) and no row uses it. 35 drafters wrote an OLD (all but requests_7309). Of them, **16 of 35 wrote an OLD that is not in their own read result**:
+
+| task | OLD not in the drafter's own read | why |
+|---|---|---|
+| fastapi_14448 | 5 of 5 | window 62-76 (reader LINES 67-71) does not contain the CHANGE target `_unwrapped_call` (about line 77 on); d1 to d4 invented it, d5 copied a `for sub_dep` line with wrong indentation and a NEW equal to OLD |
+| rich_3468 | 4 of 5 | window 2076-2124 (reader LINES 2081-2119) does not contain the target near 2063 (the reader had seen the write at 2063); d1, d3, d4, d5 invented OLD (d4's begins with `>>>`); d2's OLD is in the read but NEW = OLD (WHY says the snippet lacks the code) |
+| rich_3006 | 5 of 5 | reader LINES 95-96, window 90-101; the lines `if param.default == param.empty:` and the others the drafters wrote are not in 90-101. **Checked against the 90-101 window only**, not against a wider read |
+| fastapi_14605 | 1 of 5 | d4's OLD is in escaped `\\n` form with a trailing `"` (a form fault, not a window miss); d2's OLD matches but NEW = OLD; d5's OLD begins with `>>>` and matches |
+| httpx_3672 | 1 of 5 | d2's OLD has one line (`self.recv_chunked = True`) beyond the window end 317, and its final text leaked a thinking channel; d4's final is a degenerate repetition loop (its first OLD block matches) |
+| requests_7205 | 0 | all 5 in the read (d5's form is defective) |
+| fastapi_14301 | 0 | all 5 identical, window 121-134 |
+| requests_7309 | no OLD | no drafts |
+
+14 of the 16 come from a window that excludes the target; 2 are form faults. **Window miss (limit 1): 3 of 8 tasks (fastapi_14448, rich_3468, rich_3006)**, whatever the row. Window held on fastapi_14301, requests_7205, fastapi_14605 (three locations), httpx_3672 (three locations: `_server.py` 33-37, `_parsers.py` 301-312 and 425-427). Whether the reader's LINES were miscounted or its location was wrong is not established per task here.
+
+### 9.4 E1, E2 and E3
+
+- **E1, first applier edit applies: 6 of 8** (reference 6 of 8). Fails: fastapi_14605 (three argument-loss edits at steps 19 to 21, then steps 23, 25, 26 applied) and rich_3468 (path-form S at step 22). **Both first-edit failures are form-class; content-class (not-found) first-edit failures: 0 of 8.** fastapi_14448 applied its first edit from the applier's own OLD (copied from the reader's earlier read of `models.py` 1-100), ignoring all five drafts; requests_7309's applier read, grepped, edited and submitted by itself (no drafts).
+- **E2 failed `edit_file` calls: 13 on 3 task-runs** (summary `n_edit_fail` 2 + 3 + 8). By class: **A (argument loss) 3** (fastapi_14605); **S (path form) 1** (rich_3468 step 22: `filepath` `"rich/console.py"` double-quoted and the arguments garbled, "Source path /workspace/\"rich/console.py\" not found"); **R1-type (OLD differs from the drafter's own read) 5 failed calls on 1 task-run** (rich_3468 steps 23 d4, 24 d1, 25 d3, 26 d5 and 30 d1 again; 4 distinct drafts, all of them invented OLDs of section 9.3); **applier-own 4** (httpx_3672 2: a `def complete(self)` docstring OLD after a truncated read, not any draft; rich_3468 steps 28 and 29: after its own read of 2063-2100 it pasted a stray literal `\n` after an f-string); E (stale) 0; M (non-unique) 0. **R1-type 5 against the reference 11 on 2 task-runs** (EXP-064); but the R1-type edits that remain are copies of OLDs the drafter never read.
+- **E3.** G (any draft on a gold file) **7 of 8** (fails only on requests_7309, no drafts); G1 **7 of 8**; F >= 2 on **2 of 8** (fastapi_14605: `exceptions.py`, `_compat/v1.py`, `dependencies/utils.py`; httpx_3672: `_server.py` and `_parsers.py`). The reader gave one location on fastapi_14301, fastapi_14448, requests_7205 and rich_3468. Named, as item 8 asks: **fastapi_14301** (resolved; 5 drafts, one location, window held, first edit applied) and **rich_3006** (G yes in pass 1; not resolved; window miss; 5 nudges; the pass-2 reader had no calls and the 5 drafters wrote `NO DRAFT`).
+
+### 9.5 Harm inputs and the other counts
+
+Empty patches 1 of 8 (rich_3468; reference 1). Time, call and turn cap hits 0. Mean wall 110.3 s (under 150 s). `tool_free` 0. `scratch_in_patch` false on all 8. Stray path 0. Compactions: httpx_3672 3 (EXP-064-loc 0), fastapi_14605 1, rich_3468 1 (EXP-064-loc: fastapi_14605 1, rich_3468 1); the rich_3468 first applier prompt is 14,392 against 14,383 in EXP-064 (both above 14,336, as item 7 foresaw); httpx_3672's first applier prompt is 20,709 (it now carries five drafter reads). Nudges 5, all rich_3006 (EXP-064-loc 0): the applier ended without a submit and the root was nudged to submit. `n_text_form_calls` 1: requests_7309's **reader** final is a JSON fence `{"tool_name": "run_command", ...}` (the analyzer's one hit, not drafter-authored); that reader report had no FILE or LINES, which produced on requests_7309 the three `NO DRAFT`, one read of a directory and one text-form read line.
+
+### 9.6 Row 1 and row 2
+
+Row 1 did not fire: no `err` with a traceback, no compaction or summarizer error in the log, no blank or crashed run, the root transferred to `pipeline` on 8 of 8, no `draft_N` key was lost after a tool round (drafters ran a tool round and 35 of 40 wrote a draft). The `submit_patch` ValueErrors in the log are the root artifact above. Row 2 did not fire: 36 of 40 is above 20.
+
+### 9.7 Row 3, stated openly
+
+Every other row-3 condition is clear: empties 1 of 8 (limit 3), no cap hit, mean wall 110.3 s (limit 150), no tool-free task, A (d) 0 of 40 (limit 8), no `scratch_in_patch`, no stray path. **One condition is ambiguous and is not settled here.** Row 3 reads "any text-form call authored by a drafter"; section 3 defines it as "the drafter-authored text-form calls among them (a call-shaped fence in a drafter's final text)", "among them" being the analyzer's `n_text_form_calls`. Whose call is it:
+- **Literal section 3 reading: 0 drafter-authored.** The analyzer's one text-form call is the reader's JSON fence (requests_7309), and the analyzer's detector finds JSON-shaped values only.
+- **requests_7309 drafter_5** wrote, as its final text and with no fence and no JSON, the line `read_file(filepath="src/requests/utils.py", start_line=1, end_line=100)`: a call written as text where a native call was required. The analyzer does not count it. On the substance of row 3 (the E4B writing a call as text) this is 1 drafter text-form call; under a literal fence-only reading it is not one.
+
+I record both. The endpoint does not depend on which reading is taken: **if row 3 fires, rows 4 to 6 are not read (gate) and the numbers are recorded; if it does not fire, rows 4 to 6 read E1 = 6 of 8 (above the kill bound 5, below the promote bound 7) and R1-type = 5 (between 3 and 5, so neither the kill bound 6 nor the promote bound 2), so row 6.** Neither reading kills the claim and neither promotes it. I took no gate reading for the record beyond saying that the lead or the critic may read it either way and should know that this was a single instance, caused by an empty reader report and not by the drafter instruction.
+
+### 9.8 Row fired
+
+**Row 6, no decision** (on the literal section 3 reading of row 3), **or row 3 gate with rows 4 to 6 unread** (on the substantive reading, 1 drafter text-form call). No kill, no promote.
+
+**Blind prediction check.** A (a) above 20 of 40 (about 0.7): held, 36 of 40. Drafter text-form call (about 0.2): 0 under the fence definition, 1 bare line under the broader one. Fabricated OLD on 8 or more (about 0.15): A (d) 0 (held), although the descriptive count of OLDs not in the read is 16 of 35, which A (d) was not designed to catch. Row 3 (about 0.25): see 9.7. Row 2 (about 0.25): did not fire. Row 1 (about 0.05): did not fire. Rows 4 to 6 given the gates clear (0.2, 0.4, 0.4): row 6, the most probable of the blind readings. Mean wall about 112 s (95 to 140): actual 110.3 s, held. 0 cap hits: held. Largest call count about 23: actual 21.
+
+### 9.9 D-009 midterm inputs (counts)
+
+- **Content-class (OLD not found) first-edit failures: 0 of 8** (reference 2 of 40 task-runs on the earlier trees, i.e. 0 to 1 per 8). The two first-edit failures are form-class: A (fastapi_14605) and S (rich_3468).
+- **Drafter copy mismatches (OLD not in the drafter's own read): 16 of 35 drafts with an OLD** (14 window misses on 3 tasks, 2 form faults); A (d) fabrication by the pre-registered definition 0 of 40.
+- **Content-class not-found failures later in the task: 9 of the 13 edit failures** (R1-type 5, applier-own 4); form-class 4 (A 3, S 1). The first edit is the E1 endpoint; the later failures are the cost the applier pays after a bad draft.
+- **Gate rows: row 1 no, row 2 no, row 3 ambiguous (section 9.7), one drafter text-form line.**
+- E1 6 of 8 (reference 6 of 8); R1-type 5 on 1 task-run (reference 11 on 2).
+
+### 9.10 Reading for the next round (lessons-ready)
+
+The drafters followed the hard first-call rule (36 of 40; no fabricated OLD by the A (d) definition), so the tool-choice failure of the EXP-063 reproducer did not recur and the route is exercised. What it exposed is not drafter behaviour but the **window**: the drafter's read is bounded by the reader's LINES, and on 3 of 8 tasks (fastapi_14448, rich_3468, rich_3006) that window does not contain the CHANGE target, so 14 of the 16 mismatching OLDs are drafters inventing the code the window lacked, then the applier either failed on those drafts (rich_3468: R1-type 5) or ignored them and read or recalled the file itself (fastapi_14448, requests_7309, rich_3468 step 27). The reader's REGION copy failure of EXP-064 (R1 11) became a window-miss failure; E1 stayed at 6 of 8 and the two first-edit failures are argument-formation (A, S), which the design does not touch and which EXP-069 attacks. The route also cost context (httpx_3672 3 compactions against 0; rich_3468 over the threshold at first prompt) and five nudges on rich_3006. A 3-of-8 window-miss rate is a count of a mechanism, not a rate, and n = 8 cannot separate a miscounted LINES from a wrong location. The next form, if the lead takes it, is one that does not depend on the reader's line numbers matching the file: an applier-side read with line prefixes, or a LINES anchored on a string the drafter reads around, rather than more drafter prompt text. The empty reader report (JSON fence, no FILE) is a separate recurring fault that left the 5 requests_7309 drafters with three `NO DRAFT`, a directory read and a text-form read line.
+
+### 9.11 Defects and limits of this analysis
+
+1. The row-3 ambiguity of section 9.7: the definition was fence-based, the row text was not; not retrofitted.
+2. The rich_3006 pass-1 count of 5 mismatches was checked against the 90-101 window only.
+3. Counts were taken by Grep and line reads of `traces/`; the A (a) to (d) and OLD-in-read classifications are by hand and were not re-run by a second reader.
+4. Mean wall is the mean of `wall_s` in `summary.jsonl` (110.3 s); the harness-side total of 14.2 min seen in the forensics output is a different clock and is not used.
+5. The EXP-069 applier bare-path recipe was not in this tree; the rich_3468 S event (a double-quoted `filepath` with garbled arguments at the first edit, then five R1-type retries) is one more data point for it.
+6. The 40 drafter turns are not independent (shared reader report per task, item 4 of section 7); every count above is a bound on a behavior.
+
 ## Status
 
-2026-11-10: pre-registered (570e52b), candidate packed with sha `176a005d...a2326`, notebook built (3874589). **Pushed 2026-11-10**: kernel version 1, `rainm4/gemma4-exp068-read`, first status RUNNING (not QUEUED, so no second check). Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp068-read -p runs/EXP-068-read/`, flatten, then the analysis commands in section 6, then apply section 4.
+**2026-11-10 ANALYZED**: kernel COMPLETE. Row 6 (no decision) on the literal section 3 reading of the text-form row; row 3 ambiguous on the substantive reading (1 drafter text-form line, requests_7309 drafter_5); either way no kill and no promote. A (a) 36 of 40, A (d) 0, E1 6 of 8, R1-type 5, G 7 of 8, window miss on 3 of 8; resolved 1 of 8. Section 9 above.
+
+2026-11-10 (earlier): pre-registered (570e52b), candidate packed with sha `176a005d...a2326`, notebook built (3874589). **Pushed 2026-11-10**: kernel version 1, `rainm4/gemma4-exp068-read`, first status RUNNING (not QUEUED, so no second check). Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp068-read -p runs/EXP-068-read/`, flatten, then the analysis commands in section 6, then apply section 4.
