@@ -128,3 +128,92 @@ The kernel push is released by the lead and is not run in this job. Analysis, a 
 ## Status
 
 2026-11-10: pre-registered (39a1421), candidate packed with sha `fab2dd15...a805d`, notebook built (92b3904, pushed to origin by the lead). **Pushed 2026-11-10 on the lead's release**: kernel version 1, `rainm4/gemma4-exp066-srch`, first status RUNNING (not QUEUED, so no second check). Two kernels were live (EXP-063 v2 also RUNNING). Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp066-srch -p runs/EXP-066-srch/`, flatten, then the analysis commands in section 6, then apply section 4.
+
+2026-11-10 (later): kernel COMPLETE, downloaded, flattened and analyzed; section 9 below applies section 4. **Row 6 fired** (no decision). Nothing is running for this experiment.
+
+---
+
+## 9. Results, 2026-11-10. Section 4's readings applied as written.
+
+Source: `runs/EXP-066-srch/` (nested bundle copied up with `cp -r`), `analyze_traces.py --cap-minutes 8 --max-calls 45`, `run_forensics.py forensics` and `compare` against `runs/EXP-064-loc`, then Grep reads of `traces/` for the reader's calls and results, the reader's final report, and the draft FILE lines (no script is allowed to this agent). Only ids, counts, paths, line numbers and error kinds are written here. `summary.jsonl` is copied to `experiments/EXP-066/srch/summary.jsonl`.
+
+**Cost.** Kernel wall 1258.7 s (last entry of the kernel log) = **0.350 GPU-h** (EXP-064: 0.353). All 8 tasks ran; `task_results.jsonl` has `status` SUCCESS and `error` null on 8 of 8.
+
+### 9.1 Reader searches (S, forms), per task
+
+A search failure is a reader `run_command` whose result is an error with a non-empty error message. All 4 error results in the reader's calls carried an empty message with exit code 1, so they are no-matches, counted apart.
+
+| task | reader run_command calls | forms | failed (S) | no-match | reader read_file | reader calls total |
+|---|---|---|---|---|---|---|
+| requests_7309 | 2 | `git grep -l` dir, `git grep -n` one file | 0 | 0 | 2 | 4 |
+| requests_7205 | 2 | `git grep -l` dir (no `--`), plain `grep -n` one file | 0 | 0 | 3 | 5 |
+| fastapi_14448 | 1 | `git grep -l` dir | 0 | 0 | 5 | 6 |
+| fastapi_14301 | 6 | `git grep -l` x4 (2 on the whole tree, 2 on one file), `git grep -n` one file x2 | 0 | 2 | 2 | 8 |
+| httpx_3672 | 3 | `git grep -l` dir, `git grep -n` one file x2 | 0 | 0 | 4 | 7 |
+| fastapi_14605 | 2 | `ls` dir, `git grep -n` one file | 0 | 0 | 2 | 4 |
+| rich_3468 | 2 | `git grep -n` on `./rich` (a directory), `find` | 0 | 1 | 4 | 6 |
+| rich_3006 | 2 | `git grep` with no flag, directory, x2 | 0 | 1 | 1 | 3 |
+| **total** | **20** | pipes 0, `git grep -l` 8, `git grep -n` one file 6, plain `grep -n` one file 1, other 5 | **0** | **4** | 23 | 43 |
+
+- **S.** Failed searches 0 of 20 calls (reference 7 of 21); tasks with at least one failed search **0 of 8** (reference 4 of 8). "Searches fixed" holds (below 3).
+- **Form followed.** No reader call used a `|` (0 of 20; EXP-064 had 9 of 21). `git grep -l`, which no E4B had been seen to use, ran 8 times on 5 tasks with no error; 6 of the 8 returned hits and 2 (fastapi_14301, both with a token holding quote and bracket characters) returned no match. The prompt's two-step form (`-l` then `-n` on one file) was followed in full on 3 tasks (requests_7309, fastapi_14301, httpx_3672), and with a plain `grep -n` as step two on requests_7205. fastapi_14448 stopped after the `-l` step and went straight to reading 5 files. rich_3468, rich_3006 and fastapi_14605 did not use `-l` (a directory-wide `git grep`, `find` or `ls` instead).
+- **Reader read cap.** Reader `read_file` calls 5 at most (fastapi_14448), under the prompt's 8.
+
+### 9.2 L, the (i)/(ii) split, F, G and G1, per task
+
+L is counted as LOCATION blocks with a REGION in the reader's final report; END is present on 8 of 8 (one `ISSUE:` report per trace). A report-less reader: none.
+
+| task | L (blocks) | locations (file, lines) | draft files d1..d5 (5 FILE lines, completion order) | F | G any | G1 | resolved | wall s | calls |
+|---|---|---|---|---|---|---|---|---|---|
+| requests_7309 | 1 | `src/requests/utils.py` 527-531 | same x5 | 1 | yes | yes | no | 87.0 | 8 |
+| requests_7205 | 1 | `src/requests/utils.py` 281-283 | same x5 | 1 | yes | yes | no | 61.5 | 7 |
+| fastapi_14448 | **3** (labels 1, 1, 2) | `fastapi/utils.py` 10-20; `fastapi/utils.py` 19-20; `fastapi/routing.py` 34 | routing x1, utils x4 | **2** | **no** | no | no | 136.5 | 13 |
+| fastapi_14301 | 1 | `fastapi/dependencies/utils.py` 128-131 | same x5 | 1 | yes | yes | **yes** | 66.2 | 10 |
+| httpx_3672 | **5** | `src/httpx/_parsers.py` 68-108, 381-413, 57-72, 397-401, 370-380 | same file x5 | 1 | yes | no | no | 98.9 | 12 |
+| fastapi_14605 | **2** | `fastapi/exceptions.py` 10; `fastapi/temp_pydantic_v1_params.py` 58 | exceptions x4, temp_pydantic x1 | **2** | yes | no | no | 157.6 | 12 |
+| rich_3468 | 1 | `rich/file_proxy.py` 30-42 | same x5 | 1 | **no** | no | no | 127.1 | 18 |
+| rich_3006 | 1 | `rich/repr.py` 73-74 | same x5 | 1 | yes | yes | **yes** | 63.7 | 7 |
+
+- **L >= 2 on 3 of 8** (fastapi_14448, httpx_3672, fastapi_14605); reference 2 of 8 (httpx_3672, fastapi_14605). The fastapi_14448 report repeated the label "LOCATION 1" for two overlapping blocks of one file, so by distinct location numbers it is 2 and by blocks 3; either way the task is at 2 or more, so the count is 3 of 8 under both readings. httpx_3672's 5 locations are all in one file. L by distinct files: 2 of 8 (fastapi_14448, fastapi_14605), the same as EXP-064.
+- **(i)/(ii) split of the 5 tasks with L < 2.** (i) the reader saw one candidate file only: **2** (requests_7309, fastapi_14301). (ii) it saw several and listed one: **3** (requests_7205, which opened `sessions.py` and `utils.py`; rich_3468, which opened `console.py`, `_fileno.py` and `file_proxy.py`; rich_3006, whose one search printed hit lines in `style.py` and `text.py` and which opened `repr.py` only). EXP-064's split on its 6 was 4 and 2. The two searches that find more than one file now sit with the (ii) tasks, so the failed-search explanation for (i) does not carry here: with working searches, the tasks that still have one location mostly saw several files.
+- **F >= 2 on 2 of 8** (fastapi_14448, fastapi_14605); reference 2 of 8 (httpx_3672, fastapi_14605). **G any 6 of 8** (misses fastapi_14448 and rich_3468); reference 7 of 8. **G1 4 of 8**; reference 5 of 8. The G drop is one task: rich_3468's reader listed `rich/file_proxy.py` where EXP-064's listed the gold file `rich/console.py`; the reader's picks varied between runs without a prompt change on fastapi_14605 and fastapi_14448 (EXP-064 section 1), and on rich_3468 the region varied inside `console.py` in three earlier runs; this is the first run to list another file there. One task at n = 8 is not read as an effect.
+- **Text-form counter.** `n_text_form_calls` 0 on 8 of 8 tasks; `tool_free` false on 8 of 8 (reference 0 of 8 and 0 of 8).
+
+### 9.3 Row that fired
+
+- Row 1: no. `error` null on 8 of 8, no traceback, the root transferred on 8 of 8, every drafter built its request.
+- Row 2: no. Empty patches **1 of 8** (fastapi_14448; not above 2), time, call and turn cap hits **0**, mean wall **99.8 s** (sum 798.5 s; EXP-064 100.0 s, EXP-061 89.5 s, EXP-062 89.2 s) against the 150 s line, `tool_free` 0 of 8. Longest task 157.6 s (fastapi_14605), under 240 s.
+- Row 3: no. Tasks with at least one failed reader search 0 of 8 (the row needs 3 or more).
+- Row 4: no. L >= 2 on 3 of 8 (needs 5 or more).
+- Row 5: no. L >= 2 on 3 of 8 (needs 2 or fewer).
+- **Row 6: fired.** Searches fixed (0 of 8), L >= 2 on 3 of 8. **No decision.** The binding note applies: L >= 2 on 3 or 4 of 8 is not read as a rise on the reference 2 of 8. Resolves are recorded and decide nothing.
+
+What the row licenses (section 5): nothing is promoted and nothing is killed. For the record, the numbers sit nearer row 5's finding than row 4's: the reader's searches ran with no failure and L was 3 of 8, not 5, so the failed searches of EXP-064 were not what held L at 1 on most tasks. That is a descriptive note, not the row; row 5 needed 2 or fewer.
+
+### 9.4 Movable tasks, reported on their own
+
+- **fastapi_14448.** The reader ran one search (`git grep -l` on `fastapi`, 11 files printed, `dependencies/utils.py` among them), then read 5 files (`params.py`, `dependencies/utils.py`, `routing.py`, `types.py`, `utils.py`), so a gold file was opened. It listed `fastapi/utils.py` (twice) and `fastapi/routing.py`, neither of which is a gold file. Drafts: 4 on `utils.py`, 1 on `routing.py`; G no. The applier made 6 edit calls, all failed: 2 argument-loss and 4 with the filepath wrapped in double quotes ("Source path not found", the class S of EXP-067). Patch empty after 3 `submit_patch` calls, 136.5 s, 13 calls, one compaction. Not resolved. EXP-064's run listed `routing.py` only (no gold file either) and ended with a non-empty patch; here the patch is empty because every edit call failed on the argument form or the path, not on content.
+- **rich_3468.** The reader ran `git grep -n` on `./rich` (no match) and a `find`, then read `console.py` twice, `_fileno.py` and `file_proxy.py`. It listed one location, `rich/file_proxy.py` 30-42 (not the gold file; EXP-064 listed `console.py` 1627-1710). 5 drafts on that file; G no. The applier made 6 edit calls, 2 failed with "old_string not found" (the other 4 applied), and the patch is not empty (EXP-064: 6 of 6 failed, empty patch). Not resolved. 127.1 s, 18 calls, one compaction.
+
+### 9.5 Resolves, recorded and not an endpoint
+
+2 of 8 (fastapi_14301, rich_3006), the same two as EXP-064 and EXP-052; `compare` against EXP-064: both 2, A only 0, B only 0, neither 6, no discordant pair.
+
+### 9.6 Other recorded counts
+
+- Edit failures 17.2 percent of tool calls (`analyze_traces`): fastapi_14448 6 (2 argument-loss, 4 quote-wrapped path), fastapi_14605 6 (all "target occurs 2 times" in `temp_pydantic_v1_params.py`, one repeated 3 times), rich_3468 2, rich_3006 1 (argument-loss). Identical repeats 2, 3 and 3 on fastapi_14448, fastapi_14605 and rich_3468.
+- Compactions 3 (fastapi_14448, fastapi_14605, rich_3468), none raising an error; largest single prompt 14,979 tokens (fastapi_14448) against 14,336 (EXP-064: 22,124).
+- Projected hidden-run total 3.33 h by `analyze_traces` (setup 0 s measured here), recorded only.
+
+### 9.7 Prediction check
+
+- Searches fixed (below 3 of 8 with a failed search), about 0.75: held, 0 of 8.
+- L >= 2 on 5 or more, about 0.2: did not hold, 3 of 8. Row 6 (about 0.3): fired. Row 5 (about 0.3), row 4 (about 0.1), row 3 (about 0.15), row 2 (about 0.1), row 1 (about 0.05): did not fire.
+- Mean wall about 105 s (90 to 135): held, 99.8 s. 0 cap hits: held.
+
+### 9.8 Defects found in the reading
+
+1. L counts LOCATION blocks by label, and fastapi_14448's report used one label twice (two overlapping blocks of the same file), so L is 3 by blocks and 2 by distinct labels. The task is at 2 or more either way; the count of 3 of 8 does not change. Section 3 did not say how to count a repeated label.
+2. The (i)/(ii) split reads the hit lines of one search per task only to the first 400 to 500 characters, so "saw several files" for rich_3006 rests on two files named in the leading hit lines of a longer result.
+3. `git grep -l` returned no match twice on fastapi_14301 for a token holding quote and bracket characters, as the section 2 known limit 1 foresaw; it is counted as no-match, not as a failure.
+4. Against section 3, the reader's call counts here include the `ls` and `find` forms; section 1 had no category for them and they are in "other".
