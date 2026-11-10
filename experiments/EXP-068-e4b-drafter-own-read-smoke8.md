@@ -152,6 +152,10 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 - **Validator** (`--official --strict`): 1 error, the 18.00 h gate, demoted by `--skip-budget-gate`; 2 warnings carried from EXP-064; no new warning. The official validator could not be imported.
 - **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 20 files, `dist/EXP-068-read.zip` (gitignored). **sha256 `176a005df9d2b210dfe50dee6931be9bd00444a63577dd9717198cd2b6a2a326`.**
 
+- **Pre-registration commit:** 570e52b (this file, the candidate tree, the README row). All 20 candidate blobs were written with LF (0 CR bytes in the edited files).
+- **Notebook:** `notebooks/exp068_read/` (commit 3874589), built with the section 6 command. Against `notebooks/exp066_srch/` the notebook differs in exactly two lines: `EXP_ID` and `SUBMISSION_B64`. `kernel-metadata.json` is EXP-066's with only `id` and `title` changed, to `rainm4/gemma4-exp068-read`. Nothing was copied to `out/submission.zip`.
+- **Kernel id for the push:** `rainm4/gemma4-exp068-read`, directory `notebooks/exp068_read`.
+
 ## Status
 
-2026-11-10: built and packed; pre-registration commit pending in this save. Next: notebook build, commit, push `rainm4/gemma4-exp068-read`.
+2026-11-10: pre-registered (570e52b), candidate packed with sha `176a005d...a2326`, notebook built (3874589). **Pushed 2026-11-10**: kernel version 1, `rainm4/gemma4-exp068-read`, first status RUNNING (not QUEUED, so no second check). Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp068-read -p runs/EXP-068-read/`, flatten, then the analysis commands in section 6, then apply section 4.
