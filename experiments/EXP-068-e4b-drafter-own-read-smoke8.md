@@ -144,6 +144,15 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 3. **(Known at pre-registration.)** The thresholds 20 of 40, 8 of 40 fabricated and R1 >= 6 / <= 2 are chosen, not derived; n = 8 task-runs with 40 drafter turns gives a count that is a bound on a behavior, not a rate. Drafter turns within a task share a reader report, so the 40 are not independent.
 4. **(Known at pre-registration.)** Drafters 2 to 5 on a task with L = 1 read the same lines as drafter 1; their adherence counts are not independent of drafter 1's.
 
+**Added 2026-11-10 after the critic's D-009 review (`experiments/EXP-067/critic.md`, d372a76 and 53be9fb), while the kernel was still RUNNING and before any output was downloaded. Nothing above section 7 changes. Items 5 to 10 are interpretations or added descriptive counts, fixed before the results; they change no row except where item 5 and item 9 say so.**
+
+5. **Stray path (row 3), interpretation.** A drafter `read_file` "outside /workspace" means an absolute path that resolves outside the workspace (for example under /usr or /tmp). A quote-wrapped path or a nonexistent relative path is a read failure, not a stray path. Read failures are counted by kind (quote-wrapped path, not found, other) and are not harm.
+6. **Fabrication, added counts (descriptive, no row).** A (d) counts an OLD written with no read call before it. Two counts are added: OLD written after a failed or empty read, and drafter read errors by kind (quote-wrapped path, not found, other). Row 3's "8 or more of 40 fabricated" still uses A (d) only.
+7. **Applier context, descriptive.** Per task, the applier's first prompt tokens, its maximum prompt tokens and the compactions, against EXP-064-loc. The applier now also sees the five drafter reads. rich_3468 on EXP-064 started at 14,383 tokens, already above the 14,336 threshold.
+8. **Location, descriptive.** LINES is now the reader's read window, so the drafter picks the edit spot inside it. G and G1 are reported by task, and fastapi_14301 and rich_3006 are named in the report whatever the numbers are.
+9. **Row 1 (infrastructure) also covers** a summarizer or compaction `ValueError` and a blank or crashed run.
+10. **Direction.** EXP-068 serves D-009 round 1. D-008's ranks 2 and 3 ended at its midterm (a5e02ea); the header's "Serves: D-008" line is kept as written and read as superseded by this item.
+
 ## 8. Built (below the line; nothing above changes)
 
 ---
