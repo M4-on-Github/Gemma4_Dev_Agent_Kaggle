@@ -2,7 +2,7 @@
 id: D-009
 title: E4B pipeline edit reliability, one stage defect per round
 decision: pivot
-status: proposed, revised 2026-11-10 after the critic's `direction` review (needs-work; experiments/EXP-067/critic.md, d372a76, 53be9fb). The pivot is on the user's word "tweak the agents" (2026-11-10); the user's choice between this and option B is open.
+status: active (approved 2026-11-10: the user chose option A, round 2 on the E4B, over option B, answering "1."; knowledge/user-decisions.md, 4db058b). Revised 2026-11-10 after the critic's `direction` review (needs-work; experiments/EXP-067/critic.md, d372a76, 53be9fb). The pivot is on the user's word "tweak the agents" (2026-11-10).
 track: main
 claims: []
 date: 2026-11-10
