@@ -17,7 +17,7 @@ D-009 is cheap, and EXP-068 is a fair probe. But the round order, the midterm an
 
 ## Dissent (quotable)
 
-Round 1 targets the cause of only 2 of the 5 edit-failure empties, and both are rich_3468, which has never resolved in 13 E4B runs. The applier's quote-wrapped filepath (S), together with argument loss (A), caused the other 3 empties on three tasks. The same pair caused 8 of the 12 first-edit misses over 40 task-runs, and S already recurred on the EXP-064 tree (EXP-066). The midterm's first-edit ≥7 of 8 passes about a quarter of the time on noise alone. R1 = 0 holds by construction once REGION is gone. The final check is out of reach without an argument-form fix. Neither class ports to the 31B tree, which has 0 quoted paths in 284 edits and is the only carrier that competes on the LB. D-009 must therefore say what a success feeds. Make S round 2 unconditionally, restate the midterm on content-class failures and drafter copy mismatches, and let a not-exercised EXP-068 end only this form.
+Round 1 targets the cause of only 2 of the 5 edit-failure empties, and both are rich_3468, which has never resolved in 13 E4B runs. The applier's quote-wrapped filepath (S), together with argument loss (A), caused the other 3 empties on three tasks. The same pair caused 8 of the 12 first-edit misses over 40 task-runs, and S already recurred on the EXP-064 tree (EXP-066). The midterm's first-edit ≥7 of 8 passes about a quarter of the time on noise alone. R1 = 0 holds by construction once REGION is gone. The final check is out of reach without an argument-form fix. Little of this ports to the 31B tree, the only carrier that competes on the LB: S does not occur there (0 quoted paths in 284 edits), the reader class has no counterpart in a single loop, and A does occur there but its one prompt mitigation is refuted (C-005). D-009 must therefore say what a success feeds. Make S round 2 unconditionally, restate the midterm on content-class failures and drafter copy mismatches, and let a not-exercised EXP-068 end only this form.
 
 ## 1. Class accounting
 
@@ -64,11 +64,7 @@ Six points to settle in the analysis:
 
 1. **Failed reads escape A(d).** A drafter whose read fails (path form, range or truncation) has still made a call, so an OLD written after it escapes A(d). The drafter prompts give no failed-read rule, and the drafters now write 40 filepath arguments, so S can appear at this stage too. Count "OLD after a failed or empty read" separately, and count drafter read errors by kind.
 2. **Settle the row 3 "stray path" now.** Decide whether a quote-wrapped drafter path is harm or a recorded failure, and write that down before the output is pulled.
-3. **Compare compaction to a baseline.**
-   - On the base tree, applier_first was already 14,383 on rich_3468 in EXP-064. applier_max was ≥14,336 on 6 of 16 task-runs: fastapi_14605, httpx_3672 and rich_3468 in EXP-064, and fastapi_14448, fastapi_14605 and rich_3468 in EXP-066.
-   - The applier's branch is None, so it sees all five reads [I, `contents.py:748`]. The blind wall prediction assumes an applier input that has now changed.
-   - Report applier_first and compactions per task against these numbers.
-   - Issue 7324 at the parallel stage stays low: drafter prompts peaked at 2,662 and reader_last at 10,775.
+3. **Compare compaction to a baseline.** On the base tree applier_first was already 14,383 on rich_3468 (EXP-064), and applier_max was ≥14,336 on 6 of 16 task-runs (EXP-064: fastapi_14605, httpx_3672, rich_3468; EXP-066: fastapi_14448, fastapi_14605, rich_3468). The applier's branch is None, so it now sees all five reads [I, `contents.py:748`], and the blind wall prediction assumes the old applier input. Report applier_first and compactions per task against these numbers. Issue 7324 at the parallel stage stays low (drafter prompts peaked at 2,662, reader_last at 10,775).
 4. **The drafter now picks the locus.** LINES is now the reader's read window, not a change region of at most 25 lines. Name G and G1 on fastapi_14301 and rich_3006.
 5. **Widen row 1.** It should also name a summarizer ValueError and a blank or crashed run.
 6. **One owner for EXP-068.** EXP-068 says it serves D-008, and D-009 claims it as round 1. Reconcile the two.
