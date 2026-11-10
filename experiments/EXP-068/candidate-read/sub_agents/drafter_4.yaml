@@ -1,0 +1,18 @@
+# EXP-052 2026-11-07: drafter 4 of 5, angle contract word for word, temperature 0.9. Same tools, window and caps as drafter 1.
+# EXP-068 2026-11-10: tools [] -> [read_file], one call, so OLD is copied from a fresh read in the drafter's own turn and not from the reader's REGION. include_contents none still shows the reader's final text and the drafter's own tool events (contents.py _get_current_turn_contents); the tool calls of five drafters run one at a time under the harness tool lock. Temperature, caps and angle unchanged.
+name: drafter_4
+description: Writer 4 of 5, contract word for word, temperature 0.9.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/drafter_4.md
+include_contents: none
+output_key: draft_4
+tools:
+  - read_file
+generate_content_config:
+  temperature: 0.9
+  top_p: 0.95
+  top_k: 64
+  max_output_tokens: 3072
+  thinking_config:
+    thinking_budget: 1024
+    include_thoughts: false
