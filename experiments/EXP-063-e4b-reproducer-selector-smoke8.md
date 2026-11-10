@@ -165,3 +165,5 @@ This job does not run the kernel push; the lead releases it. The analysis is a s
 ## Status
 
 PUSHED 2026-11-09, released by the lead: kernel `rainm4/gemma4-exp063-p` version 1, first status QUEUED. No upload, no dev-48. Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp063-p -p runs/EXP-063-p/`, move the nested bundle up, then the section 6 commands.
+
+2026-11-10: v1 cancelled by the user after about 20 h QUEUED, never ran; v2 pushed 2026-11-10 (kernel version 2, first status RUNNING at 13:30 UTC). Next command unchanged.
