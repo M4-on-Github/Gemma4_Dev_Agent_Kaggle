@@ -127,4 +127,4 @@ The kernel push is released by the lead and is not run in this job. Analysis, a 
 
 ## Status
 
-2026-11-10: pre-registered (39a1421), candidate packed with sha `fab2dd15...a805d`, notebook built. **Not pushed**: the lead releases the push. Next, when released and the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp066-srch -p runs/EXP-066-srch/`, flatten, then the analysis commands in section 6, then apply section 4.
+2026-11-10: pre-registered (39a1421), candidate packed with sha `fab2dd15...a805d`, notebook built (92b3904, pushed to origin by the lead). **Pushed 2026-11-10 on the lead's release**: kernel version 1, `rainm4/gemma4-exp066-srch`, first status RUNNING (not QUEUED, so no second check). Two kernels were live (EXP-063 v2 also RUNNING). Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp066-srch -p runs/EXP-066-srch/`, flatten, then the analysis commands in section 6, then apply section 4.
