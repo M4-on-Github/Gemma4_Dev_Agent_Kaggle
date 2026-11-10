@@ -1,0 +1,8 @@
+# EXP-052 2026-11-07: max_tool_calls 28 -> 45 and max_turns 80 -> 120; timeout_seconds 240 and max_time_minutes 8 are EXP-033's.
+# Calls: the reader's worst measured pass is 13 counted calls (EXP-040 section 9.8) and the applier needs about 3 per draft (edit, check, undo) so 15 for five drafts plus 1 to 3 more; 45 leaves room for both worst cases at once (EXP-032).
+# Turns: every model event of every agent counts (swegemma context.py:277-299). One pass is about 8 to 15 reader turns, 5 drafter turns and 5 to 20 applier turns, 55 at worst; 120 lets a restarted pass run to its end instead of being cut mid-applier, so a re-run shows in the trace (EXP-040 raised 80 to 200 for the same reason).
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 45
+  max_time_minutes: 8
+  max_turns: 120
