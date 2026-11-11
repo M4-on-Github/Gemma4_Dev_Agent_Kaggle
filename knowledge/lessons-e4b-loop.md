@@ -143,3 +143,23 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
 - **Also seen:** fastapi_14448 had 6 failed edits, 4 of them a double-quote-wrapped `filepath` ("Source path not found", EXP-067's class S), and ended with an empty patch. Class S is now 6 edit calls over 2 runs.
 - **Confidence:** [V] for the counts.
 
+
+## EXP-068 (9fb6996, b231ee6; 0.38 GPU-h): each drafter reads its own lines
+- **Outcome:** row 6, no decision, under section 3's fence-only definition of a drafter text-form call. On requests_7309, drafter_5 wrote a bare `read_file(...)` line as its final text instead of making the call. Under the wider reading that is a drafter text-form call and row 3, harm, binds. Either way the form is not carried forward.
+- **Measured:**
+  - 36 of 40 drafter turns opened with `read_file`, and A(d) fabricated OLD is 0 of 40. The first-call rule held, and the EXP-063 tool-choice failure did not recur.
+  - First-edit-applies 6 of 8 (reference 6 of 8). Both misses are form-class: A on fastapi_14605 and S on rich_3468. Content-class first-edit failures: 0 of 8.
+  - R1-type failures: 5 on 1 task-run (rich_3468), against a reference of 11 on 2.
+  - G 7 of 8, 1 empty patch, mean wall 110.3 s, 0 caps. Resolved 1 of 8 (fastapi_14301), recorded only.
+  - 16 of 35 drafted OLDs are not in the drafter's own read. 14 of them are on 3 of 8 tasks (fastapi_14448, rich_3468, rich_3006) where the reader's LINES window does not contain the CHANGE target, so the drafters invented code they could not see.
+  - Cost:
+    - httpx_3672 had 3 compactions (reference 0); its first applier prompt is 20,709 tokens because it carries five reads.
+    - rich_3006 had 5 nudges (reference 0).
+- **Lesson:** removing the REGION copy moved the failure to the window. The reader's line numbers miss the target on 3 of 8 tasks. A next form must not depend on the reader's LINES matching the file, for example a string anchor or an applier-side read with line prefixes. More drafter wording will not fix a window miss.
+- **Also seen:** the reader's report on requests_7309 was an empty JSON fence with no FILE. That is a separate, recurring reader fault.
+- **D-009 midterm after round 1:**
+  - Content-class 0 of 8: pass.
+  - Copy mismatches 16 of 35 against a limit of 2: fail.
+  - Gate rows: row 3 is ambiguous on the bare line.
+  - Round 1 keeps nothing.
+- **Confidence:** [V] for the counts; [I] for the window-miss mechanism (classified by hand; n = 8 cannot separate miscounted LINES from a wrong location).

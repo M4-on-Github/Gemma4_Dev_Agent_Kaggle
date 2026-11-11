@@ -77,3 +77,12 @@ About 0.35 GPU-h per round, so about 0.7 for two. No upload slots.
 ## Final check
 - A tree with no edit-failure empty patch on two smoke-8 runs and first-edit-applies of at least 7 of 8 on both. It goes forward only in a package, on the user's word.
 - Otherwise, a written finding of which copy and argument defects the E4B cannot be prompted out of.
+
+## Midterm after EXP-068 applied, 2026-11-10
+- **EXP-068 read row 6, no decision** (9fb6996, b231ee6; 0.38 GPU-h). On requests_7309, drafter_5 wrote a bare `read_file(...)` line as its final text. Under the wider reading of row 3 that is a drafter text-form call and harm binds; under section 3's fence-only definition it is not. The action is the same either way: the form is not carried forward.
+- **Midterm criteria:**
+  - Content-class first-edit failures 0 of 8 (limit 0 to 1): pass.
+  - Drafter copy mismatches 16 of 35 (limit 2 or fewer): **fail**. 14 of them come from a reader LINES window that misses the CHANGE target on 3 of 8 tasks.
+  - Gate rows: none on the literal definitions; row 3 is ambiguous as above.
+- **Round 1 keeps nothing.** The rule "two rounds in a row with nothing kept ends the direction" therefore binds on EXP-069. If round 2 keeps nothing, D-009 ends, and the lead puts the window-anchor form (a string anchor, or an applier-side read with line prefixes) to the user as a new proposal, not as a round 3.
+- Both first-edit misses in EXP-068 are form-class: A on fastapi_14605 and S on rich_3468. That is one more S event, which supports round 2's target.
