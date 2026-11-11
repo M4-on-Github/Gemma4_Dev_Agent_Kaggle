@@ -259,8 +259,55 @@ The drafters followed the hard first-call rule (36 of 40; no fabricated OLD by t
 5. The EXP-069 applier bare-path recipe was not in this tree; the rich_3468 S event (a double-quoted `filepath` with garbled arguments at the first edit, then five R1-type retries) is one more data point for it.
 6. The 40 drafter turns are not independent (shared reader report per task, item 4 of section 7); every count above is a bound on a behavior.
 
+## 10. Window-miss desk check (zero GPU, 2026-11-11; sections 1 to 9 above are unchanged)
+
+Question (section 9.10): on the 3 window-miss tasks, is the reader's LINES a few lines off the CHANGE target (anchor fix) or at a different location (localization)? Method: the target's real range is taken from the hunk header of the applier's applied `edit_file` diff in the same trace (3 context lines before the first changed line), cross-checked against the reader's own `read_file` output where it covers the lines; for rich_3468 the applier's step-27 read (lines 2063 onward) and a hand count of the reader's 2000-2149 read (the `self.file.write(text)` at 2063, which matches the reader's own `git grep -n` hit `rich/console.py:2063`). The target is the drafted CHANGE (where the applier edited), not the gold patch location, which this run does not contain.
+
+| task | file | reader LINES (final report) | target in the file | start offset | nearest gap | drafter window (LINES -5..+5) | window short by |
+|---|---|---|---|---|---|---|---|
+| fastapi_14448 | fastapi/dependencies/models.py | 67-71 | 78-85 (`_unwrapped_call`, hunk -77,12) | 11 | 7 lines before | 62-76 | 2 (target starts at 78) |
+| rich_3468 | rich/console.py | 2081-2119 | 2062-2066 (the final `else` branch `try/except UnicodeEncodeError`) | 19 | 15 lines after | 2076-2124 | 10 (target ends at 2066) |
+| rich_3006 | rich/repr.py | 95-96 | 79-82 (`if param.default == param.empty:` and its `yield`; hunk -76,7) | 16 | 13 lines after | 90-101 | 11 (target ends at 82) |
+
+All three are the same file as the target, within 7 to 15 lines of it by nearest gap and 11 to 19 by start offset, so under the 30-line rule they are **anchor-class**, not localization-class. The target never lies outside what a window of LINES -20..+20 would contain (47-91, 2061-2101 and 75-116 cover 78-85, 2062-2066 and 79-82); this is a measurement, not a design.
+
+Direction is not constant: LINES sits before the target on fastapi_14448 and after it on rich_3468 and rich_3006, so a fixed shift would not repair it. Where the numbers came from: `read_file` output carries no line numbers (checked in rich_3006: raw `content` text, no prefixes), so the reader counts lines by eye. In fastapi_14448 and rich_3006 the reader's `git grep -n` never returned a line number for the target file's change site. rich_3468 is the exception worth stating: the reader's own grep gave `console.py:2063`, its draft thinking said 2055-2063 and then 2055-2139, and its final report said 2081-2119; the correct number was in its context and was not carried into LINES (18 lines past it). So the numbers point to an **anchor fix** (a LINES taken from a `grep -n` hit or from line-prefixed reads, or a drafter window wide enough for 7 to 15 lines of drift), not a localization fix.
+
+### 10.1 Same LINES-off pattern on EXP-064-loc and EXP-066-srch
+
+There the drafters copied the reader's REGION text and had no window, so an offset cost nothing at draft time; the comparison is only to see whether the reader's LINES drift in those trees too. Target = hunk start + 3 of the applied edit, matched on file:
+
+| run | task | reader LINES | applied-edit hunk (first changed line about) | gap |
+|---|---|---|---|---|
+| loc | rich_3006 | 67-70 | -76 (79) | 9 before |
+| loc | requests_7309 | 502-518 | -516 (519) | 1 |
+| loc | requests_7205 | 233-237 | -232 (235) | 0 (inside) |
+| loc | fastapi_14448 | 80-100 | -88 (91) | 0 (inside) |
+| loc | fastapi_14301 | 131-133 | -129 (132) | 0 (inside) |
+| loc | fastapi_14605 | 1-10 (fastapi/utils.py) | -9 (12) | 2 |
+| loc | httpx_3672 | _server 99-101 / 37-46; _parsers 447-473 / 300-350 | _server -89 (92), -49 (52); _parsers -413 (416), -342 (345) | 7, 6, 31, 0 |
+| loc | rich_3468 | console.py 1627-1710 | no applied edit; the EXP-068 target is 2062-2066 | about 350, different location |
+| srch | rich_3006 | 73-74 | -76 (79) | 5 before |
+| srch | rich_3468 | file_proxy.py 30-42 | file_proxy.py -44 (47) | 5 after the end |
+| srch | requests_7309 | 527-531 | -522 (525) | 2 |
+| srch | requests_7205 | 281-283 | -234 (237) | 44 |
+| srch | fastapi_14301 | 128-131 | -129 (132) | 1 |
+| srch | fastapi_14605 | exceptions.py 10 | exceptions.py -1,11 | inside |
+| srch | httpx_3672 | _parsers 68-108, 381-413, 57-72, 397-401, 370-380 | _parsers -83 (86), -379 (382), -402 (405), -439 (442) | 0 for three, 29 for -439 |
+
+Reading: LINES-off recurs. Of the 12 single-location tasks with an applied edit in the reader's file (6 per tree), 8 are inside or within 2 lines, 3 are 5 to 9 lines off (loc rich_3006 9, srch rich_3006 5, srch rich_3468 5) and 1 is 44 lines off (srch requests_7205 281-283). The multi-location httpx_3672 has 8 locations across the two trees: 4 inside or adjacent, 2 at 6 to 7 lines (loc `_server.py`) and 2 at 29 to 31 (loc `_parsers.py` 447-473, srch -439). One loc task (rich_3468) has the reader at 1627-1710 for a 2062 target, a different location, and its EXP-064 run applied nothing. A 5 to 9 line drift is exactly the size that a LINES -5..+5 window misses (rich_3006 loc at 9 and srch at 5 would have missed or just caught it), so the window design of EXP-068 turned a drift that REGION text had absorbed into a miss. The REGION copy was the anchor in those trees; EXP-068 removed it and kept the drift.
+
+### 10.2 Limits
+
+1. The target is the applied (or last applied) edit, not the gold patch; where the applier edited a different spot than the true fix the distance is to the drafted CHANGE only. rich_3006 is a resolved task in EXP-064-loc and EXP-069, so its line 79 is credible; the other two are unresolved.
+2. The fastapi_14448 content of LINES 67-71 was not read line by line; the offset rests on the hunk header and the 1-100 read.
+3. The loc/srch table uses hunk start + 3, which is exact to 1 to 2 lines for a mid-file edit; httpx_3672 has several locations and the loc `_server.py`/`_parsers.py` pairing follows the hunk order in the trace, not a per-edit check of the REGION text. Rows with a gap of 0 to 2 should be read as "same place".
+4. n = 3 tasks for the window-miss table; the cross-check is 8 tasks of two other trees. This counts a mechanism, it does not estimate a rate.
+
 ## Status
 
 **2026-11-10 ANALYZED**: kernel COMPLETE. Row 6 (no decision); rows 1 to 3 clear under section 3 as written. requests_7309 drafter_5's bare `read_file(...)` line is outside the fence definition and is recorded, not applied; no kill and no promote either way. A (a) 36 of 40, A (d) 0, E1 6 of 8, R1-type 5, G 7 of 8, window miss on 3 of 8; resolved 1 of 8. Section 9 above.
+
+**2026-11-11 desk check (zero GPU)**: the 3 window misses are anchor-class (LINES 7 to 15 lines from the target, same file; both directions). Section 10 above.
 
 2026-11-10 (earlier): pre-registered (570e52b), candidate packed with sha `176a005d...a2326`, notebook built (3874589). **Pushed 2026-11-10**: kernel version 1, `rainm4/gemma4-exp068-read`, first status RUNNING (not QUEUED, so no second check). Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp068-read -p runs/EXP-068-read/`, flatten, then the analysis commands in section 6, then apply section 4.
