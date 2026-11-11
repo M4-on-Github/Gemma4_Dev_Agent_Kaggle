@@ -136,3 +136,10 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 ## 8. Built (below the line; nothing above changes)
 
 ---
+
+- **Changed files vs EXP-068 `candidate-read`:** two (`prompts/reader.md`, `sub_agents/reader.yaml`), as section 2.
+- **Validator** (`--official --strict`): 1 error, the 18.00 h gate, demoted by `--skip-budget-gate`; 2 warnings carried from EXP-068; no new warning. The official validator could not be imported.
+- **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 20 files, `dist/EXP-071-anchor.zip` (gitignored). **sha256 `6569da25aa7348bec25c92cd5ffd57a08753248f8591e5c87105e8af050aace4`.**
+- **Pre-registration commit:** 27fee48 (this file, the candidate tree, the README row).
+- **Notebook:** `notebooks/exp071_anchor/`, built with the section 6 command (`TASK_IDS` = the 8 smoke-8 ids, `N_TASKS` 8, `RUN_AGENT` True). `kernel-metadata.json` is EXP-069's with only `id` and `title` changed, to `rainm4/gemma4-exp071-anchor`. Nothing was copied to `out/submission.zip`.
+- **Kernel id for the push:** `rainm4/gemma4-exp071-anchor`, directory `notebooks/exp071_anchor`.
