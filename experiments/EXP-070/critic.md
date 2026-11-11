@@ -22,11 +22,11 @@ Rounds 1 and 2 go ahead under the user's terms. The ranking of rounds 3 to 5 has
 
 D-010 reads a mechanism endpoint on the E4B as a reason to ship, and the record says otherwise.
 - EXP-069 landed the first edit on 8 of 8 tasks with 0 empty patches, and resolved the same 2 of 8 tasks as EXP-064.
-- Of 23 unresolved patched task-runs that have an empty-patch grading of the same task, 21 grade exactly like the empty patch. A verify that acts only on new failures therefore has about one event to act on, and a selector built on it will pick draft_1, which the applier already picks in 27 of 40 multi-draft passes.
+- Of 23 unresolved patched task-runs that have an empty-patch grading of the same task, 21 grade like the empty patch. A verify that acts only on new failures therefore has about one event to act on, and a selector built on it will pick draft_1, which the applier already picks in 27 of 40 multi-draft passes.
 - Round 4's per-drafter temperatures have been in the tree since EXP-052 (0.3 to 1.0).
 - A kept form on a carrier that scores 0 to 3 of 58 cannot approach our 0.18 on a best-of LB. It cannot be read at an MDE of 4. It would also take a final that belongs to a 31B variant.
 
-The one round that could create a selection signal is a reproducer stage with the hard first-call opener. That opener held on 36 of 40 drafter turns, and it fixes the cause EXP-068 §1.3 diagnosed in EXP-063. D-010 does not rank this round. A kept form justifies a written finding and a time-costed 31B port proposal, not an upload.
+The one round that could create a selection signal is a reproducer stage with the hard first-call opener. That opener removes the probable cause EXP-068 §1.3 named for EXP-063. It held on 36 of 40 drafter turns, but it has not been tested on a reproducer. D-010 does not rank this round. A kept form justifies a written finding and a time-costed 31B port proposal, not an upload.
 
 ## 1. Ranking of rounds 3 to 5
 
@@ -44,7 +44,7 @@ The one round that could create a selection signal is a reproducer stage with th
 - **The ±20 window: trigger it on any EXP-071 outcome except promote, and rank it above selection.**
   - By EXP-071's own blind numbers, P(kill) is about 0.07 [I: (0.65 × 0.8 × 0.95) × 0.15]. So "the fallback if killed" almost never fires.
   - The change is arithmetic in the drafter prompt, so it needs no new compliance; drafters opened with a read on 36 of 40 turns.
-  - EXP-068 §10 shows that ±20 covers all 3 misses.
+  - EXP-068 §10 shows that ±20 covers all 3 misses. That width is read off the same three misses, though, and §10.1 shows drifts of 29 to 44 lines at three REGION-tree locations that ±20 would not cover.
   - Cost: the applier sees all five reads. httpx_3672 already had a first applier prompt of 20,709 tokens at ±5. Record it against both 14,336 and 32,768.
 - **The fused tree last: right, but it has no base of record.**
   - EXP-071 sits on `candidate-read`, and EXP-072 sits on `candidate-loc`. Fusing them is an interaction that no round screens.
@@ -75,7 +75,7 @@ The one round that could create a selection signal is a reproducer stage with th
   - The LB keeps the best score. The E4B has scored 3, 3, and 0 or 1 of 58 (S-014 to S-016). Adding D-010's 0 to 2 tasks cannot approach 11 of 58 (0.18, S-012), and no single draw can read the gain.
   - The second final should be a 31B variant.
 - **The ports to the 31B are time-bound or have no analog.**
-  - A verify run costs 20 to 40 s, which exceeds the 31B's measured room of 13.8 s to 10.5 h and 28.8 s to 11 h (D-004 B2).
+  - A verify run costs 20 to 40 s. All of that range exceeds the 31B's measured room of 13.8 s to the 10.5 h ceiling, and its top exceeds the 28.8 s to the 11 h gate (D-004 B2).
   - The anchor and ±20 forms have no counterpart in a single loop.
 - **What a kept form does justify:** a written finding, plus a costed port proposal. Any E4B upload is the user's call, under a recorded plan.md §5.8 override.
 
