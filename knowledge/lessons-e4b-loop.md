@@ -163,3 +163,20 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
   - Gate rows: row 3 is ambiguous on the bare line.
   - Round 1 keeps nothing.
 - **Confidence:** [V] for the counts; [I] for the window-miss mechanism (classified by hand; n = 8 cannot separate miscounted LINES from a wrong location).
+
+## EXP-069 (17e0804; about 0.34 GPU-h): applier bare-path recipe and one-resend rule
+- **Outcome:** row 3, not exercised.
+  - Q = 0: none of the 23 `edit_file` calls had a quote-wrapped filepath. The base rate was about 0.2 per task-run, so P(Q = 0) was about 0.17.
+  - The one-resend rule never triggered.
+- **Measured** (recorded only):
+  - First applier turn is a tool call on 8 of 8. Text-form calls 0, mean wall 97.7 s, 0 caps, 0 empties, 0 nudges.
+  - Resolved 2 of 8, the same two tasks as EXP-064-loc (0 discordant).
+  - The 13 failed edits are all content-class "old_string not found": 8 on httpx_3672 and 5 on fastapi_14605. 6 come from drafts and 7 are the applier's own.
+- **Lesson:** at n = 8 a defect seen on about 1 task-run in 5 can miss a screen entirely. A form aimed at a rare class needs Q-conditional rows (as written here) or a cohort chosen for the defect.
+  - The applier hunk shows no harm on 8 tasks and nothing more.
+- **Window-miss desk check** (EXP-068 §10, 20adfca, zero GPU):
+  - On the 3 EXP-068 window misses, the reader's LINES are in the right file but 7 to 15 lines from the target, drifting before it on one task and after it on two.
+  - `read_file` output has no line numbers, so the reader counts by eye. On rich_3468 its own `git grep -n` printed the right line, 2063, and it still wrote 2081-2119.
+  - The same 5 to 9 line drift appears on 3 of 12 tasks in EXP-064-loc and EXP-066-srch, where REGION text absorbed it.
+  - This points to an anchor fix: LINES taken from a numbered output the reader received. It does not point to localization.
+- **Confidence:** [V] for the counts. [I] for the anchor reading (n = 3, and the target is the applied edit, not the gold patch).

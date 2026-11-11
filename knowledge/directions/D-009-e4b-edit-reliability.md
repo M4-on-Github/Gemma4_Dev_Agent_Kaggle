@@ -2,7 +2,7 @@
 id: D-009
 title: E4B pipeline edit reliability, one stage defect per round
 decision: pivot
-status: active (approved 2026-11-10: the user chose option A, round 2 on the E4B, over option B, answering "1."; knowledge/user-decisions.md, 4db058b). Revised 2026-11-10 after the critic's `direction` review (needs-work; experiments/EXP-067/critic.md, d372a76, 53be9fb). The pivot is on the user's word "tweak the agents" (2026-11-10).
+status: done, ended 2026-11-11 by its two-rounds rule (EXP-068 row 6 kept nothing; EXP-069 row 3, not exercised, kept nothing); successor D-010. Was active (approved 2026-11-10: the user chose option A, round 2 on the E4B, over option B, answering "1."; knowledge/user-decisions.md, 4db058b). Revised 2026-11-10 after the critic's `direction` review (needs-work; experiments/EXP-067/critic.md, d372a76, 53be9fb). The pivot is on the user's word "tweak the agents" (2026-11-10).
 track: main
 claims: []
 date: 2026-11-10
@@ -86,3 +86,13 @@ About 0.35 GPU-h per round, so about 0.7 for two. No upload slots.
   - Gate rows: none on the literal definitions; row 3 is ambiguous as above.
 - **Round 1 keeps nothing.** The rule "two rounds in a row with nothing kept ends the direction" therefore binds on EXP-069. If round 2 keeps nothing, D-009 ends, and the lead puts the window-anchor form (a string anchor, or an applier-side read with line prefixes) to the user as a new proposal, not as a round 3.
 - Both first-edit misses in EXP-068 are form-class: A on fastapi_14605 and S on rich_3468. That is one more S event, which supports round 2's target.
+
+## Ended 2026-11-11: two rounds in a row with nothing kept
+- **Round 1, EXP-068:** row 6. Round 2, EXP-069: row 3, not exercised (Q = 0 quoted filepaths in 23 edits; 17e0804).
+- **The finding the final check asks for:**
+  - Of the copy defects, the reader's REGION mis-copy goes away when drafters read the file themselves. In its place comes line-number drift: the reader counts lines by eye, and `read_file` shows none. The drift is 7 to 15 lines on 3 of 8 tasks in EXP-068, and 5 to 9 lines on 3 of 12 in the REGION trees (EXP-068 §10).
+  - Of the argument defects, S is about 1 in 5 task-runs. It did not occur on this cohort draw, so its form is untested rather than failed.
+  - The E4B's edit failures on EXP-069 were all content-class.
+- **What carries forward:**
+  - the anchor form, LINES from a numbered output, as a D-010 candidate;
+  - EXP-069's applier hunk, only as a free rider with no harm seen.
