@@ -12,12 +12,17 @@ Checks, per run:
      text-only session). For a non-ok pass: usable drafts in that pass, applier edit_file calls and applied edits in
      that pass, and whether the task's final patch is empty.
   2  verify step: after the applier's last applied edit_file of the task and before the next submit_patch, any
-     applier run_command whose program is pytest, python or python3 (incl. -m pytest and -c). Path class:
+     applier run_command with a pytest, python or python3 segment (incl. -m pytest and -c); a command is split on
+     &&, ||, ; and |, and leading VAR=value, timeout N, env, time and nice words are dropped. Path class:
      mod (a test file whose name holds the edited file's stem as a whole _-separated word), file (another .py path), suite (no path, or a
      directory), c (python -c), and the exit code.
-  3  drafts per pass: usable drafts (FILE, OLD, NEW) of drafter_1..5 and distinct ones after whitespace
-     normalisation (runs of whitespace collapsed, ends stripped; FILE compared by its last path part). First applied
-     edit of the task: the drafts of its pass it matches (FILE suffix plus OLD or NEW equal after normalisation).
+  3  drafts per pass: usable drafts (FILE, OLD, NEW) of drafter_1..5, distinct ones after whitespace
+     normalisation (runs of whitespace collapsed, ends stripped; FILE compared by its last path part), the size of
+     the largest identical group, and a vote class: nosignal (largest group 1), tie (two or more largest groups of 2+),
+     same (one largest group of 2+ and draft_1 is in it), diff (one largest group of 2+ without draft_1, incl. an
+     unusable draft_1); counted over passes with 2+ distinct drafts and a first applied edit. First applied edit of the
+     task, one class: exact1 (OLD and NEW both equal draft_1's), exact_other, old_only, new_only, own (usable drafts,
+     none matches), nodrafts; a draft must also have a FILE that is a suffix of the edit's filepath.
   5  task wall (task_results duration_s), the task's counted calls (tool_calls), applier counted calls per task
      (all tool calls but get_status and submit_patch), harness llm_calls.
 Usage: python -I -X utf8 experiments/EXP-070/desk.py runs/EXP-061-r runs/EXP-062-r ...
@@ -25,6 +30,7 @@ Usage: python -I -X utf8 experiments/EXP-070/desk.py runs/EXP-061-r runs/EXP-062
 from __future__ import annotations
 
 import json
+from collections import Counter
 import re
 import shlex
 import statistics as st
@@ -183,7 +189,9 @@ def main(runs: list[str]) -> int:
         walls, appl_calls, tcalls = [], [], []
         c = {k: 0 for k in ("passes", "reader_notok", "notok_empty", "edited_tasks", "v_res", "v_unres", "nv_res",
                             "nv_unres", "v_exit0", "v_mod", "v_suite", "usable_passes", "d1", "d2", "d3p", "fa",
-                            "fa_exact1", "fa_exact_other", "fa_old_only", "fa_new_only", "fa_own", "fa_nodrafts", "fa_multi", "fa_multi_exact1")}
+                            "fa_exact1", "fa_exact_other", "fa_old_only", "fa_new_only", "fa_own", "fa_nodrafts", "fa_multi", "fa_multi_exact1",
+                            "ok_zero_calls", "maj_passes", "vote_same", "vote_diff", "vote_tie", "vote_nosignal",
+                            "v_file", "v_c", "v_ran")}
         for tp in sorted(tdir.glob("trace_*.json")):
             tid = tp.stem[len("trace_"):]
             row = rows.get(tid, {})
@@ -201,6 +209,13 @@ def main(runs: list[str]) -> int:
                 ds = drafts_of(ps)
                 usable = {k: v for k, v in ds.items() if v}
                 distinct = len({key(v) for v in usable.values()})
+                groups = Counter(key(v) for v in usable.values())
+                top = max(groups.values()) if groups else 0
+                d1_in_top = 1 in usable and groups[key(usable[1])] == top
+                unique_top = sum(1 for g in groups.values() if g == top) == 1
+                vote = ("nosignal" if top < 2 else "tie" if not unique_top else "same" if d1_in_top else "diff")
+                c["ok_zero_calls"] += cls == "ok" and rcalls == 0
+                c["maj_passes"] += bool(usable) and top * 2 > len(usable)
                 c["passes"] += 1
                 if cls != "ok":
                     c["reader_notok"] += 1
@@ -239,9 +254,11 @@ def main(runs: list[str]) -> int:
                         if distinct >= 2:
                             c["fa_multi"] += 1
                             c["fa_multi_exact1"] += fcls == "exact1"
+                            c["vote_" + vote] += 1
                         match = (f"{fcls} exact[{','.join(map(str, both)) or '-'}] old-only[{','.join(map(str, oo)) or '-'}] "
                                  f"new-only[{','.join(map(str, no)) or '-'}]")
                 print(f"    pass {i}: reader {cls} calls {rcalls}; drafts usable {len(usable)} distinct {distinct} "
+                      f"largest-group {top} vote {vote} "
                       f"(of {len(ds)} finals); applier edits {n_edit} applied {n_ok}; first applied edit {match}")
             # check 2 over the whole task
             last_ok = max((j for j, e in enumerate(all_ev) if e.get("ok")), default=None)
@@ -258,6 +275,9 @@ def main(runs: list[str]) -> int:
                 c["v_exit0"] += any(x.endswith(" exit 0") for x in labs)
                 c["v_mod"] += any(" mod:" in x for x in labs)
                 c["v_suite"] += any(" suite:" in x for x in labs)
+                c["v_file"] += any(" file:" in x for x in labs)
+                c["v_c"] += any(" c:" in x for x in labs)
+                c["v_ran"] += any(x.endswith((" exit 0", " exit 1")) for x in " ; ".join(labs).split(" ; ") if x)
                 print(f"    window: {' '.join(programs(e) for e in window) or '-'}")
                 print(f"    verify: after last applied edit ({Path(edited).name}) -> {'; '.join(labs) or 'none'}"
                       f"{'' if nxt is not None else ' [no submit after it]'}")

@@ -47,9 +47,11 @@ The script also records the reader's tool calls in the pass.
 - `own`: there are usable drafts, but the edit matches none of them;
 - `nodrafts`: the pass has no usable draft.
 
+Per pass the script also records the size of the largest identical group and whether a strict majority of the usable drafts is identical. Over passes with 2 or more distinct drafts and a first applied edit, it gives a vote class: `nosignal` (the largest group is 1, all drafts differ), `tie` (two or more largest groups of 2 or more), `same` (one largest group of 2 or more, and draft_1 is in it), `diff` (one largest group of 2 or more without draft_1, an unusable draft_1 included). `same` means a majority-vote selector would pick the same edit text as draft_1.
+
 **Check 4a.** A run_command step whose observation has ModuleNotFoundError or ImportError followed within 120 characters by `inline_snapshot` or `dirty_equals`. The script prints the step's author, its programs, its exit code, and whether it comes after (A) or before (B) the last applied edit. It also checks whether the grading `test_tail` holds the same pattern. The tail is the last 1500 characters of the grading output, so the tail count is a lower bound.
 
-**Check 5.** From `summary.jsonl`: mean and max `wall_s`, and max `n_calls`. `n_calls` is one higher than the harness `tool_calls` on every max row. The script also reports the applier's counted calls per task (all calls but `get_status` and `submit_patch`). Headroom is the cap minus the max wall. Caps in all seven runs: 8 min (480 s) and 45 calls, from task_results.
+**Check 5.** From `summary.jsonl`: mean and max `wall_s`, and max `n_calls`. `n_calls` is 1 to 4 higher than the harness `tool_calls` (1 on every max row; on 46 of 56 rows the gap equals the `transfer_to_agent` count). The harness enforces its cap on its own count, so headroom read from `n_calls` is conservative. The script also reports the applier's counted calls per task (all calls but `get_status` and `submit_patch`). Headroom is the cap minus the max wall. Caps in all seven runs: 8 min (480 s) and 45 calls, from task_results.
 
 ## 3. Endpoints (counts)
 
@@ -92,7 +94,8 @@ Each `RUN counts` line of `desk.py` gives the per-run tallies. Wall and calls co
    - The `mod` test was a plain substring test. It counted the absent reproducer file of EXP-063 as the edited module's test, because one stem is a prefix of a word in that name. It became the whole-word test of section 2.
    - The first-applied match was "OLD equal or NEW equal". That counts every draft sharing a location as a hit, so it became the exclusive classes of section 2. The earlier "matches draft 1" figure overstated draft_1. It is not used.
 3. Check 2 split commands only on their first word at first. Segment splitting and the window dump were added. Neither changed any task's "none".
-4. The call maxima at first came from the harness `tool_calls`. They were replaced by `summary.jsonl` `n_calls`, the tool's figure, which is one higher.
+4. The call maxima at first came from the harness `tool_calls`. They were replaced by `summary.jsonl` `n_calls`, the tool's figure, which is 1 higher on every max row.
+5. After the first draft of this file, at the advisor's review, four counters were added to `desk.py` and every figure was re-read from them: the largest-group and vote classes of check 3; the `file`, `c` and ran (exit 0 or 1) tallies of check 2, which had been hand counts, one of them wrong (5 for 6) in that draft; and `ok` passes with 0 reader calls. The check 3 and check 2 lines of 8.2 and the Status were rewritten from these counts.
 
 ## 8. Results
 
@@ -116,7 +119,7 @@ What followed each non-ok pass:
 - **EXP-068 requests_7309.** 0 of 5 drafts usable. The applier applied 1 edit of its own after 6 counted calls, then ran a python -c check that exited 0. Unresolved. This task never resolves on this grader, gold or empty (harness-stack).
 - **EXP-068 rich_3006, pass 2.** 0 of 5 drafts usable, and the applier made no edit in that pass. The task's patch is non-empty only because pass 1's applied edit stands. Unresolved, while rich_3006 resolved in the other six runs; pass 1's first applied edit was `own`.
 
-No reader pass is `unknown` or `nofinal`. No non-ok pass ended in an empty patch.
+No reader pass is `unknown` or `nofinal`. No non-ok pass ended in an empty patch. No `ok` pass has 0 reader calls, so the text-only reader sessions (no tool call at all) are exactly the 3 non-ok passes.
 
 Check 2. Checks after the last applied edit, by task-run and by resolved and unresolved.
 
@@ -145,7 +148,7 @@ The 15 unprompted task-runs with a check break down as follows:
 - In the 4 resolved task-runs with a check, the check exited 1, 4, 1 and 2; the applier submitted after each of them.
 - The only exit 0 anywhere is a python -c on a task that never resolves on this grader.
 - No unprompted check ran an existing test file of the edited module.
-- In 6 of 15 task-runs (the four exit-1 suite runs and both c runs), tests or code ran (exit 0 or 1).
+- In 6 of 15 task-runs (the four exit-1 suite runs and both c runs), tests or code ran (exit 0 or 1). The class counters over the six unprompted runs: suite 8, file 3, mod 2, c 2, ran 6.
 - Every "none" window holds only edit_file, read_file or get_status calls, or nothing. No pytest is hidden behind a prefix.
 
 Check 3. Draft diversity per pass, and the class of the first applied edit.
@@ -161,10 +164,26 @@ Check 3. Draft diversity per pass, and the class of the first applied edit.
 | EXP-069-argform | 8 | 3 | 2 | 3 | 8 | 4 | 1 | 3 | 0 | 0 | 0 | 3 of 5 |
 | all | 53 | 5 | 19 | 29 | 48 | 30 | 3 | 7 | 1 | 4 | 3 | 27 of 40 |
 
-- In 48 of 53 passes with usable drafts, the drafts differ, and 29 have 3 or more distinct.
-- Where they differ, the applier's first applied edit is exactly draft_1 in 27 of 40.
+- 24 of 53 passes with usable drafts have 2 or fewer distinct drafts, and 29 have 3 or more. A strict majority of the usable drafts is identical in 23 of 53.
+- Where the drafts differ (2 or more distinct) and an edit was applied, the first applied edit is exactly draft_1 in 27 of 40.
 - Over all 45 first applied edits with usable drafts, it is exactly draft_1 in 30 and another draft in 3.
 - EXP-068, whose drafters read the file themselves, is the outlier: 3 `own` and 2 `nodrafts` of 7.
+
+Vote classes over passes with 2 or more distinct drafts and a first applied edit:
+
+| run | such passes | strict-majority passes (of all usable) | same | diff | tie | nosignal |
+|---|---|---|---|---|---|---|
+| EXP-061-r | 6 | 2 of 8 | 2 | 1 | 0 | 3 |
+| EXP-062-r | 5 | 5 of 7 | 3 | 0 | 0 | 2 |
+| EXP-063-p | 6 | 4 of 8 | 2 | 1 | 0 | 3 |
+| EXP-064-loc | 7 | 2 of 8 | 2 | 0 | 0 | 5 |
+| EXP-066-srch | 7 | 3 of 8 | 4 | 0 | 0 | 3 |
+| EXP-068-read | 4 | 2 of 6 | 1 | 0 | 0 | 3 |
+| EXP-069-argform | 5 | 5 of 8 | 3 | 0 | 0 | 2 |
+| all | 40 | 23 of 53 | 17 | 2 | 0 | 21 |
+| EXP-064 tree (064, 066, 068, 069) | 23 | 12 of 30 | 10 | 0 | 0 | 13 |
+
+The EXP-064 tree, with its location-diverse drafters, is the base of the batch. In it, 13 of 30 passes with usable drafts have 2 or fewer distinct drafts (4 all identical, 9 with 2), 17 have 3 or more, and the first applied edit is exactly draft_1 in 14 of 23 multi-draft passes.
 
 Check 4a. ModuleNotFoundError or ImportError naming inline_snapshot or dirty_equals.
 
@@ -206,14 +225,28 @@ The smallest headroom is 271.4 s and 22 calls. A verify run of 20 to 40 s and 1 
 ### 8.2 One line per check (rules of section 4)
 
 1. **Reader empty report.** Trigger rate: 3 of 57 passes, about 0.4 per 8. It fails rule (a), so it is not a candidate for its own round. It could ride free, with this process endpoint: non-ok reader passes and the usable drafts that follow them (reference 3 passes, all with 0 reader calls and 0 usable drafts).
-2. **Executed verify (C-019).** Unprompted checks occur on 15 of 42 edited task-runs, about 2.9 per 8, but tests or code ran on only 6 of them, and none passed on a resolved task. So the candidate is "make the check runnable", not "add a check". Process endpoint: edited task-runs with a check after the last applied edit that runs (exit 0 or 1), with no exit 2, 4 or 5 (reference 6 of 42, about 1.1 per 8), plus the class `mod` on an existing file (reference 0). It passes rules (a) to (c), with the caveat that fastapi suite runs die at collection (check 4).
-3. **Draft diversity.** The drafts already differ in 48 of 53 passes, so a diversity form is not indicated. The applier takes draft_1 exactly in 27 of 40 multi-draft passes, so a selection form is the candidate. Process endpoint: the first applied edit's class in passes with 2 or more distinct drafts (reference exact1 27 of 40; the trigger, a first applied edit in a pass with 2 or more distinct drafts, occurs on 40 of 56 task-runs, about 5.7 per 8). It passes rules (a) to (c). A smoke-8 trace cannot show that a different pick is a better one.
+2. **Executed verify (C-019).** Unprompted checks occur on 15 of the 48 task-runs of the six unprompted runs (15 of 42 edited), about 2.5 per 8 task-runs. Tests or code ran on only 6 (1.0 per 8), and none passed on a resolved task. So the candidate is "make the check runnable", not "add a check". Its trigger is any applied edit: 42 of 48, 7.0 per 8. Process endpoints:
+   - edited task-runs with a check after the last applied edit that runs (exit 0 or 1, with no exit 2, 4 or 5): reference 6 of 48;
+   - checks of class `mod` on an existing file: reference 0.
+
+   It passes rules (a) to (c), with the caveat that fastapi suite runs die at collection (check 4).
+3. **Draft diversity.** Mixed: the drafts are neither mostly identical nor uniformly different. The split depends on the form.
+   - **Majority-vote selection is not a candidate.** It would change the applier's pick in 2 of 40 multi-draft passes (diff), 0 of 23 in the EXP-064 tree. Where draft_1 sits in a plurality group (same, 17), a vote picks the same text. In the 21 all-distinct passes (nosignal), a vote has nothing to go on.
+   - **Selection by a non-vote signal, such as a check per draft,** has a trigger on 21 of 56 task-runs (13 of 32 in the EXP-064 tree, about 3.3 per 8). It needs a check that runs, so it depends on check 2's tweak landing first.
+   - **A diversity form** has a trigger, a pass with 2 or fewer distinct drafts, on 13 of 32 task-runs in the EXP-064 tree, about 3.3 per 8. Process endpoint: distinct drafts per pass (EXP-064 tree reference 17 of 30 passes with 3 or more), and the first applied edit's class.
+   - Both forms pass rules (a) to (c) on rate alone. A smoke-8 trace cannot show that a different draft or a different pick is a better one.
 4. **Vendoring (C-021).** Trigger rate: 4 of 56 task-runs, about 0.6 per 8, all fastapi. It fails rule (a) alone. It is linked to check 2: 3 of the 4 hits are the verify run itself, so it could ride with a verify round as an enabler. Process endpoint: package ModuleNotFoundError hits in run_command (reference 4 of 56). The grading question (fastapi_14605 grades exit 2 in 7 of 7 runs) needs the Kaggle CPU re-grade kernel. It cannot be settled here.
 5. **Headroom.** Not a tweak. It is a constraint, and it is met: at least 271.4 s and 22 calls of room on every run, against an added 20 to 40 s and 1 to 2 calls. Process endpoint for any verify round: mean wall within +40 s of its base run, and 0 caps.
 
 ## Status
 
 **2026-11-11 COUNTED.** Zero GPU.
-- The trigger rates per 8 task-runs: reader non-ok passes 0.4, unprompted verify checks 2.9 (of which 1.1 ran tests or code), a first applied edit in a pass whose drafts differ 5.7 (exactly draft_1 in 27 of those 40), package ModuleNotFoundError 0.6.
-- Candidates by section 4: a runnable-verify form and a draft-selection form. The reader fault and vendoring can only ride free.
+- The trigger rates per 8 task-runs:
+  - reader non-ok passes 0.4;
+  - unprompted verify checks 2.5, of which 1.0 ran tests or code;
+  - a majority vote that would change the pick 0.3 (0 in the EXP-064 tree);
+  - all-distinct multi-draft passes 3.0;
+  - passes with 2 or fewer distinct drafts in the EXP-064 tree 3.3;
+  - package ModuleNotFoundError 0.6.
+- Candidates by section 4: a runnable-verify form first. Then either a draft-diversity form, or a selection form whose signal is a per-draft check, which depends on the runnable verify landing. Majority-vote selection is not a candidate. The reader fault and vendoring can only ride free; vendoring is the enabler for fastapi checks.
 - The shim re-grade needs a Kaggle CPU kernel and was not run.
