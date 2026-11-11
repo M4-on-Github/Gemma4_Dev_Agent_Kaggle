@@ -281,3 +281,13 @@ User, verbatim: "what agentic experiments should we make to the solution? let's 
   1. **D-009 continues on the E4B. Round 2 targets class S, a quote-wrapped `filepath`.** The zero-GPU desk check comes first, then one smoke-8 inside the assumed 4.0 ceiling for 11-10.
   2. The 31B line (option B) is not started.
   3. Unchanged: no dev-48, and no upload without the user's word.
+- 2026-11-11: the lead reported EXP-068 (row 6, D-009 round 1 keeps nothing) with EXP-069 still to read. The user wrote "gi for 5 more harness trweaks for e4b agents", which the lead reads as "go for 5 more harness tweaks for E4B agents". The lead takes it as follows:
+  1. **Five more pre-registered smoke-8 rounds on the submission's E4B pipeline agents** (root, reader, drafters, applier), each with one variable. The rounds are adaptive: each is chosen after the last reading, from a ranked list that passed a zero-GPU desk check. EXP-069 is not one of the five; it was pushed on 11-10.
+  2. **Assumed terms for 11-11:**
+     - about 2.0 GPU-h expected, with a ceiling of 2.5 for the five;
+     - smoke-8 pushes are approved inside that ceiling;
+     - at most 2 kernels live at once;
+     - no dev-48;
+     - no re-run of a failed kernel without the user's word.
+  3. **Not upload approval.** The 2026-11-11 slot is open, but any upload waits on the user's word and an `approvals/S-NNN.txt`.
+  4. If EXP-069 ends D-009 by its two-rounds rule, the five run under a new direction, D-010, which the critic reviews alongside the first desk check without blocking it.
