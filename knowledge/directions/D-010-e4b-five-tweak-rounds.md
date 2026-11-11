@@ -2,7 +2,7 @@
 id: D-010
 title: E4B pipeline, five adaptive tweak rounds (11-11)
 decision: start
-status: active on the user's word (2026-11-11, "gi for 5 more harness trweaks for e4b agents", f3df1e5). The critic's `direction` review is pending; it does not block round 1.
+status: active on the user's word (2026-11-11, "gi for 5 more harness trweaks for e4b agents", f3df1e5). The critic's `direction` review came back needs-work (experiments/EXP-070/critic.md, 49784a4, 3d0fc69). All six fixes are accepted; see the revision below.
 track: main
 claims: [C-015, C-019, C-021, C-023]
 date: 2026-11-11
@@ -38,7 +38,8 @@ Five more single-variable changes to the E4B pipeline agents (root, reader, draf
   - Strongest argument against: this carrier draws 0.01 to 0.05 against the 31B's 0.18, and n = 8 screens read only process endpoints. A kept form moves the leaderboard only if it moves at least 4 tasks of 58.
 - **B: spend the five on the 31B single loop.** Not chosen: the user named E4B agents.
 - **Lead's recommendation:** A, on the user's word. Each round is read on a mechanism endpoint, so a kept form has a stated reason to ship.
-- **Critic's dissent:** pending.
+- **Critic's dissent (needs-work, 2026-11-11, verbatim):** "D-010 reads a mechanism endpoint on the E4B as a reason to ship, and the record says otherwise. EXP-069 landed the first edit on 8 of 8 tasks with 0 empty patches, and resolved the same 2 of 8 tasks as EXP-064. Of 23 unresolved patched task-runs that have an empty-patch grading of the same task, 21 grade like the empty patch. A verify that acts only on new failures therefore has about one event to act on, and a selector built on it will pick draft_1, which the applier already picks in 27 of 40 multi-draft passes. Round 4's per-drafter temperatures have been in the tree since EXP-052 (0.3 to 1.0). A kept form on a carrier that scores 0 to 3 of 58 cannot approach our 0.18 on a best-of LB. It cannot be read at an MDE of 4. It would also take a final that belongs to a 31B variant. The one round that could create a selection signal is a reproducer stage with the hard first-call opener. That opener removes the probable cause EXP-068 §1.3 named for EXP-063. It held on 36 of 40 drafter turns, but it has not been tested on a reproducer. D-010 does not rank this round. A kept form justifies a written finding and a time-costed 31B port proposal, not an upload."
+  - **Lead's response:** accepted in full (see the revision below).
 
 ## Expected score impact
 - 0 to 2 tasks of 58 for the batch, P about 0.25 [I].
@@ -58,8 +59,8 @@ Five smoke-8 runs at about 0.35 to 0.40 each, so about 2.0 GPU-h, with a ceiling
 After rounds 1 and 2: at least one is exercised and reads no harm. Otherwise the remaining rounds go to the candidates with the highest opportunity counts in EXP-070.
 
 ## Final check
-- Either a fused tree whose smoke-8 shows no harm and at least one kept mechanism, offered to the user as an upload candidate with its sha;
-- or a written finding of which forms the E4B did not take up.
+- Restated 2026-11-11 (revision item 5): a kept form yields a written finding plus a time-costed 31B port proposal. An E4B upload happens only on the user's word.
+- Otherwise, a written finding of which forms the E4B did not take up.
 
 ## Ranking after EXP-070 (6780768, 66f43cc; zero GPU), 2026-11-11
 - **Round 2, EXP-072: a runnable verify, which the experimenter builds on the EXP-064 `candidate-loc` tree.**
@@ -75,3 +76,21 @@ After rounds 1 and 2: at least one is exercised and reads no harm. Otherwise the
 - **Not a round of their own:**
   - the reader empty-report guard (3 of 57 passes, about 0.4 per 8), which may ride free;
   - vendoring (4 of 56 hits; the re-grade needs a Kaggle CPU kernel, not run).
+
+## Revision 2026-11-11 after the critic (supersedes the ranking above)
+1. **Round 4, drafter temperatures, is dropped.** The drafters have run at 0.3 to 1.0 since EXP-052, so the lever is already pulled.
+2. **Round 3 is the wider drafter window.** It runs on any EXP-071 outcome except promote, and on the `candidate-read` base. Its width must cover the measured drifts, which reach 29 to 44 lines in EXP-068 §10.1; ±20 does not cover them. It ranks above selection.
+3. **Round 4 is the reproducer stage with the hard first-call opener** ("Your first reply must be a run_command call, not text"). This is EXP-063 again, with the probable cause of its 0 tool calls removed. The opener held on 36 of 40 drafter turns in EXP-068. It is the one round that could create a selection signal, and it fills the explore quota, since it is a parked lever re-examined with new evidence.
+   - Endpoints: the reproducer's first-turn tool call, and the share of reproducer runs that fail before the edit.
+   - Base: `candidate-loc`.
+4. **Round 5, in this order:**
+   - (a) per-draft selection, only if EXP-072 shows new-failure events on at least 2 of 8 (the critic's reference is about 1 in 23);
+   - (b) otherwise the fused keepers on a named base: `candidate-read` if EXP-071 or round 3 is kept, else `candidate-loc`;
+   - (c) otherwise a written finding.
+   - Any fused round must lose no resolve on fastapi_14301 or rich_3006. EXP-068 lost rich_3006, which resolved in the other six pipeline runs.
+5. **The final check is restated:** a kept form yields a written finding plus a time-costed proposal to port it to the 31B. A verify costs 20 to 40 s, against the 31B's 13.8 s of room to the 10.5 h ceiling and 28.8 s to the 11 h gate. An E4B upload happens only on the user's word; a kept form does not justify a slot on leaderboard grounds.
+6. **EXP-072's flags,** sent to the experimenter before its push:
+   - a new-failure event count with a blind prediction;
+   - collection that exits 2 both before and after counts as no signal;
+   - the lost-resolve harm row;
+   - the base named.
