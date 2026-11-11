@@ -1,0 +1,19 @@
+# EXP-052 2026-11-07: drafter 1 of 5, angle smallest change, temperature 0.3. tools [] and include_contents none: it sees the reader's report through {plan?} and nothing else.
+# max_output_tokens 3072 and thinking_budget 1024 (thoughts excluded from the draft): a draft is a label plus old and new text, and a cut draft loses its NEW block, so the cap is not the voters' 256. A draft with no closing END line counts as cut.
+# EXP-068 2026-11-10: tools [] -> [read_file], one call, so OLD is copied from a fresh read in the drafter's own turn and not from the reader's REGION. include_contents none still shows the reader's final text and the drafter's own tool events (contents.py _get_current_turn_contents); the tool calls of five drafters run one at a time under the harness tool lock. Temperature, caps and angle unchanged.
+name: drafter_1
+description: Writer 1 of 5, smallest change, temperature 0.3.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/drafter_1.md
+include_contents: none
+output_key: draft_1
+tools:
+  - read_file
+generate_content_config:
+  temperature: 0.3
+  top_p: 0.95
+  top_k: 64
+  max_output_tokens: 3072
+  thinking_config:
+    thinking_budget: 1024
+    include_thoughts: false

@@ -1,0 +1,11 @@
+# EXP-061 2026-11-08: root SequentialAgent -> LlmAgent whose only job is to hand off to the EXP-052 T2 pipeline (now sub_agents/pipeline.yaml), so post-invocation compaction has an LlmAgent root model (EXP-052 compaction hazard, reference/compaction.md).
+# Model and sampling are the reader's (gemma-4-e4b-it-qat-w4a16-ct, configs/sampling.yaml). tools [] is explicit (EXP-039: an undeclared tool list draws warnings and may default).
+name: swe_agent
+agent_class: LlmAgent
+description: Hands the task to the read, draft and apply pipeline.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include prompts/root.md
+tools: []
+generate_content_config: !include configs/sampling.yaml
+sub_agents:
+  - config_path: sub_agents/pipeline.yaml
