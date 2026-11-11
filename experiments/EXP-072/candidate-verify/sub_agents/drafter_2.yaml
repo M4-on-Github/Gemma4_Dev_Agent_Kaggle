@@ -1,0 +1,16 @@
+# EXP-052 2026-11-07: drafter 2 of 5, angle cause, temperature 0.5. Same tools, window and caps as drafter 1.
+name: drafter_2
+description: Writer 2 of 5, cause, temperature 0.5.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/drafter_2.md
+include_contents: none
+output_key: draft_2
+tools: []
+generate_content_config:
+  temperature: 0.5
+  top_p: 0.95
+  top_k: 64
+  max_output_tokens: 3072
+  thinking_config:
+    thinking_budget: 1024
+    include_thoughts: false

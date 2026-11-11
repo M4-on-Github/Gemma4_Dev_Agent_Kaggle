@@ -1,0 +1,17 @@
+# EXP-052 2026-11-07: the EXP-033 loop agent (same tools, same sampling file) with a prompt that carries the reader's report and the five drafts through {plan?} and {draft_N?} and tells it to try them in order.
+# include_contents default (not none): the applier must see the task message (contents.py:569-580 drops it under none). It is the last stage and holds submit_patch, so a submit ends the run (agent_runner.py:920-922) and nothing re-runs the tree after it; a text ending would take the nudge path (agent_runner.py:962-1024), which the prompt forbids.
+# The ADK templater scans the instruction once (instructions_utils.py:124) and does not re-scan the substituted draft text, so braces inside a draft are safe.
+# EXP-072 2026-11-11: prompts/applier.md sections 1-3: the self-chosen check is replaced by a runnable verify (find the edited module's test file with git ls-files, a baseline pytest run of it before any edit, the same run after at most 2 applied edits, undo only on a failure not in the baseline). No key in this file changes.
+name: applier
+description: Tries the drafted edits in order with edit_file, checks each once, keeps the first that applies and passes, and submits the patch.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/applier.md
+include_contents: default
+tools:
+  - run_command
+  - read_file
+  - edit_file
+  - write_file
+  - get_status
+  - submit_patch
+generate_content_config: !include ../configs/sampling.yaml
