@@ -234,7 +234,7 @@ I record both. The endpoint does not depend on which reading is taken: **if row 
 
 ### 9.8 Row fired
 
-**Row 6, no decision** (on the literal section 3 reading of row 3), **or row 3 gate with rows 4 to 6 unread** (on the substantive reading, 1 drafter text-form call). No kill, no promote.
+**Row 6, no decision.** Rows 1 to 3 are clear under section 3 as written (the pre-registered operationalization of row 3's text-form condition is a call-shaped fence in a drafter's final text; there is none). requests_7309 drafter_5's bare `read_file(...)` line is outside that definition and is recorded as an observation and a definition defect (9.7, 9.11 item 1), not applied after the result. No kill, no promote; the decision would be the same on the wider reading.
 
 **Blind prediction check.** A (a) above 20 of 40 (about 0.7): held, 36 of 40. Drafter text-form call (about 0.2): 0 under the fence definition, 1 bare line under the broader one. Fabricated OLD on 8 or more (about 0.15): A (d) 0 (held), although the descriptive count of OLDs not in the read is 16 of 35, which A (d) was not designed to catch. Row 3 (about 0.25): see 9.7. Row 2 (about 0.25): did not fire. Row 1 (about 0.05): did not fire. Rows 4 to 6 given the gates clear (0.2, 0.4, 0.4): row 6, the most probable of the blind readings. Mean wall about 112 s (95 to 140): actual 110.3 s, held. 0 cap hits: held. Largest call count about 23: actual 21.
 
@@ -261,6 +261,6 @@ The drafters followed the hard first-call rule (36 of 40; no fabricated OLD by t
 
 ## Status
 
-**2026-11-10 ANALYZED**: kernel COMPLETE. Row 6 (no decision) on the literal section 3 reading of the text-form row; row 3 ambiguous on the substantive reading (1 drafter text-form line, requests_7309 drafter_5); either way no kill and no promote. A (a) 36 of 40, A (d) 0, E1 6 of 8, R1-type 5, G 7 of 8, window miss on 3 of 8; resolved 1 of 8. Section 9 above.
+**2026-11-10 ANALYZED**: kernel COMPLETE. Row 6 (no decision); rows 1 to 3 clear under section 3 as written. requests_7309 drafter_5's bare `read_file(...)` line is outside the fence definition and is recorded, not applied; no kill and no promote either way. A (a) 36 of 40, A (d) 0, E1 6 of 8, R1-type 5, G 7 of 8, window miss on 3 of 8; resolved 1 of 8. Section 9 above.
 
 2026-11-10 (earlier): pre-registered (570e52b), candidate packed with sha `176a005d...a2326`, notebook built (3874589). **Pushed 2026-11-10**: kernel version 1, `rainm4/gemma4-exp068-read`, first status RUNNING (not QUEUED, so no second check). Next, when the lead reports COMPLETE: `kaggle kernels output rainm4/gemma4-exp068-read -p runs/EXP-068-read/`, flatten, then the analysis commands in section 6, then apply section 4.
