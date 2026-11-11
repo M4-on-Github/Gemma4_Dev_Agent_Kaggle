@@ -60,3 +60,18 @@ After rounds 1 and 2: at least one is exercised and reads no harm. Otherwise the
 ## Final check
 - Either a fused tree whose smoke-8 shows no harm and at least one kept mechanism, offered to the user as an upload candidate with its sha;
 - or a written finding of which forms the E4B did not take up.
+
+## Ranking after EXP-070 (6780768, 66f43cc; zero GPU), 2026-11-11
+- **Round 2, EXP-072: a runnable verify, which the experimenter builds on the EXP-064 `candidate-loc` tree.**
+  - Trigger: an unprompted check ran after the last applied edit on 15 of 48 edited task-runs. Only 6 of those ran any test or code (about 1 per 8), and 0 ran an existing test file of the edited module.
+  - On all 4 resolved task-runs that had a check, the check exited non-zero and the applier submitted anyway.
+  - Hence a revert on "any failure" would have undone resolved fixes. The form must compare against a run before the edit and act only on new failures, with a harm row for a lost resolve on fastapi_14301 or rich_3006 (both resolved by EXP-064 and EXP-069).
+  - Headroom: at least 271 s and 22 calls on the tightest task-run.
+- **Round 3 depends on rounds 1 and 2:**
+  - if EXP-072's check runs, a per-draft selection form: try a draft, run the check, keep the first draft with no new failure. Its trigger is "all drafts distinct" on 13 of 32 task-runs in the EXP-064 tree. Majority vote is ruled out, since it would change the pick on 2 of 40;
+  - if EXP-071 is killed, the wider drafter window (±20), the anchor form's fallback.
+- **Round 4, explore quota:** drafter diversity by sampling, a distinct `generate_content_config` temperature per drafter (config, not wording; C-023's lever on the drafter stage). Trigger: 2 or fewer distinct drafts on 13 of 32 task-runs.
+- **Round 5:** the fused keepers, or the next ranked form.
+- **Not a round of their own:**
+  - the reader empty-report guard (3 of 57 passes, about 0.4 per 8), which may ride free;
+  - vendoring (4 of 56 hits; the re-grade needs a Kaggle CPU kernel, not run).
