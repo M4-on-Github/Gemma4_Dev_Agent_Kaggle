@@ -28,7 +28,7 @@ One variable: **the source of the reader's line numbers.** The reader prompt get
 
 `git grep -n -F -e 'FIRST' -e 'LAST' -- path/to/file.py`
 
-FIRST is a piece (at most 40 characters, no `'`) of the first line of the code to change and LAST a piece of its last line, each copied from the `read_file` result. Every hit prints as `number:line`. The rule for the report: LINES is the number printed for FIRST, a hyphen, the number printed for LAST, and "write no line number that you did not see printed"; if the command printed nothing after two tries, LINES falls back to the `read_file` call's `start_line` and `end_line` (the base behavior), so a failed command does not produce a report with no LINES. The recipe and the rule together are one variable (the EXP-057 and EXP-066 lesson: the literal command shape is what works).
+FIRST is a piece (at most 40 characters, no `'`) of the first line of the code to change and LAST a piece of its last line, each copied from the `read_file` result. Every hit prints as `path:number:line` (checked on a single-file `git grep -n` result in the EXP-066 requests_7309 trace: `src/requests/utils.py:504:def ...`); the number is the one between the first and second colon. The rule for the report: LINES is the number printed for FIRST, a hyphen, the number printed for LAST, and "write no line number that you did not see printed"; if the command printed nothing after two tries, LINES falls back to the `read_file` call's `start_line` and `end_line` (the base behavior), so a failed command does not produce a report with no LINES. The recipe and the rule together are one variable (the EXP-057 and EXP-066 lesson: the literal command shape is what works).
 
 Choices made from the evidence:
 - **No pipe.** The base prompt's own search line keeps `| head -20` (not touched: it is line 10 of the prompt and EXP-066 owns it). The new command has no `|`, as EXP-066's pipe-free form had no malformed-argument errors in 12 of 12.
@@ -124,7 +124,7 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 1. `kaggle kernels output rainm4/gemma4-exp071-anchor -p runs/EXP-071-anchor/`, then flatten.
 2. `python -I -X utf8 tools/analyze_traces.py runs/EXP-071-anchor --cap-minutes 8 --max-calls 45`.
 3. `python -I -X utf8 tools/run_forensics.py forensics runs/EXP-071-anchor` and `compare runs/EXP-068-read runs/EXP-071-anchor`.
-4. X, W and the per-task distance, the secondaries and the harm inputs by Grep and line reads of `traces/` (the method of EXP-068 sections 9 and 10).
+4. X, W and the per-task distance, the secondaries and the harm inputs by Grep and line reads of `traces/` (the method of EXP-068 sections 9 and 10). Also recompute EXP-068's W by the section 3 rule (`runs/EXP-068-read/traces/`) and report it beside the pre-registered 4 of 8 (section 7 item 7).
 
 ## 7. Defects in this pre-registration, logged after the fact
 
@@ -132,6 +132,9 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 2. **(Known at pre-registration.)** The thresholds (W >= 7, W <= 4, 30 of 40, 4 reports without a FILE, 2 text-form tasks) are chosen, with their noise stated in rows 2, 4 and 5, not derived from a model of the E4B's reader.
 3. **(Known at pre-registration.)** The tree was built by `cp -r` plus two edits; `tar` is outside this agent's commands, so no `git archive` repack was run (as EXP-068 item 2).
 4. **(Known at pre-registration.)** The numbered command has no precedent in an E4B trace (section 2, limit 1); the screen tests it and does not assume it works.
+5. **(Found 2026-11-11 after the pre-registration commit 27fee48 and before the push; the readings in section 4 are unchanged.)** The first text of the added reader bullet and of section 1.2 said each hit prints as `number:line` with the number before the first colon. A `git grep -n` with a pathspec prints `path:number:line`. Corrected in `prompts/reader.md` and section 1.2 (the number is between the first and second colon), the tree was re-validated, re-packed and re-built; the sha256 in section 8 is the corrected zip's, and the sha in the README row and section 2 is updated. Rows, thresholds and endpoints are not touched.
+6. **Overlap of two row-2 clauses (found before the push, not retrofitted).** Row 2 fires on "4 or more reports with no FILE or LINES" and on "fewer than 30 of 40 drafter first calls", where a `NO DRAFT` for a report with no FILE counts as not opened. Each report without a FILE costs about 5 drafter first calls, so 3 such tasks give about 25 of 40 and fire the second clause before the first. The overlap is **intended as written**: the second clause is the stricter one and reads "fewer than 30 of 40 open with a call" whatever the cause; the section 9 job names which tasks produced the shortfall.
+7. **W's reference was not measured with W's rule.** The reference 4 of 8 is EXP-068 section 9.3's "window held" tasks (the drafters' OLD matched their read), not "the first applied hunk lies inside a window". The analysis job recomputes EXP-068's W by the section 3 rule (the traces are on disk) and reports both; rows 4 and 5 key on the pre-registered 4 of 8 and 7 of 8 as written, and a recomputed reference that differs is reported beside them, not used to move a row.
 
 ## 8. Built (below the line; nothing above changes)
 
@@ -139,7 +142,7 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 
 - **Changed files vs EXP-068 `candidate-read`:** two (`prompts/reader.md`, `sub_agents/reader.yaml`), as section 2.
 - **Validator** (`--official --strict`): 1 error, the 18.00 h gate, demoted by `--skip-budget-gate`; 2 warnings carried from EXP-068; no new warning. The official validator could not be imported.
-- **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 20 files, `dist/EXP-071-anchor.zip` (gitignored). **sha256 `6569da25aa7348bec25c92cd5ffd57a08753248f8591e5c87105e8af050aace4`.**
-- **Pre-registration commit:** 27fee48 (this file, the candidate tree, the README row).
+- **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 20 files, `dist/EXP-071-anchor.zip` (gitignored). **sha256 `3250d189c6b21a9bbd34db13d433be3e5db66da36f461f07106eaa574e6889bc`** (the corrected zip of section 7 item 5; the first pack, `6569da25...ace4`, carried the `number:line` wording and was never pushed).
+- **Pre-registration commit:** 27fee48 (this file, the candidate tree, the README row); the section 7 items 5 to 7 correction is the next commit.
 - **Notebook:** `notebooks/exp071_anchor/`, built with the section 6 command (`TASK_IDS` = the 8 smoke-8 ids, `N_TASKS` 8, `RUN_AGENT` True). `kernel-metadata.json` is EXP-069's with only `id` and `title` changed, to `rainm4/gemma4-exp071-anchor`. Nothing was copied to `out/submission.zip`.
 - **Kernel id for the push:** `rainm4/gemma4-exp071-anchor`, directory `notebooks/exp071_anchor`.
