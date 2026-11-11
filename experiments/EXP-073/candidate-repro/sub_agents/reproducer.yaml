@@ -1,0 +1,13 @@
+# EXP-073 2026-11-11: a stage between the reader and the drafters (D-010 round 4). EXP-063's reproducer again, with the probable cause of its 0 tool calls removed (EXP-068 section 1.3): the prompt opens with "Your first reply must be a run_command call, not text", and the answer form (COMMAND / EXIT / LAST LINE) is copied from a tool result.
+# The check is one line, `PYTHONPATH=src:. python3 -c "..."`, not a file: a test file in the workspace is stripped from the patch (swegemma harness/verification.py:80-81) and a plain import can reach an installed copy (EXP-028 Arm R requests_7309: the 31B's own finding).
+# Tools: run_command only. EXP-068 section 1.3 could not separate the tool count from the missing opener, so dropping the other tools is part of the package; write_file goes because the check is one line, and read_file and get_status because the reader's REGION already shows the code (the reader's three-tool declaration complied on 8 of 8, the drafters' one-tool declaration on 36 of 40).
+# include_contents default, as the reader and as EXP-063: it needs the task message. output_key repro reaches the applier through the {repro?} template, which is rebuilt from state on every request and so survives compaction.
+name: reproducer
+description: Runs one short python3 -c check that shows the issue on the unfixed code, and reports the command, its exit code and the last error line.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/reproducer.md
+include_contents: default
+output_key: repro
+tools:
+  - run_command
+generate_content_config: !include ../configs/sampling.yaml
