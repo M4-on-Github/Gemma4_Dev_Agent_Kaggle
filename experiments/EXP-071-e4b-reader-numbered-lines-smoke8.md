@@ -143,6 +143,10 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 - **Changed files vs EXP-068 `candidate-read`:** two (`prompts/reader.md`, `sub_agents/reader.yaml`), as section 2.
 - **Validator** (`--official --strict`): 1 error, the 18.00 h gate, demoted by `--skip-budget-gate`; 2 warnings carried from EXP-068; no new warning. The official validator could not be imported.
 - **Pack:** `RESULT: VALID (0 errors, 3 warnings)`, PACK OK, 20 files, `dist/EXP-071-anchor.zip` (gitignored). **sha256 `3250d189c6b21a9bbd34db13d433be3e5db66da36f461f07106eaa574e6889bc`** (the corrected zip of section 7 item 5; the first pack, `6569da25...ace4`, carried the `number:line` wording and was never pushed).
-- **Pre-registration commit:** 27fee48 (this file, the candidate tree, the README row); the section 7 items 5 to 7 correction is the next commit.
+- **Pre-registration commit:** 27fee48 (this file, the candidate tree, the README row); the section 7 items 5 to 7 correction, the rebuilt zip and notebook are c98d80b (the push was made from c98d80b).
 - **Notebook:** `notebooks/exp071_anchor/`, built with the section 6 command (`TASK_IDS` = the 8 smoke-8 ids, `N_TASKS` 8, `RUN_AGENT` True). `kernel-metadata.json` is EXP-069's with only `id` and `title` changed, to `rainm4/gemma4-exp071-anchor`. Nothing was copied to `out/submission.zip`.
 - **Kernel id for the push:** `rainm4/gemma4-exp071-anchor`, directory `notebooks/exp071_anchor`.
+
+## Status
+
+2026-11-11: PUSHED, kernel `rainm4/gemma4-exp071-anchor`, version 1, from commit c98d80b; first `kaggle kernels status` RUNNING. Analysis pending. Next: when the lead reports COMPLETE, `kaggle kernels output rainm4/gemma4-exp071-anchor -p runs/EXP-071-anchor/`, flatten, then the section 6 analysis commands (recompute EXP-068's W by the section 3 rule, section 7 item 7).
