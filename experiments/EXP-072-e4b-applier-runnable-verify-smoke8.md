@@ -134,3 +134,18 @@ kaggle kernels push -p notebooks/exp072_verify
 Analysis, a separate job, after `kaggle kernels status rainm4/gemma4-exp072-verify` says COMPLETE: `kaggle kernels output rainm4/gemma4-exp072-verify -p runs/EXP-072-verify/`, flatten, `python tools/analyze_traces.py runs/EXP-072-verify --cap-minutes 8 --max-calls 45`, `python tools/run_forensics.py forensics runs/EXP-072-verify` and `python tools/run_forensics.py compare runs/EXP-064-loc runs/EXP-072-verify`, then the section 3 counts by a script over `traces/`, copied to `experiments/EXP-072/`.
 
 ## 7. Defects in this pre-registration, logged after the fact
+
+---
+
+## 8. Built
+
+- **Tree:** `experiments/EXP-072/candidate-verify/` (commit 5ed5b81). `diff -rq experiments/EXP-064/candidate-loc experiments/EXP-072/candidate-verify` lists 2 files: `prompts/applier.md` (Budget sentence, sections 1-3 as in section 2) and `sub_agents/applier.yaml` (one comment line). Applier prompt 693 -> 890 words.
+- **Validator:** `--official --strict --json`: 1 error (the 18.00 h packing gate, demoted by `--skip-budget-gate`), 2 warnings (applier `submit_patch`; `timeout_seconds` 240), 20 files, 25.2 KiB, the official validator not importable locally. Same as EXP-069. `python -m pytest -q` passed; `check_repo_hygiene.py --all` OK.
+- **Zip:** `dist/EXP-072-verify.zip`, 15.0 KiB, sha256 `2cfe1f9e65af423e0a1fe3091a82135b1c1e03eeba9ba2bf976a1c5f74b6857d`, PACK OK with `--skip-budget-gate --allow-warnings`. Not an upload.
+- **Desk check:** `experiments/EXP-072/desk.py` (commit 5ed5b81), output as in section 1.2.
+- **Notebook:** `notebooks/exp072_verify/kaggle_eval_l4x4.ipynb`, built with `--cohort experiments/cohorts/smoke-8.txt`, `EXP_ID "EXP-072-verify"`, `MODEL_NAME "gemma-4-e4b-it-qat-w4a16-ct"`, `RUN_GOLD_CONTROL False`, `RUN_AGENT True`, `N_TASKS 8`; `kernel-metadata.json` from `notebooks/exp069_argform` with id and title changed (commit a8ee5f2).
+- **Kernel:** `rainm4/gemma4-exp072-verify` version 1, pushed 2026-11-11; status RUNNING right after the push. Live with it: `rainm4/gemma4-exp071-anchor` (RUNNING), 2 in all.
+
+## Status
+
+PUSHED 2026-11-11, kernel `rainm4/gemma4-exp072-verify` v1 RUNNING. Analysis is a separate job (section 6).
