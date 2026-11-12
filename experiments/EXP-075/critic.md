@@ -45,20 +45,20 @@ Not blocking:
 - (d): none cheaper that I can name [I].
 
 ## Light review 2026-11-12 (results, 419e8b3 and 940a1aa)
-This verdict supersedes the prereg verdict above.
+Supersedes the prereg verdict above.
 
 ### Verdict
-needs-work, on wording only. Row 3 (kill) was the first matching row and its decision stands: no further sampling arm is funded as the M lever. Wording to carry: "At temperature 0.2, one dev-48 draw shows no keep-sized fall in the notfound share. M 0.380 (57/150) lies between the base draws (0.340, 0.439) and 0.238 (2.4s) above the M-falls bound 0.142. Not tested: smaller falls, other temperatures, top_p and top_k, endpoints other than M." A light verdict moves no claim; a ledger status move needs a full review.
+needs-work: a scope note. Row 3 (kill) was the first matching row, applied as written; its decision stands: no further sampling arm is funded as the M lever. Its blind text and §5 outrun one draw, and the record now says three things: README "dead", plan "closed as a lever on M", D-011 "not closed". Wording to carry: "At temperature 0.2, one dev-48 draw shows no keep-sized fall in the notfound share. M 0.380 (57/150) lies between the base draws (0.340, 0.439) and 0.238 (2.4s) above the M-falls bound 0.142. Not tested: smaller falls, other temperatures, top_p and top_k, endpoints other than M." A light verdict moves no claim.
 
 ### Audit
-1. **Order: finding, immaterial.** 414fd31 changed text above the line at 05:54 UTC, 4 min after the push and before any result (first task ended about 465 s after start). Disclosed in §7. Row 3 reads M only; H1 fires under neither boundary (gross 1 lost). Process: pushed on the needs-work verdict above without a re-review; fixes 1 to 5 did land in 4ec19e5.
-2. **Cohort and arms: pass.** Ids are dev-48; the loaded tree equals `candidate-t02` (diff -r); sampling 0.2.
-3. **Numbers: pass, regenerated.** `analyze_traces.py`: 0 field differences. `readings.py`: s 0.0991, 1 gross loss, 2 in EXP-077, 0 infrastructure errors. Row 2 does not fire (H7 25, repeat share 0.093, caps 0, 91.0 s, Eo 5).
-8. **Scope: fail.** The README cell's "dead" drops the dose and generalizes one draw; §9.8 says "closes sampling temperature" where row 3 says "at 0.2". My fix 4 sized 0.33 on the 0.07 SD; on s the kill sits 1.9s above the M-falls bound. §7 item 3: a kill inside the base spread is what a null looks like.
+1. **Order: finding, immaterial.** 414fd31 changed text above the line at 05:54 UTC, 4 min after the push and before any result; disclosed in §7. Row 3 reads M only; H1 fires under neither boundary (gross 1 lost). Pushed without a re-review of the needs-work above; fixes 1 to 5 did land (4ec19e5).
+2. **Cohort and arms: pass.** Dev-48 ids; loaded tree equals `candidate-t02` (diff -r); sampling 0.2.
+3. **Numbers: pass, regenerated.** `analyze_traces.py` 0 field differences; `readings.py` reproduces s, the losses and 0 infrastructure errors; row 2 does not fire.
+8. **Scope: pass on the letter, finding on reach.** The README cell and §9.8 repeat row 3 and §5 as written; my fix 4 offered 0.33 in place of rewording, so those texts stood with my assent. §7 item 3: a kill inside the base spread is what a null looks like.
 
 ### Empties (Eo 5)
-Pre-registered, but inside row 5's band (3 to 10), which also needed M to fall, so it fires nothing. The comparison with 10 and 9 is post hoc, picked from about ten figures; A (37/48), failed share (0.447) and resolves (6) also lie outside both draws. Paired E flips: 8 left and 3 entered against EXP-038 (McNemar p 0.23), 7 and 3 against EXP-077 (p 0.34) [I]. A hypothesis for a pre-registered replicate; no document should say 0.2 lowers empties.
+Eo is the pre-registered outcome endpoint beside M; 5 falls inside row 5's band (3 to 10), which also needed M to fall, so it fires nothing. §1.3 states P(at most 5) = 0.039 under 0.214, but no row reads Eo on that null; the comparison with 10 and 9 is post hoc (A 37/48, failed share 0.447 and resolves 6 are outside both too). Paired E flips: 8 left, 3 entered against EXP-038 (McNemar p 0.23); 7 and 3 against EXP-077 (p 0.34) [I]. A hypothesis for a pre-registered replicate; no document should say 0.2 lowers empties.
 
 ### Required fixes
-1. README cell and §9.8 (dated note): replace "dead" and "closes" with the wording above.
-2. D-011 and the plan line: the same wording; drop "the only figure outside both base draws".
+1. Append a dated scope note with the wording above below §9.8, and add it beside the applied reading in the README cell; the applied reading is not revised.
+2. Plan line and D-011: cite that note.

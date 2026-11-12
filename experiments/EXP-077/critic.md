@@ -23,7 +23,7 @@ Ledger wording, offered as a note, since a light verdict moves no claim: "A seco
 2. **Cohort and arms: pass.**
    - The 48 ids equal dev-48.
    - The loaded tree equals `experiments/EXP-033/candidate-e4b` under diff -r, and sampling reads 1.0.
-   - Repacking the loaded tree gives sha `9de869bd...1ac0`.
+   - The repack sha `9de869bd...1ac0` is §9.2's figure; I checked diff -r only.
 3. **Numbers: pass, regenerated.**
    - `analyze_traces.py` at 8 min and 28 calls: 0 field differences from the committed `summary.jsonl`.
    - `readings.py` gives s 0.0991, with rich_3006 and rich_3905 lost.
