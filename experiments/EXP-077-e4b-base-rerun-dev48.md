@@ -187,3 +187,8 @@ Section 5 licenses no pooled base, so these figures are not read.
 - It licenses the s = 0.099 that EXP-075 uses and the holds behind EXP-075's net H1, which is unreadable here.
 - It licenses one citable second base draw on dev-48 for later E4B arms: 3 of 48 resolved, M 0.439.
 - It licenses nothing about trees or uploads.
+
+### 9.8 Ledger wording, 2026-11-12 (critic light review, `experiments/EXP-077/critic.md`, accepted)
+Appended after the review. Row 3, as applied in section 9.3, is not revised; its label claims more than one difference shows. The wording to carry:
+
+> s = 0.099 on one df; the 0.07 bootstrap is neither confirmed nor refuted; one-draw M arms are read at 2s.

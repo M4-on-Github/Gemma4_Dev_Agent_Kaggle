@@ -248,3 +248,8 @@ Row 2 does not fire. H1 cannot be read on this pair of base draws.
 - Row 3, as written, closes sampling temperature as the edit-application lever on the E4B. It does not close edit application (section 5).
 - Section 7 item 3 is for the critic: the kill fired inside the measured base spread.
 - No statement about resolves or empties is licensed.
+
+### 9.9 Scope note, 2026-11-12 (critic light review, `experiments/EXP-075/critic.md`, required fix 1)
+Appended after the review. The applied reading in sections 9.4 and 9.8 is not revised; this note states the reach of that reading.
+
+> At temperature 0.2, one dev-48 draw shows no keep-sized fall in the notfound share. M 0.380 (57/150) lies between the base draws (0.340, 0.439) and 0.238 (2.4s) above the M-falls bound 0.142. Not tested: smaller falls, other temperatures, top_p and top_k, endpoints other than M.
