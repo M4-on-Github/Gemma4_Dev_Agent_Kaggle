@@ -291,3 +291,21 @@ User, verbatim: "what agentic experiments should we make to the solution? let's 
      - no re-run of a failed kernel without the user's word.
   3. **Not upload approval.** The 2026-11-11 slot is open, but any upload waits on the user's word and an `approvals/S-NNN.txt`.
   4. If EXP-069 ends D-009 by its two-rounds rule, the five run under a new direction, D-010, which the critic reviews alongside the first desk check without blocking it.
+- 2026-11-11 (after EXP-073 was built and EXP-071 and EXP-072 completed): the user wrote, verbatim, "go on a research loop to tune e4b. the stopping condition is either you run out of gpu hours or you have smth that could best the leaderboard. diagnose the problems of the model's reasoning and fix them how we can from what we can modify to the harness." The lead reads this as follows:
+  1. **An open-ended E4B research loop replaces D-010's five-round frame and its 2.5 GPU-h ceiling.** EXP-071, EXP-072 and EXP-073, built under D-010, are read and kept as the loop's first rounds. The loop runs under D-011.
+  2. **"Tune" means harness-side changes only:** the submission's agent tree, prompts, sampling and `eval_config.yaml`, inside the harness's tool registry. There is no LoRA training in this loop unless the user reopens it.
+  3. **The loop starts with a diagnosis.** It is a zero-GPU study of where the E4B's reasoning leaves the gold fix: the file, the region, the semantics of the change, or completeness. It uses all local E4B traces, the EXP-038 dev-48 run included. Rounds after EXP-073 are ranked from it.
+  4. **Stopping rule 1, "smth that could best the leaderboard":** the LB top was 0.29 (17/58) on 2026-11-11; to best it takes 18/58. The calibration pairs in `submissions.md`:
+     - 31B: 9/48 on dev-48 drew 0.17, 0.18 and 0.12;
+     - E4B: 5/48 drew 0.05.
+     Written blind before any run: **the loop stops at a dev-48 run of 16/48 or more with a projected worst case of 11 h or less (plan.md §5.8).** It then puts the candidate to the user. 12 to 15 of 48 beats the 31B's 9/48; the lead reports it to the user and the loop continues.
+  5. **Stopping rule 2, "out of GPU hours":** the loop stops if any of these happens:
+     - Kaggle refuses a push for quota;
+     - the lead's ledger reaches 30 GPU-h for the week counted from 11-08 (the reset day is unverified);
+     - a kernel stays QUEUED for more than 6 h. In that case the lead asks the user, because it could be quota or capacity.
+     The user is asked once for the sidebar figure.
+  6. **dev-48 is approved inside the loop,** for a candidate that passed its smoke-8 screen. The stopping rule can only be read on dev-48. Otherwise the standing rules hold:
+     - at most 2 kernels live;
+     - one unchanged re-push of a kernel that failed for infrastructure reasons, recorded, as with "requeue" on 11-10.
+  7. **Not upload approval.** Any upload waits on the user's word and an `approvals/S-NNN.txt` written by the user.
+  8. **The loop's driver** is one bounded background status check per pushed kernel. It polls every 10 min, exits when the kernel leaves RUNNING or QUEUED, and gives up after 4 h. There is no open-ended watch.
