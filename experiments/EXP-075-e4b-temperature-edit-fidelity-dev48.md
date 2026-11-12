@@ -139,7 +139,16 @@ If the download nests the run (`runs/EXP-075-t02/runs/<x>/`), the scripts' `run_
 - **Reproduced from the committed LF blobs** of 979c35c (the four files written out with `git cat-file blob`, repacked): the same sha256 `dca506d3...92a8`.
 - **Notebook:** `notebooks/exp075_t02/kaggle_eval_l4x4.ipynb`; `TASK_IDS` = the 48 dev-48 ids (checked equal to `experiments/cohorts/dev-48.txt`), `N_TASKS = 48`, `EXP_ID = "EXP-075-t02"`, `MODEL_NAME = "gemma-4-e4b-it-qat-w4a16-ct"`, `RUN_GOLD_CONTROL = False`, `RUN_AGENT = True`.
 - **Kernel metadata:** copied from `notebooks/exp038_e4b_dev48/kernel-metadata.json` (E4B model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`, the pinned docker image, the wheelhouse dataset and the competition source), `id` `rainm4/gemma4-exp075-t02`, `title` `gemma4-exp075-t02`, nothing else changed.
-- **Not pushed.** The critic reviews this pre-registration first (the arm is above 1 GPU-h).
+- ~~**Not pushed.** The critic reviews this pre-registration first (the arm is above 1 GPU-h).~~ The critic's prereg review (36f7a27, 729c72f) was needs-work with text fixes only; they are applied in 4ec19e5 (section 7 item 1), and the lead counts them as applied, so no second critic pass blocks the push.
+
+### Push record, 2026-11-12
+- **Push time: 2026-11-12 05:50 UTC** (`date -u` immediately after the push returned, 05:50:29). Released by the lead with EXP-077, pushed 11 s later.
+- **CLI output:** `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp075-t02`
+- **Kernel:** `rainm4/gemma4-exp075-t02`, version 1.
+- **Status, checked once right after the push:** `KernelWorkerStatus.RUNNING`.
+- **Checks before the push:** `git diff --quiet 9be7306 -- notebooks/exp075_t02 experiments/EXP-075/candidate-t02` clean (the tree and notebook unchanged since the first build); `sha256sum dist/EXP-075-t02.zip` = `dca506d3...92a8`; the pushed notebook is the committed one.
+- **Clock times for the stop rule (section 4.2):** push + 1.5 h = **2026-11-12 07:20 UTC** (the lead tells the user if not COMPLETE); push + 2.0 h = **2026-11-12 07:50 UTC** (the cancel time, the user's action in the Kaggle UI). If no one acts, the run continues to its end.
 
 ## Status
-**BUILT, NOT PUSHED (2026-11-12); awaiting the critic's prereg review.** Kernel `rainm4/gemma4-exp075-t02` does not exist yet. Expected cost about 1.3 GPU-h (EXP-038 reference 1.267 h).
+~~**BUILT, NOT PUSHED (2026-11-12); awaiting the critic's prereg review.** Kernel `rainm4/gemma4-exp075-t02` does not exist yet. Expected cost about 1.3 GPU-h (EXP-038 reference 1.267 h).~~
+**PUSHED 2026-11-12 05:50 UTC, RUNNING.** Kernel `rainm4/gemma4-exp075-t02` version 1. Expected cost about 1.3 GPU-h (EXP-038 reference 1.267 h). The analysis waits for EXP-077's status (section 4.1) and uses its fallbacks if EXP-077 is not readable.

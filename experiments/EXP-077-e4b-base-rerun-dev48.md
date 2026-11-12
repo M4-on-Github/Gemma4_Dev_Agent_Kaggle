@@ -86,5 +86,14 @@ If the download nests the run (`runs/EXP-077-base/runs/<x>/`), the scripts' `run
 - **Notebook:** `notebooks/exp077_base/kaggle_eval_l4x4.ipynb`, built with `tools/build_notebook.py --embed dist/EXP-038-e4b.zip --username rainm4 --cohort experiments/cohorts/dev-48.txt --set EXP_ID='"EXP-077-base"' --set MODEL_NAME='"gemma-4-e4b-it-qat-w4a16-ct"' --set RUN_GOLD_CONTROL=False --set N_TASKS=48`. `diff` against `notebooks/exp038_e4b_dev48/kaggle_eval_l4x4.ipynb` shows the `EXP_ID` line only. Checked: `TASK_IDS` equals the 48 ids of `experiments/cohorts/dev-48.txt`, `N_TASKS = 48`, `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`, the model the E4B; the embedded `SUBMISSION_B64` decodes to sha256 `9de869bd...1ac0` and its `configs/sampling.yaml` reads `temperature: 1.0`. Notebook sha256 `07b3bcf9ae0953463ea850570ca4602dd8a717b7d4ab8a844ec39335faf2de72`.
 - **Kernel metadata:** `notebooks/exp038_e4b_dev48/kernel-metadata.json` with `id` `rainm4/gemma4-exp077-base` and `title` `gemma4-exp077-base`, nothing else changed (E4B model source, the pinned docker image, the wheelhouse dataset, the competition source, GPU on, internet off).
 
+### Push record, 2026-11-12
+- **Push time: 2026-11-12 05:50 UTC** (`date -u` immediately after the push returned, 05:50:40). Released by the lead with EXP-075, pushed 11 s after it; no critic `prereg` pass of this file (header).
+- **CLI output:** `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp077-base`
+- **Kernel:** `rainm4/gemma4-exp077-base`, version 1.
+- **Status, checked once right after the push:** `KernelWorkerStatus.RUNNING`.
+- **Source:** the notebook and metadata committed in 1f394df, unchanged since.
+- **Clock times for the stop rule (section 4.1):** push + 1.5 h = **2026-11-12 07:20 UTC** (the lead tells the user if not COMPLETE); push + 2.0 h = **2026-11-12 07:50 UTC** (the cancel time, the user's action in the Kaggle UI). If no one acts, the run continues to its end.
+
 ## Status
-**BUILT, NOT PUSHED (2026-11-12).** Released for push by the lead together with EXP-075. Expected cost about 1.3 GPU-h.
+~~**BUILT, NOT PUSHED (2026-11-12).** Released for push by the lead together with EXP-075. Expected cost about 1.3 GPU-h.~~
+**PUSHED 2026-11-12 05:50 UTC, RUNNING.** Kernel `rainm4/gemma4-exp077-base` version 1. Expected cost about 1.3 GPU-h.
