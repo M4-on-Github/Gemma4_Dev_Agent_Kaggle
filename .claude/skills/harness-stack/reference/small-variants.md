@@ -24,6 +24,9 @@ Recorded 2026-11-05 by the experimenter. Tags: [V] official file or our own meas
   - Speed: 67 optimiser steps (accumulation 2, so 536 sequences of median 3,025 tokens) took 660 s. The model load and the child start add about 140 s.
   - The rank-8 adapter in the PEFT layout is 6,676,712 bytes of `.safetensors` plus a 645-byte `adapter_config.json`.
 - Serving with one rank-8 adapter [V] (EXP-054 v2): the boot with the LoRA flags took 283.4 s and had a KV pool of 263,280 tokens (298,464 without, 0.88). Idle single-stream decode at 256 tokens: base 104.5 tok/s, adapter 86.9 tok/s (0.168 slower).
+- E4B single-loop dev-48 kernel wall at an 8-minute cap and 28 calls [V] (last kernel-log entry, queueing excluded):
+  - The four draws: EXP-038 1.267 h, EXP-077 1.292 h, EXP-075 1.340 h, EXP-078 1.654 h. In EXP-075 and EXP-078, vLLM came up in 325.8 s and 320.4 s, and the overhead outside task walls was 454.7 s and 445.2 s.
+  - Price a draw at about 1.3 h, with a tail: the session timeout is not a hard bound. In EXP-078 two capped tasks ran 784 s and 483 s, against 47 s and 45 s in EXP-075, and added about 0.3 h. Set the stop rule from that tail, not from the mean (2026-11-12).
 - Not verified by us: whether E2B / E4B emit thinking and gemma4 tool calls well under the harness (EXP-006 sent plain chat completions only); whether the chat template in the model directory differs from 31B's; per-call decode speed under an agent loop; whether `enable_lora=True` (our notebook's setting; the scorer sets it False when no adapters ship) changes anything for the small models. The first E2B smoke-8 answers the first and third.
 
 ## Steps for an E2B smoke-8

@@ -168,12 +168,14 @@ Eo is the count of `patch_empty` true and AL the count of `n_edit_arg_loss` > 0,
 ## 9. Results, 2026-11-12. Section 4's readings applied as written
 
 ### 9.1 The run, the GPU figure, the stop rule
-- Kernel `rainm4/gemma4-exp078-t02r` v1 was COMPLETE at the lead's check at 10:09 UTC, before the 10:22 UTC cancel time. The stop rule was not used. The output was downloaded into `runs/EXP-078-t02r/` (gitignored), and the nested run directory was moved up.
+- Kernel `rainm4/gemma4-exp078-t02r` v1 was COMPLETE at the lead's check at 10:09 UTC, before the 10:22 UTC cancel time. The stop rule was not used.
+  - It was not COMPLETE by the push + 1.5 h notice point of 09:52 UTC. A 5,955 s kernel pushed at about 08:22 UTC ended no earlier than about 10:01 UTC.
+  - Whether the lead told the user at 09:52 is not recorded in this file and is unknown to the analysis. The output was downloaded into `runs/EXP-078-t02r/` (gitignored), and the nested run directory was moved up.
 - **GPU figure for the ledger: 1.654 h**, the last kernel-log entry at 5,955.0 s, counted as in EXP-075 section 9.1. Queueing is not included.
   - Overhead: 445.2 s (log end minus a task wall sum of 5,509.8 s).
   - vLLM came up in 320.4 s.
   - Wheelhouse: 41 of 41 wheels in 51 s, Python 3.12.
-- This is 0.31 h above the 1.3 GPU-h priced in the header (EXP-075 1.340 h). The task wall sum rose 1,140.8 s over EXP-075. The two capped tasks of section 9.3 rose 1,174.9 s between them: `rich_3105` from 47.0 to 784.3 s and `rich_3067` from 45.3 to 482.9 s, paired by id in `summary.jsonl`.
+- This is 0.35 h above the 1.3 GPU-h priced in the header, and 0.31 h above EXP-075's 1.340 h. The task wall sum rose 1,140.8 s over EXP-075. The two capped tasks of section 9.3 rose 1,174.9 s between them: `rich_3105` from 47.0 to 784.3 s and `rich_3067` from 45.3 to 482.9 s, paired by id in `summary.jsonl`.
 - `summary.jsonl` is copied to `experiments/EXP-078/summary.jsonl` (`analyze_traces.py --cap-minutes 8 --max-calls 28`).
 
 ### 9.2 Row 1
@@ -213,7 +215,7 @@ Eo is the count of `patch_empty` true and AL the count of `n_edit_arg_loss` > 0,
 - **Failed share** of `edit_file` calls: 49 of 129 = 0.380. By outcome: ok 80, notfound 35, multi 10, argloss 4.
 - **A, the first edit applied:** 40 of 48. All 48 tasks made an `edit_file` call.
 - **Phases reached** (`analyze_traces.py`): SUBMIT 46, VERIFY 1 (`rich_3105`), EDIT 1 (`rich_3067`); `submit_patch` on 46 of 48.
-- **EXP-074 classes** (`experiments/EXP-078/pair4.py`, margin 5): E3 F10 R12 C10 S13.
+- **The stage table:** EXP-074 divergence-stage classes (`experiments/EXP-078/pair4.py`, margin 5), E3 F10 R12 C10 S13.
 
   | Against | Same class | E left, entered | F left, entered | R left, entered |
   |---|---|---|---|---|
