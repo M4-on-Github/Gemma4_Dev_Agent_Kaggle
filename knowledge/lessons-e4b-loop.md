@@ -192,5 +192,5 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
 
 ## The single-loop dev-48 draws (2026-11-12; EXP-075, EXP-077, EXP-078)
 - **Two identical draws differ as much as an arm does:** 27 of 48 tasks keep their stage class, M moves by 0.099, and resolves read 5 and 3. A one-draw paired comparison reads nothing on those endpoints.
-- **Temperature 0.2 halves empties (10 and 9 down to 5 and 3) and resolves do not move (5 and 3 against 6 and 5).** This is post hoc; the pre-registered rows read kill on M, then harm on the repeat share by one call. The freed tasks fail at the next stage.
-- **Lesson:** on the E4B the binding stages are the ones after the edit lands (region, change, completeness). Mechanics fixes move mechanics counts only.
+- **Post hoc, four draws: empties 10 and 9 at 1.0, 5 and 3 at 0.2; resolves 5 and 3, 6 and 5. The tasks that left E spread over F, R, C and S; 2 resolved in EXP-075, 0 in EXP-078, and 0 of 7 between the 1.0 draws. Conversion is not readable on these counts.** The pre-registered rows read kill on M, then harm on the repeat share by one call. (Wording corrected after the critic, af8cfc0.)
+- **Lesson [I], scoped to temperature:** fewer empties did not show up as more resolves; the freed tasks failed at the file, region, change or completeness stage instead.
