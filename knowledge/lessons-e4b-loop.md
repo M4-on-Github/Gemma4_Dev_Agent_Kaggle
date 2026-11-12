@@ -189,3 +189,8 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
 - **Both read harm.** A recipe given to an E4B stage in prose comes back as text (EXP-072). A stage holding run_command edits source with `sed -i` (EXP-073). The hard opener held on only 4 of 8 for a reproducer, against 36 of 40 for drafters.
 - **Lesson:** every stage added to the E4B tree added a failure class. EXP-074 shows the single loop fails the same tasks at the same stages without the pipeline's empties. The loop's base is the single loop, and the cohort is dev-48; smoke-8 reads off two tasks.
 - **Instrument:** `analyze_traces.py` misses several text-form shapes, so final turns are checked by hand until it is fixed.
+
+## The single-loop dev-48 draws (2026-11-12; EXP-075, EXP-077, EXP-078)
+- **Two identical draws differ as much as an arm does:** 27 of 48 tasks keep their stage class, M moves by 0.099, and resolves read 5 and 3. A one-draw paired comparison reads nothing on those endpoints.
+- **Temperature 0.2 halves empties (10 and 9 down to 5 and 3) and resolves do not move (5 and 3 against 6 and 5).** This is post hoc; the pre-registered rows read kill on M, then harm on the repeat share by one call. The freed tasks fail at the next stage.
+- **Lesson:** on the E4B the binding stages are the ones after the edit lands (region, change, completeness). Mechanics fixes move mechanics counts only.
