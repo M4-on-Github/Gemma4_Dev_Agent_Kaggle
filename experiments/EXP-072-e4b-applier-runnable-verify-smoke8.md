@@ -154,6 +154,48 @@ Analysis, a separate job, after `kaggle kernels status rainm4/gemma4-exp072-veri
 - **Notebook:** `notebooks/exp072_verify/kaggle_eval_l4x4.ipynb`, built with `--cohort experiments/cohorts/smoke-8.txt`, `EXP_ID "EXP-072-verify"`, `MODEL_NAME "gemma-4-e4b-it-qat-w4a16-ct"`, `RUN_GOLD_CONTROL False`, `RUN_AGENT True`, `N_TASKS 8`; `kernel-metadata.json` from `notebooks/exp069_argform` with id and title changed (commit a8ee5f2).
 - **Kernel:** `rainm4/gemma4-exp072-verify` version 1, pushed 2026-11-11; status RUNNING right after the push. Live with it: `rainm4/gemma4-exp071-anchor` (RUNNING), 2 in all.
 
+## 9. Results, 2026-11-11. Section 4's readings applied as written.
+
+**Run.** `rainm4/gemma4-exp072-verify` v1 COMPLETE. Kernel wall 1456.97 s = **0.405 GPU-h** (pre-registered estimate about 0.45); vLLM up in 339.4 s. 8 of 8 tasks ran, 8 traces. Output downloaded to `runs/EXP-072-verify/` (one nested `runs/EXP-072-verify/` level flattened). `summary.jsonl` copied to `experiments/EXP-072/verify/summary.jsonl`; the section 3 script is `experiments/EXP-072/verify.py`.
+
+**Row 1 (infrastructure): does not fire.** No traceback `err`, no sandbox execution error, no compaction or summarizer `ValueError` (5 compactions ran without error), the root transferred to `pipeline` on 8 of 8, no blank run.
+
+**Row 2 (harm): FIRES, on three clauses.**
+- **A lost resolve on fastapi_14301.** Paired with EXP-064-loc by `run_forensics.py compare`: both 1 (rich_3006), EXP-064-loc only 1 (fastapi_14301), EXP-072 only 0, neither 6; McNemar p = 1.0. rich_3006 kept its resolve.
+- **Empty patches 2 of 8:** fastapi_14301 and rich_3468.
+  - fastapi_14301: the applier made **no native tool call**. Its first model turn was a thinking step and a final whose text holds a JSON object with an `action` key naming `run_command` and the recipe's find command; then 3 continuation nudges went to the root `swe_agent`, which ended in text. Harness error "Agent completed execution without calling submit_patch", `test_exit_code` -1. This is the recipe's first step written as text in place of a call.
+  - rich_3468: 6 `edit_file` calls all failed (2 with a quote-wrapped filepath, EXP-069's class), 1 `read_file`, then `submit_patch` on an empty tree. EXP-064-loc's rich_3468 was also empty; EXP-069-argform's was not. Not new with this recipe, but the clause counts empties, not new empties.
+- **Any applier text-form call.** `analyze_traces.py` counts 1 text-form call on 1 task: requests_7205, an applier text turn after its `submit_patch`. fastapi_14301's applier final above is a text-form call by reading as well; the tool does not count it (instrument gap, below).
+
+Clauses that do not fire: no time, call or turn cap hit; **mean wall 124.29 s** (threshold 140.0; median 84.4 s, p90 229.6 s); `tool_free` 0; the applier's first model turn is text on **1** task (fastapi_14301; threshold 2); no undo, so no empty patch after an undo. One task over 240 s is named, not a row: rich_3468 at 245.5 s.
+
+**Reading (row 2):** the recipe costs more than it buys or breaks the applier. **The prompt-wording form of the runnable verify is dropped from D-010** (a harm row binds; D-010 has since been superseded by D-011, and the drop carries over as a result). **Rows 3 to 6 are not read. Row 7 is not read** (section 4: it is read only when rows 1 and 2 did not fire).
+
+**Numbers recorded, not read** (`verify.py`, totals line):
+- **First applier tool call:** the find command on **2 of 8** (fastapi_14605, requests_7205; predicted about 6). `edit_file` first on httpx_3672, requests_7309, rich_3006 and rich_3468 (a failed edit with a quote-wrapped filepath on requests_7309, rich_3006 and rich_3468); none on fastapi_14301.
+- **Find run on 3 of 8** (fastapi_14448, fastapi_14605, requests_7205), and it printed a `test_*.py` on 3 of 3. On **all 3 the STEM was the package name, not the edited module's stem** (exact-recipe-form n and pattern-holds-stem n on 3 of 3), so the files found were `tests/test_fastapi_cli.py` and `tests/test_requests.py`, neither in the `mod` class of the module edited. The recipe's STEM derivation was not followed on any task that ran the find.
+- **Baseline exit 0 or 1 on 2 of 8:** fastapi_14605 exit 1 (2 FAILED lines), requests_7205 exit 1 (58 ERROR lines). No other baseline ran.
+- **Post-edit runs on 4 of 8:** fastapi_14448 (no baseline before it), fastapi_14605, requests_7205, rich_3006 (a pytest run with no path argument, the suite, exit 1). No task ran a third post-edit run.
+- **Pairs 2 of 8** (fastapi_14605, requests_7205; predicted about 4). **E = 0 of 8** with the leading `_` stripped and 0 of 8 with it kept (predicted about 4; reference 0 of 48). **Tasks that reached a test file of the edited module: 0 of 8.**
+- **New-failure events: 0 of 8 task-runs** (named 0, collection 0; predicted 0 at about 0.65). Row 7 is not read, but the count is below its 2-of-8 gate for round 3 selection.
+- **Undos 0.** No undo with no new failure, none with no run, no third run: row 4's triggers did not occur.
+- **Draft kept** (EXP-063 `refs.py` matching): draft 1 on 4 tasks, '?' on 1 (fastapi_14605), draft 4 on httpx_3672, none standing on 2 (the two empties).
+- **Resolves 1 of 8** (rich_3006), recorded only; EXP-064-loc 2 of 8.
+- `run_forensics.py forensics`: the run_command mix was grep or rg 13, pytest 6, git 3; fastapi_14301 never edited.
+
+**Against the blind prediction.** Row 2 was given about 0.35, "mostly the wall row"; it fired, but not on the wall (124.29 s, close to the predicted 125 s). It fired on a lost resolve, the empties and text-form calls. The find-first (2 against 6), pairs (2 against 4) and E (0 against 4) predictions all missed high. The new-failure prediction (0) held.
+
+**Instrument gap (a defect, not a revised reading).** `analyze_traces.has_text_form_call` recognises a call-shaped JSON value by the keys `name`, `tool` or `function` with an argument key (`_CALL_NAME_KEYS`, `_CALL_ARG_KEYS`), among other shapes. A JSON object keyed `action` plus a top-level `command`, as in fastapi_14301's applier final, is not recognised, so `n_text_form_calls` undercounts it. Row 2 fires on the requests_7205 count and the other two clauses without it. The tool is not changed here; an `action` key is a candidate for `_CALL_NAME_KEYS` in a later tooling change, tested on fixtures.
+
+**Commands run.**
+```
+kaggle kernels output rainm4/gemma4-exp072-verify -p runs/EXP-072-verify/
+python tools/analyze_traces.py runs/EXP-072-verify --cap-minutes 8 --max-calls 45
+python tools/run_forensics.py forensics runs/EXP-072-verify
+python tools/run_forensics.py compare runs/EXP-064-loc runs/EXP-072-verify
+python -I -X utf8 experiments/EXP-072/verify.py runs/EXP-072-verify
+```
+
 ## Status
 
-PUSHED 2026-11-11, kernel `rainm4/gemma4-exp072-verify` v1 RUNNING. Analysis is a separate job (section 6).
+ANALYZED 2026-11-11 (section 9): **row 2, harm** (lost resolve on fastapi_14301, empties 2 of 8, an applier text-form call). The form is dropped. Rows 3 to 7 not read; pairs 2, E 0, new-failure events 0 recorded. 0.405 GPU-h.
