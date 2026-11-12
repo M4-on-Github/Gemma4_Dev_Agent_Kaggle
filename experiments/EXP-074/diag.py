@@ -269,7 +269,7 @@ def q3(steps: list[dict], authors: set[str] | None, patch: str, gold_files: list
     name_step = None
     named_py: set[str] = set()
     gold_named_path = gold_named_base = False
-    gold_seen = False
+    gold_seen = gold_seen_base = False
     searched = False
     read_before = False
     edit_on_x = None
@@ -306,10 +306,12 @@ def q3(steps: list[dict], authors: set[str] | None, patch: str, gold_files: list
                 gs = g[4:] if g.startswith("src/") else g
                 if g in obs or gs in obs:
                     gold_seen = True
+                if Path(g).name in obs:
+                    gold_seen_base = True
     return {"steps": len(ms), "first_edit": first_edit if first_edit < len(ms) else None, "name_step": name_step,
             "named_before_edit": name_step is not None and name_step <= first_edit, "n_py_named": len(named_py),
             "keys": len(keys), "searched": searched, "read_before": read_before, "gold_seen": gold_seen,
-            "gold_named_path": gold_named_path, "gold_named_base": gold_named_base}
+            "gold_named_path": gold_named_path, "gold_named_base": gold_named_base, "gold_seen_base": gold_seen_base}
 
 
 # ---------- main ----------
@@ -514,7 +516,7 @@ def main() -> int:
             rr = [d for _, _, c, d in rows if c == cls]
             if not rr:
                 continue
-            s = {k: sum(1 for d in rr if d[k]) for k in ("named_before_edit", "searched", "read_before", "gold_seen", "gold_named_path", "gold_named_base")}
+            s = {k: sum(1 for d in rr if d[k]) for k in ("named_before_edit", "searched", "read_before", "gold_seen", "gold_seen_base", "gold_named_path", "gold_named_base")}
             s["keys>0"] = sum(1 for d in rr if d["keys"])
             s["searched|keys>0"] = sum(1 for d in rr if d["keys"] and d["searched"])
             print(f"  {grp_label} {cls} n {len(rr)}: {s}; median py_named {statistics.median(d['n_py_named'] for d in rr)}; median name_step {statistics.median(d['name_step'] for d in rr if d['name_step'] is not None)}; median first_edit {statistics.median(d['first_edit'] for d in rr if d['first_edit'] is not None)}; name_step<=1 {sum(1 for d in rr if d['name_step'] is not None and d['name_step'] <= 1)}")
@@ -524,6 +526,22 @@ def main() -> int:
         v = sorted(v)
         print(f"  {grp:20s} steps {len(v):4d} median {statistics.median(v):6.0f} p90 {v[int(0.9 * (len(v) - 1))]:5d} max {v[-1]:5d} "
               f">=4096 {sum(x >= 4096 for x in v)} >=8000 {sum(x >= 8000 for x in v)}")
+
+    # ---- Addendum (not pre-registered): grading block and distinct-task denominators ----
+    print("\n== Addendum: EXP-038 graded exit code by stage; gold patch unresolved in the sandbox (EXP-038 re-grade GOLD pass)")
+    gold_rg = RUNS / "EXP-038-regrade" / "GOLD" / "regrade.jsonl"
+    gold_fail = {d["instance_id"] for d in jl(gold_rg) if not d.get("resolved")} if gold_rg.exists() else set()
+    print(f"  gold unresolved in the sandbox: {len(gold_fail)}: {','.join(sorted(gold_fail))}")
+    rd, summ, res = load_run(DEV)
+    for k in ORDER:
+        ids = sorted(t for t, c in stage[DEV].items() if c == k)
+        ex = collections.Counter(str(res[t].get("test_exit_code")) for t in ids)
+        print(f"  {k} n {len(ids)} exit {dict(sorted(ex.items()))} gold-blocked {sum(t in gold_fail for t in ids)} "
+              f"{','.join(t for t in ids if t in gold_fail) or '-'}")
+    for label, group in (("dispatch", PIPE), ("early", PIPE_EARLY)):
+        fr = sorted({t for n in group for t, c in stage[n].items() if c in "FR"})
+        sc = collections.Counter(c for n in group for t, c in stage[n].items() if c.isupper() and t in gold_fail)
+        print(f"  {label}: distinct tasks with an F or R run {len(fr)}: {','.join(fr)}; unresolved runs on gold-blocked tasks {dict(sc)}")
 
     # ---- Q5 ----
     anyr, e4b = ever_resolved()

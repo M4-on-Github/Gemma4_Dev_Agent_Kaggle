@@ -97,6 +97,12 @@ Logged 2026-11-11 while computing. Sections 2 to 4 are not changed.
 5. **The opportunity count (2.5) bounds by evidence, not by proof.** A task no run has resolved is not shown to be unresolvable. And every resolve in the ever-resolved set came from a 31B run first: the six 31B dev-48 runs (E0-dev48-baseline, EXP-028-armRH, EXP-028-armR, exp003, exp025 armA and armB) give 11, 3, 1, 0, 1 and 0 new tasks, 16 in all. The union of every E4B run on dev-48 ids is EXP-038's 5. Runs under `EXP-000-*` (gold control) were left out, as were the shim re-grade directories, which have no `task_results.jsonl`.
 6. **EXP-038's `summary.jsonl` has `tool_free` and `n_text_form_calls` null** (written before those fields existed). fastapi_13537 is tool-free by its trace: 0 native calls, and 4 thinking-plus-final turns with 3 continuation nudges, ending "Agent completed execution without calling submit_patch".
 7. **Not pre-registered, reported as description:** the section 6.1 detail on EXP-038's E runs (`summary.jsonl` fields) and F runs (the top directory of each patched file).
+8. **Review after section 6 (2026-11-11), handled in section 7, not pre-registered:**
+   - a miscount in section 6.1 (nine failure counts listed for 8 runs);
+   - `gold_seen` matched full paths only, so a listing that prints basenames was missed;
+   - the S and C classes were not checked against tasks whose gold patch itself fails in the sandbox;
+   - a forecast in section 6.5 went beyond section 4;
+   - section 2.3's pipeline distinct-task row and Q2's distinct-task denominator were computed but not written.
 
 ## 6. Results, 2026-11-11
 
@@ -128,7 +134,7 @@ Per run, the dispatch sample is: 064 E1 F1 R1 C1 S2; 066 E1 F1 R1 C1 S2; 068 E1 
 
 **What the E and F runs did (description, defect 7).**
 - **EXP-038 E, 10 runs:**
-  - 8 submitted after 3 or more failed `edit_file` calls: 3, 4, 4, 4, 4, 5, 5, 6 and 8 failures, with arg-loss on 2 of the runs (1 and 4).
+  - 8 submitted after 3 or more failed `edit_file` calls: 3, 4, 4, 4, 5, 5, 6 and 8 failures, with arg-loss on 2 of the runs (1 and 4). *(Corrected 2026-11-11, section 7: the first version listed nine values for 8 runs.)*
   - fastapi_13537 is tool-free (defect 6).
   - rich_4075 made 5 calls with no failed edit and submitted without an edit.
   - No cap was hit on any of them. So the dev-48 empties are an edit-application failure, not a budget or search failure.
@@ -141,7 +147,7 @@ Per run, the dispatch sample is: 064 E1 F1 R1 C1 S2; 066 E1 F1 R1 C1 S2; 068 E1 
 | Dispatch | 18 | **4** (22%) | 4 | E 2 (EXP-071 requests_7205, EXP-072 fastapi_14301), R 2 (EXP-066 and EXP-071 fastapi_14605) | 18 of 21 |
 | Early | 12 | **4** | 3 | E 4 (EXP-061 fastapi_14301 and requests_7309, EXP-062 requests_7205, EXP-063 fastapi_14301) | 7 of 9 |
 
-- **Selection proper (an F or R run that held a gold-touching draft):** 2 of 11 dispatch F and R runs, both fastapi_14605, which no run of any model has ever resolved. In the early pipeline, 0 of 7.
+- **Selection proper (an F or R run that held a gold-touching draft):** 2 of 11 dispatch F and R runs (over 5 distinct tasks, section 7), both fastapi_14605, which no run of any model has ever resolved. In the early pipeline, 0 of 7.
 - The other 6 overlapping misses are **E runs**: a draft touched gold, and the applier submitted nothing. That is an application failure, not a selection failure.
 - Drafts naming a gold source file: 12 of 18 dispatch miss-runs (R 6 of 6, E 6 of 7, F 0 of 5).
 - **Margins:** at margin 0, the dispatch count is 4 of 19, 3 appliable; at margin 15, it is 4 of 17, 4 appliable.
@@ -227,7 +233,7 @@ Per run, the dispatch sample is: 064 E1 F1 R1 C1 S2; 066 E1 F1 R1 C1 S2; 068 E1 
   - while keeping its own 5;
   - and on 11 tasks no E4B run has ever resolved.
 - The largest single lever (E) reaches 4, a **shortfall of 7**. The two largest (E and F) reach 7, a shortfall of 4.
-- On this evidence the 16 of 48 stopping rule is not reachable by a single-lever loop. The likelier stop is GPU quota.
+- ~~On this evidence the 16 of 48 stopping rule is not reachable by a single-lever loop. The likelier stop is GPU quota.~~ *(Withdrawn 2026-11-11, section 7: a forecast beyond section 4 and defect 5.)* [I] On this evidence no single lever's opportunity reaches +11.
 
 **Ranked levers** (dev-48 opportunity, then evidence):
 1. **Edit application, stage E: 4.**
@@ -265,6 +271,50 @@ Per run, the dispatch sample is: 064 E1 F1 R1 C1 S2; 066 E1 F1 R1 C1 S2; 068 E1 
   - steps at 4096 or more 1.1%, under the predicted 5%.
 - **Q5:** ever-resolved 11 of 43 against about 20; the sum 11 against about 15; the largest lever 4 against about 5.
 
+
+## 7. Addendum, 2026-11-11 (not pre-registered)
+
+Computed by the same `diag.py` (new output blocks: `gold_seen_base` in Q3, and the "Addendum" block). Nothing in sections 2 to 4 changes.
+
+**1. Grading block.**
+- Source: the GOLD pass of the EXP-038 re-grade (`runs/EXP-038-regrade/GOLD/regrade.jsonl`; EXP-038 section 9, shims present). The gold patch itself is unresolved in the sandbox on 5 dev-48 tasks: httpx_3672, requests_7205, requests_7309, requests_7315, requests_7427. No patch can resolve them there.
+- By EXP-038 stage:
+  - **S: 3 of 6** (requests_7205, requests_7309, requests_7427);
+  - **C: 1 of 9** (httpx_3672);
+  - **F: 1 of 12** (requests_7315);
+  - **E and R: 0**.
+- So dev-48's gradable S is 3 tasks (fastapi_14297, fastapi_14964, rich_3521), of which 1 is ever-resolved.
+- The opportunity counts in section 6.5 are unchanged: no gold-blocked task is in the ever-resolved set.
+- **On smoke-8, 3 of 8 tasks are gold-blocked** (httpx_3672, requests_7205, requests_7309). In the dispatch pipeline they hold 18 of the 39 unresolved runs: S 11, C 4, R 2, E 1. So **11 of the pipeline's 12 S runs are on tasks no patch can pass**, and the pipeline's large S count (section 6.1) is a cohort artefact, not a generation finding.
+- Under the shims, the EXP-038 re-grade moved 0 E4B tasks from unresolved to resolved (EXP-038 Status: G = 0 of 15 gated, and 5 of 48 resolved both as run and as re-graded). So a sandbox-gap lever has **0** opportunity on the E4B's own dev-48 patches.
+- Graded exit codes by EXP-038 stage (unresolved): E 1 on 5, 2 on 4, -1 on 1; F 1 on 7, 2 on 5; R 1 on 3, 2 on 3; C 1 on 4, 2 on 5; S 1 on 4, 2 on 2.
+
+**2. Gold file shown, by basename (Q3 d).**
+- The gold file's basename appears in a tool output before the first edit on 5 of 12 EXP-038 F runs, against 3 of 12 by full path. On the pipeline F runs, the count is 3 of 5 by either test.
+- So in 7 to 9 of 12 dev-48 F runs, nothing the model ran showed it the gold file before it edited. In 3 to 5, it was shown and not chosen.
+- Section 6.3's reading, search breadth before commitment, holds for the majority. A minority of 3 to 5 is "shown, not chosen", which is a choice failure.
+
+**3. Pipeline distinct tasks (section 2.3).**
+- Modal class over each smoke-8 task's unresolved dispatch runs, ties toward the earlier stage: **E2 F1 R1 C2 S2** over 8 tasks:
+  - E: fastapi_14301, rich_3468;
+  - F: rich_3006;
+  - R: fastapi_14605;
+  - C: fastapi_14448, httpx_3672;
+  - S: requests_7205, requests_7309.
+- fastapi_14301 has one unresolved dispatch run (E). rich_3006 has two (S and F), so its F is a tie broken toward the earlier stage.
+
+**4. Q2's denominator in distinct tasks.**
+- The dispatch F and R runs cover **5 distinct tasks** (fastapi_14448, fastapi_14605, httpx_3672, rich_3006, rich_3468). The early pipeline's cover 3 (fastapi_14448, fastapi_14605, rich_3468).
+- The selection reading, 2 F or R runs with a gold-touching draft, both fastapi_14605, therefore rests on **1 of 5 distinct tasks**. That is enough to say selection is rare on smoke-8, not to bound it on dev-48. The carry to 48 stays [I].
+
+**5. Corrections to section 6:**
+- the E failure counts (marked in place);
+- the section 6.5 forecast (struck in place; the facts stand: sum 11, largest lever 4, 16 of 48 equal to the union of six 31B dev-48 runs and above the best of them, 11 of 48).
+
+**Effect on the ranking.** None of the five levers moves. S drops from 6 to 3 gradable tasks on dev-48, so generation stays last. The sandbox gap is added as a lever with 0 opportunity.
+
 ## Status
 
 ANALYZED 2026-11-11 (section 6), 0 GPU-h. EXP-038 unresolved 43: E10 F12 R6 C9 S6. Draft discriminator: 4 of 18 dispatch miss-runs hold a gold-touching draft (2 E, 2 R on a never-resolved task), so selection has 0 resolvable opportunity. Thought text kept; the budget is not binding; F runs commit early without being shown the gold file (9 of 12). Opportunity E4 F3 C2 R1 S1 = 11, exactly +11 with full conversion; the largest lever (edit application) reaches 4.
+
+ADDENDUM 2026-11-11 (section 7, not pre-registered): 5 dev-48 tasks are gold-blocked in the sandbox (S 3 of 6, C 1, F 1; 3 of the 8 smoke-8 tasks, carrying 11 of the pipeline's 12 S runs); F gold file shown before the first edit on 3 of 12 by path, 5 of 12 by basename; pipeline distinct E2 F1 R1 C2 S2; Q2 rests on 5 distinct dispatch tasks; the section 6.5 forecast is withdrawn; the lever ranking is unchanged.
