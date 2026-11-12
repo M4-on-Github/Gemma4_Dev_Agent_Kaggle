@@ -2,7 +2,7 @@
 id: D-010
 title: E4B pipeline, five adaptive tweak rounds (11-11)
 decision: start
-status: active on the user's word (2026-11-11, "gi for 5 more harness trweaks for e4b agents", f3df1e5). The critic's `direction` review came back needs-work (experiments/EXP-070/critic.md, 49784a4, 3d0fc69). All six fixes are accepted; see the revision below.
+status: superseded 2026-11-11 by D-011, the open-ended loop on the user's word (85f31c3); EXP-071, EXP-072 and EXP-073 carry over as its first rounds. Was active on the user's word (2026-11-11, "gi for 5 more harness trweaks for e4b agents", f3df1e5). The critic's `direction` review came back needs-work (experiments/EXP-070/critic.md, 49784a4, 3d0fc69). All six fixes are accepted; see the revision below.
 track: main
 claims: [C-015, C-019, C-021, C-023]
 date: 2026-11-11
