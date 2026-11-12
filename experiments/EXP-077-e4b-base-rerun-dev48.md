@@ -4,7 +4,7 @@
 **Type:** dev-48 GPU measurement, no variable: the EXP-038 zip unchanged, rerun on the same 48 ids with the same notebook cells. About 1.3 L4x4-h of the 30/week (EXP-038 ran **1.267 h** by its kernel log span, EXP-038 section 9; conditional worst case, a bound and not a forecast, 6.66 h, EXP-038 section 2.2). No upload.
 **Cohort:** dev-48
 **Ladder:** L4 measurement without an L2 screen, by the lead's decision (dispatch of 2026-11-12, accepting the critic's slot-2 recommendation in `experiments/EXP-075/critic.md`). Why n = 8 cannot read it: the quantity is the spread of dev-48 counts themselves (M over about 150 calls, empties over 48, the class counts over 48); an 8-task draw estimates a different, wider spread, and the 8-task reruns on disk are already the weak reference this run replaces (EXP-075 section 1.3).
-**Pre-registered:** this file is committed before the kernel push. Sections 3 and 4 are written blind, final before this run's or EXP-075's result lands, and are not revised. It is pushed on the lead's release without its own critic `prereg` pass: the lead counts the critic's EXP-075 review and slot-2 recommendation as covering it.
+**Pre-registered:** this file is committed before the kernel push. Sections 3 and 4 are written blind, final before this run's or EXP-075's result lands, and are not revised. ~~It is pushed on the lead's release without its own critic `prereg` pass: the lead counts the critic's EXP-075 review and slot-2 recommendation as covering it.~~ *Corrected 2026-11-12 05:55 UTC (section 7 item 1):* it is pushed on the lead's dispatch, which released both pushes; this file has had no critic `prereg` review.
 **Serves:** EXP-075 (section 4.1 there: the spread s and the net form of H1); every later D-011 arm read on the E4B single loop against one base draw.
 **Relates:** EXP-038 (the first draw of this zip on these ids), EXP-033-e4b and EXP-044-X0 (same zip, 8-id reruns: smoke-8 and failed-edit-8), EXP-074 (divergence classes), EXP-009 (vLLM under TP=4 is non-deterministic, so two draws at temperature 1.0 differ by construction).
 
@@ -47,7 +47,7 @@ Rows are read in order; the first that fires governs the reading of s. Rows 2 to
 | 3 spread above the bootstrap | 0.07 < s < 0.17 | **The within-run bootstrap understates the draw spread.** EXP-075's M falls (0.340 - 2s) is stricter than 0.20 and governs its keep rows. A later mechanism arm on one draw needs a fall of at least 2s to be read. |
 | 4 M unreadable on one draw | s at or above 0.17 | **One dev-48 draw per arm cannot read the notfound share.** 0.340 - 2s is at or below 0: EXP-075 rows 4 to 6 cannot fire, and its row 7 records this. Later mechanism arms on the E4B need two draws per arm or a different endpoint. |
 
-**H1 net, as EXP-075 reads it (EXP-075 section 4.1).** The holds feed EXP-075 only when row 1 did not fire. If this run lost 3 or more of the 5, EXP-075's net H1 is unreadable (it cannot reach 3), and that is recorded here and there.
+**H1 net, as EXP-075 reads it (EXP-075 section 4.1).** The holds feed EXP-075 only when row 1 did not fire. ~~If this run lost 3 or more of the 5, EXP-075's net H1 is unreadable (it cannot reach 3), and that is recorded here and there.~~ *Amended 2026-11-12 05:55 UTC, after the push and before any result (section 7 item 2):* if this run lost 2 or more of the 5, EXP-075's net H1 is unreadable (with `requests_6644` never lost, a net of 3 could only come through it), and that is recorded here and there. EXP-075 is not analysed until this run is terminal (EXP-075 section 4.1).
 
 **Blind predictions (not readings):** s about 0.05 (M between 0.29 and 0.40), Eo 6 to 13, F 10 to 16, A 24 to 32 of 47, resolves 4 to 6 with `requests_6644` held, `fastapi_14301` and `rich_3006` held, one of `fastapi_14463` and `rich_3905` lost, `n_identical_repeats` 15 to 40, mean wall within 15 s of EXP-038. Most likely row: 2, then 3.
 
@@ -67,6 +67,7 @@ Rows are read in order; the first that fires governs the reading of s. Rows 2 to
 python -I -X utf8 tools/analyze_traces.py runs/EXP-077-base --cap-minutes 8 --max-calls 28
 python -I -X utf8 experiments/EXP-075/desk.py --all --run EXP-077-base        # M, M_nr, A, repeats (mechanism line)
 python -I -X utf8 experiments/EXP-075/noise.py EXP-077-base                   # classes and paired transitions vs EXP-038
+python -I -X utf8 experiments/EXP-075/readings.py EXP-077-base --rerun EXP-077-base   # added 05:55 UTC (section 7 item 1): row 1 errors, holds (lost ids), s
 python -I -X utf8 tools/run_forensics.py compare runs/EXP-038-e4b-dev48 runs/EXP-077-base   # resolves 2x2, holds
 python -I -X utf8 tools/run_forensics.py forensics runs/EXP-077-base
 python tools/estimate_budget.py --eval-config experiments/EXP-033/candidate-e4b/eval_config.yaml --results runs/EXP-077-base/summary.jsonl --tok-s 116.63 --per-call-s 0
@@ -75,7 +76,7 @@ cp runs/EXP-077-base/summary.jsonl experiments/EXP-077/summary.jsonl
 If the download nests the run (`runs/EXP-077-base/runs/<x>/`), the scripts' `run_dir` finds it; pass the nested path to the tools. s is computed from the unrounded call counts of the two mechanism lines.
 
 ## 7. Defects in this pre-registration, logged after the fact
-(none yet)
+1. *2026-11-12 05:55 UTC, after the push and before any result.* (a) The header said the lead counted the critic's EXP-075 review as covering this file; the dispatch only released the push. Corrected in place. (b) The unreadable boundary for EXP-075's net H1 moves from 3 or more lost here to 2 or more, matching EXP-075 section 4.1 (`requests_6644` cannot be lost). (c) Section 6 had no command for row 1's error count or s; `experiments/EXP-075/readings.py` prints them (run with this run as both arguments it prints this run's row 1 inputs and lost ids, and s against EXP-038).
 
 ## 8. Built (below the line; nothing above changes)
 

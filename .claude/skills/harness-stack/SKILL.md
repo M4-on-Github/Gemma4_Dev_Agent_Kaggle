@@ -48,6 +48,7 @@ user-invocable: false
 - The session timeout is not a hard per-task bound: one EXP-028 RH task ran 752 s at an 8-min cap.
 - Hygiene and `.gitignore` admit a jsonl in `experiments/` only when it is named exactly `summary.jsonl`; store per-arm copies as `experiments/EXP-NNN/<arm>/summary.jsonl`.
 - Pitfall: the push guard reads the text of every Bash command, so a heredoc, commit message or patch script whose text contains the exact push command (the three words in sequence) is blocked as if it were a push. Write such files with the Write tool, or keep the command out of the text. Run the push itself as a bare, unchained command: chained with `;` or `&&`, the guard reads the directory argument with the separator attached and refuses with "expected exactly one .ipynb in notebooks/<dir>;, found 0" (EXP-047, 2026-11-07).
+- Two GPU kernels at once (2026-11-12, EXP-075 and EXP-077): two L4x4 dev-48 kernels pushed 11 s apart both reported `KernelWorkerStatus.RUNNING` on the status check right after the push. For the push record, use `date -u +%Y-%m-%dT%H:%M:%SZ`: bare `date -u` in this Git Bash prints a locale format with no UTC label.
 
 ## Run analysis
 

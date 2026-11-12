@@ -90,10 +90,11 @@ Rows are read in order; the first that fires governs, later rows are recorded.
 
 ### 4.1 How EXP-077 enters the rows *(added 2026-11-12, critic fixes; final before either result lands)*
 EXP-077 reruns the EXP-038 zip unchanged on the same 48 ids (`experiments/EXP-077-e4b-base-rerun-dev48.md`). This file stays paired with EXP-038: every endpoint and threshold above is computed against EXP-038 as written, and no second comparison against EXP-077 is made. EXP-077 enters in two places only.
-- **EXP-077 is readable** when its own row 1 did not fire (not cancelled, not infrastructure) and its kernel is COMPLETE before this file's analysis. Otherwise both places below take their fallback, and this file is read without waiting further.
+- ~~**EXP-077 is readable** when its own row 1 did not fire (not cancelled, not infrastructure) and its kernel is COMPLETE before this file's analysis. Otherwise both places below take their fallback, and this file is read without waiting further.~~
+- *Amended 2026-11-12 05:55 UTC, after the push and before any result (section 7 item 2):* **this file is not analysed until EXP-077 is terminal** (COMPLETE, ERROR, or cancelled under its stop rule). EXP-077 is **readable** when it is terminal and its own row 1 did not fire; the fallbacks below apply only when it is terminal and its row 1 fired. The timing of the analysis therefore cannot choose between s and 0.07, or between net and gross H1.
 - **The spread s.** s = |M(EXP-077) - M(EXP-038)|, the notfound shares of `edit_file` calls of the two base draws (desk.py `notfound_share`, unrounded call counts). It is one realization of the difference of two draws, one degree of freedom, and it replaces the bootstrap 0.07 literally (no floor: the fixed 0.20 in rows 4 to 6 already floors a small s). Fallback: s = 0.07.
 - **M falls** (rows 4 to 7) means M(arm) <= 0.340 - 2s, where 0.340 is EXP-038's 53 of 156. With the fallback, 0.340 - 0.14 = 0.20, so the rows read exactly as before EXP-077 existed. If s is above 0.07, M falls is stricter than M <= 0.20 and governs; below 0.07 the 0.20 governs. If s is 0.17 or more, M falls needs M at or below 0 (0.340 - 2s <= 0), so in practice rows 4 to 6 cannot fire, and row 7 records that one draw per arm cannot read the mechanism at this spread.
-- **H1.** If EXP-077 is readable, H1 is read in its **net** form only: it fires when 3 or more of the 5 ids are lost in the arm and held in EXP-077. If EXP-077 itself lost 3 or more of the 5, net H1 cannot reach 3; it is then reported as **unreadable**, not as no harm, and the gross count is recorded beside it. If EXP-077 is not readable, H1 is read in its **gross** form (3 or more of the 5 lost in the arm). Both forms are always recorded.
+- **H1.** If EXP-077 is readable, H1 is read in its **net** form only: it fires when 3 or more of the 5 ids are lost in the arm and held in EXP-077. ~~If EXP-077 itself lost 3 or more of the 5, net H1 cannot reach 3; it is then reported as **unreadable**, not as no harm, and the gross count is recorded beside it.~~ *Amended 2026-11-12 05:55 UTC, after the push and before any result (section 7 item 2):* if EXP-077 itself lost 2 or more of the 5, net H1 is reported as **unreadable**, not as no harm, and the gross count is recorded beside it: `requests_6644` cannot be lost (section 3), so with 2 of the other four lost in EXP-077 a net of 3 could only come through it. If EXP-077 is not readable, H1 is read in its **gross** form (3 or more of the 5 lost in the arm). Both forms are always recorded.
 - Nothing else in EXP-077 changes a row here. Its Eo, A, class and repeat spreads are recorded beside this file's secondaries.
 
 ### 4.2 Stop rule *(added 2026-11-12, critic fixes, fix 2)*
@@ -112,6 +113,7 @@ EXP-077 reruns the EXP-038 zip unchanged on the same 48 ids (`experiments/EXP-07
 python -I -X utf8 tools/analyze_traces.py runs/EXP-075-t02 --cap-minutes 8 --max-calls 28
 python -I -X utf8 experiments/EXP-075/desk.py --all --run EXP-075-t02        # M, A, H2 (mechanism line)
 python -I -X utf8 experiments/EXP-075/noise.py EXP-075-t02                   # R5 and the paired class table
+python -I -X utf8 experiments/EXP-075/readings.py EXP-075-t02 --rerun EXP-077-base   # added 05:55 UTC (section 7 item 2): row 1 errors, H7, H1 gross and net, s
 python -I -X utf8 tools/run_forensics.py compare runs/EXP-038-e4b-dev48 runs/EXP-075-t02   # resolves 2x2
 python -I -X utf8 tools/run_forensics.py forensics runs/EXP-075-t02
 python tools/estimate_budget.py --eval-config experiments/EXP-075/candidate-t02/eval_config.yaml --results runs/EXP-075-t02/summary.jsonl --tok-s 116.63 --per-call-s 0
@@ -128,6 +130,7 @@ If the download nests the run (`runs/EXP-075-t02/runs/<x>/`), the scripts' `run_
    - Fix 5 (loops outside `edit_file`): H7 in section 3 and row 2 (total 50 or more, or 3 or more tasks at 8 or more).
    - Non-blocking (wrong-file harm): section 2 limit (5).
    - Lead's additions: M_nr recorded (section 3, desk.py `notfound_share_nonrepeat`); the measured spread s replaces the 0.07 (section 4.1, section 2 limit (6)).
+2. *2026-11-12 05:55 UTC, after the push of both kernels and before any result.* Three gaps in the critic-fix text (4ec19e5), closed in place with strikes: (a) section 4.1 let the time of the analysis choose between the measured s and the fallback; this file now waits until EXP-077 is terminal. (b) The unreadable boundary for net H1 was 3 or more lost in EXP-077; it is 2 or more, because `requests_6644` cannot be lost. (c) Section 6 had no command printing row 1's error count, H7, H1 gross and net, or s; `experiments/EXP-075/readings.py` prints them (checked on EXP-038: 48 rows, 0 infrastructure errors, 1 no-submit ending with turns, H7 total 25 with 0 tasks at 8 or more and at most 4 on one task, M 53 of 156, gross lost 0).
 
 ## 8. Built (below the line; nothing above changes)
 
