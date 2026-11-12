@@ -180,3 +180,7 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
   - The same 5 to 9 line drift appears on 3 of 12 tasks in EXP-064-loc and EXP-066-srch, where REGION text absorbed it.
   - This points to an anchor fix: LINES taken from a numbered output the reader received. It does not point to localization.
 - **Confidence:** [V] for the counts. [I] for the anchor reading (n = 3, and the target is the applied edit, not the gold patch).
+
+## EXP-071, the anchor form (2026-11-11; ac412ce)
+- **Read rows 2 (harm) and 3 (not exercised).** The numbered `git grep -n -F` command met all four of its conditions on 2 of 8 tasks. Text-form tool calls appeared on 2 tasks, one by the applier. W was 5 of 8 against a reference of 4 of 8, recorded only.
+- **Lesson:** a multi-flag command form is taken up on about a quarter of tasks, so the E4B does not follow a command recipe it is given. Text-form calls recur in pipeline trees (EXP-065 counted 0 of 24 there, and this run has 2 of 8), so the first-turn tool-call row alone does not catch later turns.
