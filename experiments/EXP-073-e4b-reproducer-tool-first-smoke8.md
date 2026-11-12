@@ -166,6 +166,68 @@ Analysis, a separate job, after `kaggle kernels status rainm4/gemma4-exp073-repr
 - **Kernel metadata:** copied from `notebooks/exp071_anchor/kernel-metadata.json` (E4B model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`), `id` `rainm4/gemma4-exp073-repro`, `title` `gemma4-exp073-repro`, nothing else changed.
 - **Slot check at build, 2026-11-11:** `rainm4/gemma4-exp071-anchor` RUNNING and `rainm4/gemma4-exp072-verify` RUNNING, so D-010's two-kernel limit holds and the kernel is not pushed.
 
+## 9. Results, 2026-11-12
+
+Readings of section 4 applied as written. Counts and task ids only (plan.md:52). Run dir `runs/EXP-073-repro/` (gitignored); `summary.jsonl` copied to `experiments/EXP-073/repro/summary.jsonl`. Analysis: `analyze_traces.py --cap-minutes 8 --max-calls 45`, then Grep and line-number reads of `traces/` and the 8 patches (EXP-068 method). The analyzer's `n_text_form_calls` is 0 on all 8 tasks and `tool_free` is false on all 8, but its counter misses the shapes found by hand below (harness-stack, EXP-072 section 9); the hand check governs.
+
+### 9.1 Run facts
+
+- Kernel `rainm4/gemma4-exp073-repro` v1 COMPLETE. Kernel wall 1666 s (last log entry), so **0.46 GPU-h** (pre-registered ~0.40).
+- Resolved **1 of 8: `rich_3006` only** (recorded, not an endpoint). `fastapi_14301` is **not** resolved (EXP-064-loc resolved both `fastapi_14301` and `rich_3006`).
+- Agent wall per task (s): `requests_7309` 115.8, `requests_7205` 81.0, `fastapi_14448` 87.5, `fastapi_14301` 177.7, `httpx_3672` 190.0, `fastapi_14605` 225.5, `rich_3468` 205.5, `rich_3006` 88.8. **Mean 146.5 s** (reference 100.0 s; blind prediction about 125 s), **max 225.5 s** (`fastapi_14605`), median 146.8 s. Tasks over 240 s: none.
+- Calls (including the transfer): 13, 5, 7, 18, 14, 16, 17, 5; max 18 of 45. No time, call or turn cap hit; no timeout.
+- Empty patches **1 of 8** (`rich_3468`; reference 1 of 8). Nudges 1 (`fastapi_14605`). Compactions 3 (`httpx_3672`, `fastapi_14605`, `rich_3468`); largest prompt not read, so the 14,336 window cost is recorded as untested. Malformed calls 2 (`httpx_3672`). `submit_patch` called on 8 of 8. `scratch_in_patch` false on 8 of 8.
+- Failed edits: `requests_7309` 1, `fastapi_14301` 9, `httpx_3672` 2, `rich_3468` 7; the others 0. The per-task first-edit-applies secondary was not computed.
+
+### 9.2 Endpoints
+
+| task | first reproducer turn (row 3 record) | T | X | last reproducer run class |
+|---|---|---|---|---|
+| `requests_7309` | native `run_command` | yes | yes | pass (exit 0), reached after the reproducer's own source edits |
+| `requests_7205` | text, a bare command, no call and no report | no | no | no run |
+| `fastapi_14448` | text, a fenced JSON verdict with a command, an exit 1 and an assertion last line, no call | no | no | no run |
+| `fastapi_14301` | native `run_command` | yes | yes | syntax class, project frame (exit 1) |
+| `httpx_3672` | text-form call (raw tool-call text in the final) | no | no | no run |
+| `fastapi_14605` | native `run_command` | yes | yes | syntax class (IndentationError, project frame, exit 1) |
+| `rich_3468` | native `run_command` | yes | yes | syntax class (SyntaxError from the `<string>` frame, exit 1) |
+| `rich_3006` | text, a bare multi-line command, no call and no report | no | no | no run |
+
+- **T = 4 of 8** (`requests_7309`, `fastapi_14301`, `fastapi_14605`, `rich_3468`). Blind prediction 6.
+- **X = 4 of 8**, the same four.
+- **Fb = 0 of 8. Fb-wide = 0 of 8.** Blind prediction Fb about 3. No reproducer run ended on an `AssertionError`; two ended on a syntax class raised by the reproducer's own source edit, one on a syntax error in its own one-liner, one passed after its own source edit.
+- **V and P: undefined**, 0 Fb tasks.
+- **D = 0 of 8** (no applier undo and no kept-draft departure after a COMMAND failure).
+- The applier ran the reproducer's COMMAND before its first edit on **0 of 8** tasks. It ran it after an edit on `requests_7309`, `requests_7205` and `rich_3006` (each once, each exit 0); on `fastapi_14448` its run after the edit exited 2, not the exit 1 the report claimed.
+
+### 9.3 Harm inputs (row 2 clauses, each read as written)
+
+1. **Stray write: fires.** The reproducer wrote source with `sed -i` on **3 of 8** tasks (`requests_7309`, `fastapi_14301`, `fastapi_14605`; 11 `sed -i` calls in all). No `>`, `tee`, `rm`, `mv`, `git checkout` or `pip` form was found in the reproducer commands that were read. `scratch_in_patch` is false on all 8, but **two shipped patches carry the reproducer's source hunks** (`fastapi_14301`, `fastapi_14605`) and in both the module no longer imports (a repeated keyword argument in one; a corrupted class block with stray text and a column-0 statement in the other). The stage's tool strip to `run_command` did not stop it from editing source.
+2. **Fabricated verdict: fires.** `fastapi_14448`: a report with a COMMAND and an EXIT 1 with an assertion last line, no `run_command` call made by the reproducer; the applier's own later run of that COMMAND exited 2. Also: `requests_7205` and `rich_3006` ended the stage with a bare command and no report form, `httpx_3672` ended it with a raw tool-call text; none of the three states an EXIT, so they are recorded as no-call commands and not counted as fabricated verdicts. The reports on `requests_7309`, `fastapi_14301` and `fastapi_14605` copy the tool result faithfully (checked on EXIT and last line).
+3. **Text-form call by any author: fires (hand check).** `httpx_3672`, reproducer final is the raw tool-call text form (the analyzer counts 0). `fastapi_14605`, applier first-pass final is call-shaped fenced pseudo-calls to `edit_file` and `run_command` (no native edit made on that task). `fastapi_14448` reproducer final is a fenced JSON verdict with a command key, no call (the shape harness-stack names as missed). `httpx_3672` and `rich_3468` applier finals are status-shaped fenced JSON, not calls, and are not counted. No `tool_free` task.
+4. **Attributed lost resolve: the letter of section 3 does not fire; the mechanism is direct.** Lost against EXP-064-loc: `fastapi_14301`. The applier ran no COMMAND (0 `run_command` calls), so clauses (a) an undo after a COMMAND failure and (b) a kept draft chosen after a COMMAND run do not apply; clause (c) an edit after a COMMAND failure is arguable (the applier made 9 `edit_file` calls, 8 of them failed, after a reproducer report of a syntax failure). The trace shows what the clauses were written to catch in a different form: the shipped patch contains the reproducer's own `sed -i` hunk, which leaves the module unable to import, so the lost resolve follows from the stage's write, not from selection. Recorded both ways. `rich_3006` was resolved (the reproducer made no run; the applier's one post-edit run exited 0 and tells nothing).
+5. **2 or more empty patches: does not fire** (1 of 8). **Any cap hit: does not fire.** **Mean wall over 150 s: does not fire** (146.5 s, 3.5 s under).
+
+### 9.4 Secondaries
+
+- Reproducer `sed -i` source edits: `requests_7309` 4 of 7 run_command calls (the last python check, exit 0, came after them), `fastapi_14301` 1, `fastapi_14605` 6 of its first-pass 10; `fastapi_14605` has 12 run_command calls on the task and `rich_3468` 5 (4 one-line checks, each a syntax error from the `;` before `except`, in the reproducer).
+- Applier: `fastapi_14605` made 0 native edits (text-form pseudo-calls, then a nudge re-ran the pipeline from the reader and the reproducer ran again on edited code); `rich_3468` made 7 failed edits and the patch is empty; `fastapi_14301` 9 edits, 8 failed.
+- R1-type failed edits: `fastapi_14301` 9, `rich_3468` 7, `httpx_3672` 2, `requests_7309` 1; arg-loss: `requests_7309` 1, `httpx_3672` 1.
+
+### 9.5 Rows
+
+| # | reading | holds? |
+|---|---|---|
+| 1 | infrastructure | **no.** All 8 tasks ran, the reproducer made a step on every task, no error with a traceback, no compaction error. On the 4 tasks where the reproducer ended with text, the applier acted on the bare command on 3 (so the state was not empty there); the fourth (`httpx_3672`) ended in a raw tool-call text that the applier did not rerun as such. |
+| 2 | harm | **FIRES**, on three clauses: a stray write (3 of 8 tasks; 2 patches carry the hunk), a fabricated verdict (`fastapi_14448`), and a text-form call by an author (`httpx_3672` reproducer, `fastapi_14605` applier, `fastapi_14448` reproducer). The attributed-lost-resolve clause is arguable by the letter on `fastapi_14301` (9.3 item 4). Not fired: empties 1 of 8, no cap hit, mean wall 146.5 s, no `tool_free`. |
+| 3 | not exercised, T at most 4 of 8 | **FIRES.** T = 4. |
+| 4 to 6 | kill, promote, no decision | **not read** (rows 2 and 3 hold; numbers recorded in 9.2). |
+
+Two gates hold, so neither kill nor promote is licensed. Against the blind prediction: T 4 vs about 6 (row 3 had been given about 0.15), Fb 0 vs about 3, mean wall 146.5 s vs about 125 s, row 2 had been given about 0.28. The sharper risk named in section 4 (a verdict that does not match the call) occurred once, but the larger failure was the stage writing source.
+
+### 9.6 What this answers
+
+"Can an E4B stage be made to run a reproducer at all": on this carrier, partly. The opener made 4 of 8 first reproducer turns native `run_command` calls (EXP-063: 0 of 8), so the first-call part moved but did not reach the pre-registered bar of 5. The check the stage was built to produce, a one-line failing-before assertion tied to the issue, appeared on 0 of 8 tasks; the stage's tool strip to `run_command` let it edit source with `sed -i` on 3 tasks and two of those edits shipped in the patch and broke the module. Not decided: which of the four packaged changes (opener, one-line form, tool strip, applier use of the COMMAND) did what (section 7 item 3). No follow-up round is named here; the loop has moved to the single-loop base on dev-48 (`knowledge/plan.md`), so this is for the record.
+
 ## Status
 
-PUSHED 2026-11-11 from commit 5baad58 (the build was held until EXP-071 and EXP-072 were COMPLETE and both slots were free). Kernel `rainm4/gemma4-exp073-repro` version 1, zip sha256 `0c3ce653a9b67426d3376ca24182900b73030a940f035c6d01d711a04302cc13`, status RUNNING at the first check. Next: when `kaggle kernels status rainm4/gemma4-exp073-repro` says COMPLETE, the analysis job of section 6.
+ANALYZED 2026-11-12. Kernel `rainm4/gemma4-exp073-repro` v1 COMPLETE (kernel wall 1666 s, 0.46 GPU-h). Row 3 (T 4 of 8) and row 2 (stray write on 3 tasks, one fabricated verdict, text-form calls by 3 author-tasks; attributed lost resolve on `fastapi_14301` arguable by the letter) hold; rows 4 to 6 not read. Fb 0 of 8, V and P undefined, resolved `rich_3006` only (recorded). No kill, no promote. PUSHED 2026-11-11 from commit 5baad58, zip sha256 `0c3ce653a9b67426d3376ca24182900b73030a940f035c6d01d711a04302cc13`.
