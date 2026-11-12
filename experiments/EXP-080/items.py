@@ -376,53 +376,59 @@ def cmd_join(codes: Path, kmap_path: Path) -> int:
         YES[f"x{i + 1}"] = "y"
         for z in rows:
             z[f"x{i + 1}"] = z["added"][i] if i < len(z["added"]) else "na"
-    print("item | E4B runs yes/n | arm R runs yes/n | tasks both | mean r - mean e | untied | with sign | call | like-for-like (arm R unresolved R/C/S)")
-    calls = {}
-    for it in items:
-        E = collections.defaultdict(list)
-        Rv = {}
-        for z in rows:
-            v = z[it]
-            if v in ("na", "w"):
-                continue
-            (E[z["task_id"]].append(v == YES[it]) if z["run"] != REF else Rv.__setitem__(z["task_id"], v == YES[it]))
-        ey, en = rate([z[it] for z in rows if z["run"] != REF], it)
-        ry, rn = rate([z[it] for z in rows if z["run"] == REF], it)
-        both = [t for t in tids if t in E and t in Rv]
+    def analyse(rows, label):
+        print(f"[{label}] item | E4B runs yes/n | arm R runs yes/n | tasks both | mean r - mean e | untied | with sign | call | like-for-like (arm R unresolved R/C/S)")
+        calls = {}
+        for it in items:
+            E = collections.defaultdict(list)
+            Rv = {}
+            for z in rows:
+                v = z[it]
+                if v in ("na", "w"):
+                    continue
+                (E[z["task_id"]].append(v == YES[it]) if z["run"] != REF else Rv.__setitem__(z["task_id"], v == YES[it]))
+            ey, en = rate([z[it] for z in rows if z["run"] != REF], it)
+            ry, rn = rate([z[it] for z in rows if z["run"] == REF], it)
+            both = [t for t in tids if t in E and t in Rv]
 
-        def stat(ts):
-            if not ts:
-                return 0.0, 0, 0
-            e = {t: sum(E[t]) / len(E[t]) for t in ts}
-            diff = sum(Rv[t] for t in ts) / len(ts) - sum(e.values()) / len(ts)
-            unt = [t for t in ts if abs(Rv[t] - e[t]) > 1e-9]
-            sgn = sum(1 for t in unt if (Rv[t] - e[t]) * diff > 0)
-            return diff, len(unt), sgn
-        diff, unt, sgn = stat(both)
-        c1 = abs(diff) >= 0.30
-        c2 = unt >= 4 and sgn >= 0.75 * unt
-        call = "separates" if c1 and c2 else "leans" if c1 or c2 else "does not separate"
-        calls[it] = (call, diff)
-        lfl = [t for t in both if cl[REF][t] in ("R", "C", "S") and not G[t]["R_resolved_regraded"]]
-        d2, u2, s2 = stat(lfl)
-        print(f"   {it:3s} | {ey}/{en} | {ry}/{rn} | {len(both)} | {diff:+.3f} | {unt} | {sgn} | {call} | tasks {len(lfl)} diff {d2:+.3f} untied {u2} sign {s2}")
-        split = collections.Counter((cl[REF][z['task_id']].upper() + ('v' if z['armR_regraded_resolved'] else '-'), z[it])
-                                    for z in rows if z["run"] == REF)
-        print(f"         arm R split by its stage and re-graded flag: " + " ".join(f"{k[0]}:{k[1]}={v}" for k, v in sorted(split.items())))
-    print(f"D-011 two against two threshold: more than {th['two_v_two']:.2f} per draw (one against one {th['one_v_one']:.2f})")
-    for it, (call, diff) in calls.items():
-        if call != "separates":
-            continue
-        fail_yes = diff < 0  # arm R lower: the E4B failing state is the yes label
-        out = []
-        for d in DRAWS:
-            zs = [z for z in rows if z["run"] == d and z[it] not in ("na", "w")]
-            bad = [z for z in zs if (z[it] == YES[it]) == fail_yes]
-            out.append((len(bad), sum(1 for z in bad if z["armR_regraded_resolved"])))
-        base = [out[0], out[1]]
-        print(f"   opportunity {it}: per draw loose/conditioned " + " ".join(f"{a}/{b}" for a, b in out)
-              + f"; base-pair mean conditioned {sum(b for _, b in base) / 2:.1f} -> "
-              + ("exceeds" if sum(b for _, b in base) / 2 > th["two_v_two"] else "cannot clear the rule at full conversion"))
+            def stat(ts):
+                if not ts:
+                    return 0.0, 0, 0
+                e = {t: sum(E[t]) / len(E[t]) for t in ts}
+                diff = sum(Rv[t] for t in ts) / len(ts) - sum(e.values()) / len(ts)
+                unt = [t for t in ts if abs(Rv[t] - e[t]) > 1e-9]
+                sgn = sum(1 for t in unt if (Rv[t] - e[t]) * diff > 0)
+                return diff, len(unt), sgn
+            diff, unt, sgn = stat(both)
+            c1 = abs(diff) >= 0.30
+            c2 = unt >= 4 and sgn >= 0.75 * unt
+            call = "separates" if c1 and c2 else "leans" if c1 or c2 else "does not separate"
+            calls[it] = (call, diff)
+            lfl = [t for t in both if cl[REF][t] in ("R", "C", "S") and not G[t]["R_resolved_regraded"]]
+            d2, u2, s2 = stat(lfl)
+            print(f"   {it:3s} | {ey}/{en} | {ry}/{rn} | {len(both)} | {diff:+.3f} | {unt} | {sgn} | {call} | tasks {len(lfl)} diff {d2:+.3f} untied {u2} sign {s2}")
+            split = collections.Counter((cl[REF][z['task_id']].upper() + ('v' if z['armR_regraded_resolved'] else '-'), z[it])
+                                        for z in rows if z["run"] == REF)
+            print(f"         arm R split by its stage and re-graded flag: " + " ".join(f"{k[0]}:{k[1]}={v}" for k, v in sorted(split.items())))
+        print(f"D-011 two against two threshold: more than {th['two_v_two']:.2f} per draw (one against one {th['one_v_one']:.2f})")
+        for it, (call, diff) in calls.items():
+            if call != "separates":
+                continue
+            fail_yes = diff < 0  # arm R lower: the E4B failing state is the yes label
+            out = []
+            for d in DRAWS:
+                zs = [z for z in rows if z["run"] == d and z[it] not in ("na", "w")]
+                bad = [z for z in zs if (z[it] == YES[it]) == fail_yes]
+                out.append((len(bad), sum(1 for z in bad if z["armR_regraded_resolved"])))
+            base = [out[0], out[1]]
+            print(f"   opportunity {it}: per draw loose/conditioned " + " ".join(f"{a}/{b}" for a, b in out)
+                  + f"; base-pair mean conditioned {sum(b for _, b in base) / 2:.1f} -> "
+                  + ("exceeds" if sum(b for _, b in base) / 2 > th["two_v_two"] else "cannot clear the rule at full conversion"))
+    analyse(rows, "all coded runs")
+    ungr = [z for z in rows if z["run"] in DRAWS[1:] and G[z["task_id"]]["gated"]]
+    print(f"sample E4B runs that are un-regraded gated cells (EXP-077, EXP-075, EXP-078 on EXP-036 gated ids): {len(ungr)}: "
+          + " ".join(f"{z['run']}:{z['task_id']}" for z in ungr))
+    analyse([z for z in rows if z not in ungr], "un-regraded gated E4B runs dropped")
     return 0
 
 
