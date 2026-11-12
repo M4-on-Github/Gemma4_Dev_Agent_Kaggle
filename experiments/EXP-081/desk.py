@@ -369,7 +369,24 @@ def main() -> int:
     for r in sorted(pc, key=lambda z: (z["run"], z["task_id"], z["step"])):
         last[(r["run"], r["task_id"])] = r["exit"]
     print(f"python -c task-runs, last python -c check passed: {sum(1 for v in last.values() if v == '0')}/{len(last)} "
-          f"({sum(1 for v in last.values() if v == '0') / len(last):.3f})")
+          f"({sum(1 for v in last.values() if v == '0') / len(last):.3f}); runs {dict(collections.Counter(k[0] for k in last))}; "
+          f"distinct ids {len({k[1] for k in last})}")
+    exc_re = re.compile(r"\b([A-Z]\w*(?:Error|Exception|Exit)|AssertionError)\b")
+    excs = collections.Counter()
+    for r in pc:
+        if r["exit"] == "0":
+            continue
+        ms = I.steps_of(r["run"], r["task_id"])
+        found = exc_re.findall(text_of(I.obs_of(ms[r["step"]])))
+        tx = text_of(I.obs_of(ms[r["step"]]))
+        snip = "snippet" if 'File "<string>"' in tx else "file"
+        excs[(found[-1] if found else "none") + "/" + snip + "/" + r["cls"]] += 1
+    print(f"non-zero python -c checks by the last exception name in the output: {dict(excs.most_common())}")
+    auth = collections.Counter()
+    for r in pc:
+        ms = I.steps_of(r["run"], r["task_id"])
+        auth[(r["run"], str((ms[r["step"]].get("extra") or {}).get("author") or "?"))] += 1
+    print("python -c checks by run and step author: " + " ".join(f"{a}:{b}:{v}" for (a, b), v in sorted(auth.items())))
     c1 = sum(1 for r in pnz if r["cls"] == "C" and r["exit"] == "1")
     print(f"B1 margin: lower bound with the {c1} exit-1 C checks moved to signal {(sh['lo'] + c1) / sh['n']:.3f}; "
           f"noise without them {(sh['noise'] - c1) / sh['n']:.3f}")

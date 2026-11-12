@@ -228,19 +228,21 @@ Build the arm if both B1 and B2 hold; otherwise do not build, and say which fail
 
 0 GPU-h.
 
-**What failed is not the dispatch's own exit, and the rule's clause is weaker than it looked.** The lead should read the decision with these points beside it.
-- **Neither of the dispatch's two do-not-build conditions fired.**
+**What the decision does and does not say.** Corrected in the commit after 4a12dd6 (defect 7). The lead should read the decision with these points beside it.
+- **Neither of the dispatch's two do-not-build conditions is what fired.**
   - The failed pytest checks mostly carry no signal (B1 holds).
-  - An uptake path exists: EXP-046-team's check stage took up the exact form on 5 of 8.
-- **The exit 0 clause measured whether the change was right, not whether the form runs.**
-  - The repo was importable from where the check ran: M-repo 2 of 19, and both of those were skill-tree scripts (EXP-056-r2).
-  - Post hoc, the `python -c` checks alone: 15, exit 0 5 (0.333). Their non-zero classes are L 2, C 1 and F 7, and 14 of 15 exercise the change.
-  - Post hoc, on the task unit (the arm's primary): the last `python -c` check passed on 5 of 11 task-runs (0.455). That is above 0.40, but the rule as written reads checks, not tasks. Section 7 records this as defect 1.
-  - So the E4B's `python -c` checks run, reach the change, and fail mostly with real failures. A python check that fails while exercising the change is the signal the pytest checks lack.
-- **What is untested is the step the arm would take.** That step is removing the pytest option from the single loop's check line.
-  - The single loop emits no `python -c` while pytest is offered (0 of 192 task-draws).
-  - The only measured uptake comes from a dedicated check stage in a Sequential team (EXP-046), not from the single loop.
-- **Whether to re-dispatch** the arm with the rule's defect in view is the lead's call.
+  - A path for the form exists: python -c after a change on 5 of 8 in EXP-046-team. All 8 of that run's python -c checks were made by its check stage (step author `check`), whose prompt directs the form.
+- **B2(b)'s exit 0 clause did catch the form failing on this model.** It was meant to show that the form runs; it cannot by itself separate a broken snippet from a wrong change. The post hoc exception count separates them for the python -c checks:
+  - python -c checks alone: 15, exit 0 5 (0.333).
+  - Of the 10 non-zero ones, the last exception name in the output is SyntaxError on 7: 6 in class F (no changed file named, so the error is in the -c code itself) and 1 in class L (a changed file named). The other 3 are ImportError on 2 (1 C, 1 L) and TypeError on 1 (F).
+  - So **6 of the 15 python -c checks were snippets that did not compile**. That is a failure of the form for the E4B, which is what B2(b) was written to catch. Why the snippets did not compile (quoting of a multi-line snippet inside one command string, for example) is not counted here [I].
+  - "Exercises y" (14 of 15) is a text match on the command. It shows that the snippet names the changed code, not that the code ran.
+  - The repo was importable where the checks ran: M-repo 2 of 19, both skill-tree scripts (EXP-056-r2).
+  - Post hoc, on the task unit: the last python -c check passed on 5 of 11 task-runs (0.455). Those 11 task-runs come from 5 smoke-8 runs (EXP-045-p 3, EXP-046-team 5, and one each from EXP-056-r1, EXP-066-srch and EXP-068-read) over 7 distinct ids. That is too few to set beside the rule's line, and the rule reads checks, not task-runs.
+- **The step the arm would take is untested.** That step is removing the pytest option from the single loop's check line.
+  - The single loop emits no python -c while pytest is offered (0 of 192 task-draws).
+  - The measured uptake comes from a dedicated check stage in a Sequential team (EXP-046) and from smoke-8 pipeline stages, not from the single loop.
+- **Re-dispatch is the lead's call.** A re-dispatch would also have to meet the snippet-compile failure: 6 of 15 python -c checks did not compile.
 
 **Contradicted predictions (section 4), stated plainly:**
 - **Q2 missed.** Submit next was 0.748, not about half. Rerun or another check was 0.028, not about a quarter. Edit was 0.150, close to the predicted 0.1.
@@ -255,13 +257,15 @@ Build the arm if both B1 and B2 hold; otherwise do not build, and say which fail
 **B1's margin (post hoc).** C includes 9 exit 1 checks, matched by text (`ImportError`, `conftest` and the like). With those 9 moved to signal, the lower bound is 0.245 and noise 0.547, so B1 still holds. B1 does not hinge on that text match.
 
 ## 7. Defects
-1. **B2(b) does not measure what it was written for.** Its exit 0 clause was meant to show that the form runs in the sandbox. A `python -c` check that exercises a wrong change also exits non-zero, so the clause mixes runnability with correctness. The M-repo clause is the runnability part, and it holds.
+1. **B2(b)'s exit 0 clause cannot by itself separate a broken snippet from a wrong change.** Both exit non-zero. The post hoc exception count in section 6 shows that on the python -c checks most non-zero exits were snippets that did not compile (6 of 10), so the clause read the form's failure, as intended. (Corrected: 4a12dd6 said the clause mixed runnability with correctness and that the python -c checks failed with real failures; the counts do not support that.)
    - The rule also pools forms the arm would not use: scripts whose `/tmp` write was refused, and skill-tree scripts. It reads checks, not task-runs.
    - Not revised. The post hoc figures in section 6 sit beside it.
-2. **Post hoc lines were added to `desk.py` after the first read.** These are the `python -c`-only share, the task-unit last-pass share, B1's margin, the Q2 shares, and the missing-module names. They sit in a block headed "Post hoc", and the decision rule's output above that block is unchanged.
+2. **Post hoc lines were added to `desk.py` after the first read.** These are the `python -c`-only share, the task-unit last-pass share (with its runs and distinct ids), the exception names and step authors of the python -c checks, B1's margin, the Q2 shares, and the missing-module names. They sit in a block headed "Post hoc", and the decision rule's output above that block is unchanged.
 3. **M-repo reads a `src/` layout as a top-level package.** The rule says a top-level package dir or module of the repo snapshot. `desk.py` also counts `src/<pkg>`, the layout requests uses. This is a clarification in the implementation, not a change of rule. M-repo is 0 in Q1 and 2 in Q4, both from skill-tree scripts.
 4. **The exercises code is `unknown` for 10 of 28 E4B python-form checks**, and for 2 of arm R's 50. The script path's source was not found by the `write_file` or `cat >`/`tee` rule. Examples are a heredoc piped to the interpreter, or a script that already sat in the repo. This does not touch the decision.
 5. **The noise share depends on the C class's text rule.** It is bounded by the B1 margin line in section 6.
+6. **B2(a) was met by a run that section 3 did not name.** Section 3 named EXP-045-p as the known candidate; it reads 3 of 8 by this file's rules and misses. EXP-046-team (5 of 8) was found to qualify, under "a run whose prompt directs a python command", by reading its `prompts/check.md` after the counts were seen. Its python -c checks are by the check stage (step author printed post hoc). The qualifying run is a Sequential team's check stage, not the single loop.
+7. **Correction commit after 4a12dd6.** Section 6's commentary and defect 1 claimed that the python -c checks reached the change and failed with real failures. The post hoc exception and author lines were added to `desk.py`, and the commentary was rewritten from them. F is ambiguous by section 2.2, and "exercises" is a text match. The decision and every count above the post hoc block are unchanged.
 
 ## Status
-**DESK CHECK COMPLETE 2026-11-12; the arm is NOT BUILT (B2(b) fails on its exit 0 clause, 0.321 against 0.40), 0 GPU-h.** There is no tree, zip, notebook or kernel, and no blind threshold, because no arm was pre-registered. Re-dispatch, with defect 1 in view, is the lead's call.
+**DESK CHECK COMPLETE 2026-11-12; the arm is NOT BUILT (B2(b) fails on its exit 0 clause, 0.321 against 0.40), 0 GPU-h.** There is no tree, zip, notebook or kernel, and no blind threshold, because no arm was pre-registered. Of the E4B's 15 python -c checks on disk, 6 did not compile (post hoc). Re-dispatch is the lead's call.
