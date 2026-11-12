@@ -1,0 +1,8 @@
+# EXP-075 2026-11-12: 1.0 -> 0.2, the one variable of the arm: copy fidelity of edit_file old_string on the E4B (EXP-075 section 1.1, 53 of 156 EXP-038 edits not found)
+temperature: 0.2
+top_p: 0.95
+top_k: 64
+max_output_tokens: 8192
+thinking_config:
+  thinking_budget: 4096
+  include_thoughts: true
