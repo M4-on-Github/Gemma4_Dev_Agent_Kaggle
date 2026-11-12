@@ -26,16 +26,15 @@ Built as stated. It can be pushed after a text-only amendment; no rebuild is nee
 1. **H1 governs before the mechanism rows.**
    - `requests_6644` cannot be lost.
    - `fastapi_14463` and `rich_3905` have one E4B draw each.
-   - On other single-loop runs, `fastapi_14301` held 7/9 and `rich_3006` 8/9.
+   - On single-loop variant runs, `fastapi_14301` held 7/9 and `rich_3006` 8/9.
    - Use 3 or more lost, or losses net of a base rerun.
 2. **Row 1:** a complete file from a dead server would fire H6 as model harm. Port EXP-038 row 0's non-cap `error` clause and its cancel rule, with a cancel time.
 3. **Row 6:** bracket the condition as M ≤ 0.20 and (failed > 0.532 or A < 28 or Eo 11-15). As written, A < 28 alone, the base's point value, fires it ahead of row 7.
-4. **Row 3:** 0.30 is about 0.5 SD below the base, and a keep-sized fall is not excluded there. Use 0.33, or reword the reading so it does not close the lever.
-5. **Loops outside `edit_file`:** the all-tool `n_identical_repeats` is 25 on EXP-038, and reached 27 on 8 tasks in EXP-068 and in EXP-071. Add a clause with a stated threshold.
+4. **Row 3:** 0.30 is about 0.5 SD below the base, where a keep-sized fall is not excluded. Use 0.33 and widen row 7 to match, or reword the reading so it does not close the lever.
+5. **Loops outside `edit_file`:** the all-tool `n_identical_repeats` is 25 on EXP-038 and reached 27 on 8 tasks on the pipeline trees EXP-068 and EXP-071. Add a clause with a stated threshold.
 
 Not blocking:
-- Wrong-file harm is in no row. Reruns show F entered on 3 of 15 tasks, so net F is unreadable against one draw; state this as a limit.
-- Record M over non-repeat calls.
+- Wrong-file harm is in no row. Reruns show F entered on 3 of 15 non-F tasks, so net F is unreadable against one draw; state this as a limit.
 
 ## Slot 2 (direction, not blocking)
 **Recommend (a)**, as its own pre-registered file that reuses the EXP-038 zip (`9de869bd...`).
