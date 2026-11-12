@@ -149,4 +149,45 @@ Analysis, a separate job, after `kaggle kernels status` says COMPLETE:
 
 ## Status
 
-2026-11-11: PUSHED, kernel `rainm4/gemma4-exp071-anchor`, version 1, from commit c98d80b; first `kaggle kernels status` RUNNING. Analysis pending. Next: when the lead reports COMPLETE, `kaggle kernels output rainm4/gemma4-exp071-anchor -p runs/EXP-071-anchor/`, flatten, then the section 6 analysis commands (recompute EXP-068's W by the section 3 rule, section 7 item 7).
+2026-11-11: PUSHED, kernel `rainm4/gemma4-exp071-anchor`, version 1, from commit c98d80b; first `kaggle kernels status` RUNNING.
+
+2026-11-11 (analysis): COMPLETE, analyzed. Row 2 (harm) and row 3 (not exercised) both fire, so rows 4 to 6 are not read (section 9). W 5 of 8 is recorded only. No new round is named here.
+
+## 9. Results, 2026-11-11
+
+Counts and task ids only; no repo snippets (plan.md:52). Run dir `runs/EXP-071-anchor/` (gitignored); `experiments/EXP-071/anchor/summary.jsonl` is the committed copy. Analysis: `analyze_traces.py runs/EXP-071-anchor --cap-minutes 8 --max-calls 45`, plus reads of `traces/` and `patches/`.
+
+### 9.1 Run facts
+
+- Kernel log: the notebook stdout reached its bundle line at about 1400 s, the log's last write at about 1415 s, so kernel wall is about 1415 s = **about 0.39 L4x4-h** (EXP-068: 1369 s). Pre-registered estimate ~0.38.
+- 8 of 8 tasks ran; no kernel error, no cap hit (`timeout_hit` and `calls_cap_hit` false on all 8), no `tool_free`, no `scratch_in_patch`, no read outside `/workspace` seen in the summary fields.
+- Wall per task (s): requests_7309 69.0, requests_7205 80.6, fastapi_14448 107.4, fastapi_14301 75.1, httpx_3672 108.4, fastapi_14605 128.7, rich_3468 314.5, rich_3006 88.4. **Mean 121.5 s** (EXP-068 reference 110.3 s), max 314.5 s (rich_3468).
+- Nudges 7 (requests_7205 3, rich_3468 4); compactions 4 (rich_3468 3, fastapi_14605 1).
+- Resolved (recorded only, never an endpoint): **1 of 8, fastapi_14301**.
+- Empty patches: **2 of 8** (requests_7205, rich_3468); EXP-068 reference 1 of 8.
+
+### 9.2 Inputs to the readings
+
+- **X (the reader ran the numbered command)**: 2 of 8 tasks met all four conditions (`-n`, `-F`, at least one `-e`, a path of a FILE the report names). A command beginning `git grep -n` appears in all 8 traces counting every author, so the 2 of 8 reflects the reader's own calls with `-F`, `-e` and a report-FILE path. Printed-source compliance (the LINES numbers were the ones the command printed) held for 2 of the 3 locations checked. The two task ids and the per-location detail were tallied in the analysis pass and are not re-listed here; a re-read of the reader's `run_command` calls in `traces/` would list them.
+- **W (first applied hunk inside a drafter window, LINES -5..+5, same file)**, rule of section 3, read from the patch hunk headers against the reader's report: **5 of 8**.
+  - W = 1: requests_7309, fastapi_14448, fastapi_14605, httpx_3672, rich_3006.
+  - W = 0: fastapi_14301 (the reader's first final was a text-form tool call, no FILE or LINES in a report, though the task resolved), requests_7205 and rich_3468 (no applied edit, empty patch).
+  - Caveat, as in EXP-068 section 10: for httpx_3672 (LINES 1-10 and 378-385 among five locations) and fastapi_14605 (LINES 1-150 for the first location) the first applied hunk lies in a broad window, so W = 1 there does not show a precise line number.
+- **EXP-068 W recomputed by the section 3 rule** from `runs/EXP-068-read/traces/` (section 7 item 7): **4 of 8**, equal to the pre-registered reference 4 of 8. (The first-applied-edit caveat applies to httpx_3672 and fastapi_14605 in EXP-068 too.) The reference stands; no row key moves.
+- Reader reports with no FILE or LINES: 1 of 8 (fastapi_14301), under the 4 threshold.
+- Text-form calls: requests_7205 (1 call, by the applier, as a fenced json `edit_file` request, never executed, so no patch) and rich_3468 (4 calls, 4 nudges, author not re-read); **2 tasks** by `n_text_form_calls`. Counted either way (a text tool call in a reader final also counts), fastapi_14301 adds a third.
+- Not tabulated in this pass (the gate was already closed by the clause above): the reader's first reply as a native call on each task, the 40 drafter first calls against the floor of 30, and fabricated OLD against 8 of 40.
+
+### 9.3 Readings applied as written (section 4)
+
+- Row 1 (infrastructure): does not hold; 8 of 8 tasks ran, the notebook completed.
+- **Row 2 (harm): fires**, on the clause "2 or more tasks with a text-form call by any agent, counted either way" (requests_7205 and rich_3468; 3 counting fastapi_14301). Other clauses read: empties 2 of 8 (threshold 3 or more, not met); cap hit none; mean wall 121.5 s (threshold over 150 s, not met); `tool_free` none; reports without FILE or LINES 1 (threshold 4, not met); `scratch_in_patch` none. The three clauses in 9.2 not tabulated are not needed for the row.
+- **Row 3 (not exercised): also holds**, X = 2 of 8 (threshold 4 or fewer).
+- Rows 4, 5 and 6 are **not read**: rows 1 to 3 are gates and rows 2 and 3 hold. W = 5 of 8 is recorded, beside EXP-068's recomputed 4 of 8, and is neither a kill (row 4, W at most 4) nor a promote (row 5, W at least 7 with X at least 6).
+
+### 9.4 Against the blind prediction and what the screen can decide
+
+- The screen decides that the numbered command was not exercised as designed (the reader ran it in 2 of 8 tasks), so the variable "LINES come from a printed number" was not delivered on 6 of 8. It therefore neither kills nor promotes the idea. Not licensed: killing the claim (row 4 is not read), and promoting it to a dev-48 arm (row 5 is not read, and X is far below 6).
+- W moved from 4 to 5 of 8 with the command used in 2 of 8; under the section 4 gate this is a recorded difference of one task, not an effect.
+- This job names no new round, redesign or follow-up arm, per the lead's instruction (D-011, open-ended loop; rounds are ranked from EXP-074).
+- Resolved ids and walls are recorded only. EXP-068 reference for the same 8: mean wall 110.3 s, empties 1 of 8.
