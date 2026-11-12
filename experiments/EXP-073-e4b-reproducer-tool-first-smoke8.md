@@ -168,4 +168,4 @@ Analysis, a separate job, after `kaggle kernels status rainm4/gemma4-exp073-repr
 
 ## Status
 
-BUILT, COMMITTED, NOT PUSHED (2026-11-11). Kernel `rainm4/gemma4-exp073-repro` is ready; the push is `kaggle kernels push -p notebooks/exp073_repro`, to be released by the lead when a slot frees.
+PUSHED 2026-11-11 from commit 5baad58 (the build was held until EXP-071 and EXP-072 were COMPLETE and both slots were free). Kernel `rainm4/gemma4-exp073-repro` version 1, zip sha256 `0c3ce653a9b67426d3376ca24182900b73030a940f035c6d01d711a04302cc13`, status RUNNING at the first check. Next: when `kaggle kernels status rainm4/gemma4-exp073-repro` says COMPLETE, the analysis job of section 6.
