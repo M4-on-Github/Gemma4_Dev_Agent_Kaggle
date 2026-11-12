@@ -66,3 +66,12 @@ date: 2026-11-11
 ## Final check
 - A dev-48 count against the 5/48 reference, on a tree whose every change carries a diagnosed stage.
 - Otherwise, a written finding on which reasoning stages the E4B could not be moved on through the harness.
+
+## Revision 2026-11-12 after EXP-074, EXP-075 and EXP-077
+- **The carrier is the E4B single loop** (the EXP-033 tree). EXP-071, EXP-072 and EXP-073 all read harm on the pipeline, and EXP-074 shows the pipeline adds empties and resolves nothing more.
+- **One-draw paired stage transitions cannot be read.** Two draws of the same tree (EXP-038, EXP-077) keep the stage class on 27 of 48 tasks, differ by 0.099 in M, and resolve 5 and 3. The EXP-075 arm sits inside that spread on every such endpoint. The midterm check above is withdrawn.
+- **Endpoint rule from here on:** every pre-registration states its primary's value on both base draws, and sets keep beyond their gap. An arm whose expected effect cannot clear that gap stays at desk. Stable so far across the two base draws: empties (10 and 9), mean wall (85.7 and 87.6 s), and identical repeats (25 and 22).
+- **Temperature 0.2 is not closed and not adopted.** Its kill on M fired inside the spread. Its empties (5) are the only figure outside both base draws, but that is post hoc, and it misses EXP-075's own keep row (2 or fewer).
+- **Repeated attempts are not a route to rule 1.** The union over three draws is 7 ids, and no selector has worked (EXP-072, EXP-073).
+- **Headroom, stated plainly:** three draws read 5, 3 and 6 of 48 against a target of 16, and EXP-074's opportunity bound sums to +11 only if every lever converts in full. The loop continues on the user's word and is expected to end on rule 2.
+- **GPU week:** the default reading is a reset on Saturday 00:00 UTC, so the week began 2026-11-07 and resets 2026-11-14. This is unverified until the user reads the sidebar.
