@@ -184,3 +184,8 @@ The experience file of the loop the user started on 2026-11-08 (`knowledge/user-
 ## EXP-071, the anchor form (2026-11-11; ac412ce)
 - **Read rows 2 (harm) and 3 (not exercised).** The numbered `git grep -n -F` command met all four of its conditions on 2 of 8 tasks. Text-form tool calls appeared on 2 tasks, one by the applier. W was 5 of 8 against a reference of 4 of 8, recorded only.
 - **Lesson:** a multi-flag command form is taken up on about a quarter of tasks, so the E4B does not follow a command recipe it is given. Text-form calls recur in pipeline trees (EXP-065 counted 0 of 24 there, and this run has 2 of 8), so the first-turn tool-call row alone does not catch later turns.
+
+## EXP-072 and EXP-073 (2026-11-12; 3840d1a, 00e6591) and the EXP-074 diagnosis
+- **Both read harm.** A recipe given to an E4B stage in prose comes back as text (EXP-072). A stage holding run_command edits source with `sed -i` (EXP-073). The hard opener held on only 4 of 8 for a reproducer, against 36 of 40 for drafters.
+- **Lesson:** every stage added to the E4B tree added a failure class. EXP-074 shows the single loop fails the same tasks at the same stages without the pipeline's empties. The loop's base is the single loop, and the cohort is dev-48; smoke-8 reads off two tasks.
+- **Instrument:** `analyze_traces.py` misses several text-form shapes, so final turns are checked by hand until it is fixed.
