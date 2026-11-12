@@ -1,8 +1,8 @@
 ---
 id: EXP-078-critic
 exp: EXP-078
-tier: prereg
-verdict: ready
+tier: light
+verdict: accepted
 verified: regenerated
 date: 2026-11-12
 ---
@@ -32,3 +32,41 @@ Landed verbatim in EXP-075 section 9.9, EXP-077 section 9.8 and both README cell
 
 ## EXP-079 no-build
 The counts reproduce (`desk.py`, `ceiling.py`), and the recipe-alone +2 is below every reference, so the no-build stands. The fixed-15 upper bound of +4.0 ties the gap. The recipe does not ask for that bound.
+
+## Light review 2026-11-12 (results, a2af572 and a2a865e)
+### Verdict
+Accepted. Row 2 is the first matching row, on H2: repeat share 21 of 129 = 0.163, above 0.16. It licenses the decision only: 0.2 is not kept as the single-loop base. It does not show that 0.2 raises repeats (0.2 draws 0.093 and 0.163; 1.0 draws 0.083 and 0.101). Eo 3 sits in the row 3 band and is recorded only.
+
+### Audit
+1. Pass. Readings 2b351a3 and critic-ready 2d42b07 precede the push (about 08:22 UTC). Since 49bbb69 only section 7, section 8, Status and section 9 change.
+2. Pass. `summary.jsonl` ids equal dev-48; `diff -r` of the loaded tree against `experiments/EXP-075/candidate-t02` is empty; eval_config 240/28/8/80.
+3. Pass. `analyze_traces.py` re-run to scratch: 0 field differences from the committed `summary.jsonl`. `desk.py`: repeats 21/129, and the references 13/156, 14/139, 14/150. `readings.py`: 0 infra rows, H7 26, H1 0. `pair4.py` gives section 9.5. Log end 5,954.97 s = 1.654 h. No instrument changed after 2b351a3.
+8. Pass for the EXP file: section 9.8 claims only row 2. Not pass for the lead's post hoc lines (below).
+
+### Question 1
+The lead's reading is fair. "No further temperature draw is funded" is the lead's decision, consistent with section 9.8, not a reading of row 2. Section 7 item 1 applies "above 0.16" to the exact fraction, as written; rounding after the result would be a reinterpretation.
+
+### Question 2: not fairly worded (lead's fix, `knowledge/plan.md` and `knowledge/lessons-e4b-loop.md`)
+- "Halves empties" is the general statement section 5 bars.
+- Of the 16 tasks empty in either 1.0 draw, the 0.2 draws placed F4 R2 C3 S2 plus 2 resolved (EXP-075), and F4 R4 C3 S3 (EXP-078). That is all four later stages, not R and S.
+- fastapi_14873 and rich_3067, both empty in a base draw, resolved in EXP-075. "S 13" holds 4 resolved runs.
+- Between the two 1.0 draws, 7 tasks left E and none resolved, with no temperature change.
+- "Mechanics fixes move mechanics counts only" rests on one lever: mark it [I].
+
+Suggested replacement: "Post hoc, four draws: empties 10 and 9 at 1.0, 5 and 3 at 0.2; resolves 5 and 3, 6 and 5. The tasks that left E spread over F, R, C and S; 2 resolved in EXP-075, 0 in EXP-078, and 0 of 7 between the 1.0 draws. Conversion is not readable on these counts."
+
+## D-011 ranking 2026-11-12 (requested; my inference throughout)
+- **GPU: none.**
+  - A third 0.2 draw would at best keep a base with no resolve signal.
+  - The motivation for the top_p arm, AL 1, did not recur (AL 4).
+  - Pacing reads on wall only, and EXP-042 found no trace support for a check before submit.
+  - On resolves against the two 1.0 draws (5 and 3), a keep needs about +4 per draw over two arm draws [I].
+- **To the user, record-bound:**
+  - The best single dev-48 run of any model or tree is 11 (EXP-074 defect 5).
+  - EXP-028 arm R, the E4B tree's files with the 31B on the model line, reached 9. The E4B read 3 to 6, with a union of 7.
+  - No tested or desk-checked E4B arm clears D-011's rule. EXP-078 adds that the one lever landing in its keep band moved no readable resolve. EXP-079 adds that search sits below the base spread.
+  - So harness tuning of the E4B has no readable path to rule 1 on this record. That does not prove that no path exists.
+- **Zero GPU** (none of these changes that answer):
+  1. Arm R against the four draws with `pair.py`: a model swap at a fixed harness. Unresolved, arm R reads E6 F3 R6 C14 S10 with 9 resolved; the E4B draws read F 8 to 12.
+  2. Change-level thought text on R, C and S runs, within the 16 tasks ever resolved. EXP-074 Q3 already covered F and R at file level.
+  3. What the 7 share: it describes the easy set.
