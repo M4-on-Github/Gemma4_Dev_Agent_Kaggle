@@ -109,8 +109,230 @@ Probabilities are the agent's, written before any coding.
 
 ## 5. Defects
 
-(none yet)
+Logged after the pre-registration commit (4a5968a). The rules in sections 2 to 4 are not revised. Each item below says how section 6 handles it.
+
+1. **The opportunity rule did not say whether E4B runs that already resolved count.** Section 2.7 counts "the E4B runs of that draw with the item in its failing state on a task arm R resolves under the re-grade". For a judged item this cannot matter, because the sample holds only unresolved runs. For a scripted item over 48 it does matter: a resolved E4B run can sit in the failing state, and flipping the item there adds no resolve. Section 6 reports the rule as written (conditioned) and beside it the conditioned ceiling with resolved E4B runs left out (conditioned-unresolved). The call as written uses the first figure.
+2. **Model-level 2 SD.** It is applied as written: 2 x sqrt(2 p (1 - p) / 48) at the four-draw pooled rate. Items d, e2, e3 and e4 have denominators below 48, so a sensitivity is printed with the item's own mean denominator. It changes no call.
+3. **"Failing state"** is read as the E4B side of the separating direction: the label the E4B mostly shows where arm R mostly shows the other one. For d this is E4B = y. The E4B reads the lines it edits verbatim more often than arm R does, so a lever that flips d is not a sensible direction. d is reported with its counts and gets no lever.
+4. **`refs.exit_code` returns "?"** on 2 checks in EXP-078. For e2 and e4 these count as non-zero, as `items.py` codes them, because "?" is not exit 0.
+5. **Not pre-registered: the check-form and exit table.** The table of check form (pytest, `python -c`, other python) by exit code, and the reading of the shared prompt's check line (section 6.4), were not pre-registered. They were added after the scripted items had printed. They are labelled post hoc and enter no call.
+6. **Blinding broke in practice.** The arm R windows were recognisable from step style and from the patch reference, and so were the E4B windows. For most tasks the step index of the first change gives the model away. The judged codes are therefore not blind to the model, only to the draw and the class.
+7. **Thin arm R windows.** The 31B's first edit comes late and its runs are long, so arm R's windows hold a smaller share of the run's thought text: median 0.180 against the E4B's 0.291. One arm R run (fastapi_14873, no change call) holds 0.005 and was coded w on a and b.
+8. **Item c is coarse** when all the gold regions share one enclosing function. Naming that function then counts as "all".
+9. **Item f is hard to apply to a feature-request issue.** On such an issue the issue wording and the gold point largely coincide. rich_3676 was coded n on f in every run.
+10. **Output file renamed.** Section 2.5 names `experiments/EXP-080/codes.jsonl`, but `.jsonl` outside `summary.jsonl` is gitignored and fails `check_repo_hygiene.py`. The same rows, ids and labels only, are written to `experiments/EXP-080/codes.csv`.
+11. **Item x1 was added after reading** (section 2.4 rule). It was defined after the five runs of fastapi_14297, the fifth task in reading order, and before any further run was coded. The four earlier tasks' runs were then back-coded for x1. Definition: the change is the gold's idea at a gold site, but it carries a code-level defect that makes it not do what the window says it does (a wrong attribute, call or value type, a name used but not imported, a check that can never be true). Codes are y or n. It is na when a is not y or when the run touched no gold region. It enters no separation call.
+
+## 6. Results (2026-11-12)
+
+Commands, all zero GPU:
+
+```bash
+python -I -X utf8 experiments/EXP-080/part1.py
+python -I -X utf8 experiments/EXP-080/items.py scripted
+python -I -X utf8 experiments/EXP-080/items.py dump <scratchpad dir>      # windows, scratchpad only
+python -I -X utf8 experiments/EXP-080/items.py join <scratchpad codes> <scratchpad keymap>   # -> experiments/EXP-080/codes.csv
+```
+
+### 6.1 Part 1: classes and the first check
+
+`part1.py` finds 48 shared ids. Arm R as run reads E6 F3 R6 C14 S10 with 9 resolved, which matches the critic's figure, so the first check passes and **P1 holds**. `experiments/EXP-036/summary.jsonl` agrees with arm R's summary on all 48 ids: 9 resolved as run, 12 re-graded, 15 gated.
+
+| Run | E | F | R | C | S | resolved | short | same | further | leaves at E F R C S |
+|---|---|---|---|---|---|---|---|---|---|---|
+| EXP-028-armR (31B) | 6 | 3 | 6 | 14 | 10 | 9 | | | | |
+| EXP-038-e4b-dev48 | 10 | 12 | 6 | 9 | 6 | 5 | 19 | 24 | 5 | 8 8 2 1 0 |
+| EXP-077-base | 9 | 8 | 8 | 13 | 7 | 3 | 20 | 24 | 4 | 6 6 5 2 1 |
+| EXP-075-t02 | 5 | 12 | 7 | 10 | 8 | 6 | 14 | 30 | 4 | 3 8 3 0 0 |
+| EXP-078-t02r | 3 | 9 | 12 | 10 | 9 | 5 | 12 | 30 | 6 | 2 4 5 1 0 |
+| four draws, per task-draw (192) | | | | | | | 65 | 108 | 19 | 19 26 15 4 1 |
+
+The table below sums the four draws, with arm R's stage as rows and the E4B's as columns (as run; v = resolved):
+
+| arm R \ E4B | E | F | R | C | S | v | row |
+|---|---|---|---|---|---|---|---|
+| E | 8 | 7 | 4 | 4 | 0 | 1 | 24 |
+| F | 4 | 8 | 0 | 0 | 0 | 0 | 12 |
+| R | 0 | 8 | 14 | 2 | 0 | 0 | 24 |
+| C | 6 | 9 | 8 | 32 | 1 | 0 | 56 |
+| S | 4 | 6 | 0 | 2 | 28 | 0 | 40 |
+| v | 5 | 3 | 7 | 2 | 1 | 18 | 36 |
+
+- **Where the E4B leaves the 31B's path: at the file.** Of the 65 short task-draws, the E4B stops at E in 19 and at F in 26, an E+F share of 0.692. It stops at R in 15, at C in 4 and at S in 1. **P2 holds**: E+F is at least 0.50 and F is the single most frequent letter.
+- **Once on the 31B's regions it mostly stays there.** Arm R is at C, S or resolved on 132 task-draws. On 84 of them (0.636) the E4B also reaches C, S or resolved. **P3 fails**: it predicted at most half.
+- **Per task:** 12 tasks are short in at least 3 of the 4 draws. Their most frequent leave stage is F on 7, R on 3, C on 1 and E on 1. By arm R stage these tasks are R 2, C 4, S 2 and resolved 4.
+- **The EXP-028 fastapi grading gap.** Re-ranking arm R as resolved on its 3 re-graded flips gives short 72, same 101, further 19, leaves at E19 F26 R15 C4 S8, E+F 0.625, and 84 of 132 (0.636). 14 tasks are then short in at least 3 draws, with leave stages F 7, R 3, S 2, C 1, E 1. The gap moves cells from arm R's S row to its v row: re-graded, the E4B leaves at S 8 times where it did once. The E-and-F answer stands. The three later E4B draws have 45 gated cells that were never re-graded, all of them unresolved. Dropping them leaves 147 task-draws: short 52, E+F 0.692, and 59 of 99 (0.596) at C, S or resolved. 8 tasks are then short in at least 3 draws.
+
+Per task, as run (ever = in the 16 ever-resolved; g = EXP-036 gated; Rv = arm R re-graded resolved; lowercase = resolved):
+
+| task | ever | g | arm R | Rv | 038 | 077 | 075 | 078 |
+|---|---|---|---|---|---|---|---|---|
+| fastapi_11355 | - | g | C | - | F | C | F | F |
+| fastapi_13207 | y | g | S | v | F | C | F | E |
+| fastapi_13537 | y | - | s | v | E | R | R | R |
+| fastapi_13786 | - | g | C | - | E | C | C | C |
+| fastapi_14262 | - | g | C | - | C | C | C | C |
+| fastapi_14297 | y | g | S | v | S | S | S | S |
+| fastapi_14301 | y | - | s | v | s | s | s | s |
+| fastapi_14360 | y | g | S | v | E | S | S | S |
+| fastapi_14448 | - | - | C | - | F | F | R | F |
+| fastapi_14459 | - | g | C | - | E | R | C | R |
+| fastapi_14463 | y | - | s | v | s | s | s | s |
+| fastapi_14512 | - | g | F | - | F | E | E | F |
+| fastapi_14583 | - | g | F | - | F | F | F | F |
+| fastapi_14605 | - | g | C | - | R | C | C | R |
+| fastapi_14609 | - | g | C | - | C | C | E | C |
+| fastapi_14873 | y | - | E | - | E | E | c | R |
+| fastapi_14953 | - | g | C | - | C | C | C | C |
+| fastapi_14962 | - | g | R | - | F | F | F | R |
+| fastapi_14964 | - | g | S | - | S | C | S | S |
+| fastapi_15030 | - | g | R | - | R | R | R | R |
+| fastapi_15280 | - | - | E | - | R | R | E | R |
+| fastapi_15589 | y | - | s | v | R | E | R | R |
+| fastapi_15661 | - | - | S | - | E | F | F | F |
+| fastapi_15800 | - | - | R | - | C | C | R | R |
+| fastapi_5624 | y | - | R | - | F | F | F | F |
+| fastapi_9753 | y | - | s | v | C | E | F | C |
+| httpx_3672 | - | - | C | - | C | C | C | C |
+| requests_6644 | y | - | f | v | f | f | f | f |
+| requests_7205 | - | - | S | - | S | S | S | S |
+| requests_7309 | - | - | S | - | S | S | S | S |
+| requests_7315 | - | - | S | - | F | S | S | S |
+| requests_7427 | - | - | S | - | S | S | S | S |
+| rich_3006 | y | - | s | v | s | R | F | s |
+| rich_3061 | - | - | C | - | C | R | C | R |
+| rich_3063 | - | - | C | - | E | C | E | S |
+| rich_3067 | y | - | s | v | F | E | s | E |
+| rich_3105 | - | - | E | - | F | F | F | F |
+| rich_3180 | y | - | E | - | C | C | C | C |
+| rich_3468 | - | - | R | - | R | F | R | R |
+| rich_3480 | - | - | E | - | F | E | F | F |
+| rich_3521 | - | - | S | - | S | E | S | S |
+| rich_3676 | y | - | C | - | E | R | C | C |
+| rich_3905 | y | - | s | v | s | S | s | s |
+| rich_3934 | - | - | R | - | R | R | R | R |
+| rich_3935 | - | - | F | - | E | E | F | F |
+| rich_3953 | - | - | C | - | F | F | F | C |
+| rich_4070 | - | - | C | - | C | C | C | C |
+| rich_4075 | - | - | E | - | E | E | E | E |
+
+### 6.2 Part 2: sample and coding
+
+The sample is 26 E4B runs on 11 tasks, as in section 2.3: EXP-038 4, EXP-077 8, EXP-075 6, EXP-078 8; R 9, C 9, S 8. Arm R's 11 runs on those tasks are 8 resolved under the re-grade (Sv or sv) and 3 unresolved under it (fastapi_14873 E, rich_3180 E, rich_3676 C). All 37 runs were coded. The per-run labels are in `experiments/EXP-080/codes.csv`. The window held a median 0.291 of an E4B run's thought text and 0.180 of an arm R run's (defect 7).
+
+**Judged items** (section 2.7 per-task rule; "tasks" = tasks where both sides exist):
+
+| item | E4B runs yes/n | arm R runs yes/n | tasks | mean r - mean e | untied | with sign | call |
+|---|---|---|---|---|---|---|---|
+| a root cause | 8/24 | 10/10 | 9 | +0.676 | 7 | 7 | **separates** |
+| b other cause, kept | 16/24 | 0/10 | 9 | -0.676 | 7 | 7 | **separates** |
+| c all regions named | 10/26 | 8/10 | 10 | +0.467 | 5 | 5 | **separates** |
+| f literal wording | 11/26 | 0/9 | 9 | -0.370 | 4 | 4 | **separates** |
+| x1 (added after reading) | 7/8 | 1/9 | 3 | -1.000 | 3 | 3 | leans (fewer than 4 tasks); not a pre-registered item |
+
+**Scripted items on the sample:**
+
+| item | E4B runs yes/n | arm R runs yes/n | tasks | mean r - mean e | untied | with sign | call |
+|---|---|---|---|---|---|---|---|
+| d read before edit | 25/26 | 9/9 | 9 | +0.000 | 0 | 0 | does not separate |
+| e1 check after change | 20/26 | 5/11 | 11 | -0.265 | 5 | 4 | leans |
+| e2 a check failed | 19/20 | 2/5 | 5 | -0.500 | 4 | 3 | **separates** |
+| e3 fixed after failure | 0/19 | 0/2 | 2 | +0.000 | 0 | 0 | does not separate |
+| e4 last check passed | 1/20 | 5/5 | 5 | +0.900 | 5 | 5 | **separates** |
+| g submitted with room | 26/26 | 8/11 | 11 | -0.273 | 3 | 3 | does not separate |
+
+- **Arm R by its own stage.** a is y on all 8 re-graded-resolved runs, on the C- run and on one E- run; the other E- run is coded w. c is "all" on all 8 resolved runs and "part" on the two unresolved ones that can be coded. Each like-for-like line (tasks where arm R is itself unresolved R, C or S) has at most 1 task, so it can say nothing.
+- **x1.** It is y on 7 of the 8 E4B runs where a = y and the change touched a gold region. Those are the 4 runs on fastapi_14297, 2 on fastapi_14360 and 1 on rich_3905. It is y on 1 of 9 arm R runs (rich_3676, unresolved). In other words, where the E4B has the gold's idea at the gold site, its change is almost always broken at the code level.
+- **Patterns seen in the reading.** These are hand observations, not items, and enter no call. Failed `edit_file` retries take up the E4B's whole window on fastapi_9753, coded w on a and b. On rich_3180, one E4B run takes it that another file cannot be read.
+
+### 6.3 Scripted items over all 48 tasks (model level, section 2.7)
+
+| run | d | e1 | e2 | e3 (fix) | e4 (pass) | g | median time left s | median calls left |
+|---|---|---|---|---|---|---|---|---|
+| EXP-028-armR | 35/40 | 21/48 | 12/21 | 3/12 | 18/21 | 25/48 | 179.7 | 4 |
+| EXP-038-e4b-dev48 | 38/39 | 16/48 | 16/16 | 1/16 | 1/16 | 47/48 | 398.7 | 21 |
+| EXP-077-base | 39/40 | 21/48 | 21/21 | 1/21 | 0/21 | 48/48 | 410.0 | 21 |
+| EXP-075-t02 | 43/43 | 32/48 | 30/32 | 2/30 | 3/32 | 48/48 | 408.6 | 19 |
+| EXP-078-t02r | 44/45 | 27/48 | 26/27 | 0/26 | 1/27 | 46/48 | 404.4 | 21 |
+
+| item | draw range | arm R | outside by | 2 SD | call |
+|---|---|---|---|---|---|
+| d | 0.974-1.000 | 0.875 | 0.099 | 0.054 | **separates** (arm R lower) |
+| e1 | 0.333-0.667 | 0.438 | 0.000 | 0.204 | does not separate |
+| e2 | 0.938-1.000 | 0.571 | 0.366 | 0.071 | **separates** (arm R lower) |
+| e3 | 0.000-0.067 | 0.250 | 0.183 | 0.083 | **separates** (arm R higher) |
+| e4 | 0.000-0.094 | 0.857 | 0.763 | 0.091 | **separates** (arm R higher) |
+| g | 0.958-1.000 | 0.521 | 0.438 | 0.051 | **separates** (arm R lower) |
+
+The own-denominator 2 SD (defect 2) gives the same calls.
+
+### 6.4 Post hoc: what the checks are (defect 5, not pre-registered, enters no call)
+
+Check form and exit code of the e1 checks, over all 48 tasks:
+
+| run | pytest exit 0 / non-zero | `python -c` exit 0 / non-zero | other python exit 0 / non-zero |
+|---|---|---|---|
+| EXP-028-armR | 0 / 0 | 24 / 8 | 10 / 8 |
+| EXP-038-e4b-dev48 | 0 / 17 | 0 / 0 | 1 / 1 |
+| EXP-077-base | 0 / 24 | 0 / 0 | 0 / 0 |
+| EXP-075-t02 | 2 / 35 | 0 / 0 | 2 / 0 |
+| EXP-078-t02r | 1 / 30 | 0 / 0 | 0 / 0 |
+
+- **What the E4B checks with.** It checks with pytest. Of its pytest checks, 106 of 109 exit non-zero, and most of those exits are 2 or 4 (EXP-038 2:11 4:3; EXP-077 2:11 4:6; EXP-075 2:13 4:6; EXP-078 2:12).
+- **What arm R checks with.** It never runs pytest after its first change. Its checks are `python -c` or a small python script, and 34 of 50 exit 0.
+- **Both trees carry the same check line.** The E4B tree and arm R share one prompt (`experiments/EXP-033/candidate-e4b/prompts/system.md` line 25), which offers both a pytest node and a `python -c` check after the edit. The E4B takes the first option, and that check fails. The 31B takes the second.
+- **This is a reading, not a measured cause.** The table does not show that the failing pytest checks are why the E4B submits broken changes.
+
+### 6.5 Separating items, levers, and the D-011 opportunity count
+
+The D-011 thresholds come from `items.py`. The base pair resolves 5 and 3, pooled p 0.0833, gap 2. Two draws against two need **more than 3.83** per draw; one against one needs more than 5.42.
+
+Opportunity per draw is given as loose / conditioned (rule as written). For the scripted items, a third figure leaves out the resolved E4B runs (conditioned-unresolved, defect 1). Draws are listed in the order 038, 077, 075, 078.
+
+| item | direction | per draw | base-pair mean conditioned | as written | resolved E4B runs left out | lever in the tree, prompt, sampling or eval_config |
+|---|---|---|---|---|---|---|
+| a | E4B states the root cause less | 2/1, 5/3, 5/3, 4/2 | 2.0 | cannot clear | n/a | none. The model is fixed. Comprehension of the cause is not a setting in any shipped file. |
+| b | E4B keeps another cause | 2/1, 5/3, 5/3, 4/2 | 2.0 | cannot clear | n/a | none (as a) |
+| c | E4B names all regions less | 3/2, 5/3, 3/1, 5/3 | 2.5 | cannot clear | n/a | none (as a) |
+| f | E4B follows literal wording | 2/2, 2/2, 3/3, 4/4 | 2.0 | cannot clear | n/a | none. A prompt line against literal readings would also act on the tasks where the wording and the gold coincide. |
+| e2 (sample) | E4B checks fail | 3/3, 4/3, 6/4, 6/3 | 3.0 | cannot clear | n/a | prompt structure: the check line (6.4) |
+| e4 (sample) | E4B last check fails | 3/3, 4/3, 6/4, 6/3 | 3.0 | cannot clear | n/a | prompt structure: the check line (6.4) |
+| d (48) | E4B reads verbatim more | 38/10/5, 39/9/6, 43/12/7, 44/10/5 | 9.5 | exceeds | 5.5, exceeds | none. The direction is not a lever (defect 3). |
+| e2 (48) | E4B checks fail | 16/7/4, 21/6/3, 30/11/7, 26/7/3 | 6.5 | exceeds | 3.5, cannot clear | prompt structure: offer only the `python -c` form in the check line. A near variant has already been screened twice: EXP-045 (repro bullet, row 5, no decision) and EXP-055 (last call a one-command check, row 3, keep-base). |
+| e3 (48) | E4B ignores a failed check | 15/7/4, 20/6/3, 28/11/7, 26/7/3 | 6.5 | exceeds | 3.5, cannot clear | prompt structure, as e2. The E4B's failures are mostly pytest usage or collection exits, which a fix to the library does not change. |
+| e4 (48) | E4B last check fails | 15/7/4, 21/6/3, 29/11/7, 26/7/3 | 6.5 | exceeds | 3.5, cannot clear | prompt structure, as e2 |
+| g (48) | E4B submits early with room | 47/11/6, 48/12/9, 48/12/7, 46/11/6 | 11.5 | exceeds | 7.5, exceeds | `eval_config.yaml` cannot make a run use its budget, and the caps already allow 480 s and 28 calls. A prompt line to keep working before submitting would be speculative: EXP-055 tested a last-check rule. There is no measured mechanism by which more time converts. |
+
+- **Reading 2.7 as written.**
+  - Every judged separating item (a, b, c, f, and e2 and e4 on the sample) **cannot clear the rule at full conversion**. No lever on them is proposed for GPU.
+  - The scripted items over 48 (d, e2, e3, e4, g) exceed 3.83 on the conditioned ceiling as written. Of them, d is not a lever direction. e2, e3 and e4 fall to 3.5 when the resolved E4B runs are left out (defect 1), and 3.5 cannot clear. g stays above, at 7.5.
+- **What the conditioned ceiling measures over 48.** It is bounded by the model gap itself: the 12 tasks arm R resolves under the re-grade, minus the E4B's resolves there. Every E4B run on those tasks that fails is in nearly every item's failing state. So the ceiling exceeding the threshold says the model gap is large. It does not say that flipping the item would convert, and sufficiency is untested. g is the clearest case: its loose count is 46 to 48 of 48 runs per draw.
+- **Candidate for the lead.** On the counts, the only lever left is the check line in the prompt structure (e2, e3, e4). It clears the rule only if resolved runs count, and it has two earlier smoke screens on near variants that did not fire. Section 4 licenses nothing on GPU, and this study proposes none.
+
+### 6.6 Predictions scored
+
+| prediction | outcome |
+|---|---|
+| P1 arm R E6 F3 R6 C14 S10, 9 resolved (95%) | **hit** |
+| P2 E+F at least 0.50 of leaves-at, F most frequent (60%) | **hit**: 0.692, F 26 |
+| P3 E4B at C, S or resolved in at most half where arm R is (60%) | **miss**: 84 of 132 (0.636) |
+| a: E4B at most 0.40, arm R at least 0.60, separates (55%) | **hit**: 8/24, 10/10, separates |
+| b: E4B at least 0.40, arm R at most 0.20, separates (45%) | **hit**: 16/24, 0/10, separates |
+| c: E4B "all" less by at least 0.30, separates (40%) | **hit**: +0.467, separates |
+| d: both at least 0.70, does not separate (55%) | **hit on the sample** (25/26, 9/9, does not separate). Over 48 d separates with arm R lower (35/40). |
+| e1: E4B lower by at least 0.30, separates on the sample and over 48 (65%) | **miss**: the E4B checks more on the sample (20/26 against 5/11, leans the other way), and over 48 arm R lies inside the draw range |
+| f: E4B at least 0.25, arm R at most 0.10, separates (35%) | **hit**: 11/26, 0/9, separates |
+| g: E4B submits with room more, median at least 300 s against at most 200 s, separates (80%) | **hit over 48** (about 400 s against 179.7 s, separates). It does not separate on the sample (3 untied tasks). |
+| Levers: no separating item has a conditioned ceiling above the threshold (60%) | **miss as written**: d, e2, e3, e4 and g exceed over 48. All judged items fall below it. |
+
+### 6.7 What this says, within section 4
+
+- **Part 1.** With the harness and files fixed, the E4B leaves the 31B's path mostly by not reaching the right file. On the short task-draws it stops at E or F in 0.692 of cases. Where the 31B reaches the gold regions, the E4B also reaches them in about two thirds of task-draws.
+- **Part 2.** On the ever-resolved tasks where an E4B run reaches a gold file and fails, it states the gold's cause in 8 of 24 codable runs, against 10 of 10 for arm R. In 16 of 24 it acts on a different cause and keeps it. Where it does state the gold's cause, its change carries a code-level defect in 7 of 8 runs (x1, added after reading).
+- **Its checks.** The E4B's checks are pytest runs that fail at usage or collection level, and it submits after them. Arm R's checks are `python -c` runs that pass.
+- **Opportunity.** None of the judged differences has enough opportunity on the sample to clear the D-011 rule.
+- **Limits.** All of this rests on one 31B draw and on step windows that hold a fifth to a third of each run's thought text.
 
 ## Status
 
-PRE-REGISTERED 2026-11-12. Next: `part1.py`, `items.py`, the coding pass, results in section 6.
+ANALYZED 2026-11-12, 0 GPU-h (pre-registration 4a5968a). Part 1: the E4B leaves at the file (E+F 0.692 of short task-draws). Part 2: a, b, c and f separate on the sample, and none can clear the D-011 rule there. Over 48, d, e2, e3, e4 and g separate. The check-line lever (e2 to e4) clears only if resolved E4B runs count (6.5 as written, 3.5 without them); two earlier smoke screens on near variants did not fire. No GPU arm proposed.
