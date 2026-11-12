@@ -220,8 +220,12 @@ def main() -> int:
         mech["notfound"] += sum(e["cls"] == "notfound" for e in ed)
         mech["failed"] += sum(e["cls"] != "ok" for e in ed)
         mech["repeat"] += sum(e["repeat"] for e in ed)
+        mech["nonrepeat_calls"] += sum(not e["repeat"] for e in ed)
+        mech["nonrepeat_notfound"] += sum((not e["repeat"]) and e["cls"] == "notfound" for e in ed)
     share = round(mech["notfound"] / mech["edit_calls"], 3) if mech["edit_calls"] else None
-    print(f"mechanism {RUN.name}: {dict(mech)} notfound_share {share}")
+    nr = mech["nonrepeat_calls"]
+    share_nr = round(mech["nonrepeat_notfound"] / nr, 3) if nr else None
+    print(f"mechanism {RUN.name}: {dict(mech)} notfound_share {share} notfound_share_nonrepeat {share_nr}")
     walls = [summ[t]["wall_s"] for t in ids]
     print(f"wall median {statistics.median(walls)} max {max(walls)} over {len(ids)} tasks")
     return 0
