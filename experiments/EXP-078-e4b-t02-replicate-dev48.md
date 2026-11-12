@@ -142,7 +142,11 @@ cp runs/EXP-078-t02r/summary.jsonl experiments/EXP-078/summary.jsonl
 Eo is the count of `patch_empty` true and AL the count of `n_edit_arg_loss` > 0, both over the 48 rows of `runs/EXP-078-t02r/summary.jsonl`.
 
 ## 7. Defects in this pre-registration, logged after the fact
-None yet.
+1. **2026-11-12, at analysis: the H2 threshold states no precision.**
+   - Row 2 reads "repeat share above 0.16". The references in section 3 are given to three decimals (0.083, 0.093).
+   - The result is 21 of 129 = 0.1628. That is above 0.16 as an exact fraction and at three decimals, and it rounds to 0.16 at two.
+   - Section 9 applies the threshold to the exact fraction, which is the reading as written. One fewer repeat (20 of 129 = 0.155) would not fire.
+   - Logged for the critic. The reading is not revised.
 
 ## 8. Built (below the line; nothing above changes)
 
@@ -158,4 +162,100 @@ None yet.
 - **Pushed 2026-11-12, about 08:22 UTC, kernel `rainm4/gemma4-exp078-t02r` version 1**, from the committed notebook directory `notebooks/exp078_t02r` (embedded zip sha `dca506d3...92a8`, pre-registered 2b351a3, built 49bbb69, released after the critic verdict 2d42b07). The first status check right after the push read `KernelWorkerStatus.RUNNING`. The push time is a clock stamp taken seconds after the push (08:22:25 UTC, from a file written then and listed with `ls --full-time`, local offset -0500), because `date` is not an allowed command for the screener; it is within about a minute of the push. **Stop-rule time (push + 2.0 h): 10:22 UTC** (section 4.2 clock).
 
 ## Status
-**PUSHED (2026-11-12, about 08:22 UTC).** Kernel `rainm4/gemma4-exp078-t02r` version 1, status RUNNING at the first check. Stop time push + 2.0 h = 10:22 UTC. Expected cost about 1.3 GPU-h (EXP-075: 1.340 h). Next: when `kaggle kernels status rainm4/gemma4-exp078-t02r` says COMPLETE, the analysis job of section 6.
+~~**PUSHED (2026-11-12, about 08:22 UTC).** Kernel `rainm4/gemma4-exp078-t02r` version 1, status RUNNING at the first check. Stop time push + 2.0 h = 10:22 UTC. Expected cost about 1.3 GPU-h (EXP-075: 1.340 h). Next: when `kaggle kernels status rainm4/gemma4-exp078-t02r` says COMPLETE, the analysis job of section 6.~~
+**ANALYZED 2026-11-12.** Row 2 (harm) fired, on its H2 clause: repeat share 21 of 129 = 0.163, above 0.16. 0.2 is not kept as the E4B single-loop base. Eo 3 is recorded only. 1.654 GPU-h. See section 9, and section 7 item 1.
+
+## 9. Results, 2026-11-12. Section 4's readings applied as written
+
+### 9.1 The run, the GPU figure, the stop rule
+- Kernel `rainm4/gemma4-exp078-t02r` v1 was COMPLETE at the lead's check at 10:09 UTC, before the 10:22 UTC cancel time. The stop rule was not used. The output was downloaded into `runs/EXP-078-t02r/` (gitignored), and the nested run directory was moved up.
+- **GPU figure for the ledger: 1.654 h**, the last kernel-log entry at 5,955.0 s, counted as in EXP-075 section 9.1. Queueing is not included.
+  - Overhead: 445.2 s (log end minus a task wall sum of 5,509.8 s).
+  - vLLM came up in 320.4 s.
+  - Wheelhouse: 41 of 41 wheels in 51 s, Python 3.12.
+- This is 0.31 h above the 1.3 GPU-h priced in the header (EXP-075 1.340 h). The task wall sum rose 1,140.8 s over EXP-075. The two capped tasks of section 9.3 rose 1,174.9 s between them: `rich_3105` from 47.0 to 784.3 s and `rich_3067` from 45.3 to 482.9 s, paired by id in `summary.jsonl`.
+- `summary.jsonl` is copied to `experiments/EXP-078/summary.jsonl` (`analyze_traces.py --cap-minutes 8 --max-calls 28`).
+
+### 9.2 Row 1
+| Clause | Value | Fires |
+|---|---|---|
+| Rows in `task_results.jsonl` | 48; 48 traces | no |
+| Model | E4B: `gemma-4-e4b-it-qat-w4a16-ct` in the loaded `agent.yaml`, served from the E4B model input (log at 89.5 s) | no |
+| Zip sha256 | The loaded tree `runs/EXP-078-t02r/agent/` repacks to `dca506d3...92a8` (`pack_submission.py --skip-budget-gate --allow-warnings`). The committed notebook's embedded base64 decodes to the same sha. Its four files have the same sha256 as `experiments/EXP-075/candidate-t02/`. | no |
+| `runs/EXP-078-t02r/agent/configs/sampling.yaml` | `temperature: 0.2` | no |
+| Infrastructure errors (`readings.py`) | 0: `llm_calls` 0 on 0 rows; `n_turns` 0 on 0 rows; other errors 0. There are 2 cap strings, read under H4, and 0 no-submit endings with turns. | no |
+| Cancelled | no | no |
+
+*Note (the critic's optional sentence, `experiments/EXP-078/critic.md`, "Pinned blind: 1 to 4 infrastructure rows"; added here as a results note, not above the line):* Eo, AL and H1 are counted over all 48 rows as written, with nothing subtracted. The infrastructure rows number 0, with no ids, so no row's recorded `patch_empty` enters Eo from an infrastructure failure.
+
+### 9.3 Row 2, harm
+| Clause | Value | Fires |
+|---|---|---|
+| H1, both-draw form | 0 of `fastapi_14301`, `fastapi_14463`, `requests_6644` lost. `readings.py --rerun EXP-077-base`: net ids 0, gross lost 0 against EXP-038's 5, 0 against EXP-077's 3 | no |
+| H7 | `n_identical_repeats` total 26; 0 tasks at 8 or more; at most 5 on one task | no |
+| **H2** | **repeat share 21 of 129 = 0.163** (`desk.py --all --run EXP-078-t02r`, `repeat` / `edit_calls`). Threshold: above 0.16 | **yes** |
+| H3 | text-form calls on 0 tasks; `tool_free` 0 | no |
+| H4 | time cap 2 (`rich_3105` 784.3 s, `rich_3067` 482.9 s); calls cap 0 | no (2 < 3) |
+| H5 | mean wall 114.8 s (max 784.3 s); analyzer projection 3.83 h | no |
+| H6 | Eo 3 | no |
+
+**Row 2 fires, on the H2 clause.** The reading, as written: **harm. 0.2 is not kept as the E4B single-loop base.** Rows 3 to 5 are recorded only (section 9.4). The single-loop base stays at temperature 1.0.
+- The H2 instrument is the one that gave the references: the same script and field give 13 of 156 = 0.083 (EXP-038), 14 of 139 = 0.101 (EXP-077) and 14 of 150 = 0.093 (EXP-075) in this session.
+- The 21 repeats fall on 9 tasks: `fastapi_13786` 4, `rich_3067` 4, `rich_3063` 3, `rich_3521` 3, `fastapi_15800` 2, `rich_4070` 2, `fastapi_14953` 1, `fastapi_9753` 1, `rich_3061` 1. By the outcome of the repeated call: 16 notfound, 5 multi.
+- The margin is one repeat: 20 of 129 = 0.155 would not fire. Section 7 item 1 records that the threshold states no precision. It is applied here to the exact fraction, as written.
+
+### 9.4 Rows 3 to 5 and the secondary, recorded only
+- **Eo = 3 of 48** (`patch_empty`): `rich_4075`, `fastapi_13207`, `rich_3067`. This is the band row 3 names (4 or fewer). Row 3 is not the governing row, because row 2 fired first. No keep is read.
+- **AL = 4 of 48** (`n_edit_arg_loss` > 0): `fastapi_14609`, `fastapi_13207`, `fastapi_15800`, `rich_3067`, one arg-loss call each. Under row 2 the secondary is "any, under rows 1 or 2: recorded only". It would otherwise read as "2 or more, not replicated on this draw".
+
+### 9.5 Recorded only (section 3)
+- **M** = 35 of 129 = 0.271. **M over non-repeat calls** = 19 of 108 = 0.176 (`desk.py`).
+- **Failed share** of `edit_file` calls: 49 of 129 = 0.380. By outcome: ok 80, notfound 35, multi 10, argloss 4.
+- **A, the first edit applied:** 40 of 48. All 48 tasks made an `edit_file` call.
+- **Phases reached** (`analyze_traces.py`): SUBMIT 46, VERIFY 1 (`rich_3105`), EDIT 1 (`rich_3067`); `submit_patch` on 46 of 48.
+- **EXP-074 classes** (`experiments/EXP-078/pair4.py`, margin 5): E3 F10 R12 C10 S13.
+
+  | Against | Same class | E left, entered | F left, entered | R left, entered |
+  |---|---|---|---|---|
+  | EXP-038 | 32 of 48 | 9, 2 | 5, 2 | 0, 6 |
+  | EXP-077 | 30 of 48 | 7, 1 | 3, 4 | 2, 6 |
+  | EXP-075 | 33 of 48 | 4, 2 | 5, 2 | 1, 6 |
+
+- **Resolves** (reported, not an endpoint): 5 of 48, `fastapi_14301`, `fastapi_14463`, `requests_6644`, `rich_3006`, `rich_3905`. Paired, exact McNemar:
+  - against EXP-038: 5 both, 0 and 0 discordant, p 1.000;
+  - against EXP-077: 3 both; EXP-078 only `rich_3006`, `rich_3905`; p 0.500;
+  - against EXP-075: 4 both; EXP-075 only `fastapi_14873`, `rich_3067`; EXP-078 only `rich_3006`; p 1.000.
+
+  `run_forensics.py compare` gives the same 2x2 tables.
+- **Wall:** mean 114.8 s, median 76.25 s, p90 173.6 s. Analyzer projection 3.83 h; worst case 16.00 h at the 8-minute cap. Three tasks ran over 380 s: `rich_3105` 784.3 s (capped), `rich_3067` 482.9 s (capped), `rich_3480` 388.5 s. `run_forensics.py forensics`: `edit_file` holds 48.0% of agent wall (129 calls, median 10.80 s).
+
+### 9.6 Predictions scored (blind, not readings)
+| Prediction | Observed | Held |
+|---|---|---|
+| Eo about 7 | 3 | no (lower) |
+| AL about 2 | 4 | no (higher) |
+| M between 0.30 and 0.45 | 0.271 | no (lower) |
+| Mean wall within 15 s of EXP-075 (91.0 s) | 114.8 s | no (+23.8 s) |
+| Resolves 3 to 6, `requests_6644` held | 5, held | yes |
+| Most likely row 4, then 5, then 3 | row 2 | no |
+
+### 9.7 Post hoc, outside the readings (requested by the lead)
+Four E4B single-loop draws on the same 48 ids. Nothing here is pooled or read; it is labelled post hoc.
+
+| Draw | Temperature | Eo | AL | A, first edit applied | M | Resolves |
+|---|---|---|---|---|---|---|
+| EXP-038 | 1.0 | 10 | 6 | 28 of 47 | 53/156 = 0.340 | 5 |
+| EXP-077 | 1.0 | 9 | 4 | 33 of 47 | 61/139 = 0.439 | 3 |
+| EXP-075 | 0.2 | 5 | 1 | 37 of 48 | 57/150 = 0.380 | 6 |
+| EXP-078 | 0.2 | 3 | 4 | 40 of 48 | 35/129 = 0.271 | 5 |
+
+- Sources:
+  - Eo, AL and resolves come from each run's `summary.jsonl`.
+  - A and M come from `experiments/EXP-075/desk.py --all --run <run>`, which prints the A denominator as the tasks with an `edit_file` call.
+- **Union of resolved ids over the four draws: 7.** They are `fastapi_14301`, `fastapi_14463`, `fastapi_14873`, `requests_6644`, `rich_3006`, `rich_3067`, `rich_3905` (`pair4.py`; its line reads "over the three runs", a fixed string in `experiments/EXP-077/pair.py`, but it is computed over the four `RUNS`).
+- A pooled 0.2 Eo of 8 of 96 may be printed only as a post hoc figure (section 4.1). It is not read.
+
+### 9.8 What this licenses
+- Row 2's reading only: temperature 0.2 is not kept as the E4B single-loop base, and the base stays at 1.0.
+- No statement that 0.2 lowers or raises empties. No statement on resolves. No upload, and no change to `submission/`.
+- Section 5 lists no follow-up arm for row 2, and none is built here.
