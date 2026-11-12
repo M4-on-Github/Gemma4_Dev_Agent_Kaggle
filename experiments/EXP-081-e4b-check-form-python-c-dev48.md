@@ -117,4 +117,151 @@ Build the arm if both B1 and B2 hold; otherwise do not build, and say which fail
 - **Decision:** build. B1 and B2 both hold.
 
 ## 5. Desk-check counts
-To be appended after `desk.py` runs.
+- **Command:** `python -I -X utf8 experiments/EXP-081/desk.py`, plus `--per-check` for the per-check list.
+- **When:** 2026-11-12, after the commit of sections 1 to 4 (6a554d5).
+- **Post hoc lines:** the script's block headed "Post hoc" was added after the first read (section 7, defect 2). It is not part of the decision rule.
+- **Cross-check:** the check counts reproduce EXP-080 (113 checks, 109 pytest, 106 non-zero), as do e3 (1/16, 1/21, 2/30, 0/26; arm R 3/12).
+
+### 5.1 Q1: why the E4B's pytest checks fail (four dev-48 draws)
+| Draw | Checks (tasks) | Forms | Non-zero pytest by class |
+|---|---|---|---|
+| EXP-038 | 19 (16) | pytest 17, script 2 | U 3, M-env 11, C 2, F 1 |
+| EXP-077 | 24 (21) | pytest 24 | U 6, M-env 8, L 5, C 1, F 4 |
+| EXP-075 | 39 (32) | pytest 37, script 2 | U 6, M-env 12, L 7, C 3, F 7 |
+| EXP-078 | 31 (27) | pytest 31 | X 2, M-env 10, L 5, C 3, F 10 |
+
+**Pooled pytest checks, exit code by class:**
+| Exit | Classes |
+|---|---|
+| 0 | P 3 |
+| 1 | L 11, C 9, F 22 |
+| 2 | M-env 41, L 6 |
+| 4 | U 15 |
+| ? | X 2 |
+
+**Shares over the 106 non-zero pytest checks:**
+| Share | Count | Share |
+|---|---|---|
+| Noise (X + U + M-repo + M-env + C) | 67 | 0.632 |
+| Signal, lower bound (M-own 0 + L 17) | 17 | 0.160 |
+| Signal, upper bound (adding F 22) | 39 | 0.368 |
+
+- **Every exit 2 with a missing module names one of two test-only packages.** All 41 M-env checks: `dirty_equals` 27 and `inline_snapshot` 14. They fall on 40 task-draws over 19 distinct ids.
+  - These two packages are absent from the sandbox. `tools/compat_shims/` exists for them.
+  - On those tasks, the test file fails at import before any test runs, whatever the change.
+- **Tasks whose every check was noise:** 14/16, 14/21, 19/32 and 13/27 of the tasks with a check.
+- **The E4B's non-pytest checks in the draws:** 4, all scripts, on 2 task-draws.
+  - rich_3105 in EXP-038: exit 1 (L), then exit 0.
+  - fastapi_15661 in EXP-075: exit 0 twice.
+  - Their sources were not found, so exercises is `unknown`.
+
+### 5.2 Q2: the next action after a non-zero check (E4B draws, all forms; 107 checks)
+| Set | S | R | K | E | D | T | N |
+|---|---|---|---|---|---|---|---|
+| All 107 | 80 | 0 | 3 | 16 | 7 | 0 | 1 |
+| EXP-038 | 15 | | 2 | 1 | | | |
+| EXP-077 | 16 | | | 5 | 3 | | |
+| EXP-075 | 27 | | 1 | 5 | 2 | | |
+| EXP-078 | 22 | | | 5 | 2 | | 1 |
+| by class: X (2) | | | | 1 | | | 1 |
+| U (15) | 11 | | 3 | | 1 | | |
+| M-env (41) | 39 | | | 1 | 1 | | |
+| L (18) | 6 | | | 10 | 2 | | |
+| C (9) | 9 | | | | | | |
+| F (22) | 15 | | | 4 | 3 | | |
+
+- **Shares:**
+  - submit next 80/107 (0.748);
+  - identical rerun or another check 3/107 (0.028);
+  - edit next 16/107 (0.150).
+- **The L row includes one non-pytest check** (rich_3105's script), so L is 18 here against 17 pytest L in section 5.1.
+- **Next action E is not e3.** E counts any edit attempt as the next call, successful or not. e3 counts a successful change later than the run's last failed check, which is 1, 1, 2 and 0 tasks per draw. So most of the 10 edits after an L check did not leave a successful change after the run's last failed check [I].
+- **The E4B treats the check by its class [I].** It edits after 10 of 18 linked failures and submits after 39 of 41 missing-module failures. The base prompt says to do exactly that: its section 4 says to ignore import errors and pre-existing breakage, and to submit even when the check is red.
+
+### 5.3 Q3: arm R (EXP-028-armR)
+- **Checks:** 50 on 21 tasks, `python -c` 32 and scripts 18; exit 0 34, exit 1 16.
+- **Exercises the changed code** (section 2.4): y 30, n 18, unknown 2 of 50.
+
+  | Subset | y | n | unknown |
+  |---|---|---|---|
+  | exit 0 (34) | 19 | 13 | 2 |
+  | non-zero (16) | 11 | 5 | |
+  | `python -c` (32) | 19 | 13 | |
+  | scripts (18) | 11 | 5 | 2 |
+
+- **Its 16 non-zero checks (12 tasks):**
+  - classes L 2 and F 14, so noise 0.000;
+  - next action K 9, D 5, E 2, and never a submit;
+  - e3, fixed after a failure: 3/12 tasks.
+
+### 5.4 Q4: python-form commands in the E4B runs on disk (27 runs)
+| Run (tasks) | Python-form cmds (tasks) | Checks | `python -c` after a change, tasks | Forms | Exits |
+|---|---|---|---|---|---|
+| EXP-038 (48) | 2 (1) | 2 | 0 | script 2 | 0:1 1:1 |
+| EXP-045-p (8) | 8 (6) | 8 | 3 | `python -c` 3, script 5 | 0:2 1:2 2:4 |
+| EXP-046-team (8) | 9 (6) | 8 | 5 | `python -c` 9 | 0:3 1:6 |
+| EXP-056-r1 (8) | 1 (1) | 1 | 1 | `python -c` 1 | 0:1 |
+| EXP-056-r2 (8) | 3 (3) | 3 | 0 | script 3 | 1:2 2:1 |
+| EXP-063-p (8) | 1 (1) | 1 | 0 | script 1 | 2:1 |
+| EXP-066-srch (8) | 2 (1) | 2 | 1 | `python -c` 2 | 1:2 |
+| EXP-068-read (8) | 1 (1) | 1 | 1 | `python -c` 1 | 0:1 |
+| EXP-075-t02 (48) | 2 (1) | 2 | 0 | script 2 | 0:2 |
+| the other 18 runs | 0 | 0 | 0 | | |
+
+- **Pooled over all 27 runs:**
+  - python-form commands 29 on 21 task-runs, 28 of them checks;
+  - of the checks, exit 0 9; the non-zero ones are U 6, M-repo 2, L 3, C 1, F 7;
+  - exercises y 17, n 1, unknown 10.
+- **EXP-045-p scripts:** an earlier `write_file` of the script path was refused on 2 script checks. Both exited 2, class U. Two more script checks exited 2, class U, with no earlier write of the path found.
+- **The four dev-48 draws:** 4 python-form commands on 2 of 192 task-draws, all scripts. There is **no `python -c` command at all** in the single loop, although its check line already offers that form.
+
+## 6. Decision (section 3 as written): NOT BUILT
+| Part | Rule | Measured | Holds |
+|---|---|---|---|
+| B1 | noise share 0.50 or more, and lower-bound signal 0.25 or less | noise 0.632, lower bound 0.160 | yes |
+| B2(a) | in a run whose prompt directs a python command, `python -c` after a change on 4 or more of 8 tasks | EXP-046-team 5 of 8: its check stage's prompt (`experiments/EXP-046/candidate-team/prompts/check.md`) directs a `python3 -c` import-and-call check. EXP-045-p 3 of 8: its prompt directed a script written to `/tmp`. | yes, on EXP-046-team |
+| B2(b) | over the E4B python-form checks on disk (28, so it is read), exit 0 share 0.40 or more, and M-repo 0.25 or less of the non-zero ones | exit 0 9/28 = 0.321; M-repo 2/19 | **no**: the exit 0 clause fails, the M-repo clause holds |
+
+**B2 fails on B2(b)'s exit 0 clause, so the arm is not built.** As section 3 requires, these are not written:
+- the arm design and readings;
+- the candidate tree, zip and notebooks.
+
+0 GPU-h.
+
+**What failed is not the dispatch's own exit, and the rule's clause is weaker than it looked.** The lead should read the decision with these points beside it.
+- **Neither of the dispatch's two do-not-build conditions fired.**
+  - The failed pytest checks mostly carry no signal (B1 holds).
+  - An uptake path exists: EXP-046-team's check stage took up the exact form on 5 of 8.
+- **The exit 0 clause measured whether the change was right, not whether the form runs.**
+  - The repo was importable from where the check ran: M-repo 2 of 19, and both of those were skill-tree scripts (EXP-056-r2).
+  - Post hoc, the `python -c` checks alone: 15, exit 0 5 (0.333). Their non-zero classes are L 2, C 1 and F 7, and 14 of 15 exercise the change.
+  - Post hoc, on the task unit (the arm's primary): the last `python -c` check passed on 5 of 11 task-runs (0.455). That is above 0.40, but the rule as written reads checks, not tasks. Section 7 records this as defect 1.
+  - So the E4B's `python -c` checks run, reach the change, and fail mostly with real failures. A python check that fails while exercising the change is the signal the pytest checks lack.
+- **What is untested is the step the arm would take.** That step is removing the pytest option from the single loop's check line.
+  - The single loop emits no `python -c` while pytest is offered (0 of 192 task-draws).
+  - The only measured uptake comes from a dedicated check stage in a Sequential team (EXP-046), not from the single loop.
+- **Whether to re-dispatch** the arm with the rule's defect in view is the lead's call.
+
+**Contradicted predictions (section 4), stated plainly:**
+- **Q2 missed.** Submit next was 0.748, not about half. Rerun or another check was 0.028, not about a quarter. Edit was 0.150, close to the predicted 0.1.
+- **Q3 missed.** "Arm R edits more often after a failure" is contradicted: arm R's next actions were K 9, D 5 and E 2, against the E4B's E 16 of 107. Arm R does not submit after a failure; it runs another check or reads. Exercises was 30 of 50, against the predicted about 0.7.
+- **Q4 partly missed.**
+  - Python-form commands in the dev-48 draws: 2 of 192 task-draws, which landed (fewer than 1 in 10).
+  - EXP-045-p by this file's rules gives `python -c` after a change on 3 of 8, not 6 of 8. Its 6 counts python-form commands of any form; scripts were 5 of its 8 commands.
+  - The exit 0 share was 0.321, not about 0.5.
+- **Decision missed.** The prediction was build; the rule reads not built.
+- **Landed:** Q1, noise 0.632 (predicted about 0.6), L 0.160 (0.1 to 0.2), M-own 0. F was 22 of 106, against the predicted 0.2 to 0.3.
+
+**B1's margin (post hoc).** C includes 9 exit 1 checks, matched by text (`ImportError`, `conftest` and the like). With those 9 moved to signal, the lower bound is 0.245 and noise 0.547, so B1 still holds. B1 does not hinge on that text match.
+
+## 7. Defects
+1. **B2(b) does not measure what it was written for.** Its exit 0 clause was meant to show that the form runs in the sandbox. A `python -c` check that exercises a wrong change also exits non-zero, so the clause mixes runnability with correctness. The M-repo clause is the runnability part, and it holds.
+   - The rule also pools forms the arm would not use: scripts whose `/tmp` write was refused, and skill-tree scripts. It reads checks, not task-runs.
+   - Not revised. The post hoc figures in section 6 sit beside it.
+2. **Post hoc lines were added to `desk.py` after the first read.** These are the `python -c`-only share, the task-unit last-pass share, B1's margin, the Q2 shares, and the missing-module names. They sit in a block headed "Post hoc", and the decision rule's output above that block is unchanged.
+3. **M-repo reads a `src/` layout as a top-level package.** The rule says a top-level package dir or module of the repo snapshot. `desk.py` also counts `src/<pkg>`, the layout requests uses. This is a clarification in the implementation, not a change of rule. M-repo is 0 in Q1 and 2 in Q4, both from skill-tree scripts.
+4. **The exercises code is `unknown` for 10 of 28 E4B python-form checks**, and for 2 of arm R's 50. The script path's source was not found by the `write_file` or `cat >`/`tee` rule. Examples are a heredoc piped to the interpreter, or a script that already sat in the repo. This does not touch the decision.
+5. **The noise share depends on the C class's text rule.** It is bounded by the B1 margin line in section 6.
+
+## Status
+**DESK CHECK COMPLETE 2026-11-12; the arm is NOT BUILT (B2(b) fails on its exit 0 clause, 0.321 against 0.40), 0 GPU-h.** There is no tree, zip, notebook or kernel, and no blind threshold, because no arm was pre-registered. Re-dispatch, with defect 1 in view, is the lead's call.
