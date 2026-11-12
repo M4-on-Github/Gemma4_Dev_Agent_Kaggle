@@ -47,9 +47,11 @@ The lead asked for one arm, run as two kernels of the same zip and pooled, on th
 | By path or basename, all 48 | 35 | 40 | 5 | |
 
 - The critic's base of F 3 of 12 is reproduced on EXP-038 by path.
-- An unchanged rerun of the base moved the endpoint by 7 of 48. The two draws' miss lists overlap little:
-  - `fastapi_11355` and `fastapi_13207` are misses in EXP-038 and shown in EXP-077.
-  - `fastapi_14512` and `rich_3480` are the reverse.
+- An unchanged rerun of the base moved the endpoint by 7 of 48 (`desk.py --per-task`, paired):
+  - 31 tasks are shown in both draws and 6 are missed in both: `fastapi_14512`, `fastapi_15661`, `rich_3105`, `rich_3935`, `rich_3953`, `rich_4075`.
+  - 11 of the 17 tasks missed in either draw are discordant.
+  - Shown in EXP-038 only (2): `requests_6644`, `rich_3480`.
+  - Shown in EXP-077 only (9): `fastapi_11355`, `fastapi_13207`, `fastapi_13537`, `fastapi_14360`, `fastapi_14448`, `fastapi_14962`, `requests_7315`, `rich_3063`, `rich_3067`.
 
 ### 3.2 What the recipe could reach (`ceiling.py`), per base draw
 | | EXP-038 | EXP-077 |
@@ -62,8 +64,15 @@ The lead asked for one arm, run as two kernels of the same zip and pooled, on th
 | Upper bound inside the fixed 15 | 5 | 3 |
 
 - **Reconciling with EXP-076.** EXP-076 section 5 put the recipe-alone figure at 3 on EXP-038, including `rich_3480`. That count was over qualifying searches whose own output did not name gold. On this endpoint, `rich_3480` is not a miss in EXP-038, because another observation before the first edit shows its gold path (`desk.py --per-task`).
-- **`fastapi_14512`.** EXP-076 judged it unreachable: its EXP-038 pattern is held by 311 files. In EXP-077 a different, more specific pattern (166 files) would list gold within 5000 characters.
+- **`fastapi_14512`, a miss in both draws.**
+  - EXP-076 judged it unreachable, because its EXP-038 pattern is held by 311 files.
+  - In EXP-077, `trunc.py EXP-077-base` prints one search held by 311 files (not list_ok) and another held by 166 files, which would list gold within 5000 characters.
+  - So whether the recipe reaches it depends on which pattern the draw chose.
 - **EXP-077 is the out-of-sample draw.** The recipe was chosen on EXP-038. On EXP-077 it reaches 2, with no wider-scope case.
+- **The reachable ids against the base's own spread.**
+  - All 6 of EXP-038's upper-bound ids are shown by the unchanged base in EXP-077 (they are among its 9 EXP-077-only ids).
+  - Of EXP-077's 3: `rich_3480` is shown in EXP-038; `fastapi_14512` and `rich_3953` are missed in both draws.
+  - The recipe-alone ids are disjoint between the draws.
 
 ### 3.3 Uptake (`desk.py`, first search)
 | | EXP-038 | EXP-077 | EXP-075 (0.2) |
@@ -96,7 +105,11 @@ The lead asked for one arm, run as two kernels of the same zip and pooled, on th
 - **One draw cannot read it either.** Its thresholds are higher: +8.36 and +5.47.
 - **The same answer from a paired reference.** The square root of the base's discordant pairs is 3.32 over all 48 and 2.83 over the fixed set. Two of those is 6.6 and 5.7, still above the recipe-alone ceiling of 2.
 - **So the arm is not built.** No candidate tree, prompt file, zip or notebook exists for EXP-079, and the 2.6 GPU-h are not spent.
-- **What the counts say instead.** At this endpoint the base's own draw spread, 7 of 48, is larger than the recipe's best case. Whether gold reaches the context before the first edit is a per-draw state on most of the tasks where it fails. On the remaining misses, no search pattern the model chose is held by the gold file (9 of 15 and 5 of 8 misses fall outside the upper bound). This is reported as a finding on reach for the lead, not as a new lever.
+- **What the counts say instead.**
+  - At this endpoint the base's own draw spread, 7 of 48, is larger than the recipe's best case.
+  - Whether gold reaches the context before the first edit varies by draw on 11 of the 17 tasks missed in either draw. The other 6 are missed in both.
+  - On the misses outside the upper bound (9 of 15 and 5 of 8), no search before the first edit would name gold in list form. These include tasks with no search before the first edit, and searches whose held pattern lists too many files.
+  - This is reported as a finding on reach for the lead, not as a new lever.
 
 ## 5. Limits of this check
 1. **The simulation holds the model's search patterns fixed.** With a list in place of matching lines, the model might choose different follow-up searches or reads. That could move the endpoint either way [I].
@@ -113,7 +126,11 @@ python -I -X utf8 experiments/EXP-076/trunc.py EXP-077-base
 ```
 
 ## 7. Defects
-None yet.
+1. **2026-11-12, corrected in place before any review.** This record has no pre-registered readings, so the corrections were made in place.
+   - **§3.1** first said the two draws' miss lists "overlap little" and named `fastapi_14512` and `rich_3480` as shown in EXP-038 and missed in EXP-077. The paired table shows 6 tasks missed in both, `fastapi_14512` among them. The draw-038-only ids are `requests_6644` and `rich_3480`. §3.1 now gives the full paired lists.
+   - **§3.2** now gives the source of the 311 and 166 file counts and adds the reachable ids set against the paired lists.
+   - **§4** last bullet first said that on the misses outside the upper bound no chosen pattern is held by gold. The bound also requires the list form to name gold, so it now says what `ceiling.py` computes.
+   - No count, threshold or conclusion changed.
 
 ## Status
 **DESK CHECK COMPLETE 2026-11-12. The dispatched two-draw dev-48 arm is NOT BUILT (section 4).** The endpoint's base-draw gap is 7 of 48, and the recipe's full-uptake ceiling is 2 per draw (upper bound 4.5). 0 GPU-h.
