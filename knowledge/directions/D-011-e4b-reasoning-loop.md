@@ -75,3 +75,26 @@ date: 2026-11-11
 - **Repeated attempts are not a route to rule 1.** The union over three draws is 7 ids, and no selector has worked (EXP-072, EXP-073).
 - **Headroom, stated plainly:** three draws read 5, 3 and 6 of 48 against a target of 16, and EXP-074's opportunity bound sums to +11 only if every lever converts in full. The loop continues on the user's word and is expected to end on rule 2.
 - **GPU week:** the default reading is a reset on Saturday 00:00 UTC, so the week began 2026-11-07 and resets 2026-11-14. This is unverified until the user reads the sidebar.
+
+## Revision 2026-11-12 after the critic's direction review (needs-work; experiments/EXP-074/critic.md, eaa018d, 4701ea6)
+All fixes are accepted.
+- **Endpoint rule, corrected:** keep is set beyond the larger of the base-draw gap and two reference SDs. One gap between two draws is not the spread.
+  - Stable on one draw: mean wall, cap hits, projection.
+  - Readable on one draw only for large moves: empties and identical repeats.
+  - Need two draws per arm: M, first edit applied, the F and C class counts, same-class share, resolves.
+- **Corrections to the text above:**
+  - The 0.2 draw's empties are not its only figure outside both base draws; first edit applied (37/48), failed share (0.447) and resolves (6) are outside too. All of them are post hoc.
+  - A dev-48 E4B arm costs 1.27 to 1.34 GPU-h, not about 2.
+  - The ledger is about 9.8 GPU-h, not 6.8.
+  - The single-loop tree runs under an 8-minute cap, not 4.5, so any upload candidate needs its own budget reading.
+  - The week start is unverified, and both 11-07 and 11-08 appear above.
+  - 5 of the 48 tasks are gold-blocked, so rule 1 in effect asks for 16 of 43.
+- **Temperature wording (EXP-075's scope note):** at 0.2, one dev-48 draw shows no keep-sized fall in the notfound share. Smaller falls, other temperatures, top_p and top_k, and endpoints other than M are untested.
+- **Process:** EXP-075 and EXP-077 ran above 1 GPU-h before this direction review, and EXP-075 was pushed on a needs-work prereg without a re-check. From here on, a prereg re-check of the amended file comes before every push above 1 GPU-h.
+- **Ranked arms** (none clears the gap on resolves; the remaining GPU buys process answers):
+  1. EXP-078, a replicate of the 0.2 tree, read alone. Primary: empties, with keep at 4 or fewer, no decision at 5 to 8, and not replicated at 9 or more. Blind secondary: tasks with an arg-loss edit, at 1 or fewer.
+  2. EXP-079, the file-list search recipe on the single loop, two draws. Endpoint: a gold path in a tool output before the first edit.
+  3. A change to the visible call or time budget (pacing).
+  - Also noted: top_p at temperature 1.0, to separate token-level argument loss from homogenized behaviour.
+  - Not levers: the thinking budget, compaction and context.
+- **Critic's dissent, recorded:** a top-5 team would spend this GPU on the 31B (28/174 pooled LB against 0.05 for the E4B). The lead agrees on LB value; the loop stays on the E4B on the user's word.
