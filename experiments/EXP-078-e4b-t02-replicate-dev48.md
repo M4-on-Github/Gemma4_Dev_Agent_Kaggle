@@ -147,3 +147,14 @@ None yet.
 ## 8. Built (below the line; nothing above changes)
 
 ---
+
+- **Zip:** `dist/EXP-075-t02.zip`, not repacked. `sha256sum` reads `dca506d3f6b9011156ffe4a32ef067fd54ba54d633f44a2aa2aec09a348392a8`.
+- **Reproduced from the committed LF blobs:** `git -c core.autocrlf=false archive HEAD experiments/EXP-075/candidate-t02`, packed with `--skip-budget-gate --allow-warnings`, gives the same sha `dca506d3...92a8`. `git ls-files --eol` shows `i/lf w/lf` on all four files.
+- **Notebook:** `notebooks/exp078_t02r/kaggle_eval_l4x4.ipynb`, built with `tools/build_notebook.py --embed dist/EXP-075-t02.zip --username rainm4 --cohort experiments/cohorts/dev-48.txt --set EXP_ID='"EXP-078-t02r"' --set MODEL_NAME='"gemma-4-e4b-it-qat-w4a16-ct"' --set RUN_GOLD_CONTROL=False --set N_TASKS=48`.
+  - `diff` against `notebooks/exp075_t02/kaggle_eval_l4x4.ipynb` shows one line, the `EXP_ID` assignment. So `TASK_IDS` (the dev-48 ids), `N_TASKS`, `MODEL_NAME`, `RUN_GOLD_CONTROL`, `RUN_AGENT = True` and the embedded zip are the same as EXP-075.
+  - The embedded base64 decodes to sha `dca506d3...92a8`.
+- **Kernel metadata:** written after the build, copied from `notebooks/exp075_t02/kernel-metadata.json` with only two changes: `id` `rainm4/gemma4-exp078-t02r` and `title` `gemma4-exp078-t02r`. `diff` shows the one line.
+- **Not pushed.** The critic re-checks this file first, and the lead then releases the push (D-011 process line).
+
+## Status
+**BUILT, NOT PUSHED (2026-11-12).** It waits for the critic's prereg re-check and the lead's release. Kernel `rainm4/gemma4-exp078-t02r` does not exist yet. Expected cost about 1.3 GPU-h (EXP-075: 1.340 h). Next command after the release, run bare and unchained: the kaggle CLI kernel push with `-p notebooks/exp078_t02r`, then `date -u +%Y-%m-%dT%H:%M:%SZ` for the push record and the stop-rule clock times (section 4.2).
