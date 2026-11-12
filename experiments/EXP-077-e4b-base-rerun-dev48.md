@@ -97,4 +97,93 @@ If the download nests the run (`runs/EXP-077-base/runs/<x>/`), the scripts' `run
 
 ## Status
 ~~**BUILT, NOT PUSHED (2026-11-12).** Released for push by the lead together with EXP-075. Expected cost about 1.3 GPU-h.~~
-**PUSHED 2026-11-12 05:50 UTC, RUNNING.** Kernel `rainm4/gemma4-exp077-base` version 1. Expected cost about 1.3 GPU-h.
+~~**PUSHED 2026-11-12 05:50 UTC, RUNNING.** Kernel `rainm4/gemma4-exp077-base` version 1. Expected cost about 1.3 GPU-h.~~
+**ANALYZED 2026-11-12.** Row 3 fired: s = 0.099, so the within-run bootstrap understates the draw spread. 1.292 GPU-h. Section 9.
+
+## 9. Results, 2026-11-12. Section 4's readings applied as written and as amended before any result
+
+### 9.1 The run, the GPU figure, the stop rule
+- Kernel `rainm4/gemma4-exp077-base` v1 was COMPLETE at the lead's check, 07:15 UTC. That was before the 07:20 UTC notice point, so the stop rule was not used and nothing was cancelled. The kernel was terminal before EXP-075's analysis began, as EXP-075 section 4.1 requires.
+- Downloaded with `kaggle kernels output` into `runs/EXP-077-base/` (gitignored). The nested run directory was moved up one level.
+- **GPU figure for the ledger: 1.292 h.** This is the last kernel-log entry, at 4,650.9 s, counted as EXP-038 section 9.1 counts its 1.267 h; queueing is not included.
+  - Overhead: 448.2 s (log end minus the task wall sum of 4,202.7 s). EXP-038's was 445.6 s.
+  - vLLM came up in 323.9 s (EXP-038: 323.8 s).
+- **Environment.** Limit (2) of section 2 can only be checked from what the logs print. All three logs show the wheelhouse installed with 41 of 41 wheels on Python 3.12. No other version line is printed in any of the three, so drift outside the pinned image is neither seen nor excluded.
+
+### 9.2 Row 1
+| Clause | Value | Fires |
+|---|---|---|
+| Rows in `task_results.jsonl` | 48 | no |
+| Model | E4B: the loaded `agent.yaml` names `gemma-4-e4b-it-qat-w4a16-ct`, and the log serves it from the E4B model input | no |
+| Zip sha256 | The loaded tree `runs/EXP-077-base/agent/` repacks to `9de869bd...1ac0`. The notebook is the one checked before the push (1f394df), unchanged since. | no |
+| Loaded `configs/sampling.yaml` | `temperature: 1.0` | no |
+| Infrastructure errors (`readings.py`) | 0: `llm_calls` 0 on 0 rows, `n_turns` 0 on 0 rows, cap strings 0, no-submit endings 0, other errors 0 | no |
+| Cancelled | no | no |
+
+Row 1 did not fire, so **EXP-077 is readable** for EXP-075.
+
+### 9.3 The primary and the row that fires
+- M(EXP-077) = 61 of 139 = **0.439**; M(EXP-038) = 53 of 156 = 0.340.
+- **s = 0.0991**, from `readings.py` on unrounded counts.
+- **Row 3 fires (0.07 < s < 0.17): the within-run bootstrap understates the draw spread.**
+  - EXP-075's "M falls" threshold is 0.340 − 2s = **0.142**. That is stricter than 0.20, so it governs EXP-075's keep rows.
+  - A later mechanism arm read on one draw needs a fall of at least 2s, about 0.20, to be read.
+  - Read with limit (1): one difference, one degree of freedom.
+
+### 9.4 Recorded spreads, EXP-038 to EXP-077 (paired on the same 48 ids)
+| Endpoint | EXP-038 | EXP-077 | Difference |
+|---|---|---|---|
+| Empty patches Eo | 10 | 9 | −1 (binomial reference SD about 4.0 [I]) |
+| Class E | 10 | 9 | E left 7 of 10, entered 6 |
+| Class F | 13 | 9 | F left 6 of 13, entered 2 of 35 |
+| Class R | 6 | 8 | left 3, entered 5 |
+| Class C | 9 | 13 | left 2, entered 6 |
+| Class S | 10 | 9 | left 3, entered 2 |
+| Same class | | | 27 of 48 |
+| First edit applied, A | 28 of 47 | 33 of 47 | +5 (binomial reference SD about 4.8 [I]) |
+| `edit_file` calls | 156 | 139 | −17 |
+| Failed `edit_file` calls, any class | 83 (0.532) | 78 (0.561) | |
+| Identical repeats of the previous edit (desk) | 13 of 156 (0.083) | 14 of 139 (0.101) | |
+| `n_identical_repeats`, all tools | 25, 0 tasks at 8 or more, at most 4 on one task | 22, 0 tasks at 8 or more, at most 3 | −3 |
+| M_nr | 45 of 143 = 0.315 | 48 of 125 = 0.384 | +0.069 |
+| Resolved | 5 | **3** (`fastapi_14301`, `fastapi_14463`, `requests_6644`) | −2 |
+| Mean wall, max | 85.7 s, 207.3 s | 87.6 s, 386.8 s | |
+| Analyzer projection | 2.86 h | 2.92 h | |
+
+- **Holds of the 5 base resolves:** `fastapi_14301` held, `fastapi_14463` held, `requests_6644` held, `rich_3006` **lost**, `rich_3905` **lost**. That is 2 lost of 5.
+  - This run lost 2 or more of the 5, so under section 4 (as amended at 05:55 UTC) **EXP-075's net H1 is unreadable**.
+- **Paired resolves:** both 3; EXP-038 only 2 (`rich_3006`, `rich_3905`); EXP-077 only 0. Exact McNemar p = 0.500. This is reported, not an endpoint.
+- **Other counts:**
+  - cap hits 0 and 0;
+  - text-form calls 0 on 0 tasks here, against 3 tasks (6 calls) and `tool_free` 1 for EXP-038 (taken from the re-analyzed copy `runs/EXP-075-base038/`);
+  - no task with 0 native calls;
+  - nudges 1 (EXP-038: 9);
+  - no-submit endings 0 (EXP-038: 1).
+- The cap-only bound from `estimate_budget.py` is 16.00 h. That is the 8-minute cap times 120, not a forecast.
+- The class table, the transitions and the resolve lists come from `experiments/EXP-077/pair.py`. It was written after the data landed, but its EXP-038-to-EXP-077 figures agree with `noise.py EXP-077-base` (the section 6 command): E left 7, F left 6, F entered 2, same class 27.
+
+### 9.5 Predictions scored (blind, not readings)
+| Prediction | Result | Held |
+|---|---|---|
+| s about 0.05 | 0.099 | no |
+| M 0.29 to 0.40 | 0.439 | no |
+| Eo 6 to 13 | 9 | yes |
+| F 10 to 16 | 9 | no |
+| A 24 to 32 of 47 | 33 | no, by 1 |
+| Resolves 4 to 6 | 3 | no |
+| `requests_6644` held | held | yes |
+| `fastapi_14301` and `rich_3006` held | `rich_3006` lost | no |
+| One of `fastapi_14463` and `rich_3905` lost | `rich_3905` lost | yes |
+| `n_identical_repeats` 15 to 40 | 22 | yes |
+| Mean wall within 15 s of EXP-038 | +1.9 s | yes |
+| Most likely row 2, then 3 | row 3 | second choice |
+
+### 9.6 Outside the readings, post hoc (requested by the lead after the results)
+Section 5 licenses no pooled base, so these figures are not read.
+- Over the two base draws, 5 ids resolve in at least one draw and 3 in both. **2 resolve in one draw but not both** (`rich_3006`, `rich_3905`).
+- With EXP-075 added, the union over the three runs is 7 ids: `fastapi_14301`, `fastapi_14463`, `fastapi_14873`, `requests_6644`, `rich_3006`, `rich_3067`, `rich_3905`.
+
+### 9.7 What this licenses
+- It licenses the s = 0.099 that EXP-075 uses and the holds behind EXP-075's net H1, which is unreadable here.
+- It licenses one citable second base draw on dev-48 for later E4B arms: 3 of 48 resolved, M 0.439.
+- It licenses nothing about trees or uploads.

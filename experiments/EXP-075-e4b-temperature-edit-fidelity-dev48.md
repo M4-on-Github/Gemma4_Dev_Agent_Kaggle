@@ -131,6 +131,7 @@ If the download nests the run (`runs/EXP-075-t02/runs/<x>/`), the scripts' `run_
    - Non-blocking (wrong-file harm): section 2 limit (5).
    - Lead's additions: M_nr recorded (section 3, desk.py `notfound_share_nonrepeat`); the measured spread s replaces the 0.07 (section 4.1, section 2 limit (6)).
 2. *2026-11-12 05:55 UTC, after the push of both kernels and before any result.* Three gaps in the critic-fix text (4ec19e5), closed in place with strikes: (a) section 4.1 let the time of the analysis choose between the measured s and the fallback; this file now waits until EXP-077 is terminal. (b) The unreadable boundary for net H1 was 3 or more lost in EXP-077; it is 2 or more, because `requests_6644` cannot be lost. (c) Section 6 had no command printing row 1's error count, H7, H1 gross and net, or s; `experiments/EXP-075/readings.py` prints them (checked on EXP-038: 48 rows, 0 infrastructure errors, 1 no-submit ending with turns, H7 total 25 with 0 tasks at 8 or more and at most 4 on one task, M 53 of 156, gross lost 0).
+3. *2026-11-12, logged after the results. The reading is not changed.* The kill threshold in row 3 is a fixed 0.33. Only the keep rows were tied to the measured spread s, through "M falls". With s = 0.099 (EXP-077), the arm's M of 0.380 lies between the two base draws, 0.340 and 0.439. So row 3 fires on a value inside the base's own draw spread. The fix 4 concern, a kill inside the draw SD, therefore reappears at the measured spread. Section 9.4 applies row 3 as written; this item is for the critic.
 
 ## 8. Built (below the line; nothing above changes)
 
@@ -154,4 +155,96 @@ If the download nests the run (`runs/EXP-075-t02/runs/<x>/`), the scripts' `run_
 
 ## Status
 ~~**BUILT, NOT PUSHED (2026-11-12); awaiting the critic's prereg review.** Kernel `rainm4/gemma4-exp075-t02` does not exist yet. Expected cost about 1.3 GPU-h (EXP-038 reference 1.267 h).~~
-**PUSHED 2026-11-12 05:50 UTC, RUNNING.** Kernel `rainm4/gemma4-exp075-t02` version 1. Expected cost about 1.3 GPU-h (EXP-038 reference 1.267 h). The analysis waits for EXP-077's status (section 4.1) and uses its fallbacks if EXP-077 is not readable.
+~~**PUSHED 2026-11-12 05:50 UTC, RUNNING.** Kernel `rainm4/gemma4-exp075-t02` version 1. Expected cost about 1.3 GPU-h (EXP-038 reference 1.267 h). The analysis waits for EXP-077's status (section 4.1) and uses its fallbacks if EXP-077 is not readable.~~
+**ANALYZED 2026-11-12.** Row 3 (kill) fired: M = 0.380, at or above 0.33. Net H1 is unreadable, and no harm clause fired. 1.340 GPU-h. See section 9, and section 7 item 3.
+
+## 9. Results, 2026-11-12. Section 4's readings applied as written and as amended before any result
+
+### 9.1 The run, the GPU figure, the stop rule
+- Kernel `rainm4/gemma4-exp075-t02` v1 was COMPLETE at the lead's check at 07:15 UTC, before the 07:20 UTC notice point. The stop rule was not used.
+- EXP-077 was terminal (COMPLETE) before this analysis began (section 4.1).
+- The output was downloaded into `runs/EXP-075-t02/` (gitignored), and the nested run directory was moved up.
+- **GPU figure for the ledger: 1.340 h**, the last kernel-log entry at 4,823.7 s. It is counted as in EXP-038 section 9.1 and does not include queueing.
+  - Overhead: 454.7 s (log end minus a task wall sum of 4,369.0 s).
+  - vLLM came up in 325.8 s.
+  - Wheelhouse: 41 of 41 wheels, Python 3.12.
+
+### 9.2 Row 1
+| Clause | Value | Fires |
+|---|---|---|
+| Rows in `task_results.jsonl` | 48 | no |
+| Model | E4B (`gemma-4-e4b-it-qat-w4a16-ct` in the loaded `agent.yaml`, served from the E4B model input) | no |
+| Zip sha256 | The loaded tree `runs/EXP-075-t02/agent/` repacks to `dca506d3...92a8`. The notebook is unchanged since the pre-push check (`git diff` against 9be7306 was clean). | no |
+| `runs/EXP-075-t02/agent/configs/sampling.yaml` | `temperature: 0.2` | no |
+| Infrastructure errors (`readings.py`) | 0: `llm_calls` 0 on 0 rows; `n_turns` 0 on 0 rows; cap strings 0; no-submit endings 0; other errors 0 | no |
+| Cancelled | no | no |
+
+### 9.3 Row 2, harm
+| Clause | Value | Fires |
+|---|---|---|
+| H1 | EXP-077 is readable, so H1 is read in its net form. EXP-077 lost 2 of the 5 (`rich_3006`, `rich_3905`), so **net H1 is unreadable** (section 4.1 as amended at 05:55 UTC). This is reported as unreadable, not as no harm. Recorded alongside: gross 1 lost (`rich_3006`); net 0. | unreadable |
+| H7 | `n_identical_repeats` total 25; 0 tasks at 8 or more; at most 4 on one task | no |
+| H2 | repeat share 14 of 150 = 0.093 | no |
+| H3 | text-form calls on 0 tasks; `tool_free` 0; no task with 0 native calls | no |
+| H4 | time cap 0, calls cap 0 | no |
+| H5 | mean wall 91.0 s (max 373.7 s); analyzer projection 3.04 h | no |
+| H6 | Eo 5 | no |
+
+Row 2 does not fire. H1 cannot be read on this pair of base draws.
+
+### 9.4 The row that fires
+- **M = 57 of 150 = 0.380.** Base EXP-038: 0.340. The second base draw, EXP-077: 0.439.
+- **Row 3 fires: M is at or above 0.33.** The reading, as written: **copy fidelity is not set by sampling temperature at 0.2. Lever 1 by sampling is dead; edit application on the E4B needs a form that is not a sampling knob (or has none, section 1.2).**
+- See section 7 item 3: 0.380 lies inside the two base draws' range. The kill reading is applied as written.
+- Later rows, recorded only:
+  - "M falls" would need M at or below 0.340 − 2 × 0.0991 = 0.142, and at or below 0.20. M is above both.
+  - Failed share: 67 of 150 = 0.447 (base 0.532).
+  - A: the first edit applied on 37 of the 48 tasks that made an edit (base 28 of 47).
+  - Eo: 5 (base 10).
+  - M_nr: 45 of 136 = 0.331 (base 0.315). This is recorded, not read against any threshold.
+  - Without the M condition, the failed share, A and Eo would meet row 5's other three conditions. Row 5 requires M falls, so it cannot fire.
+
+### 9.5 Secondaries
+**Class table, paired by id** (`experiments/EXP-077/pair.py`; the figures against EXP-038 agree with `noise.py EXP-075-t02`):
+
+| Class | EXP-038 | EXP-077 | EXP-075 | vs EXP-038: left / entered | vs EXP-077: left / entered |
+|---|---|---|---|---|---|
+| E | 10 | 9 | 5 | 8 / 3 | 7 / 3 |
+| F | 13 | 9 | 13 | 4 / 4 | 2 / 6 |
+| R | 6 | 8 | 7 | 2 / 3 | 5 / 4 |
+| C | 9 | 13 | 11 | 3 / 5 | 6 / 4 |
+| S | 10 | 9 | 12 | 1 / 3 | 0 / 3 |
+| Same class | | | | 30 of 48 | 28 of 48 |
+
+- R5: 8 of EXP-038's 10 E tasks are not E here. EXP-077, a rerun of the base, scored 7 of 10. This is reported, not read.
+- The comparison against EXP-077 is outside this file's readings: section 4.1 names no second comparison. It was requested by the lead after the results, and `pair.py` was written after the data landed.
+
+**Resolves, paired.** These are reported, not an endpoint.
+- vs EXP-038: both 4; EXP-038 only 1 (`rich_3006`); EXP-075 only 2 (`fastapi_14873`, `rich_3067`). Exact McNemar p = 1.000.
+- vs EXP-077 (post hoc, requested by the lead): both 3; EXP-077 only 0; EXP-075 only 3 (`fastapi_14873`, `rich_3067`, `rich_3905`). Exact McNemar p = 0.250.
+- EXP-075 resolved **6 of 48**: `fastapi_14301`, `fastapi_14463`, `fastapi_14873`, `requests_6644`, `rich_3067`, `rich_3905`.
+
+**Other.**
+- `edit_file` calls: 150. Model calls (`n_calls`): 460 (EXP-038: 425).
+- Nudges 2. Wall median 71.4 s.
+- `estimate_budget.py` gives a cap-only bound of 16.00 h (the 8-minute cap times 120; not a forecast). The H5 input is the analyzer projection, 3.04 h.
+
+### 9.6 Predictions scored (blind, not readings)
+| Prediction | Result | Held |
+|---|---|---|
+| M about 0.28 | 0.380 | no |
+| Eo about 8 | 5 | no (lower) |
+| A about 30 of 47 | 37 of 48 | no (higher) |
+| Repeat share about 0.12 | 0.093 | no (lower) |
+| Resolves 4 to 6 | 6 | yes |
+| Mean wall within 15 s of the base | +5.3 s | yes |
+| Most likely row 7, then 3 | row 3 | second choice |
+
+### 9.7 Post hoc, outside the readings (requested by the lead)
+- Union of resolved ids over EXP-038, EXP-077 and EXP-075: **7**. They are `fastapi_14301`, `fastapi_14463`, `fastapi_14873`, `requests_6644`, `rich_3006`, `rich_3067`, `rich_3905`.
+- Over the two base draws, 5 ids resolve in at least one and 3 in both. **2 resolve in one but not both** (`rich_3006`, `rich_3905`).
+
+### 9.8 What this licenses
+- Row 3, as written, closes sampling temperature as the edit-application lever on the E4B. It does not close edit application (section 5).
+- Section 7 item 3 is for the critic: the kill fired inside the measured base spread.
+- No statement about resolves or empties is licensed.
