@@ -282,3 +282,13 @@ Fixed by the operator 2026-11-18T17:25Z, before any run of the four trees and be
 ## Results
 
 (appended after the runs)
+
+### Base screen draws (read 2026-11-18, before any S-004 result)
+
+- S-000-31b-base-s1 and -s2 on screen-31b-20 each resolved 9 of 20, and on the same 9 tasks: no task flipped between the two draws. The base mean is 9.0, so the promotion bars are a mean of 10.5 or more, or 9.5 or more with the endpoint met.
+- The two draws differ in how they fail.
+  - s1: 2 tasks at the call cap, 6 at the time cap, 6 with an empty patch.
+  - s2: 0 at the call cap, 12 at the time cap, 2 with an empty patch.
+  - Mean wall time was 387 s and 406 s.
+- For the no-edit guard, the base reference is about 4 empty patches per draw (6 and 2).
+- The time-cap count moves by 6 between two draws of the same tree, so a change of that size is not attributable to a tweak.
