@@ -7,7 +7,7 @@ author_role: staff
 credibility: high
 topics: [rules, grading, budget]
 first_seen: 2026-11-03
-last_checked: 2026-11-07
+last_checked: 2026-11-17
 ---
 
 ## Summary
@@ -20,10 +20,12 @@ Host-announced $10,000 bonus for the best submission whose base model is Gemma E
 - [V] Notebook ryanholbrook/gemma-4-developer-agent-small-model-leaderboard (lastRunTime 2026-11-02 23:54): stored output "Last Updated: 2026-10-20 19:27 UTC"; top 100 rows; rank 1 NullPointers 0.06, rank 2 GZ_F 0.06, rank 3 Bart Agent 0.06, rank 4 Luxshan Thavarasa 0.05; 24 rows shown, last shown 0.00.
 - [V] Notebook text: "Teams will be dropped from the private leaderboard if they do not have an eligible submission."
 - Participant comment (2026-10-25, Aditya Vishwakarma): the harness readme names `gemma4-27b-it` and `gemma4-27b` aliases. [M] unverified, no action.
+- [V] Context from topic 748287 (host, Ryan Holbrook, 2026-10-11): asked whether the smaller variants are scored under the same conditions as 31B, the reply was "Yes, everything is the same." The same thread has the 12B `--hf-overrides` note and "The scorer has this update already."
 
 ## Possible claims for us
 - Our 31B bundle is not eligible for the small-model prize; the prize adds no reason to change the main-track model. [I]
 - The public small-model top was 0.06 on 2026-10-20, so the small-model track is far below the main track's 0.29. [V] for the stored output, dated.
+- [I] 2026-11-17: no host post on the small-model prize since 2026-10-20 in topic 751104 or the topic list pages 1 to 3. The board notebook's lastRunTime (kernel list) is 2026-11-17 23:57:29, so it is being run, but its stored output was not re-read in this run.
 
 ## Files
 - untrusted/ryanholbrook-small-model-leaderboard/gemma-4-developer-agent-small-model-leaderboard.ipynb, 6232 bytes, SHA-256 f2feb34cb3c9d50ad3683524a5ce10a80098b7f617ebb108d96236ca785af917. Read as text only. Licence: not checked. Data input `gemma-4-small-model-data` not downloaded.
@@ -34,3 +36,4 @@ Host-announced $10,000 bonus for the best submission whose base model is Gemma E
 ## Updates
 - 2026-11-03: first read. Earlier digest listed the topic as "not read in full".
 - 2026-11-07: re-read. (a) Topic 751104 has 8 comments and no host reply after 2026-10-20; the post-10-20 comments are participant only: amunozo 2026-11-06 15:15 "Could you update the leaderboard's notebook daily?" [M], which suggests the board has not been refreshed; ZHYLAR 2026-10-21 asks for a separate competition [M]; Aditya Vishwakarma 2026-10-25 asks for the harness-readme aliases correction, no host reply [M]. No host text defines what counts as E2B/E4B (the model in agent.yaml, sub-agents or adapters): not stated in this topic [I for the gap]. (b) The board notebook's stored cell output still reads "Last Updated: 2026-10-20 19:27 UTC" (read 11-07; the data input `/kaggle/input/notebooks/ryanholbrook/gemma-4-small-model-data/last_updated.txt`). The table has 24 rows, not 100; rank 1 NullPointers 0.06; rank 3 Bart Agent 0.06; rank 10 prince22466 0.03. Ties at the top are shown at two decimals. (c) `gemma-4-small-model-data` is not in the public datasets list of ryanholbrook (`kaggle datasets list --user ryanholbrook`); it is referenced as a notebook source path, so it is not a verifiable public dataset [V for the listing; I for the reading]. (d) Context from topic 748287 (host, Ryan Holbrook, 2026-10-11): asked whether the smaller variants are scored under the same conditions as 31B, the reply was "Yes, everything is the same." [V] The same thread has the 12B `--hf-overrides` note and "The scorer has this update already." [V]
+- 2026-11-17: re-checked the topic list (pages 1 to 3). No host post in 751104 since 2026-10-20. Participant comment 3551300 (Mikhail, 2026-11-07) promotes a repository and is not a host post. Topic 757244 (2026-11-09, Gagan Deep) quotes the Prizes section "Submissions must be made by November 12, 2026 at 11:59PM UTC" for the Small Model Prize deadline; the only reply is participant Smart Manoj (3552209, 11-09) "December 2. That section should be inserted above the Paper section." [M] No host answer. The board notebook lastRunTime is 2026-11-17 23:57:29 [V, kernel list]; its stored output was not re-read in this run.
