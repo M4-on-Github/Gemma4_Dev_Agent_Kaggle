@@ -95,8 +95,11 @@ None yet.
 
 ---
 
-(to be filled after the push)
+- **Pre-registration commit:** af1c2a3 (this file at sections 1 to 7, the candidate tree, the cohort file and `screen_read.py`), made before the build.
+- **Zip:** `dist/EXP-083-sweep.zip`, sha256 `4005033fda1bfd19e52859dfa44a32f0b2af270f12609f09e5e5602be603a0f4`, 4 members. The committed blobs of `experiments/EXP-083/candidate-sweep/` are LF in index and worktree (`git ls-files --eol` shows `i/lf w/lf`), so the pack reproduces from them.
+- **Notebook:** `notebooks/exp083_sweep/kaggle_eval_l4x4.ipynb`, built with the section 6 command; `TASK_IDS` equals the 8 ids of `experiments/cohorts/sweep-31b-8.txt`, `N_TASKS = 8`, `EXP_ID = "EXP-083-sweep"`, `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`. Notebook sha256 `edfea8c86e4fb3d505c55238fec318137677e959fa5de7961e3b146892f4010f`.
+- **Kernel metadata:** `notebooks/exp028_armR/kernel-metadata.json` with `id` `rainm4/gemma4-exp083-sweep` and `title` `gemma4-exp083-sweep`, nothing else changed (`diff` shows those two lines only). The 31B model source is `google/gemma-4/other/gemma-4-31b-it-qat-w4a16-ct/2`.
 
 ## Status
 
-BUILT, NOT PUSHED (2026-11-17).
+BUILT, NOT PUSHED (2026-11-17). Next: push `notebooks/exp083_sweep`, record the kernel id, status and push time here.
