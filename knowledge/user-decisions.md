@@ -309,3 +309,8 @@ User, verbatim: "what agentic experiments should we make to the solution? let's 
      - one unchanged re-push of a kernel that failed for infrastructure reasons, recorded, as with "requeue" on 11-10.
   7. **Not upload approval.** Any upload waits on the user's word and an `approvals/S-NNN.txt` written by the user.
   8. **The loop's driver** is one bounded background status check per pushed kernel. It polls every 10 min, exits when the kernel leaves RUNNING or QUEUED, and gives up after 4 h. There is no open-ended watch.
+- 2026-11-17 (after the run synthesis, 64be60a, and the web scout, 271b6c2): the user wrote, verbatim, "yea let's start with 1. on both E4b and 31b". Idea 1 is the sibling-site sweep (`research/lit/2026-11-17-next-ideas-web-scout.md`): a prompt rule to list the implied change sites before the first edit, then search for the changed identifier after the last edit and mark each hit. The lead reads this as follows:
+  1. **Both models, one idea.** The same rule goes into the 31B v24-at-8 tree (EXP-027 candidate) and into the E4B single-loop tree (EXP-033). The E4B work reopens D-011 for this one arm.
+  2. **The ladder is climbed in order.** First a zero-GPU trace-mining check per model, with go and drop thresholds written before counting. Each model goes to its smoke-8 only if its own check passes.
+  3. **GPU.** One smoke-8 per model is approved, about 0.8 GPU-h each, at most 2 kernels live. A dev-48 arm needs the user's word after the smoke-8 readings.
+  4. **Not upload approval.** Any upload waits on the user's word and an `approvals/S-NNN.txt` written by the user.
