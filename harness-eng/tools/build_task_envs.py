@@ -140,14 +140,51 @@ def declared(root):
     return [str(root)] + pep621_reqs(root, py), "pyproject", False
 
 
+BUILD_HINT = re.compile(r"hint: `([A-Za-z0-9._-]+)` \(v[^)]*\) was included")
+NOW = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+DROP = ("pytest", "pluggy", "iniconfig", "py", "pytest-timeout")
+
+
+def remove_dist(target, name):
+    """Delete an installed distribution from a --target dir by its RECORD. True if one was there."""
+    hit = False
+    for di in list(target.glob("*.dist-info")) if target.exists() else []:
+        if norm(di.name[:-len(".dist-info")].rsplit("-", 1)[0]) != name:
+            continue
+        hit = True
+        rec = di / "RECORD"
+        for ln in rec.read_text().splitlines() if rec.exists() else []:
+            f = (target / ln.split(",")[0]).resolve()
+            if f.is_relative_to(target.resolve()) and f.is_file():
+                f.unlink()
+        shutil.rmtree(di, ignore_errors=True)
+    for d in sorted(target.rglob("*"), reverse=True) if hit else []:   # directories left empty
+        if d.is_dir() and not any(d.iterdir()):
+            d.rmdir()
+    return hit
+
+
 def install(reqs, target, created_at, pinned, workdir):
+    """Install under the task-date cap. A compiled package whose dated version has no cp313 wheel
+    fails to build from source (old cffi, greenlet, ...); uv names it in a hint, and it alone is then
+    exempted from the cap (newest version) and the install retried, up to six times."""
     rf = workdir / "reqs.txt"
     rf.write_text("\n".join(reqs) + "\n")
-    cmd = [UV, "pip", "install", "--python", str(PY313), "--target", str(target), "--link-mode", "hardlink",
-           "--no-progress", "-r", str(rf)]
-    if not pinned:
-        cmd += ["--exclude-newer", created_at]
-    return run(cmd)
+    exempt = []
+    for _ in range(7):
+        cmd = [UV, "pip", "install", "--python", str(PY313), "--target", str(target), "--link-mode", "hardlink",
+               "--no-progress", "-r", str(rf)]
+        if not pinned:
+            cmd += ["--exclude-newer", created_at]
+            cmd += [a for p in exempt for a in ("--exclude-newer-package", f"{p}={NOW}")]
+        code, out = run(cmd)
+        m = BUILD_HINT.search(out) if code != 0 and not pinned else None
+        if not m or norm(m.group(1)) in exempt:
+            return code, out + (f"\n[exempt from date cap: {', '.join(exempt)}]" if exempt else "")
+        exempt.append(norm(m.group(1)))
+    return code, out
 
 
 def build(task, force=False):
@@ -176,6 +213,8 @@ def build(task, force=False):
         rec.update(source=source, pinned=pinned, n_reqs=len(reqs),
                    reqs=[r.replace(str(root), ".") for r in reqs])
         code, out = install(reqs, target, task["created_at"], pinned, tmp)
+        m = re.search(r"\[exempt from date cap: ([^\]]*)\]", out)
+        rec["exempt_from_date_cap"] = m.group(1).split(", ") if m else []
         if code != 0:
             rec["error"] = out.strip()[-1500:]
             shutil.rmtree(target, ignore_errors=True)
@@ -183,11 +222,8 @@ def build(task, force=False):
                 c, o = install([r], target, task["created_at"], pinned, tmp)
                 if c != 0:
                     rec["failed"].append({"req": r.replace(str(root), "."), "error": o.strip()[-600:]})
-        # the workspace provides the project itself
-        for p in list(target.glob("*")) if target.exists() else []:
-            n = p.name
-            if norm(n.split("-")[0]) == project and (p.is_dir() or n.endswith((".py", ".pth"))):
-                shutil.rmtree(p, ignore_errors=True) if p.is_dir() else p.unlink()
+        # the workspace provides the project itself, and the scorer's own pytest must run the tests
+        rec["dropped"] = [d for d in (project,) + DROP if remove_dist(target, d)]
         rec["ok"] = target.exists() and not rec["failed"]
         rec["seconds"] = round(time.time() - t0, 1)
         if target.exists():

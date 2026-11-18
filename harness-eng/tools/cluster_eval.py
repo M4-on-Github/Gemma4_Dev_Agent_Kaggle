@@ -59,6 +59,9 @@ def parse_args():
                         "public scorer's Python) instead of the image's; see tools/scorer_env.py")
     p.add_argument("--extras", type=Path, default=None,
                    help="with --py313: a directory of packages the public scorer lacks, added to every venv")
+    p.add_argument("--task-envs", type=Path, default=None,
+                   help="with --py313: env/taskenvs; each task's venv gets <dir>/<id> (the repo's declared test "
+                        "deps, tools/build_task_envs.py) ahead of site-packages. Not scorer-faithful")
     return p.parse_args()
 
 
@@ -163,10 +166,10 @@ def main():
     if a.py313:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         import scorer_env
-        test_env = scorer_env.install(a.py313, a.extras)
+        test_env = scorer_env.install(a.py313, a.extras, a.task_envs)
         print("sandbox test env:", test_env, flush=True)
     else:
-        assert not a.extras, "--extras needs --py313"
+        assert not (a.extras or a.task_envs), "--extras and --task-envs need --py313"
 
     tasks_path = a.data / "tasks.jsonl"
     by_id = {t.instance_id: t for t in load_tasks(tasks_path)}
@@ -220,6 +223,7 @@ def main():
                "hardware": {"host": socket.gethostname(), "gpus": [] if a.control else gpu_info(), "tensor_parallel_size": 1},
                "slurm_job": os.environ.get("SLURM_JOB_ID"), "server_start_s": server_start_s,
                "sandbox_test_env": test_env,
+               "task_env_used": (sys.modules["scorer_env"].TASK_ENV_USE if a.py313 and a.task_envs else None),
                "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "tasks": [], "resolved": 0}
     try:
         models = ModelRegistry()
