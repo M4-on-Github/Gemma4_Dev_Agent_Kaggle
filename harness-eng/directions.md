@@ -31,5 +31,6 @@ Status: open / active / kept / dropped / pivoted-away. Update after every round.
 ## Later (not in the first 24 h)
 
 - LoRA adapters (public data only unless the user says otherwise); canary on the 31B serving path first.
-- Per-task dependency install in the sandbox from `data/raw/wheels` (needs the user's permission:
-  it is an install). It would make the 57 tasks that do not grade here usable.
+- ~~Per-task dependency install in the sandbox~~ done 2026-11-18 with the user's permission:
+  `--py313 ... --task-envs env/taskenvs` makes 119/129 tasks gradeable (was 101); see
+  `rounds/C-002-C-003-test-envs.md`. Agent runs that should use it must pass the same flags.
