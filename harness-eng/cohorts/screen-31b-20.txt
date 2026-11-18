@@ -1,0 +1,21 @@
+# screen-31b-20: 20 ids from cdev-56, seed 20261118, strata from the 6 finished 31B draws on cdev-56 as of 2026-11-18T17:00Z (all trees): 12 of 16 tasks resolved in some draws, 4 of 26 resolved in none, 4 of 14 resolved in all. Enriched for movable tasks; counts here do not scale to the full cohort.
+fastapi_13537
+fastapi_13920
+fastapi_14419
+fastapi_14873
+fastapi_15588
+fastapi_15661
+fastapi_5077
+fastapi_9425
+fastapi_9753
+rich_2725
+rich_3063
+rich_3278
+rich_3454
+rich_3480
+rich_3521
+rich_3782
+rich_3894
+rich_3944
+rich_4077
+rich_4079

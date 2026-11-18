@@ -1,0 +1,10 @@
+name: swe_agent
+# EXP-033 2026-11-05: model gemma-4-31b-it-qat-w4a16-ct -> gemma-4-e4b-it-qat-w4a16-ct, nothing else changed from experiments/EXP-027/candidate-v24-at-8 (small-model prize screen on smoke-8; the prompt was written for the 31B)
+# harness-eng R-007 2026-11-18 (T-e4b-014): single LlmAgent -> SequentialAgent of two LlmAgents on the same model.
+# sub_agents/locator.yaml has run_command and read_file only and ends with a LOCATION message (file, function, lines);
+# sub_agents/editor.yaml is the base agent (same six tools, same sampling) with prompt section 2 starting from that message.
+# Reason: the first edit is made without the reference lines on screen in 28, 25, 26 of 56 tasks per base draw.
+agent_class: SequentialAgent
+sub_agents:
+  - config_path: sub_agents/locator.yaml
+  - config_path: sub_agents/editor.yaml

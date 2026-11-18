@@ -1,0 +1,15 @@
+# Everything for the cluster work lives in this folder, but only text records are tracked.
+# Competition data, traces, weights and images never enter git.
+/wheelhouse/
+/data/
+/models/
+/runs/
+/env/
+/adapters/
+/logs/
+*.sif
+*.safetensors
+*.zip
+*.jsonl
+/teacher/runs/
+/teacher/graded/

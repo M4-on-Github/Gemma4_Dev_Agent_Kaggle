@@ -1,0 +1,20 @@
+# Tweak ledger
+
+One row per tweak tried on the cluster, kept or not. Append only; a wrong row is corrected by a new
+row that names it.
+
+| ID | Date | Model | Round | Base tree | Change | Zip sha256 | Level | Cohort x draws | Result | Outcome | Lesson |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| T-e4b-003 | 2026-11-18 | E4B | R-002 | e4b-base | prompt: short old_string, re-read after a failed edit, scripted replace after two | - | L2 | cdev-56 x 2 | 6, 2 (mean 4.0) vs base 4, 7 (5.5) | not kept | More edit rules in the long prompt did not lower edit failures (9%, 15%) or empty patches (8, 7). |
+| T-e4b-001 | 2026-11-18 | E4B | R-001 | e4b-base | max_tool_calls 28 -> 40, prompt says 40 | - | L2 | cdev-56 x 2 (third draw queued) | 8, 7 (mean 7.5) vs 5.5 | kept by rule, at the threshold (third draw 9; mean 8.0 vs base 6.0); composed in R-006 | The E4B never nears the call cap (8-10 calls); any gain is not from extra calls. |
+| T-e4b-002 | 2026-11-18 | E4B | R-001 | e4b-base | prompt section 3b: grep the changed identifier, patch sibling sites | - | L2 | cdev-56 x 2 (third draw queued) | 11, 5 (mean 8.0) vs 5.5 | kept by rule, at the threshold (third draw 8; mean 8.0 vs base 6.0); composed in R-006 | Same tree gave 11 and 5: two draws cannot rank E4B trees. |
+| T-31b-001 | 2026-11-18 | 31B | R-001 | 31b-base | max_tool_calls 28 -> 40, prompt says 40 | - | L2 | cdev-56 x 1 | 23 vs base 22, 22; time-cap tasks 27 vs 16, 14 | not kept | Lifting the call cap moves the same tasks onto the time cap; time is the 31B's real limit. |
+| T-e4b-004 | 2026-11-18 | E4B | R-003 | e4b-base | temperature 1.0 -> 0.3 | - | L2 | cdev-56 x 3 | 6, 3, 8 (5.7) vs base 4, 7, 7 (6.0) | not kept | Lower temperature did not narrow the draw-to-draw range. |
+| T-e4b-005 | 2026-11-18 | E4B | R-003 | e4b-base | 3.1 kB prompt -> six-step 1.2 kB prompt | - | L2 | cdev-56 x 3 | 9, 6, 3 (6.0) vs 6.0 | not kept | A much shorter prompt scores the same: most of the long prompt's rules are not what limits the E4B. |
+| T-e4b-006 | 2026-11-18 | E4B | R-004 | e4b-base | include_thoughts true -> false (proposer v1) | - | L2 | cdev-56 x 3 | 5, 5, 5 (5.0) vs 6.0 | not kept | Dropping thoughts from history does not help the E4B. |
+| T-31b-004 | 2026-11-18 | 31B | R-003 | 31b-base | include_thoughts true -> false (proposer v1) | - | L2 | cdev-56 x 1 | 15 vs base 22, 22 | not kept | The 31B needs its own earlier thoughts in context; removing them costs 7 tasks. |
+| T-31b-003 | 2026-11-18 | 31B | R-002 | 31b-base | thinking_budget 4096 -> 1024 | - | L2 | cdev-56 x 1 (d2 queued) | 22 vs 22, 22; time-cap tasks 17 vs 16, 14 | pending d2 | A smaller thinking budget saved no wall time. |
+| T-31b-002 | 2026-11-18 | 31B | R-001 | 31b-base | prompt section 3b sibling sweep | - | L2 | cdev-56 x 2 | 23, 23 vs 22, 22; empty patches 7, 10 vs 11, 12 | not kept | The sweep rule lowers empty patches a little and moves resolves by +1, inside the margin. |
+| T-e4b-007 | 2026-11-18 | E4B | R-004 | e4b-base | syntax check after each edit (proposer v1) | - | L2 | cdev-56 x 3 | 7, 7, 5 (6.3) vs 6.0 | not kept | |
+| T-e4b-001+002 | 2026-11-18 | E4B | R-006 | e4b-base | T-e4b-001 + T-e4b-002 composed | - | L2 | cdev-56 x 3 | 8, 4, 8 (6.7) vs 6.0 | not kept; T-e4b-001 and T-e4b-002 reclassified as noise, base stays e4b-base | +2.0 on three draws is inside the E4B's noise on cdev-56; the keep bar is +3. |
+| T-31b-005 | 2026-11-18 | 31B | R-003 | 31b-base | scratch-file line replaced by an inline-check line (proposer v1) | - | L2 | cdev-56 x 1 (d2 queued, job 59096) | 24 vs 22, 22 | pending d2 | |

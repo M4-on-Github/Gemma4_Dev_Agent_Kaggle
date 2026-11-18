@@ -1,0 +1,21 @@
+#!/bin/bash
+# Teacher tool wrapper: runs tools/teacher_tool.py inside env/harness.sif with the same apptainer
+# flags the eval and control jobs use (slurm/eval.sbatch, slurm/control.sbatch), minus the GPU.
+#   tools/tt init   <run> <task_id> [--tree trees/31b-base] [--tools all] [--timeout-seconds N]
+#   tools/tt call   <run> <task_id> <tool_name> --args '<json>' --why '<one line>'
+#   tools/tt finish <run> <task_id>
+# HENG_SHIMS=1 binds the repo's stand-ins for inline_snapshot and dirty_equals, as the jobs do.
+set -euo pipefail
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+REPO=$(dirname "$ROOT")
+SCRATCH=$(mktemp -d "${TMPDIR:-/tmp}/heng_tt_XXXXXXXX"); mkdir -p "$SCRATCH/tmp" "$SCRATCH/home"
+trap 'rm -rf "$SCRATCH"' EXIT
+SHIMS=""
+if [ "${HENG_SHIMS:-0}" = "1" ]; then
+  for m in inline_snapshot dirty_equals; do
+    SHIMS="$SHIMS --bind $REPO/tools/compat_shims/$m:/usr/local/lib/python3.12/dist-packages/$m"
+  done
+fi
+apptainer exec --cleanenv --containall \
+  --bind "$REPO:$REPO" --bind "$SCRATCH/tmp:/tmp" --home "$SCRATCH/home" --pwd "$ROOT" $SHIMS \
+  "$ROOT/env/harness.sif" python3 -I -X utf8 tools/teacher_tool.py "$@"

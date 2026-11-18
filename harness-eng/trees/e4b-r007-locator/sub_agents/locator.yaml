@@ -1,0 +1,8 @@
+name: locator
+description: Finds the file, function and line range the issue requires changing. Never edits.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/locator.md
+tools:
+  - run_command
+  - read_file
+generate_content_config: !include ../configs/sampling.yaml

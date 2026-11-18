@@ -1,0 +1,58 @@
+Bootstrap: localimage
+From: /home/mmyatmau/Gemma4_Dev_Agent_Kaggle/harness-eng/env/base/gemma4_judge.sif
+
+# The harness environment for harness-eng: the competition wheelhouse (swegemma, adk_submission,
+# adk_eval_core, google-adk, the patched vLLM 0.19.1) installed over a local base image, plus the
+# dependencies Kaggle's own image supplies (torch 2.10 cu128, litellm, git and the rest), fetched
+# from the PyTorch index, PyPI and Ubuntu at build time (the user's word, 2026-11-18).
+# tools/install_wheelhouse.py documents the recipe; slurm/harness.lock.txt is the resolved set.
+#
+# Base: gemma4_judge.sif = vllm/vllm-openai:v0.24.0 (Ubuntu 22.04, Python 3.12.13, the Python the
+# Kaggle kernel runs) plus scipy, pandas, scikit-learn. slurm/build_env.sbatch copies it once from
+# /data/mmyatmau/gemma4_judge.sif into env/base/ so the build reads and writes only inside this
+# folder, and records its sha256 in env/harness.sif.base.sha256. Its own definition is
+# slurm/base_gemma4_judge.def (a copy of ~/Eval_CASTOR/containers/container_gemma4_judge.def).
+#
+# Build with slurm/build_env.sbatch, which binds harness-eng/wheelhouse at /wheelhouse.
+# Model weights, task data and results are NOT in the image; they are bound at run time.
+
+%setup
+    # Runs on the host. The bind target must exist in the image before the install section mounts
+    # the wheelhouse on it.
+    mkdir -p "${APPTAINER_ROOTFS}/wheelhouse"
+
+%files
+    tools/install_wheelhouse.py /opt/install_wheelhouse.py
+
+%post
+    set -eu
+    test -d /wheelhouse || { echo "bind the wheelhouse at /wheelhouse"; exit 1; }
+    # git: the sandbox builds the agent patch with it (the scorer's sandbox image installs git and patch).
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get -o APT::Sandbox::User=root update -qq
+    apt-get -o APT::Sandbox::User=root install -y -qq --no-install-recommends git patch
+    rm -rf /var/lib/apt/lists/*
+    git config --system user.email "agent@eval"
+    git config --system user.name "Agent"
+    git config --system init.defaultBranch main
+    git config --system --add safe.directory "*"
+    rm -f /usr/local/lib/python*/dist-packages/*cutlass*.pth
+    python3 /opt/install_wheelhouse.py /wheelhouse /usr/local/share/harness_install_report.json /usr/local/share/harness.lock.txt
+    rm -rf /root/.cache/pip /tmp/wheelhouse_stage /tmp/constraints.txt
+
+%environment
+    export PYTHONUNBUFFERED=1
+    export TOKENIZERS_PARALLELISM=false
+    export LITELLM_LOCAL_MODEL_COST_MAP=True
+    export TRANSFORMERS_NO_TF=1
+    export VLLM_WORKER_MULTIPROC_METHOD=spawn
+    export VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=1
+    export VLLM_ENGINE_READY_TIMEOUT_S=1200
+    export VLLM_NO_USAGE_STATS=1
+    export OTEL_SDK_DISABLED=true
+    export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+    export HF_HUB_OFFLINE=1
+
+%labels
+    Project  gemma4-harness-eng
+    Base     vllm/vllm-openai:v0.24.0 via gemma4_judge.sif

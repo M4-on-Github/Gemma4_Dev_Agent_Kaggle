@@ -1,0 +1,21 @@
+# screen-e4b-20: 20 ids from cdev-56, seed 20261118, strata from the 22 finished E4B draws on cdev-56 as of 2026-11-18T17:00Z (all trees): 12 of 20 tasks resolved in some draws, 8 of 36 resolved in none, 0 of 0 resolved in all. Enriched for movable tasks; counts here do not scale to the full cohort.
+fastapi_13537
+fastapi_13920
+fastapi_14301
+fastapi_14419
+fastapi_14463
+fastapi_14794
+fastapi_15280
+fastapi_15589
+fastapi_15661
+fastapi_5624
+fastapi_9425
+fastapi_9555
+rich_3006
+rich_3105
+rich_3470
+rich_3518
+rich_3676
+rich_3894
+rich_4077
+rich_4079
