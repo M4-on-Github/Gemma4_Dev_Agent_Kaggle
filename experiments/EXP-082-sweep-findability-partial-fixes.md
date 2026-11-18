@@ -109,7 +109,71 @@ None yet.
 
 - **Script:** `experiments/EXP-082/sweep_check.py`, written and committed before any count. It imports `parse_diff`, `gold_regions`, `touches`, `same_file`, `norm_path`, `classify`, `load_run` and `jl` from `experiments/EXP-074/diag.py` and adds the line walker, the identifier sets and the region and selection logic.
 - **Run by the screener:** not run (see Status).
+- **Run by the experimenter, 2026-11-18 about 03:45 UTC:** `python -I -X utf8 experiments/EXP-082/sweep_check.py --out experiments/EXP-082/counts.json`, once, on the script as committed at 6934945 (no change; it ran without error). `counts.json` was checked before commit: its keys are labels and its string values are run names, task ids, class letters and the verdict labels; the rest are counts and booleans. It is committed.
 
 ## Status
 
-PRE-REGISTERED, NOT COUNTED (2026-11-17). The screener's Bash guard allows `python tools/...` and no other script path, so `python -I -X utf8 experiments/EXP-082/sweep_check.py` is blocked for it; the exact guard text is in the handback. Next: someone whose command list allows the script runs the one command in section 6, then appends section 9.
+COUNTED AND READ 2026-11-18. Instrument gate (row 1) did not fire. 31B row 4 BETWEEN (no kernel; counts and the per-task table go to the lead). E4B row 2 DROP (claim dropped for the E4B at L1). No smoke-8 is built or pushed by this file; step 2 is a separate dispatch.
+
+## 9. Results, 2026-11-18. Section 4's readings applied as written.
+
+**Source:** `python -I -X utf8 experiments/EXP-082/sweep_check.py --out experiments/EXP-082/counts.json`, run once (section 8). Every number below is printed by that script or stored in `experiments/EXP-082/counts.json`.
+
+### 9.1 Row 1, instrument: did not fire
+
+| Run | Exclusive C | Expected | Raw classes | Exclusive (other) |
+|---|---|---|---|---|
+| EXP-028-armR | 13 | 13 ok | E 6, F 3, R 6, C 14, S 10, resolved 9 (matches E6 F3 R6 C14 S10 with 9 resolved, ok) | gap 3, impossible 5 |
+| EXP-028-armRH | 11 | 11 ok | E 5, F 6, R 5, C 14, S 8, resolved 10 | gap 5, impossible 5 |
+| EXP-038-e4b-dev48 | 8 | 8 ok | E 10, F 12, R 6, C 9, S 6, resolved 5 | impossible 5 |
+| EXP-077-base | 12 | 12 ok | E 9, F 8, R 8, C 13, S 7, resolved 3 | impossible 5 |
+| EXP-075-t02 | 9 | 9 ok | E 5, F 12, R 7, C 10, S 8, resolved 6 | impossible 5 |
+| EXP-078-t02r | 9 | 9 ok | E 3, F 9, R 12, C 10, S 9, resolved 5 | impossible 5 |
+
+- Region rows that disagree with their class letter: 0 for the 31B, 0 for the E4B.
+- The script errored: no. It ran on the committed source unchanged, so section 7 has no script fix.
+- The instrument is OK, so the verdicts are read.
+
+### 9.2 Counts per model (unit: class C task-runs)
+
+| Model | Pool (distinct tasks) | V0 all | V1 all | V2 all | V0 any | V1 any | V2 any |
+|---|---|---|---|---|---|---|---|
+| 31B | 24 (16) | **8** runs on 6 tasks | 8 on 6 | 5 on 4 | 19 on 13 | 18 on 12 | 15 on 10 |
+| E4B | 38 (17) | **7** runs on 4 tasks | 6 on 3 | 5 on 3 | 29 on 12 | 29 on 12 | 25 on 11 |
+
+**Third count, recorded only.** These are the right-file-wrong-region task-runs (exclusive class R), and the number with every region findable.
+
+| Model | Runs (distinct tasks) | All findable under V0 | All findable under V1 |
+|---|---|---|---|
+| 31B | 11 (9) | 4 (4) | 4 (4) |
+| E4B | 33 (15) | 8 (5) | 8 (5) |
+
+**Per unit task-run.** The full table (task, run, regions, hit, missed and the six flags) is in the script's output and in `counts.json` under `models.<model>.rows`.
+- 31B, the 8 V0-all task-runs: fastapi_13786 (R and RH), fastapi_14448 (R), rich_3468 (RH), rich_3480 (RH), rich_3676 (R and RH), rich_3953 (RH).
+- E4B, the 7 V0-all task-runs:
+  - fastapi_13207 (EXP-077);
+  - fastapi_13786 (EXP-075, EXP-077 and EXP-078);
+  - fastapi_9753 (EXP-038 and EXP-078);
+  - rich_3061 (EXP-038). V1 drops this one, so V1 is 6.
+
+### 9.3 Verdicts (section 4, per model, first match after row 1)
+
+| Model | V0 | V1 | Thresholds (GO / DROP) | Row | Verdict |
+|---|---|---|---|---|---|
+| 31B | 8 | 8 | 10 or more / fewer than 6 | **4** | **Between**: the counts and the per-task table go to the lead; no kernel is built |
+| E4B | 7 | 6 | 16 or more / fewer than 10 | **2** | **DROP**: the sweep cannot reach enough of the missed regions on the E4B; the claim is dropped for the E4B at L1; no kernel |
+
+- **The 31B's V0 to V1 guard did not bind.** V1 equals V0 (8 and 8), so `self`, `cls` and dunder names did not inflate V0. The 31B is between on V0 itself, 2 below GO.
+- **Step 2 selection, as the script prints it** (the section 6 rule). Both models' 8 ids are recorded here, but neither model reads GO, so neither smoke-8 is licensed by this file.
+  - **31B:** 7 in tier 1, 1 in tier 2, 1 in tier 3. First 8: `rich_3953, fastapi_14448, rich_3468, rich_3480, fastapi_14953, fastapi_11355, rich_3063, rich_3934`. Gold source regions: 2, 3, 3, 2, 3, 3, 2, 3.
+  - **E4B:** 5 in tier 1, 2 in tier 2, 3 in tier 3. First 8: `fastapi_9753, fastapi_13207, fastapi_14964, rich_3063, rich_3953, fastapi_14873, fastapi_15280, rich_3180`. Gold source regions: 2, 2, 2, 2, 2, 2, 2, 3.
+
+### 9.4 Predictions (section 4), against the counts
+- **31B: missed.** The prediction was V0 about 11 (P(GO) about 0.5) and V1 about 8, with V0 inflation from `self` and short generic names named as the likely route from GO to between. V0 was 8 and V1 was 8. The between came from V0 itself, with no inflation.
+- **E4B: missed on the low side.** The prediction was V0 about 14 and V1 about 10, with P(DROP) about 0.2. V0 was 7 and V1 was 6, so DROP fired.
+- **Row 1: did not fire.** It was given about 0.2.
+
+### 9.5 Observations, not readings
+- **Many-region tasks have some findable region but not all.** fastapi_14609 (82 gold source regions, 75 to 81 missed per run) and rich_4070 (32 regions, 25 to 31 missed) are any-findable in every run listed and all-findable in none. "All" is strict for such tasks by construction.
+- **Region counts of the 8 all-findable 31B task-runs, as listed in the table:** fastapi_13786 15 and 15, fastapi_14448 3, rich_3468 3, rich_3480 2, rich_3676 6 and 6, rich_3953 2. Whether the sweep moves tasks in the 2-to-3-region band is a question the between reading leaves to the lead; this file does not answer it.
+- Findability remains an upper bound (section 4, "not rows").
