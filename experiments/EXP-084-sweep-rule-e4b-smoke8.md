@@ -97,6 +97,12 @@ None yet.
 - **Notebook:** `notebooks/exp084_sweep/kaggle_eval_l4x4.ipynb`, built with the section 6 command; `TASK_IDS` equals the 8 ids of `experiments/cohorts/sweep-e4b-8.txt`, `N_TASKS = 8`, `EXP_ID = "EXP-084-sweep"`, `MODEL_NAME` the E4B, `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`. Notebook sha256 `8861e87cd551b7ffc9a75b362f1ceb1620822a94b9b4e0240f6eadd4051e248d`.
 - **Kernel metadata:** `notebooks/exp077_base/kernel-metadata.json` with `id` `rainm4/gemma4-exp084-sweep` and `title` `gemma4-exp084-sweep`, nothing else changed (`diff` shows the one line, id and title). Model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`.
 
+### Push record
+- **Pushed** with `kaggle kernels push -p notebooks/exp084_sweep` (bare, after the build commit 42e932e and after EXP-083's push), no guard block. CLI output: `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp084-sweep`.
+- **Kernel:** `rainm4/gemma4-exp084-sweep`, version 1.
+- **Push time:** about 2026-11-18 03:54 UTC (2026-11-17 22:54 -0500; file stamp as in EXP-083 section 8).
+- **First status reading:** `KernelWorkerStatus.QUEUED` (EXP-083's was RUNNING at the same check).
+
 ## Status
 
-BUILT, NOT PUSHED (2026-11-17). Next: push `notebooks/exp084_sweep`, record the kernel id, status and push time here.
+**PUSHED, QUEUED (2026-11-18 03:54 UTC).** Kernel `rainm4/gemma4-exp084-sweep` v1. Next: when `kaggle kernels status rainm4/gemma4-exp084-sweep` reads COMPLETE, `kaggle kernels output rainm4/gemma4-exp084-sweep -p runs/EXP-084-sweep`, then the section 6 commands, then section 9.

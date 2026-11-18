@@ -100,6 +100,12 @@ None yet.
 - **Notebook:** `notebooks/exp083_sweep/kaggle_eval_l4x4.ipynb`, built with the section 6 command; `TASK_IDS` equals the 8 ids of `experiments/cohorts/sweep-31b-8.txt`, `N_TASKS = 8`, `EXP_ID = "EXP-083-sweep"`, `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`. Notebook sha256 `edfea8c86e4fb3d505c55238fec318137677e959fa5de7961e3b146892f4010f`.
 - **Kernel metadata:** `notebooks/exp028_armR/kernel-metadata.json` with `id` `rainm4/gemma4-exp083-sweep` and `title` `gemma4-exp083-sweep`, nothing else changed (`diff` shows those two lines only). The 31B model source is `google/gemma-4/other/gemma-4-31b-it-qat-w4a16-ct/2`.
 
+### Push record
+- **Pushed** with `kaggle kernels push -p notebooks/exp083_sweep` (bare, after the build commit 42e932e), no guard block. CLI output: `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp083-sweep`.
+- **Kernel:** `rainm4/gemma4-exp083-sweep`, version 1. Pushed first; EXP-084 pushed right after, so two kernels live.
+- **Push time:** about 2026-11-18 03:54 UTC (2026-11-17 22:54 -0500; the shell has no `date` under the guard, so the time is the file stamp of `out/push-stamp-exp083-084.txt`, 22:55:33 -0500, written after both pushes and both status checks).
+- **First status reading:** `KernelWorkerStatus.RUNNING`.
+
 ## Status
 
-BUILT, NOT PUSHED (2026-11-17). Next: push `notebooks/exp083_sweep`, record the kernel id, status and push time here.
+**PUSHED, RUNNING (2026-11-18 03:54 UTC).** Kernel `rainm4/gemma4-exp083-sweep` v1. Next: when `kaggle kernels status rainm4/gemma4-exp083-sweep` reads COMPLETE, `kaggle kernels output rainm4/gemma4-exp083-sweep -p runs/EXP-083-sweep`, then the section 6 commands, then section 9. The first reading of `screen_read.py` is the first run of that script.
