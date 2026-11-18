@@ -209,3 +209,21 @@ Fixed by the operator 2026-11-18, before any run of either tree and before any R
 
 
 Amendment 2026-11-18T17:00Z, before any run: the six cdev-56 draws were cancelled; both trees run the L1 screen instead (`S-005-e4b-<tree>-s1/-s2` on screen-e4b-20, base `S-000-e4b-base-s1..3`). The cdev-56 readings above apply only if a tree is promoted, on cdev2-79 with a bar of base + 3. The process endpoints are read on the screen, scaled to 20 tasks.
+
+### Screen results (2026-11-18, read by the rules above and the 17:00Z amendment)
+
+Resolves on screen-e4b-20: base S-000-e4b-base-s1..s3 3, 3, 3 (mean 3.0); twosearch 5, 2 (3.5); filerank 1, 3 (2.0).
+Process counts are per 20 tasks, before the first edit attempt. The bars are scaled from 56 tasks.
+"Wrong file" is the trace_vs_reference.py class.
+
+| Draw | <2 searches with output | count-form search used | reference file named in a search output | wrong file |
+|---|---|---|---|---|
+| base s1, s2, s3 | 18, 20, 11 | 0, 0, 0 | 9, 7, 7 | 5, 5, 7 |
+| twosearch s1, s2 | 14, 16 (bar < 7.1) | 0, 0 | 6, 11 | 6, 7 |
+| filerank s1, s2 | 12, 11 | 13, 9 (bar >= 10.7) | 11, 10 | 8, 7 (bar <= 3.2) |
+
+Readings:
+- T-e4b-008 is not promoted. Its +0.5 is at the promotion threshold, but its process endpoint is missed by a wide margin, so this is a compliance reading.
+- T-e4b-009 is not promoted, at -1.0. The template was taken up (mean 11 per 20) and the reference file was named more often. Wrong-file did not fall.
+- By the shared outcome rule, direction B1 closes: the search changed and the file choice did not.
+- Counting script: a session scratch file, not kept. It uses `tools/trace_vs_reference.py`'s parser: a search is a `run_command` containing `grep` before the first edit call, and "with output" means non-empty stdout.

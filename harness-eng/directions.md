@@ -21,7 +21,7 @@ Status: open / active / kept / dropped / pivoted-away. Update after every round.
 | # | Direction | Why (evidence) | First tweak | Status |
 |---|---|---|---|---|
 | B0 | Edit failures (found 2026-11-18, R-000) | 17% and 28% of edit calls fail with FileEditError in the two reference draws; 10 and 8 of 56 tasks end with an empty patch | prompt: short `old_string` copied from the last read; re-read after a failure; scripted replace after two | active (R-002) |
-| B1 | Localization (wrong file 10.0, wrong region 8.2 tasks lost per draw) | R-005 proposer: the reference file appears in a search output in only 5 of 43 wrong-file task-draws; 'edits the first grep hit' held on 7 of 27 | prompt rule: two greps (symbol and error string), list candidate files, read the definition before editing | open |
+| B1 | Localization (wrong file 10.0, wrong region 8.2 tasks lost per draw) | R-005 proposer: the reference file appears in a search output in only 5 of 43 wrong-file task-draws; 'edits the first grep hit' held on 7 of 27 | prompt rule: two greps (symbol and error string), list candidate files, read the definition before editing | closed 2026-11-18 (R-005: the hit-count search was taken up and named the reference file more often, but wrong-file did not fall; two-search was not followed) |
 | B2 | Sibling-site sweep | partial fix 9.5 tasks lost per draw | same rule as A2 | open |
 | B3 | Sampling | small model at T=1.0 | T 1.0 -> 0.3 | open |
 | B4 | Use the unused budget | E4B tasks end in ~30-50 s of 480 s and under 10 calls | prompt: required second look (re-read the diff against the contract list, fix, then submit) | open |
