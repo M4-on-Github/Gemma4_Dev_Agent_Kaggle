@@ -1,8 +1,8 @@
 ---
 id: S-017
 date: 2026-11-12
-status: pending
-public_score: null
+status: scored
+public_score: 0.13
 kaggle_ref: 58287318
 submitted_utc: 2026-11-12 23:27:28 (Kaggle list timestamp)
 landed_before_midnight_utc: yes (2026-11-12 slot)
@@ -41,4 +41,4 @@ Successfully submitted to Google - The Gemma 4 Developer Agent Competition
 ```
 
 ## Status
-pending. It landed at 23:27:28 UTC on 2026-11-12, before 00:00 UTC, so it took the 2026-11-12 slot. Grading has taken 6 to 22 hours. Poll only when asked; then set `status: scored | error` and `public_score`.
+Scored **0.13 = 8/58** (COMPLETE; the LB truncates, 8/58 = 0.1379), read by the lead with `kaggle competitions submissions -c gemma-4-developer-agent --csv` on 2026-11-17. Earlier note: pending. It landed at 23:27:28 UTC on 2026-11-12, before 00:00 UTC, so it took the 2026-11-12 slot. Grading has taken 6 to 22 hours. Poll only when asked; then set `status: scored | error` and `public_score`.
