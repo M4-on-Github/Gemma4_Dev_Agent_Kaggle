@@ -349,3 +349,35 @@ Fixed by the operator 2026-11-18T17:35Z, before any run of the four trees and be
 ## Results
 
 (appended after the runs)
+
+### Screen results (2026-11-18, read by the rules above)
+
+Resolves on screen-e4b-20 (base S-000-e4b-base-s1..s3: 3, 3, 3, mean 3.0; bars 4.5 outright, 3.5 with endpoint):
+
+| Tree | s1, s2 | Mean | vs base | Reading |
+|---|---|---|---|---|
+| T-e4b-013 pagedread | 6, 3 | 4.5 | +1.5 | promoted (outright bar); compaction guard holds |
+| T-e4b-011 think2048 | 4, 3 | 3.5 | +0.5 | dropped: endpoints missed |
+| T-e4b-014 locator | 3, 4 | 3.5 | +0.5 | dropped: compliance met, effect endpoints missed |
+| T-e4b-012 pinissue | 3, 2 | 2.5 | -0.5 | dropped |
+
+Process counts per draw, from the traces by one script for base and trees alike (session scratch, not kept). It does
+not reproduce the proposer's base numbers exactly (its definitions were not kept). So each reading is given both
+against the proposer's absolute bar and against the base as counted here.
+
+| Draw | turns >= 3000 tokens | first edit_file fails | compacted | resolved among compacted | empty patch | first edit in a reference file | reference hunk read before first edit | locator LOCATION | calls >= 28 |
+|---|---|---|---|---|---|---|---|---|---|
+| base s1, s2, s3 | 2, 6, 5 | 6, 6, 5 | 9, 5, 10 | 1, 1, 2 | 5, 2, 2 | 12, 15, 13 | 6, 10, 7 | - | 0, 0, 0 |
+| think2048 | 1, 3 | 7, 8 | 9, 11 | 1, 0 | 1, 1 | 13, 11 | 7, 6 | - | 0, 0 |
+| pinissue | 5, 5 | 5, 3 | 6, 9 | 0, 1 | 4, 2 | 11, 12 | 6, 5 | - | 0, 0 |
+| pagedread | 4, 6 | 3, 8 | 9, 9 | 0, 1 | 1, 1 | 14, 11 | 10, 6 | - | 0, 0 |
+| locator | 6, 5 | 4, 8 | 6, 4 | 0, 0 | 2, 2 | 14, 11 | 9, 9 | 19, 20 | 0, 1 |
+
+- think2048: missed every endpoint on both counts. Long turns 1 and 3 (bar at most 1 per draw). First-edit failures 7 and 8 (bar 5 or fewer). Compacted 9 and 11 (bar 5 or fewer). Not promoted.
+- locator: compliance met (19 and 20 sessions end with a LOCATION message, against a bar of 16). The effect endpoints were missed. First edit in a reference file 14 and 11 (bar 15). Reference hunk read before the edit 9 and 9 (bar 10); that is above this script's base mean of 7.7 but under the bar. Guards hold. Not promoted.
+  - Like B1 (R-005), the E4B followed the new search or locate step, and its file choice did not change.
+- pinissue: -0.5. Resolved among compacted task-draws 1 of 15 (7%), against a bar of 25% or more. Not promoted.
+- pagedread: promoted on the outright bar, +1.5. The compaction guard (no rise of more than 3) holds at 9 and 9 against 5 to 10. On its own endpoint 3, reference hunk read before the first edit, it scored 10 and 6 (bar 9), so the mechanism is unclear.
+  - The two draws are 6 and 3, so the third-screen-draw rule applies. Next are `S-007-e4b-pagedread-s3` and the first full draw. If s3 brings the three-draw mean under 3.5 (that is, s3 resolves 1 or fewer), the tree is stopped.
+- Full level (README L2, rule by README Setup 7): cdev2-79 = cdev-56 + cdevx-23, with `HENG_SHIMS=1`. The base's cdev-56 part is R-000-e4b-base-d1..d3 (6.0 per draw). Its cdevx-23 part does not exist yet, so the base is run there three times: `R-000-e4b-base-x1..x3`. The candidate runs on cdev2-79 (`R-007-e4b-pagedread-d1..d3`). Bar: the pooled-base mean plus 3.
+- Only one tree is promoted, so there is no composition screen.
