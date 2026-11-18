@@ -1,0 +1,10 @@
+# cohort sweep-e4b-8: 8 task ids, a subset of dev-48, chosen by experiments/EXP-082/sweep_check.py step 2 selection (exactly 2 gold source regions except the last, 3; partial-fix or right-file task-runs in the four E4B dev-48 draws); Textualize/rich=3, fastapi/fastapi=5
+# ids only, no competition data
+fastapi_9753
+fastapi_13207
+fastapi_14964
+rich_3063
+rich_3953
+fastapi_14873
+fastapi_15280
+rich_3180

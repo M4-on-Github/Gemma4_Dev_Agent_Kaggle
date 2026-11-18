@@ -1,0 +1,12 @@
+name: swe_agent
+# EXP-083 2026-11-17: prompts/system.md only, sibling-site sweep rule added (a list of change sites in section 1, one search after the last edit in section 4); this comment is the only other change from experiments/EXP-027/candidate-v24-at-8
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/system.md
+tools:
+  - run_command
+  - read_file
+  - edit_file
+  - write_file
+  - get_status
+  - submit_patch
+generate_content_config: !include configs/sampling.yaml
