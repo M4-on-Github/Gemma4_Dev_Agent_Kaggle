@@ -381,3 +381,11 @@ against the proposer's absolute bar and against the base as counted here.
   - The two draws are 6 and 3, so the third-screen-draw rule applies. Next are `S-007-e4b-pagedread-s3` and the first full draw. If s3 brings the three-draw mean under 3.5 (that is, s3 resolves 1 or fewer), the tree is stopped.
 - Full level (README L2, rule by README Setup 7): cdev2-79 = cdev-56 + cdevx-23, with `HENG_SHIMS=1`. The base's cdev-56 part is R-000-e4b-base-d1..d3 (6.0 per draw). Its cdevx-23 part does not exist yet, so the base is run there three times: `R-000-e4b-base-x1..x3`. The candidate runs on cdev2-79 (`R-007-e4b-pagedread-d1..d3`). Bar: the pooled-base mean plus 3.
 - Only one tree is promoted, so there is no composition screen.
+
+### pagedread follow-up (2026-11-18T23:50Z)
+
+- The third screen draw, S-007-e4b-pagedread-s3, resolved 4 of 20. The three-draw mean is 4.33, against a stop line of 3.5, so the tree continues.
+- The first full draw, R-007-e4b-pagedread-d1, resolved 8 of 79 (one row has an error: no submit_patch). The job ended with a cgroup oom-kill event after all 79 rows were written. The same event is in most earlier job logs, at teardown.
+- The cdevx-23 base draws R-000-e4b-base-x1..x3 already existed (started 18:26Z), so the re-queued jobs exited on "already holds a run" and nothing was rerun. They resolved 2, 1 and 1.
+- The pooled base on cdev2-79 is 6.0 (cdev-56 d1..d3) + 1.33 (cdevx-23 x1..x3) = 7.33 per draw. The L2 bar is 10.33.
+- d1's 8 is under the bar. d2 and d3 are queued, and the reading waits for all three.
