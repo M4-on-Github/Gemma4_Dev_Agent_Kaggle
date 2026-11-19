@@ -292,3 +292,29 @@ Fixed by the operator 2026-11-18T17:25Z, before any run of the four trees and be
   - Mean wall time was 387 s and 406 s.
 - For the no-edit guard, the base reference is about 4 empty patches per draw (6 and 2).
 - The time-cap count moves by 6 between two draws of the same tree, so a change of that size is not attributable to a tweak.
+
+### S-004 screens read (2026-11-19T01:40Z)
+
+| Tree | s1 | s2 | Mean | vs base 9.0 | Process endpoint (screen, s1 / s2; base s1 / s2) | Empty patches (base 6 / 2) | Reading |
+|---|---|---|---|---|---|---|---|
+| out2048 (T-31b-006) | 8 | 7 | 7.5 | -1.5 | not needed: the mean is under 9.5 | 5 / 6 | **dropped** |
+| editfirst (T-31b-007) | 7 | 12 | 9.5 | +0.5 | tasks with a pre-edit probe: 9 / 8 (base 14 / 10); the 56-task target "under 10" scales to under 4 of 20 | 5 / 3 | **dropped**: endpoint not met |
+| editargs (T-31b-008) | 9 | 11 | 10.0 | +1.0 | tasks with 3+ garbled `edit_file` calls in a row: 2 / 2 (base 2 / 2); target 1 or fewer of 56 scales to 0. Seconds in garbled turns: 130 / 109 (base 492 / 388); target under 300 of 56 scales to under 107 | 6 / 3 | **dropped**: endpoint not met |
+| runnottrace (T-31b-009) | 9 | 8 | 8.5 | -0.5 | not needed: the mean is under 9.5 | 7 / 6 | **dropped** |
+
+- **Counter.** Endpoints are counted by my script, using the definitions above: garbled means `edit_file`
+  without `old_string`; a pre-edit probe is Python, pytest, a heredoc, a redirect or `write_file` before the
+  first successful non-/tmp edit; a turn's seconds are the gap between successive call timestamps.
+  - On the base screen draws it does not reproduce the proposer's counts exactly. 60 s-or-more probes come out
+    10 / 6 (theirs 6 / 9), and any garbled call 4 / 3 (theirs 2 / 6).
+  - Neither verdict depends on this. editfirst's probe count stayed at 8-9 of 20, against a target under 4.
+    editargs's 3+-run count did not move from base.
+- **No-edit guard.** No tree went more than 2 empty patches over the base reference of about 4 per draw.
+  runnottrace s1 had 7, which is +3 over 4 but +1 over base s1's 6. It is dropped anyway.
+- **T-31b-006 extra guard (cut turns leaving a malformed call).** Not counted, because out2048 is dropped on
+  its mean. So 4096 is not queued as a follow-up.
+- **editargs is the nearest miss.** Garbled-turn time fell about 70% (from 440 to 120 s per draw), and the mean
+  is +1.0. But the edit's own endpoint (3+-call runs) did not move, so the rule drops it. If it is tried again,
+  it needs a new proposal that names time in garbled turns as the endpoint before any run.
+- **Next.** No R-004 tree goes to cdev2-79. Later 31B screens are read against the R-008 task-env base, not
+  9.0.

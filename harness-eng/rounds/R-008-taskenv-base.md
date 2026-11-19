@@ -81,3 +81,30 @@ nothing in `trees/` changes, and no promotion rule applies. Approved by the user
 - **31B queued `afterany:59096`, concurrency 4 (same as the old base).**
   - `S-008-31b-base-te-s1, s2`: jobs 59438, 59440.
   - `R-008-31b-base-te-d1, d2`: jobs 59439, 59441.
+
+### Check 1 failed on the first E4B draws; round stopped and restarted (2026-11-19T01:30-01:55Z)
+
+- **Read at 01:25Z** (`envcheck.py`):
+  - `S-008-e4b-base-te-s1`: 2 of 14 task-draws had import errors.
+  - `-s2`: 2 of 20.
+  - `R-008-e4b-base-te-d1`: 0 of 16.
+  - All 4 are `No module named 'pkg_resources'`, in `rich_3006` and `rich_3105`, from the agent's
+    `pytest tests/`. 4 of 50 is 8%, over the 2% line.
+  - Pytest headers were all Python 3.13, so check 2 held.
+- **Action, per check 1.** Cancelled jobs 59432-59437. None of their rows is used.
+- **Cause.** `tests/test_syntax.py` does `import pkg_resources` in 10 rich snapshots (rich_3006, _3043, _3052,
+  _3061, _3063, _3064, _3067, _3105, _3130, _3180). The scorer copy's setuptools 84.2.1 no longer has
+  `pkg_resources`; the old 3.12 image's did.
+- **Fix.** `tools/build_task_envs.py` `EXTRA_REQS` adds `setuptools` to those 10 envs. The date cap gives
+  68.0.0, which has `pkg_resources`; it imports on 3.13.
+- **Grading unchanged (C-005).** Jobs 59442/59443 ran gold 10/10 and empty 0/10 on the 10 tasks, the same as
+  C-003.
+- **Audit of all 129 snapshots.** Every top-level import in test files was checked against the task's env plus
+  the scorer interpreter. The only unresolved names left are guarded:
+  - Python 2 and Windows fallbacks in requests (`StringIO`, `BaseHTTPServer`, `winreg`, ...);
+  - `orjson` in 7 fastapi tasks, behind `pytest.importorskip` / `find_spec` skips;
+  - `importlib_metadata` in 3 rich tasks, behind a Python < 3.8 branch.
+- **Restart (jobs 59444-59449).** The same design and readings, under new run ids:
+  - `S-008-e4b-base-te2-s1..s3` and `R-008-e4b-base-te2-d1..d3`.
+  - The 31B jobs 59438-59441 have not started, so they keep their ids and pick up the fixed envs (envs are
+    read at run time).

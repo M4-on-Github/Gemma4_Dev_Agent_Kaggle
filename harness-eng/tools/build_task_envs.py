@@ -151,6 +151,12 @@ EXTRA_REQS = {
     # (2023-09-30), which the date cap (2023-12-16) would otherwise pick. 2026-11-19, C-004.
     "requests_6592": ["werkzeug<3"],
 }
+# tests/test_syntax.py in these rich snapshots does `import pkg_resources`; the scorer copy's setuptools
+# (84.x) no longer ships it, so the agent's `pytest tests/` failed at collection (R-008 E4B screens,
+# 4 of 34 task-draws). Setuptools at the task date still has it. Grading was not affected. 2026-11-19, R-008.
+for _iid in ("rich_3006", "rich_3043", "rich_3052", "rich_3061", "rich_3063", "rich_3064", "rich_3067",
+             "rich_3105", "rich_3130", "rich_3180"):
+    EXTRA_REQS.setdefault(_iid, []).append("setuptools")
 
 
 def remove_dist(target, name):
