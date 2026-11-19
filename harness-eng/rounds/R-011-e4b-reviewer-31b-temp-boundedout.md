@@ -132,3 +132,18 @@ env/py313-scorer/bin/python3.13 --task-envs env/taskenvs`, the R-008 flags.
 6. **No other comparison is read.** That excludes temp06 against boundedout, per-repo splits, and partial draws.
 
 ## Log
+- **2026-11-19T21:53Z, pre-registration committed** as 051ea98 and pushed.
+- **21:53Z, 31B chains submitted** (Ada, 4 CPUs, 64G each):
+  - chain 1: `S-011-31b-temp06-s1` 59692 → `-s2` 59694 → `R-011-31b-base-te-d3` 59696;
+  - chain 2: `S-011-31b-boundedout-s1` 59693 → `-s2` 59695 → `R-011-31b-base-te-d4` 59697.
+
+  At submission another user's jobs held all 16 Ada GPUs, so the chains wait for two to free.
+- **21:53-22:06Z, smoke `S-011-e4b-reviewer-smoke`** (job 59691, 741 s): **gate passed.**
+  - Both tasks show the editor ending with a hand-over, then a reviewer stage that called `submit_patch`.
+  - No engine error, and no editor call to `submit_patch`.
+  - Resolved 0/2 (not read).
+  - One reviewer opened with `read_file` instead of the `git diff` the prompt asks for, and submitted an empty
+    diff after the editor's two edit calls left nothing on disk. Recorded for the compliance count, not fixed:
+    the gate is that the stages run.
+- **22:07Z, the 16 E4B draws submitted** on pleiades-1-10, interleaved: jobs 59706 (base d1), 59707 (reviewer
+  d1) and so on, through 59720 (base d8) and 59721 (reviewer d8).
