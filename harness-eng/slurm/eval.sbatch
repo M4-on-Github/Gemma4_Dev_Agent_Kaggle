@@ -47,8 +47,21 @@ if [ "${HENG_SHIMS:-0}" = "1" ]; then
     SHIMS="$SHIMS --bind $REPO/tools/compat_shims/$m:/usr/local/lib/python3.12/dist-packages/$m"
   done
 fi
+# pleiades-1-10 (Quadro RTX 6000, open kernel module 580, apptainer 1.1.2, persistence mode off): the first open
+# of a GPU makes the driver load its GSP firmware, looked up in the opening process's filesystem, so inside the
+# container /dev/nvidia0 gives EIO and CUDA reports "unknown error" (999) until /lib/firmware/nvidia is visible.
+# Bound only on that GPU type so the Ada jobs keep their exact setup. Run there with
+#   sbatch --constraint=QUADRORTX6000 ... (the command line overrides the RTX6000ADA line above). 2026-11-19.
+FW=""
+if nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | grep -q "Quadro RTX 6000"; then
+  FW="--bind /lib/firmware/nvidia:/lib/firmware/nvidia:ro"
+  # Turing-safe Triton attention op (64 KB shared memory; see tools/turing_patches/make_triton_attn_patch.py).
+  TP="$ROOT/env/turing_patches/triton_unified_attention.py"
+  [ -f "$TP" ] || { echo "$TP missing: run tools/turing_patches/make_triton_attn_patch.py"; exit 1; }
+  FW="$FW --bind $TP:/usr/local/lib/python3.12/dist-packages/vllm/v1/attention/ops/triton_unified_attention.py:ro"
+fi
 apptainer exec --nv --cleanenv --containall \
-  --bind "$REPO:$REPO" --bind "$SCRATCH/tmp:/tmp" --home "$SCRATCH/home" --pwd "$ROOT" $SHIMS \
+  --bind "$REPO:$REPO" --bind "$SCRATCH/tmp:/tmp" --home "$SCRATCH/home" --pwd "$ROOT" $SHIMS $FW \
   --env "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}" \
   "$SIF" python3 -I -X utf8 tools/cluster_eval.py \
     --tree "$TREE" --cohort "$COHORT" --out "runs/$RUN_ID" \
