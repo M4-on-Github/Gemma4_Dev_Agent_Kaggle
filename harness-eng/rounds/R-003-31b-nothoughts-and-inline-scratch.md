@@ -116,3 +116,13 @@ the compaction endpoint is moot.
 
 24 against base 22, 22 (up 5, down 3). At call cap 11, at time cap 13, empty patches 12. d1 >= 22,
 so d2 is queued (R-003-31b-inline-scratch-d2); kept only if the two-draw mean is above 25.
+
+### T-31b-005 inline-scratch d2, read 2026-11-19T03:20Z
+
+- **Result.** `R-003-31b-inline-scratch-d2` (job 59096) resolved 19/56. With d1 = 24, the two-draw mean is
+  21.5, against base 22.0 (22, 22).
+- **Reading.** Kept needs a mean above 25, so it is **not kept**. A third draw is called for only in (24, 25].
+- **Per task.** 4 tasks went up and 6 went down. Empty patches were 12 and 13 (base 11, 12), and time-cap hits
+  13 and 18 (base 16, 14).
+- **Composition.** d1's +2 was within draw noise. No R-003 31B tree remains a positive for the "composes them"
+  rule.
