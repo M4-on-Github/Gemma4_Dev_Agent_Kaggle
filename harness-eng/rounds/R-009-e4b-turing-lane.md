@@ -85,3 +85,37 @@ night ("it is all yours for tonight").
     to use its extra calls. That goes into the reading-2 report.
   - Pace is about 3.5 h per job, so the three waves end around 07:30Z, 11:00Z and 14:30Z (02:30, 06:00 and
     09:30 EST), not the 1.5 h per job estimated above.
+
+## Results (2026-11-19T13:30Z)
+
+All 18 jobs completed with 79 rows each, between 2:54 and 3:27 h per job. The last one finished at 08:20 EST.
+
+| Arm | d1-d6 | Mean | SD | Paired diff vs base (90% bootstrap CI) | Tasks up / down | Time-cap stops (16 min) | Empty patches |
+|---|---|---|---|---|---|---|---|
+| base | 5, 8, 9, 10, 9, 9 | **8.33** | 1.75 | - | - | 60/474 | 67/474 |
+| pagedread (T-e4b-013) | 7, 5, 10, 6, 4, 10 | 7.00 | 2.53 | -1.33 (-3.0, +0.17) | 6 / 11 | 87/474 | 84/474 |
+| calls40 (T-e4b-001) | 9, 6, 6, 8, 8, 8 | 7.50 | 1.22 | -0.83 (-2.5, +0.83) | 6 / 10 | 85/474 | 71/474 |
+
+- **Check 1 holds.**
+  - 18 of 1422 task-draws (1.3%) had import errors.
+  - Most are `coverage` (6) or names that do not exist, from the agent's own scripts (`pydantic.typing_inspection`,
+    `fastapi._compat.v1`, `typing.AnyType`, ...). One is `pip`.
+  - Every pytest header says Python 3.13.
+  - No engine error appeared in any job log, and no draw is short.
+- **Reading 2, lane offset: +1.67** (8.33 against the Ada R-008 base 6.67). That is within ±3, so the lane behaves
+  like Ada within the no-change line.
+  - 717 of 1422 task-draws ran to 480 s or more. On Ada that was 0 of 237.
+  - The median model-step gap is 18.5 s, against 3.3 s on Ada.
+  - So this lane runs each task under a much tighter effective time budget, and the resolve rate still matches.
+- **Reading 3.**
+  - **pagedread: not kept** (7.00 < 8.33 + 1.5).
+  - **calls40: not kept** (7.50 < 8.33 + 1.5).
+  - Neither meets the candidate mean, so the CI condition is not reached. Both point estimates are below the
+    base.
+  - Base draw-to-draw SD: **1.75 resolves** on cdev2-79. A +3 bar is about 1.7 SD of one draw.
+- **Reported, not read (reading 4).**
+  - No base task-draw used 28 or more tool calls, so on this lane the calls40 change has nothing to act on.
+  - Its "not kept" says only that raising the cap does not help when the time cap binds first. The same was
+    true on Ada (T-e4b-001's lesson).
+- **For the ledger.** T-e4b-013 and T-e4b-001 now each have 6 more draws, both below the base. Neither is worth
+  re-drawing.
