@@ -207,5 +207,18 @@ if the cluster cannot run jobs, report and wait.
      for requests_6592 (C-004), and setuptools (for `pkg_resources`) in 10 rich tasks.
    - Gradeable: 120/129.
    - Import errors in the agent's test runs went from about 1 in 5 E4B task-draws to 1 in 357.
-   - The new E4B bases are screen-e4b-20 3.67 and cdev2-79 6.67. The 31B bases are pending.
+   - The new E4B bases are screen-e4b-20 3.67 and cdev2-79 6.67. The 31B bases are screen-31b-20 8.5
+     and cdev2-79 27.5 (cdev-56 19.5).
+   - The OUT_OF_MEMORY flag on many jobs is the `rich_3480` grading run (an unfixed infinite loop) hitting
+     the 64G limit; it is a normal fail of that task, not lost rows.
    - Runs before R-008 are not comparable to runs after it as a base.
+
+9. pleiades-1-10 Turing lane (2026-11-19, `rounds/R-009-e4b-turing-lane.md`). E4B only (the 31B does not
+   fit in 24 GB). Submit with `sbatch --constraint=QUADRORTX6000 -w pleiades-1-10 slurm/eval.sbatch ...`.
+   - On that GPU `eval.sbatch` binds `/lib/firmware/nvidia` and the patched Triton attention op, and
+     `cluster_eval.py` picks float16. Ada jobs are unchanged.
+   - The patched op is built from the image, once, with
+     `apptainer exec --containall --bind $PWD:$PWD --pwd $PWD env/harness.sif python3 -I tools/turing_patches/make_triton_attn_patch.py env/turing_patches/triton_unified_attention.py`.
+   - Decoding is about 2x slower, so jobs add `--time-scale 2.0`. Turing draws are read only against the
+     Turing base, never pooled with Ada.
+   - The node was lent for one night. Ask before queuing there again.

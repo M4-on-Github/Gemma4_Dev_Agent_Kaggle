@@ -135,3 +135,43 @@ nothing in `trees/` changes, and no promotion rule applies. Approved by the user
 - **Harness errors.** "Agent completed execution without calling ..." came up 1, 0 and 3 times on d1-d3 and
   once on the screen. This is a harness message, not an env error.
 - **Teardown flag.** Jobs 59445 and 59449 ended with the usual OUT_OF_MEMORY flag after writing all rows.
+
+## Results: 31B (2026-11-19T05:20Z)
+
+| Run | Resolved | cdev-56 | cdevx-23 | Empty patches (cdev-56) | Time-cap stops (cdev-56) | Import errors (task-draws) | Pytest headers |
+|---|---|---|---|---|---|---|---|
+| S-008-31b-base-te-s1 (job 59438) | 8/20 | - | - | - | - | 0/20 | 3.13 x 4 |
+| S-008-31b-base-te-s2 (59440) | 9/20 | - | - | - | - | 1/20 | none |
+| R-008-31b-base-te-d1 (59439) | 28/79 | 20 | 8 | 10 | 14 | 1/79 | none |
+| R-008-31b-base-te-d2 (59441) | 27/79 | 19 | 8 | 12 | 13 | 3/79 | 3.13 x 4 |
+| old base R-000-31b-base-d1, d2 | - | 22, 22 | - | 11, 12 | 13, 11 | - | 3.12 |
+
+- **Check 1 holds, with one note.**
+  - The counter reads 5 of 198 task-draws (2.5%), over the 2% line.
+  - All 5 are `cannot import name` from the agent's own scratch scripts, importing names that do not exist in
+    that library: `types.TypeAliasType`, `rich.highlighter.AutoHighlighter`, `fastapi.FastAPIError`,
+    `starlette.datastructures.Cookies`, and `fastapi.dependencies.analyze_param`.
+  - `No module named` hits: 0 of 198. The check asks whether the env reaches the agent, and it does. Same ruling
+    as the E4B `coverage` hit.
+- **Check 2 holds, thinly.** The 31B ran pytest with a visible header only 8 times, and all 8 say Python 3.13.
+- **New 31B bases (reading 3):**
+  - screen-31b-20: **8.5** (8, 9);
+  - cdev2-79: **27.5** (28, 27), of which cdev-56 19.5 and cdevx-23 8.0.
+  - The L2 bar (base + 3) on cdev2-79 is 30.5.
+- **Environment effect (reading 4).**
+  - Screen -0.5 against 9.0, cdev-56 -2.5 against 22.0. Both are under the no-change lines (1.5 and 3), so
+    no hand check is triggered.
+  - Per task on cdev-56: 2 up (`rich_3676` 0 -> 2, `rich_3782` 0 -> 1) and 6 down. `fastapi_15589` and
+    `fastapi_9753` went 2 -> 0, and `fastapi_14419`, `fastapi_9425`, `rich_3063`, `rich_4079` dropped 1 each.
+  - The two 2 -> 0 tasks were looked at even though the line was not crossed. The four new draws are one
+    time-cap stop with an empty patch, and three wrong patches (an assertion failure, and a
+    response-validation error in both 9753 draws). None shows an import or env error.
+  - The -2.5 is the largest env shift on either model, so if the 31B's next L2 arms all land low, the 20
+    lowest tasks get the hand check reading 4 describes.
+- **OUT_OF_MEMORY flags (jobs 59439-59441).**
+  - Each job had one cgroup OOM kill, and every job wrote all its rows.
+  - The killed process is the grading run of `rich_3480` (exit -9). Its bug is an infinite loop (R-004), so a
+    patch that leaves it unfixed grows memory until the 64G cgroup limit.
+  - Across all 63 `rich_3480` draws in `runs/`, 41 grading runs were killed this way, and all 9 resolves
+    exited 0. So -9 is how that task fails. It does not cost a resolve, and earlier "teardown" flags are the
+    same event.
