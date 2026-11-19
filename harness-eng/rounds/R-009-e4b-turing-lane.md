@@ -1,6 +1,6 @@
 # R-009 (E4B): a Turing lane on pleiades-1-10, and two near-miss tweaks re-drawn six times
 
-Written 2026-11-19T04:10Z, before any R-009 draw except the 2-task smoke `S-009-e4b-turing-smoke` (job 59474),
+Written 2026-11-19T04:00Z (committed 04:00:23Z as 9ef46c6, first job submitted 04:00:30Z; an earlier version of this line said 04:10Z, corrected 2026-11-19T05:15Z), before any R-009 draw except the 2-task smoke `S-009-e4b-turing-smoke` (job 59474),
 which checks only that the stack runs (it is not read for resolves). The user offered pleiades-1-10 for the
 night ("it is all yours for tonight").
 
@@ -70,3 +70,18 @@ night ("it is all yours for tonight").
 ## Log
 
 - 2026-11-19T03:49-03:59Z: smoke `S-009-e4b-turing-smoke` (job 59474), see above.
+- 2026-11-19T04:00Z: 18 jobs submitted interleaved, 59475-59492 (d1: 59475 base, 59476 pagedread, 59477
+  calls40; then in the same order to d6: 59490-59492). 8 run at once. All 8 vLLM servers came up in 225-227 s.
+- **2026-11-19T05:10Z, speed under full load (logged, not a reading; the design is unchanged).**
+  - With 8 jobs at concurrency 4, decode runs about 13 tokens/s per sequence, against 99 on Ada (R-008
+    d1). The median model-step gap is 22.6-24.6 s against 3.3 s. Prompt and completion sizes are the same
+    (prompt median about 7.8k tokens, completion about 260). Tool time is near zero on both.
+  - The smoke's "1.7-2x" came from 2 tasks on one GPU and does not hold at concurrency 4. The cause has not
+    been pinned down (KV-cache room, the patched kernel's small tiles at prefill, or both). The vLLM server
+    log is not kept, so this is not checked yet.
+  - Consequence: the 16 min cap binds far more often than the 8 min cap on Ada. On 78 base task-draws so far,
+    11 timed out, against 0 of 237 on Ada. The readings stay within-Turing and paired as written. But this
+    lane measures each tweak under a much tighter effective time budget, and calls40 especially may not get
+    to use its extra calls. That goes into the reading-2 report.
+  - Pace is about 3.5 h per job, so the three waves end around 07:30Z, 11:00Z and 14:30Z (02:30, 06:00 and
+    09:30 EST), not the 1.5 h per job estimated above.
