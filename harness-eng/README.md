@@ -131,7 +131,10 @@ if the cluster cannot run jobs, report and wait.
 
 - A round file is written, with its readings, before the round's first run.
 - Every tweak gets a row in `tweaks.md`, kept or not.
-- Every job's GPU time goes in `gpu-ledger.md`.
+- Every job's GPU time goes in `logs/gpu_seconds.csv` (written by `slurm/eval.sbatch`), and its per-run totals
+  go in `runs-index.md`. The `gpu-ledger.md` named above was never created; the CSV replaced it.
+- Jobs request only what they use: 1 GPU, 4 CPUs, 64G (since R-011, 2026-11-19). The partition bills CPUs,
+  and the user's fairshare pays for idle ones. Re-size from `sacct` (TotalCPU, MaxRSS) if concurrency changes.
 - Numbers go in these files, not in chat.
 - Competition data and traces stay out of git, as in the rest of the repo.
 - `runs-index.md` lists every run under `runs/` with counts only (resolved, empty, caps, wall and GPU hours).

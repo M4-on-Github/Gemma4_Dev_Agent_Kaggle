@@ -8,7 +8,11 @@
 #SBATCH -p pleiades
 #SBATCH --constraint=RTX6000ADA
 #SBATCH --gpus=1
-#SBATCH --cpus-per-task=8
+# CPUs 2026-11-19 (R-011): 8 -> 4. The partition bills allocated CPUs (billing=8 for cpu=8), and sacct shows these
+# jobs use about 2.1 cores on average (R-009 59475-59492: TotalCPU 6:23-6:41 over 3:02-3:12 elapsed; 31B 59441:
+# 4:30 over 2:07). Memory stays 64G: MaxRSS reached 46-57 GB, memory is not billed, and rich_3480's grading run
+# already hits 64G (README Setup results 8).
+#SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=12:00:00
 #SBATCH --output=/home/mmyatmau/Gemma4_Dev_Agent_Kaggle/harness-eng/logs/%x_%j.out

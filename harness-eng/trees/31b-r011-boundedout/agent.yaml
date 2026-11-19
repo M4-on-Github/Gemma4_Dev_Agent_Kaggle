@@ -1,0 +1,14 @@
+name: swe_agent
+# harness-eng R-011 2026-11-19 (T-31b-011): prompts/system.md section 2 adds a bounded-output rule (every run_command
+# ends in head -40, or tail -40 for a check; read_file ranges 120 -> 80 lines) and section 4's check examples carry
+# the same tail. Direction A4. Nothing else changed from trees/31b-base.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/system.md
+tools:
+  - run_command
+  - read_file
+  - edit_file
+  - write_file
+  - get_status
+  - submit_patch
+generate_content_config: !include configs/sampling.yaml

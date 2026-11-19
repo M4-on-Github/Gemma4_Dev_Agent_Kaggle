@@ -1,0 +1,11 @@
+name: editor
+description: Locates and edits the source the issue requires, then hands over to the reviewer without submitting.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/editor.md
+tools:
+  - run_command
+  - read_file
+  - edit_file
+  - write_file
+  - get_status
+generate_content_config: !include ../configs/sampling.yaml
