@@ -1,0 +1,163 @@
+diff --git a/fastapi/applications.py b/fastapi/applications.py
+index c7c551e4e..56f4137a7 100644
+--- a/fastapi/applications.py
++++ b/fastapi/applications.py
+@@ -1,4 +1,4 @@
+-from collections.abc import Awaitable, Callable, Coroutine, Sequence
++from collections.abc import Awaitable, Callable, Coroutine, Iterator, Sequence
+ from enum import Enum
+ from typing import Annotated, Any, TypeVar
+ 
+@@ -1066,6 +1066,18 @@ class FastAPI(Starlette):
+             app = cls(app, *args, **kwargs)
+         return app
+ 
++    def iter_route_contexts(self) -> Iterator[routing.RouteContext]:
++        """
++        Iterate over all the routes in the app, including the routes of
++        included routers (recursively), yielding a `RouteContext` for each one
++        with the effective path, methods, tags, dependencies, etc.
++
++        This is intended for advanced use cases that used to iterate over
++        `app.routes` directly, `app.routes` is an internal tree structure that
++        can contain included routers.
++        """
++        return self.router.iter_route_contexts()
++
+     def openapi(self) -> dict[str, Any]:
+         """
+         Generate the OpenAPI schema of the application. This is called by FastAPI
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index 48c0c2153..54c0b81df 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -1665,6 +1665,90 @@ def _iter_routes_with_context(
+             yield route, None
+ 
+ 
++@dataclass(frozen=True)
++class RouteContext:
++    """
++    The effective information of a route as it is seen by the app, after
++    applying the configuration of all the routers that include it (prefix,
++    tags, dependencies, etc).
++
++    This is returned by `iter_route_contexts()`, `APIRouter.iter_route_contexts()`
++    and `FastAPI.iter_route_contexts()`.
++
++    **Note**: this is intended for advanced use cases that used to iterate over
++    `router.routes` directly. `router.routes` is an internal tree structure that
++    can contain included routers, use `iter_route_contexts()` instead.
++    """
++
++    route: BaseRoute
++    """
++    The original route object, as it was declared (e.g. the `APIRoute` created
++    by a `@router.get()` decorator). This is the same object even when the
++    router that contains it is included in several places.
++    """
++    effective_route: Any
++    """
++    An object with the effective attributes of the route (the same attributes
++    as the original route, e.g. as an `APIRoute`), with the configuration of
++    all the including routers applied. For routes that were not included from
++    another router, this is the same `route`.
++    """
++
++    @property
++    def path(self) -> str:
++        """The full effective path, including the prefixes of all routers."""
++        return cast(str, getattr(self.effective_route, "path", ""))
++
++    @property
++    def path_format(self) -> str:
++        return cast(str, getattr(self.effective_route, "path_format", self.path))
++
++    @property
++    def name(self) -> str | None:
++        return cast(str | None, getattr(self.effective_route, "name", None))
++
++    @property
++    def methods(self) -> set[str] | None:
++        return cast(set[str] | None, getattr(self.effective_route, "methods", None))
++
++    @property
++    def endpoint(self) -> Callable[..., Any] | None:
++        return cast(
++            Callable[..., Any] | None, getattr(self.effective_route, "endpoint", None)
++        )
++
++    @property
++    def include_in_schema(self) -> bool:
++        return cast(bool, getattr(self.effective_route, "include_in_schema", True))
++
++    @property
++    def tags(self) -> list[str | Enum]:
++        return list(getattr(self.effective_route, "tags", None) or [])
++
++    @property
++    def dependencies(self) -> list[params.Depends]:
++        return list(getattr(self.effective_route, "dependencies", None) or [])
++
++
++def iter_route_contexts(routes: Sequence[BaseRoute]) -> Iterator[RouteContext]:
++    """
++    Iterate over all the routes reachable from `routes` (e.g. `app.routes` or
++    `router.routes`), including the routes of included routers (recursively),
++    yielding a `RouteContext` for each one, with the effective path, methods,
++    tags, dependencies, etc.
++    """
++    for route, route_context in _iter_routes_with_context(routes):
++        if route_context is None:
++            yield RouteContext(route=route, effective_route=route)
++        elif isinstance(route, APIRoute):
++            yield RouteContext(route=route, effective_route=route_context)
++        else:
++            yield RouteContext(
++                route=route,
++                effective_route=route_context.starlette_route or route,
++            )
++
++
+ class APIRouter(routing.Router):
+     """
+     `APIRouter` class, used to group *path operations*, for example to structure
+@@ -1994,6 +2078,38 @@ class APIRouter(routing.Router):
+                 version += route.original_router._get_routes_version(seen)
+         return version
+ 
++    def iter_route_contexts(self) -> Iterator[RouteContext]:
++        """
++        Iterate over all the routes in this router, including the routes of
++        included routers (recursively), yielding a `RouteContext` for each one
++        with the effective path, methods, tags, dependencies, etc.
++
++        This is intended for advanced use cases that used to iterate over
++        `router.routes` directly, `router.routes` is an internal tree
++        structure that can contain included routers.
++
++        ## Example
++
++        ```python
++        from fastapi import APIRouter, FastAPI
++
++        app = FastAPI()
++        router = APIRouter(prefix="/users")
++
++
++        @router.get("/")
++        async def read_users():
++            return []
++
++
++        app.include_router(router)
++
++        for route_context in app.router.iter_route_contexts():
++            print(route_context.path, route_context.methods)
++        ```
++        """
++        return iter_route_contexts(self.routes)
++
+     def _contains_router(
+         self, router: "APIRouter", seen: set[int] | None = None
+     ) -> bool:

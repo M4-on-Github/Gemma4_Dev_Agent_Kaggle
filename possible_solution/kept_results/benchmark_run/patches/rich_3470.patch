@@ -1,0 +1,35 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index a45eaff0..985061dd 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ - Fixed cached hash preservation upon clearing meta and links https://github.com/Textualize/rich/issues/2942
+ - Fixed overriding the `background_color` of `Syntax` not including padding https://github.com/Textualize/rich/issues/3295
+ - Fixed selective enabling of highlighting when disabled in the `Console` https://github.com/Textualize/rich/issues/3419
++- Fixed duplicated output when recording a `Console` inside a buffer context or capture https://github.com/Textualize/rich/issues/2563
+ - Fixed BrokenPipeError writing an error message https://github.com/Textualize/rich/pull/3468
+ - Fixed superfluous space above Markdown tables https://github.com/Textualize/rich/pull/3469
+ 
+diff --git a/rich/console.py b/rich/console.py
+index cdfac282..c73d61bc 100644
+--- a/rich/console.py
++++ b/rich/console.py
+@@ -874,6 +874,9 @@ class Console:
+             str: Console output.
+         """
+         render_result = self._render_buffer(self._buffer)
++        if self.record:
++            with self._record_buffer_lock:
++                self._record_buffer.extend(self._buffer)
+         del self._buffer[:]
+         self._exit_buffer()
+         return render_result
+@@ -2029,7 +2032,7 @@ class Console:
+         """Write the buffer to the output file."""
+ 
+         with self._lock:
+-            if self.record:
++            if self.record and not self._buffer_index:
+                 with self._record_buffer_lock:
+                     self._record_buffer.extend(self._buffer[:])
+ 

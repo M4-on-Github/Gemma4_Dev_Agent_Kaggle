@@ -1,0 +1,63 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 6c7332fe..169d40af 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
+ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+ 
++## Unreleased
++
++### Added
++
++- Tracebacks now render `Exception.__notes__`
+ 
+ ## [13.9.4] - 2024-11-01
+ 
+diff --git a/rich/default_styles.py b/rich/default_styles.py
+index 28e8f6f9..3975a361 100644
+--- a/rich/default_styles.py
++++ b/rich/default_styles.py
+@@ -121,6 +121,7 @@ DEFAULT_STYLES: Dict[str, Style] = {
+     "traceback.exc_value": Style.null(),
+     "traceback.offset": Style(color="bright_red", bold=True),
+     "traceback.error_range": Style(underline=True, bold=True, dim=False),
++    "traceback.note": Style(color="green", bold=True),
+     "bar.back": Style(color="grey23"),
+     "bar.complete": Style(color="rgb(249,38,114)"),
+     "bar.finished": Style(color="rgb(114,156,31)"),
+diff --git a/rich/traceback.py b/rich/traceback.py
+index 3bf5baa7..b6d9f4ae 100644
+--- a/rich/traceback.py
++++ b/rich/traceback.py
+@@ -200,6 +200,7 @@ class Stack:
+     syntax_error: Optional[_SyntaxError] = None
+     is_cause: bool = False
+     frames: List[Frame] = field(default_factory=list)
++    notes: List[str] = field(default_factory=list)
+ 
+ 
+ @dataclass
+@@ -411,10 +412,12 @@ class Traceback:
+                 return "<exception str() failed>"
+ 
+         while True:
++            notes = getattr(exc_value, "__notes__", None) or []
+             stack = Stack(
+                 exc_type=safe_str(exc_type.__name__),
+                 exc_value=safe_str(exc_value),
+                 is_cause=is_cause,
++                notes=[safe_str(note) for note in notes],
+             )
+ 
+             if isinstance(exc_value, SyntaxError):
+@@ -594,6 +597,9 @@ class Traceback:
+             else:
+                 yield Text.assemble((f"{stack.exc_type}", "traceback.exc_type"))
+ 
++            for note in stack.notes:
++                yield Text.assemble(("[NOTE] ", "traceback.note"), highlighter(note))
++
+             if not last:
+                 if stack.is_cause:
+                     yield Text.from_markup(

@@ -1,0 +1,148 @@
+diff --git a/fastapi/dependencies/models.py b/fastapi/dependencies/models.py
+index fbb666a7..31cea5ed 100644
+--- a/fastapi/dependencies/models.py
++++ b/fastapi/dependencies/models.py
+@@ -1,7 +1,7 @@
+ import inspect
+ import sys
+ from dataclasses import dataclass, field
+-from functools import cached_property
++from functools import cached_property, partial
+ from typing import Any, Callable, List, Optional, Sequence, Union
+ 
+ from fastapi._compat import ModelField
+@@ -15,6 +15,46 @@ else:  # pragma: no cover
+     from asyncio import iscoroutinefunction
+ 
+ 
++def _unwrapped_call(call: Any) -> Any:
++    """Return the innermost callable, unwrapping `functools.partial` objects and
++    decorators that set `__wrapped__` (e.g. `functools.wraps`, `functools.cache`)."""
++    while True:
++        if isinstance(call, partial):
++            call = call.func
++            continue
++        try:
++            unwrapped = inspect.unwrap(call)
++        except ValueError:  # pragma: no cover
++            # Cycle in __wrapped__ chain
++            return call
++        if unwrapped is call:
++            return call
++        call = unwrapped
++
++
++def _call_candidates(call: Any) -> List[Any]:
++    """Return the callables to inspect to determine the kind of a dependency:
++    the call itself, its unwrapped version, and their `__call__` methods (for
++    callable instances), also unwrapped."""
++    candidates: List[Any] = []
++    unwrapped = _unwrapped_call(call)
++    for candidate in (call, unwrapped):
++        if not any(candidate is c for c in candidates):
++            candidates.append(candidate)
++    if inspect.isclass(unwrapped) or inspect.isroutine(unwrapped):
++        return candidates
++    for candidate in list(candidates):
++        if inspect.isroutine(candidate) or inspect.isclass(candidate):
++            continue
++        dunder_call = getattr(candidate, "__call__", None)  # noqa: B004
++        if dunder_call is None:
++            continue
++        for sub in (dunder_call, _unwrapped_call(dunder_call)):
++            if not any(sub is c for c in candidates):
++                candidates.append(sub)
++    return candidates
++
++
+ @dataclass
+ class SecurityRequirement:
+     security_scheme: SecurityBase
+@@ -75,28 +115,39 @@ class Dependant:
+                 return True
+         return False
+ 
++    @cached_property
++    def _call_candidates(self) -> List[Any]:
++        if self.call is None:
++            return []
++        return _call_candidates(self.call)
++
++    @cached_property
++    def _call_kind(self) -> Optional[str]:
++        # The first (outermost) candidate that is a generator, async generator or
++        # coroutine function determines the kind, so wrappers that change the
++        # kind of the wrapped function are respected.
++        if self.call is None or inspect.isclass(_unwrapped_call(self.call)):
++            return None
++        for candidate in self._call_candidates:
++            if inspect.isgeneratorfunction(candidate):
++                return "gen"
++            if inspect.isasyncgenfunction(candidate):
++                return "async_gen"
++            if iscoroutinefunction(candidate):
++                return "coroutine"
++        return None
++
+     @cached_property
+     def is_gen_callable(self) -> bool:
+-        if inspect.isgeneratorfunction(self.call):
+-            return True
+-        dunder_call = getattr(self.call, "__call__", None)  # noqa: B004
+-        return inspect.isgeneratorfunction(dunder_call)
++        return self._call_kind == "gen"
+ 
+     @cached_property
+     def is_async_gen_callable(self) -> bool:
+-        if inspect.isasyncgenfunction(self.call):
+-            return True
+-        dunder_call = getattr(self.call, "__call__", None)  # noqa: B004
+-        return inspect.isasyncgenfunction(dunder_call)
++        return self._call_kind == "async_gen"
+ 
+     @cached_property
+     def is_coroutine_callable(self) -> bool:
+-        if inspect.isroutine(self.call):
+-            return iscoroutinefunction(self.call)
+-        if inspect.isclass(self.call):
+-            return False
+-        dunder_call = getattr(self.call, "__call__", None)  # noqa: B004
+-        return iscoroutinefunction(dunder_call)
++        return self._call_kind == "coroutine"
+ 
+     @cached_property
+     def computed_scope(self) -> Union[str, None]:
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index a8e12eb6..d7f25fcd 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -3,7 +3,6 @@ import email.message
+ import functools
+ import inspect
+ import json
+-import sys
+ from contextlib import AsyncExitStack, asynccontextmanager
+ from enum import Enum, IntEnum
+ from typing import (
+@@ -79,12 +78,6 @@ from starlette.types import AppType, ASGIApp, Lifespan, Receive, Scope, Send
+ from starlette.websockets import WebSocket
+ from typing_extensions import Annotated, deprecated
+ 
+-if sys.version_info >= (3, 13):  # pragma: no cover
+-    from inspect import iscoroutinefunction
+-else:  # pragma: no cover
+-    from asyncio import iscoroutinefunction
+-
+-
+ # Copy of starlette.routing.request_response modified to include the
+ # dependencies' AsyncExitStack
+ def request_response(
+@@ -308,7 +301,7 @@ def get_request_handler(
+     embed_body_fields: bool = False,
+ ) -> Callable[[Request], Coroutine[Any, Any, Response]]:
+     assert dependant.call is not None, "dependant.call must be a function"
+-    is_coroutine = iscoroutinefunction(dependant.call)
++    is_coroutine = dependant.is_coroutine_callable
+     is_body_form = body_field and isinstance(
+         body_field.field_info, (params.Form, temp_pydantic_v1_params.Form)
+     )

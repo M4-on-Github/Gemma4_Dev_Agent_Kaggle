@@ -1,0 +1,139 @@
+diff --git a/docs/en/docs/advanced/custom-response.md b/docs/en/docs/advanced/custom-response.md
+index 823ee5ff..e9822791 100644
+--- a/docs/en/docs/advanced/custom-response.md
++++ b/docs/en/docs/advanced/custom-response.md
+@@ -16,6 +16,15 @@ If you use a response class with no media type, FastAPI will expect your respons
+ 
+ ///
+ 
++/// tip
++
++If you want to **stream** data, you don't need to create and return a `StreamingResponse` yourself, you can use `yield` in your *path operation function*.
++
++* To stream data that can be structured as JSON, read [Stream JSON Lines](../tutorial/stream-json-lines.md){.internal-link target=_blank}.
++* To stream pure binary data or strings, read [Stream Data](stream-data.md){.internal-link target=_blank}.
++
++///
++
+ ## JSON Responses { #json-responses }
+ 
+ By default FastAPI returns JSON responses.
+@@ -165,7 +174,15 @@ You can also use the `status_code` parameter combined with the `response_class`
+ 
+ ### `StreamingResponse` { #streamingresponse }
+ 
+-Takes an async generator or a normal generator/iterator and streams the response body.
++Takes an async generator or a normal generator/iterator (a function with `yield`) and streams the response body.
++
++/// tip
++
++Instead of returning a `StreamingResponse` directly, you should probably use `response_class=StreamingResponse` and `yield` in your *path operation function*, as described in [Stream Data](stream-data.md){.internal-link target=_blank}. It's much more convenient, and FastAPI handles cancellation for you behind the scenes.
++
++If you are streaming data that can be structured as JSON, use [Stream JSON Lines](../tutorial/stream-json-lines.md){.internal-link target=_blank} instead.
++
++///
+ 
+ {* ../../docs_src/custom_response/tutorial007_py310.py hl[3,16] *}
+ 
+@@ -203,6 +220,12 @@ Notice that here as we are using standard `open()` that doesn't support `async`
+ 
+ ///
+ 
++/// tip
++
++You could also do the same using `yield` directly in your *path operation function* with `response_class=StreamingResponse`, as described in [Stream Data - Files and Async](stream-data.md#files-and-async){.internal-link target=_blank}.
++
++///
++
+ ### `FileResponse` { #fileresponse }
+ 
+ Asynchronously streams a file as the response.
+diff --git a/docs/en/docs/advanced/response-directly.md b/docs/en/docs/advanced/response-directly.md
+index 9d58490e..7f1ba7bb 100644
+--- a/docs/en/docs/advanced/response-directly.md
++++ b/docs/en/docs/advanced/response-directly.md
+@@ -79,3 +79,5 @@ When you return a `Response` directly its data is not validated, converted (seri
+ But you can still document it as described in [Additional Responses in OpenAPI](additional-responses.md){.internal-link target=_blank}.
+ 
+ You can see in later sections how to use/declare these custom `Response`s while still having automatic data conversion, documentation, etc.
++
++If you want to stream data, instead of returning a `StreamingResponse` directly, you can use `yield` in your *path operation function*, as described in [Stream JSON Lines](../tutorial/stream-json-lines.md){.internal-link target=_blank} and [Stream Data](stream-data.md){.internal-link target=_blank}.
+diff --git a/fastapi/.agents/skills/fastapi/SKILL.md b/fastapi/.agents/skills/fastapi/SKILL.md
+index 99e2b3b4..eb878339 100644
+--- a/fastapi/.agents/skills/fastapi/SKILL.md
++++ b/fastapi/.agents/skills/fastapi/SKILL.md
+@@ -241,6 +241,74 @@ Do not use `ORJSONResponse` or `UJSONResponse`, they are deprecated.
+ 
+ Instead, declare a return type or response model. Pydantic will handle the data serialization on the Rust side.
+ 
++## Stream JSON Lines
++
++To stream data that can be structured as JSON, use `yield` in the *path operation function* and declare the return type as `AsyncIterable[Item]` (or `Iterable[Item]` for regular `def` functions). FastAPI will send it as JSON Lines (`application/jsonl`), validating, documenting, and serializing each item with Pydantic.
++
++```python
++from collections.abc import AsyncIterable
++
++from fastapi import FastAPI
++from pydantic import BaseModel
++
++app = FastAPI()
++
++
++class Item(BaseModel):
++    name: str
++    description: str | None
++
++
++items = [
++    Item(name="Plumbus", description="A multi-purpose household device."),
++    Item(name="Portal Gun", description="A portal opening device."),
++]
++
++
++@app.get("/items/stream")
++async def stream_items() -> AsyncIterable[Item]:
++    for item in items:
++        yield item
++```
++
++## Stream Data
++
++To stream pure binary data or strings, use `response_class=StreamingResponse` (or a subclass with a custom `media_type`) and `yield` in the *path operation function*, instead of creating and returning a `StreamingResponse` directly.
++
++```python
++from collections.abc import AsyncIterable
++
++from fastapi import FastAPI
++from fastapi.responses import StreamingResponse
++
++app = FastAPI()
++
++
++class PNGStreamingResponse(StreamingResponse):
++    media_type = "image/png"
++
++
++@app.get("/image/stream", response_class=PNGStreamingResponse)
++async def stream_image() -> AsyncIterable[bytes]:
++    for chunk in read_image():
++        yield chunk
++```
++
++instead of:
++
++```python
++# DO NOT DO THIS
++@app.get("/image/stream")
++async def stream_image():
++    async def generate():
++        for chunk in read_image():
++            yield chunk
++
++    return StreamingResponse(generate(), media_type="image/png")
++```
++
++If the data comes from a blocking source (e.g. a regular file), use a regular `def` function so it's run in a threadpool.
++
+ ## Including Routers
+ 
+ When declaring routers, prefer to add router level parameters like prefix, tags, etc. to the router itself, instead of in `include_router()`.

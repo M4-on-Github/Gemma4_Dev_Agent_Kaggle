@@ -1,0 +1,27 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index e153073c..c0ada8fb 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ - Thread used in progress.track will exit if an exception occurs in a generator https://github.com/Textualize/rich/pull/3402
+ - Progress track thread is now a daemon thread https://github.com/Textualize/rich/pull/3402
+ - Fixed cached hash preservation upon clearing meta and links https://github.com/Textualize/rich/issues/2942
++- Fixed overriding the background color of Syntax not including padding https://github.com/Textualize/rich/issues/3295
+ 
+ ### Changed
+ 
+diff --git a/rich/syntax.py b/rich/syntax.py
+index f3ceff75..4da6c3b7 100644
+--- a/rich/syntax.py
++++ b/rich/syntax.py
+@@ -619,9 +619,7 @@ class Syntax(JupyterMixin):
+     ) -> RenderResult:
+         segments = Segments(self._get_syntax(console, options))
+         if self.padding:
+-            yield Padding(
+-                segments, style=self._theme.get_background_style(), pad=self.padding
+-            )
++            yield Padding(segments, style=self._get_base_style(), pad=self.padding)
+         else:
+             yield segments
+ 

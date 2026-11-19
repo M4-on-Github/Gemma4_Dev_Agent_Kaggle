@@ -1,0 +1,22 @@
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index fb4784309..18b3e153d 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -2435,8 +2435,15 @@ class APIRouter(routing.Router):
+                 "A path prefix must not end with '/', as the routes will start with '/'"
+             )
+         else:
+-            for r in _iter_included_route_candidates(router.routes):
+-                path = getattr(r, "path", None)
++            for r, route_context in _iter_routes_with_context(router.routes):
++                if route_context is None:
++                    path = getattr(r, "path", None)
++                elif route_context.starlette_route is not None:
++                    path = getattr(route_context.starlette_route, "path", None)
++                else:
++                    # APIRoute in a nested included router, use the effective
++                    # path, including the prefixes of the routers in between
++                    path = route_context.path
+                 name = getattr(r, "name", "unknown")
+                 if path is not None and not path:
+                     raise FastAPIError(

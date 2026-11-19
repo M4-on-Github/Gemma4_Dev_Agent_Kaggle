@@ -1,0 +1,90 @@
+diff --git a/docs/en/docs/tutorial/server-sent-events.md b/docs/en/docs/tutorial/server-sent-events.md
+index bbac05bd6..7243fd053 100644
+--- a/docs/en/docs/tutorial/server-sent-events.md
++++ b/docs/en/docs/tutorial/server-sent-events.md
+@@ -79,6 +79,12 @@ Import `ServerSentEvent` from `fastapi.sse`:
+ 
+ The `data` field is always encoded as JSON. You can pass any value that can be serialized as JSON, including Pydantic models.
+ 
++/// note
++
++The `event` and `id` fields must be single-line values: they can't contain line breaks (`\r` or `\n`), and `id` can't contain null characters (`\0`). Those characters would break the event stream, so FastAPI raises an error instead of sending invalid data.
++
++///
++
+ ## Raw Data { #raw-data }
+ 
+ If you need to send data **without** JSON encoding, use `raw_data` instead of `data`.
+diff --git a/fastapi/sse.py b/fastapi/sse.py
+index 901d82496..65a9a44a9 100644
+--- a/fastapi/sse.py
++++ b/fastapi/sse.py
+@@ -33,9 +33,23 @@ class EventSourceResponse(StreamingResponse):
+     media_type = "text/event-stream"
+ 
+ 
+-def _check_id_no_null(v: str | None) -> str | None:
++def _check_no_line_breaks(field_name: str, value: str | None) -> None:
++    if value is not None and ("\r" in value or "\n" in value):
++        raise ValueError(
++            f"SSE '{field_name}' must not contain line break characters "
++            "(carriage return or line feed)"
++        )
++
++
++def _check_event_value(v: str | None) -> str | None:
++    _check_no_line_breaks("event", v)
++    return v
++
++
++def _check_id_value(v: str | None) -> str | None:
+     if v is not None and "\0" in v:
+         raise ValueError("SSE 'id' must not contain null characters")
++    _check_no_line_breaks("id", v)
+     return v
+ 
+ 
+@@ -86,24 +100,27 @@ class ServerSentEvent(BaseModel):
+     ] = None
+     event: Annotated[
+         str | None,
++        AfterValidator(_check_event_value),
+         Doc(
+             """
+             Optional event type name.
+ 
+             Maps to `addEventListener(event, ...)` on the browser. When omitted,
+             the browser dispatches on the generic `message` event.
++            **Must not contain line breaks (`\\r` or `\\n`).**
+             """
+         ),
+     ] = None
+     id: Annotated[
+         str | None,
+-        AfterValidator(_check_id_no_null),
++        AfterValidator(_check_id_value),
+         Doc(
+             """
+             Optional event ID.
+ 
+             The browser sends this value back as the `Last-Event-ID` header on
+-            automatic reconnection. **Must not contain null (`\\0`) characters.**
++            automatic reconnection. **Must not contain null (`\\0`) characters
++            or line breaks (`\\r` or `\\n`).**
+             """
+         ),
+     ] = None
+@@ -189,7 +206,13 @@ def format_sse_event(
+     """Build SSE wire-format bytes from **pre-serialized** data.
+ 
+     The result always ends with `\n\n` (the event terminator).
++
++    Raises `ValueError` if `event` or `id` contain line breaks, or if `id`
++    contains null characters, as those would produce a broken event stream.
+     """
++    _check_event_value(event)
++    _check_id_value(id)
++
+     lines: list[str] = []
+ 
+     if comment is not None:

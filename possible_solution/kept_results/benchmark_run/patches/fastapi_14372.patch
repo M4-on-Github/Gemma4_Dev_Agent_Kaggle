@@ -1,0 +1,50 @@
+diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py
+index 4b69e39a..74721ee9 100644
+--- a/fastapi/dependencies/utils.py
++++ b/fastapi/dependencies/utils.py
+@@ -1,6 +1,7 @@
++import dataclasses
+ import inspect
+ from contextlib import AsyncExitStack, contextmanager
+-from copy import copy, deepcopy
++from copy import deepcopy
+ from dataclasses import dataclass
+ from typing import (
+     Any,
+@@ -426,9 +427,8 @@ def analyze_param(
+ 
+     # Get Depends from type annotation
+     if depends is not None and depends.dependency is None:
+-        # Copy `depends` before mutating it
+-        depends = copy(depends)
+-        depends.dependency = type_annotation
++        # Create a new `depends` with the dependency set, `Depends` is frozen
++        depends = dataclasses.replace(depends, dependency=type_annotation)
+ 
+     # Handle non-param type annotations like Request
+     if lenient_issubclass(
+diff --git a/fastapi/params.py b/fastapi/params.py
+index 6a58d580..f516e07f 100644
+--- a/fastapi/params.py
++++ b/fastapi/params.py
+@@ -762,13 +762,18 @@ class File(Form):  # type: ignore[misc]
+         )
+ 
+ 
+-@dataclass
++@dataclass(frozen=True)
+ class Depends:
+     dependency: Optional[Callable[..., Any]] = None
+     use_cache: bool = True
+     scope: Union[Literal["function", "request"], None] = None
+ 
+ 
+-@dataclass
++@dataclass(frozen=True)
+ class Security(Depends):
+     scopes: Optional[Sequence[str]] = None
++
++    def __hash__(self) -> int:
++        # `scopes` can be a list (unhashable), so hash it as a tuple
++        scopes = tuple(self.scopes) if self.scopes is not None else None
++        return hash((self.dependency, self.use_cache, self.scope, scopes))

@@ -1,0 +1,64 @@
+diff --git a/src/requests/_types.py b/src/requests/_types.py
+index b2273d61..2b68432e 100644
+--- a/src/requests/_types.py
++++ b/src/requests/_types.py
+@@ -39,6 +39,17 @@ HookType: TypeAlias = Callable[["Response"], Any]
+ HooksInputType: TypeAlias = Mapping[str, Iterable[HookType] | HookType]
+ 
+ 
++def supports_read(obj: object) -> TypeIs[SupportsRead[Any]]:
++    """Check whether an object provides a ``read`` method.
++
++    ``isinstance`` checks against a runtime protocol miss objects that proxy
++    attribute access to an underlying object via ``__getattr__`` (e.g. the
++    wrapper returned by ``tempfile.NamedTemporaryFile``), so fall back to
++    ``hasattr`` for those.
++    """
++    return isinstance(obj, SupportsRead) or hasattr(obj, "read")
++
++
+ def is_prepared(request: PreparedRequest) -> TypeIs[_ValidatedRequest]:
+     """Verify a PreparedRequest has been fully prepared."""
+     if TYPE_CHECKING:
+diff --git a/src/requests/models.py b/src/requests/models.py
+index ebeba1e3..84639126 100644
+--- a/src/requests/models.py
++++ b/src/requests/models.py
+@@ -36,7 +36,7 @@ from urllib3.filepost import encode_multipart_formdata
+ from urllib3.util import parse_url
+ 
+ from ._internal_utils import to_native_string, unicode_is_ascii
+-from ._types import SupportsRead as _SupportsRead
++from ._types import supports_read as _supports_read
+ from .auth import HTTPBasicAuth
+ from .compat import (
+     JSONDecodeError,
+@@ -161,7 +161,7 @@ class RequestEncodingMixin:
+ 
+         if isinstance(data, (str, bytes)):
+             return data
+-        elif isinstance(data, _SupportsRead):
++        elif _supports_read(data):
+             return data
+         elif hasattr(data, "__iter__"):
+             result: list[tuple[bytes, bytes]] = []
+@@ -236,9 +236,7 @@ class RequestEncodingMixin:
+ 
+             if isinstance(fp, (str, bytes, bytearray)):
+                 fdata = fp
+-            # data that proxies attributes to underlying objects needs hasattr
+-            # defensive check for untyped callers
+-            elif isinstance(fp, _SupportsRead) or hasattr(fp, "read"):
++            elif _supports_read(fp):  # defensive check for untyped callers
+                 fdata = fp.read()
+             elif fp is None:  # defensive check for untyped callers
+                 continue
+@@ -641,7 +639,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
+             else:
+                 if raw_data:
+                     body = self._encode_params(raw_data)
+-                    if isinstance(data, basestring) or isinstance(data, _SupportsRead):
++                    if isinstance(data, basestring) or _supports_read(data):
+                         content_type = None
+                     else:
+                         content_type = "application/x-www-form-urlencoded"

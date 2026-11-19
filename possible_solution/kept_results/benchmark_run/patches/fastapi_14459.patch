@@ -1,0 +1,57 @@
+diff --git a/fastapi/dependencies/models.py b/fastapi/dependencies/models.py
+index 9b545e4e..6bd19d05 100644
+--- a/fastapi/dependencies/models.py
++++ b/fastapi/dependencies/models.py
+@@ -83,11 +83,22 @@ class Dependant:
+             return True
+         if self.security_scopes_param_name is not None:
+             return True
++        if self._is_security_scheme:
++            # Security schemes declare the (inherited) scopes in OpenAPI, so the
++            # same scheme with different scopes must not be treated as a repeat
++            return True
+         for sub_dep in self.dependencies:
+             if sub_dep._uses_scopes:
+                 return True
+         return False
+ 
++    @cached_property
++    def _is_security_scheme(self) -> bool:
++        if self.call is None:
++            return False  # pragma: no cover
++        unwrapped = _unwrapped_call(self.call)
++        return isinstance(unwrapped, SecurityBase)
++
+     @cached_property
+     def is_gen_callable(self) -> bool:
+         if self.call is None:
+diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py
+index 1ff35f64..278fabcd 100644
+--- a/fastapi/dependencies/utils.py
++++ b/fastapi/dependencies/utils.py
+@@ -55,7 +55,11 @@ from fastapi.concurrency import (
+     asynccontextmanager,
+     contextmanager_in_threadpool,
+ )
+-from fastapi.dependencies.models import Dependant, SecurityRequirement
++from fastapi.dependencies.models import (
++    Dependant,
++    SecurityRequirement,
++    _unwrapped_call,
++)
+ from fastapi.exceptions import DependencyScopeError
+ from fastapi.logger import logger
+ from fastapi.security.base import SecurityBase
+@@ -258,9 +262,10 @@ def get_dependant(
+     path_param_names = get_path_param_names(path)
+     endpoint_signature = get_typed_signature(call)
+     signature_params = endpoint_signature.parameters
+-    if isinstance(call, SecurityBase):
++    if dependant._is_security_scheme:
++        security_scheme = cast(SecurityBase, _unwrapped_call(call))
+         security_requirement = SecurityRequirement(
+-            security_scheme=call, scopes=current_scopes
++            security_scheme=security_scheme, scopes=current_scopes
+         )
+         dependant.security_requirements.append(security_requirement)
+     for param_name, param in signature_params.items():

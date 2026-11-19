@@ -1,0 +1,16 @@
+diff --git a/src/requests/models.py b/src/requests/models.py
+index c4cc028e..81793991 100644
+--- a/src/requests/models.py
++++ b/src/requests/models.py
+@@ -236,7 +236,10 @@ class RequestEncodingMixin:
+ 
+             if isinstance(fp, (str, bytes, bytearray)):
+                 fdata = fp
+-            elif isinstance(fp, _SupportsRead):  # defensive check for untyped callers
++            elif hasattr(fp, "read"):
++                # Use hasattr rather than isinstance(fp, SupportsRead): runtime
++                # Protocol checks use getattr_static and miss file wrappers
++                # that delegate ``read`` via ``__getattr__``.
+                 fdata = fp.read()
+             elif fp is None:  # defensive check for untyped callers
+                 continue

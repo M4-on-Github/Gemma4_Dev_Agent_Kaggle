@@ -1,0 +1,62 @@
+diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py
+index 0ba93524..f3e24fd1 100644
+--- a/fastapi/dependencies/utils.py
++++ b/fastapi/dependencies/utils.py
+@@ -1,6 +1,7 @@
+ import dataclasses
+ import inspect
+ import sys
++import warnings
+ from collections.abc import Coroutine, Mapping, Sequence
+ from contextlib import AsyncExitStack, contextmanager
+ from copy import copy, deepcopy
+@@ -497,6 +498,15 @@ def analyze_param(
+     field = None
+     # It's a field_info, not a dependency
+     if field_info is not None:
++        if annotation_is_pydantic_v1(type_annotation) or isinstance(
++            field_info, may_v1.FieldInfo
++        ):
++            warnings.warn(
++                "pydantic.v1 is deprecated and will soon stop being supported by FastAPI."
++                f" Please update the param {param_name}: {annotation!r}.",
++                category=DeprecationWarning,
++                stacklevel=6,
++            )
+         # Handle field_info.in_
+         if is_path_param:
+             assert isinstance(
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index a1f2e44b..9d0c9c6d 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -2,6 +2,7 @@ import email.message
+ import functools
+ import inspect
+ import json
++import warnings
+ from collections.abc import (
+     AsyncIterator,
+     Awaitable,
+@@ -28,6 +29,7 @@ from fastapi._compat import (
+     _get_model_config,
+     _model_dump,
+     _normalize_errors,
++    annotation_is_pydantic_v1,
+     lenient_issubclass,
+     may_v1,
+ )
+@@ -633,6 +635,13 @@ class APIRoute(routing.Route):
+             assert is_body_allowed_for_status_code(status_code), (
+                 f"Status code {status_code} must not have a response body"
+             )
++            if annotation_is_pydantic_v1(self.response_model):
++                warnings.warn(
++                    "pydantic.v1 is deprecated and will soon stop being supported by FastAPI."
++                    f" Please update the response model {self.response_model!r}.",
++                    category=DeprecationWarning,
++                    stacklevel=4,
++                )
+             response_name = "Response_" + self.unique_id
+             self.response_field = create_model_field(
+                 name=response_name,

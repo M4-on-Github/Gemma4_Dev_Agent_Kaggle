@@ -1,0 +1,418 @@
+diff --git a/.github/workflows/create-draft-release.yml b/.github/workflows/create-draft-release.yml
+new file mode 100644
+index 000000000..68d0a4a66
+--- /dev/null
++++ b/.github/workflows/create-draft-release.yml
+@@ -0,0 +1,63 @@
++name: Create Draft Release
++
++on:
++  pull_request:
++    types:
++      - closed
++
++permissions: {}
++
++jobs:
++  create-draft-release:
++    if: >-
++      github.repository_owner == 'fastapi'
++      && github.event.pull_request.merged == true
++      && github.event.pull_request.head.repo.full_name == github.repository
++      && contains(github.event.pull_request.labels.*.name, 'release')
++    runs-on: ubuntu-latest
++    timeout-minutes: 5
++    permissions:
++      contents: write
++    env:
++      PREPARE_RELEASE_VERSION_FILE: fastapi/__init__.py
++      PREPARE_RELEASE_RELEASE_NOTES_FILE: docs/en/docs/release-notes.md
++    steps:
++      - name: Dump GitHub context
++        env:
++          GITHUB_CONTEXT: ${{ toJson(github) }}
++        run: echo "$GITHUB_CONTEXT"
++      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        with:
++          # The merge commit of the release PR
++          ref: ${{ github.event.pull_request.merge_commit_sha }}
++          persist-credentials: false
++      - name: Set up Python
++        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
++        with:
++          python-version-file: ".python-version"
++      - name: Install uv
++        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
++        with:
++          # Before upgrading uv version, make sure astral-sh/setup-uv knows its checksum.
++          # See: https://github.com/astral-sh/setup-uv/issues/851#issuecomment-4282017837
++          version: "0.11.4"
++          enable-cache: false
++      - name: Extract release details
++        id: release-details
++        run: |
++          set -euo pipefail
++          version="$(uv run --no-project --with "typer>=0.21.1" python scripts/prepare_release.py current-version)"
++          uv run --no-project --with "typer>=0.21.1" python scripts/prepare_release.py release-notes > draft-release-notes.md
++          echo "version=$version" >> "$GITHUB_OUTPUT"
++      - name: Create draft release
++        env:
++          GH_TOKEN: ${{ github.token }}
++          VERSION: ${{ steps.release-details.outputs.version }}
++        run: |
++          set -euo pipefail
++          gh release create "$VERSION" \
++            --repo "$GITHUB_REPOSITORY" \
++            --draft \
++            --title "$VERSION" \
++            --notes-file draft-release-notes.md \
++            --target "$(git rev-parse HEAD)"
+diff --git a/.github/workflows/labeler.yml b/.github/workflows/labeler.yml
+index 5b7524f25..803160ef5 100644
+--- a/.github/workflows/labeler.yml
++++ b/.github/workflows/labeler.yml
+@@ -33,5 +33,5 @@ jobs:
+     steps:
+       - uses: agilepathway/label-checker@c3d16ad512e7cea5961df85ff2486bb774caf3c5 # v1.6.65
+         with:
+-          one_of: breaking,security,feature,bug,refactor,upgrade,docs,lang-all,internal
++          one_of: breaking,security,feature,bug,refactor,upgrade,docs,lang-all,internal,release
+           repo_token: ${{ secrets.GITHUB_TOKEN }}
+diff --git a/.github/workflows/latest-changes.yml b/.github/workflows/latest-changes.yml
+index 12bc67686..92f8f24c9 100644
+--- a/.github/workflows/latest-changes.yml
++++ b/.github/workflows/latest-changes.yml
+@@ -39,7 +39,7 @@ jobs:
+         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled == 'true' }}
+         with:
+           limit-access-to-actor: true
+-      - uses: tiangolo/latest-changes@c9d329cb147f0ddf4fb631214e3f838ff17ccbbd # 0.4.1
++      - uses: tiangolo/latest-changes@eb3f6e7ff0073896ecb561e774a121de9418fa06 # 0.5.0
+         with:
+           token: ${{ secrets.GITHUB_TOKEN }}
+           latest_changes_file: docs/en/docs/release-notes.md
+diff --git a/.github/workflows/prepare-release.yml b/.github/workflows/prepare-release.yml
+new file mode 100644
+index 000000000..e355a5341
+--- /dev/null
++++ b/.github/workflows/prepare-release.yml
+@@ -0,0 +1,87 @@
++name: Prepare Release
++
++on:
++  workflow_dispatch:
++    inputs:
++      bump:
++        description: Release bump
++        required: true
++        type: choice
++        options:
++          - patch
++          - minor
++          - major
++      date:
++        description: Release date in YYYY-MM-DD format. Defaults to today.
++        required: false
++        type: string
++
++permissions: {}
++
++jobs:
++  prepare-release:
++    if: github.repository_owner == 'fastapi'
++    runs-on: ubuntu-latest
++    timeout-minutes: 5
++    permissions:
++      contents: write
++      issues: write
++      pull-requests: write
++    env:
++      PREPARE_RELEASE_VERSION_FILE: fastapi/__init__.py
++      PREPARE_RELEASE_RELEASE_NOTES_FILE: docs/en/docs/release-notes.md
++    steps:
++      - name: Dump GitHub context
++        env:
++          GITHUB_CONTEXT: ${{ toJson(github) }}
++        run: echo "$GITHUB_CONTEXT"
++      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        with:
++          # Use a token that triggers other workflows (tests, labels) on the release PR
++          token: ${{ secrets.FASTAPI_LATEST_CHANGES }} # zizmor: ignore[secrets-outside-env]
++          persist-credentials: true # Required for `git push` below
++      - name: Set up Python
++        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
++        with:
++          python-version-file: ".python-version"
++      - name: Install uv
++        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
++        with:
++          # Before upgrading uv version, make sure astral-sh/setup-uv knows its checksum.
++          # See: https://github.com/astral-sh/setup-uv/issues/851#issuecomment-4282017837
++          version: "0.11.4"
++          enable-cache: false
++      - name: Prepare release
++        env:
++          PREPARE_RELEASE_BUMP: ${{ inputs.bump }}
++          PREPARE_RELEASE_DATE: ${{ inputs.date }}
++        run: uv run --no-project --with "typer>=0.21.1" python scripts/prepare_release.py prepare
++      - name: Get release version
++        id: release-version
++        run: |
++          set -euo pipefail
++          version="$(uv run --no-project --with "typer>=0.21.1" python scripts/prepare_release.py current-version)"
++          echo "$version"
++          # Fail before opening the PR if the new release section has no changes
++          uv run --no-project --with "typer>=0.21.1" python scripts/prepare_release.py release-notes
++          echo "version=$version" >> "$GITHUB_OUTPUT"
++      - name: Create release pull request
++        env:
++          GH_TOKEN: ${{ secrets.FASTAPI_LATEST_CHANGES }} # zizmor: ignore[secrets-outside-env]
++          VERSION: ${{ steps.release-version.outputs.version }}
++          BASE_BRANCH: ${{ github.event.repository.default_branch }}
++        run: |
++          set -euo pipefail
++          branch="release-${VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
++          git config user.name "github-actions[bot]"
++          git config user.email "github-actions[bot]@users.noreply.github.com"
++          git switch -c "$branch"
++          git add "$PREPARE_RELEASE_VERSION_FILE" "$PREPARE_RELEASE_RELEASE_NOTES_FILE"
++          git commit -m "🔖 Release version ${VERSION}"
++          git push --set-upstream origin "$branch"
++          gh pr create \
++            --base "$BASE_BRANCH" \
++            --head "$branch" \
++            --title "🔖 Release version ${VERSION}" \
++            --body "Prepare release ${VERSION}. Merging this PR creates a draft GitHub release; publishing that release publishes the package to PyPI." \
++            --label release
+diff --git a/.github/workflows/publish.yml b/.github/workflows/publish.yml
+index 307b3cb3c..57a6af204 100644
+--- a/.github/workflows/publish.yml
++++ b/.github/workflows/publish.yml
+@@ -3,7 +3,7 @@ name: Publish
+ on:
+   release:
+     types:
+-      - created
++      - published
+ 
+ permissions: {}
+ 
+diff --git a/scripts/prepare_release.py b/scripts/prepare_release.py
+new file mode 100644
+index 000000000..3eb286401
+--- /dev/null
++++ b/scripts/prepare_release.py
+@@ -0,0 +1,213 @@
++"""Prepare a release by updating the package version and release notes.
++
++Commands:
++
++* `prepare`: bump `__version__` and move the "Latest Changes" in the release
++  notes under a new dated version heading.
++* `current-version`: print the current `__version__`.
++* `release-notes`: print the release notes section for the current version.
++"""
++
++import re
++from datetime import date
++from pathlib import Path
++from typing import Annotated, Literal
++
++import typer
++
++DEFAULT_VERSION_FILE = Path("fastapi/__init__.py")
++DEFAULT_RELEASE_NOTES_FILE = Path("docs/en/docs/release-notes.md")
++
++VERSION_PATTERN = re.compile(r'(?m)^__version__ = "(\d+\.\d+\.\d+)"$')
++VERSION_HEADING_PATTERN = re.compile(r"(?m)^## (\d+\.\d+\.\d+)(?: \([^)]+\))?$")
++RELEASE_NOTES_HEADER = "# Release Notes\n\n"
++LATEST_CHANGES_HEADER = "## Latest Changes"
++BumpType = Literal["major", "minor", "patch"]
++
++app = typer.Typer()
++
++
++def parse_version(version: str) -> tuple[int, int, int]:
++    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
++        raise ValueError(f"Invalid version: {version!r}. Expected format: X.Y.Z")
++    major, minor, patch = version.split(".")
++    return int(major), int(minor), int(patch)
++
++
++def get_current_version(content: str, version_file: Path) -> str:
++    matches = list(VERSION_PATTERN.finditer(content))
++    if len(matches) != 1:
++        raise RuntimeError(
++            f"Expected exactly one __version__ assignment in {version_file}, "
++            f"found {len(matches)}"
++        )
++    return matches[0].group(1)
++
++
++def bump_version(version: str, bump: BumpType) -> str:
++    major, minor, patch = parse_version(version)
++    if bump == "major":
++        return f"{major + 1}.0.0"
++    if bump == "minor":
++        return f"{major}.{minor + 1}.0"
++    if bump == "patch":
++        return f"{major}.{minor}.{patch + 1}"
++    raise ValueError(f"Invalid bump: {bump!r}. Expected major, minor, or patch")
++
++
++def update_version_file(content: str, version: str, version_file: Path) -> str:
++    current_version = get_current_version(content, version_file)
++    if parse_version(version) <= parse_version(current_version):
++        raise RuntimeError(
++            f"New version {version} must be greater than current version "
++            f"{current_version}"
++        )
++    return VERSION_PATTERN.sub(f'__version__ = "{version}"', content, count=1)
++
++
++def _version_heading(version: str) -> re.Pattern[str]:
++    return re.compile(rf"(?m)^## {re.escape(version)}(?: \([^)]+\))?$")
++
++
++def update_release_notes(
++    content: str, version: str, release_date: date, release_notes_file: Path
++) -> str:
++    # The release notes may start with front matter (e.g. MkDocs `hide`
++    # options), so look for the headers instead of requiring them at the start
++    latest_header = f"{RELEASE_NOTES_HEADER}{LATEST_CHANGES_HEADER}\n"
++    if latest_header not in content:
++        raise RuntimeError(
++            f"{release_notes_file} must contain {latest_header!r} "
++            "at the top of the release notes"
++        )
++    if _version_heading(version).search(content):
++        raise RuntimeError(f"Release notes already contain a section for {version}")
++
++    release_header = f"## {version} ({release_date.isoformat()})"
++    return content.replace(
++        latest_header,
++        f"{latest_header}\n{release_header}\n",
++        1,
++    )
++
++
++def get_release_notes_body(content: str, version: str, release_notes_file: Path) -> str:
++    match = _version_heading(version).search(content)
++    if not match:
++        raise RuntimeError(
++            f"Could not find release notes section for {version} in "
++            f"{release_notes_file}"
++        )
++
++    next_match = VERSION_HEADING_PATTERN.search(content, match.end())
++    end = next_match.start() if next_match else len(content)
++    body = content[match.end() : end].strip()
++    if not body:
++        raise RuntimeError(
++            f"Release notes section for {version} in {release_notes_file} is empty"
++        )
++    return f"{body}\n"
++
++
++VersionFileOption = Annotated[
++    Path,
++    typer.Option(
++        envvar="PREPARE_RELEASE_VERSION_FILE",
++        exists=True,
++        file_okay=True,
++        dir_okay=False,
++        readable=True,
++        help="Path to the Python file containing the __version__ assignment.",
++    ),
++]
++
++ReleaseNotesFileOption = Annotated[
++    Path,
++    typer.Option(
++        envvar="PREPARE_RELEASE_RELEASE_NOTES_FILE",
++        exists=True,
++        file_okay=True,
++        dir_okay=False,
++        readable=True,
++        help="Path to the release notes Markdown file.",
++    ),
++]
++
++
++@app.command()
++def prepare(
++    bump: Annotated[
++        BumpType,
++        typer.Argument(
++            envvar="PREPARE_RELEASE_BUMP",
++            help="The release bump to make: major, minor, or patch.",
++        ),
++    ],
++    version_file: VersionFileOption = DEFAULT_VERSION_FILE,
++    release_notes_file: ReleaseNotesFileOption = DEFAULT_RELEASE_NOTES_FILE,
++    release_date: Annotated[
++        str | None,
++        typer.Option(
++            "--date",
++            envvar="PREPARE_RELEASE_DATE",
++            help="Release date in YYYY-MM-DD format. Defaults to today.",
++        ),
++    ] = None,
++) -> None:
++    """Bump the version and add a dated release heading to the release notes."""
++    # An empty string (e.g. an unset workflow input) means today
++    parsed_release_date = (
++        date.fromisoformat(release_date) if release_date else date.today()
++    )
++
++    version_file_content = version_file.read_text(encoding="utf-8")
++    release_notes_content = release_notes_file.read_text(encoding="utf-8")
++    version = bump_version(
++        get_current_version(version_file_content, version_file), bump
++    )
++
++    # Compute both new contents before writing anything, so that an error
++    # doesn't leave the files half updated
++    new_version_file_content = update_version_file(
++        version_file_content, version, version_file
++    )
++    new_release_notes_content = update_release_notes(
++        release_notes_content, version, parsed_release_date, release_notes_file
++    )
++    version_file.write_text(new_version_file_content, encoding="utf-8")
++    release_notes_file.write_text(new_release_notes_content, encoding="utf-8")
++
++    typer.echo(f"Prepared release {version} ({parsed_release_date.isoformat()})")
++
++
++@app.command()
++def current_version(
++    version_file: VersionFileOption = DEFAULT_VERSION_FILE,
++) -> None:
++    """Print the current version."""
++    typer.echo(
++        get_current_version(version_file.read_text(encoding="utf-8"), version_file)
++    )
++
++
++@app.command()
++def release_notes(
++    version_file: VersionFileOption = DEFAULT_VERSION_FILE,
++    release_notes_file: ReleaseNotesFileOption = DEFAULT_RELEASE_NOTES_FILE,
++) -> None:
++    """Print the release notes section for the current version."""
++    version = get_current_version(
++        version_file.read_text(encoding="utf-8"), version_file
++    )
++    typer.echo(
++        get_release_notes_body(
++            release_notes_file.read_text(encoding="utf-8"),
++            version,
++            release_notes_file,
++        ),
++        nl=False,
++    )
++
++
++if __name__ == "__main__":
++    app()

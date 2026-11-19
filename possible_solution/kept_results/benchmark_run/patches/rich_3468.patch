@@ -1,0 +1,48 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 9a33db4a..17e87764 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ - Fixed cached hash preservation upon clearing meta and links https://github.com/Textualize/rich/issues/2942
+ - Fixed overriding the `background_color` of `Syntax` not including padding https://github.com/Textualize/rich/issues/3295
+ - Fixed selective enabling of highlighting when disabled in the `Console` https://github.com/Textualize/rich/issues/3419
++- Fixed BrokenPipe error https://github.com/Textualize/rich/pull/3468
+ 
+ ### Changed
+ 
+diff --git a/rich/console.py b/rich/console.py
+index ee543553..b15b1964 100644
+--- a/rich/console.py
++++ b/rich/console.py
+@@ -1998,6 +1998,31 @@ class Console:
+         if self.quiet:
+             del self._buffer[:]
+             return
++
++        try:
++            self._write_buffer()
++        except BrokenPipeError:
++            self.on_broken_pipe()
++
++    def on_broken_pipe(self) -> None:
++        """This function is called when a `BrokenPipeError` is raised.
++
++        This can occur when piping output to a process that exits early (such as
++        `head`) on Linux and macOS. The default implementation is to redirect stdout
++        to devnull (so Python doesn't raise again when flushing at exit) and to exit
++        with a return code of 1. You could implement this method in a subclass to
++        change the behavior.
++
++        See https://docs.python.org/3/library/signal.html#note-on-sigpipe for details.
++        """
++        self.quiet = True
++        devnull = os.open(os.devnull, os.O_WRONLY)
++        os.dup2(devnull, sys.stdout.fileno())
++        raise SystemExit(1)
++
++    def _write_buffer(self) -> None:
++        """Write the buffer to the output file."""
++
+         with self._lock:
+             if self.record:
+                 with self._record_buffer_lock:

@@ -1,0 +1,313 @@
+diff --git a/fastapi/_compat/shared.py b/fastapi/_compat/shared.py
+index 3a11e88a..31ba6c48 100644
+--- a/fastapi/_compat/shared.py
++++ b/fastapi/_compat/shared.py
+@@ -183,9 +183,11 @@ def annotation_is_pydantic_v1(annotation: Any) -> bool:
+     if lenient_issubclass(annotation, may_v1.BaseModel):
+         return True
+     origin = get_origin(annotation)
++    if origin is Annotated:
++        return annotation_is_pydantic_v1(get_args(annotation)[0])
+     if origin is Union or origin is UnionType:
+         for arg in get_args(annotation):
+-            if lenient_issubclass(arg, may_v1.BaseModel):
++            if annotation_is_pydantic_v1(arg):
+                 return True
+     if field_annotation_is_sequence(annotation):
+         for sub_annotation in get_args(annotation):
+diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py
+index af2bed9a..9b6e4d1b 100644
+--- a/fastapi/dependencies/utils.py
++++ b/fastapi/dependencies/utils.py
+@@ -1,7 +1,6 @@
+ import dataclasses
+ import inspect
+ import sys
+-import warnings
+ from collections.abc import Coroutine, Mapping, Sequence
+ from contextlib import AsyncExitStack, contextmanager
+ from copy import copy, deepcopy
+@@ -51,7 +50,7 @@ from fastapi.concurrency import (
+     contextmanager_in_threadpool,
+ )
+ from fastapi.dependencies.models import Dependant
+-from fastapi.exceptions import DependencyScopeError, FastAPIDeprecationWarning
++from fastapi.exceptions import DependencyScopeError, PydanticV1NotSupportedError
+ from fastapi.logger import logger
+ from fastapi.security.oauth2 import SecurityScopes
+ from fastapi.types import DependencyCacheKey
+@@ -323,13 +322,6 @@ def get_dependant(
+             )
+             continue
+         assert param_details.field is not None
+-        if isinstance(param_details.field, may_v1.ModelField):
+-            warnings.warn(
+-                "pydantic.v1 is deprecated and will soon stop being supported by FastAPI."
+-                f" Please update the param {param_name}: {param_details.type_annotation!r}.",
+-                category=FastAPIDeprecationWarning,
+-                stacklevel=5,
+-            )
+         if isinstance(
+             param_details.field.field_info, (params.Body, temp_pydantic_v1_params.Body)
+         ):
+@@ -491,20 +483,20 @@ def analyze_param(
+         ) or is_uploadfile_sequence_annotation(type_annotation):
+             field_info = params.File(annotation=use_annotation, default=default_value)
+         elif not field_annotation_is_scalar(annotation=type_annotation):
+-            if annotation_is_pydantic_v1(use_annotation):
+-                field_info = temp_pydantic_v1_params.Body(  # type: ignore[assignment]
+-                    annotation=use_annotation, default=default_value
+-                )
+-            else:
+-                field_info = params.Body(
+-                    annotation=use_annotation, default=default_value
+-                )
++            field_info = params.Body(annotation=use_annotation, default=default_value)
+         else:
+             field_info = params.Query(annotation=use_annotation, default=default_value)
+ 
+     field = None
+     # It's a field_info, not a dependency
+     if field_info is not None:
++        if annotation_is_pydantic_v1(use_annotation) or isinstance(
++            field_info, may_v1.FieldInfo
++        ):
++            raise PydanticV1NotSupportedError(
++                "pydantic.v1 models are no longer supported by FastAPI."
++                f" Please update the param {param_name}: {use_annotation!r}."
++            )
+         # Handle field_info.in_
+         if is_path_param:
+             assert isinstance(
+diff --git a/fastapi/exceptions.py b/fastapi/exceptions.py
+index 53e50528..eb497546 100644
+--- a/fastapi/exceptions.py
++++ b/fastapi/exceptions.py
+@@ -154,6 +154,12 @@ class FastAPIError(RuntimeError):
+     """
+ 
+ 
++class PydanticV1NotSupportedError(FastAPIError):
++    """
++    A pydantic.v1 model is used, which is no longer supported.
++    """
++
++
+ class DependencyScopeError(FastAPIError):
+     """
+     A dependency declared that it depends on another dependency with an invalid
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index 3f78e93e..fc3fb33d 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -2,7 +2,6 @@ import email.message
+ import functools
+ import inspect
+ import json
+-import warnings
+ from collections.abc import (
+     AsyncIterator,
+     Awaitable,
+@@ -47,8 +46,8 @@ from fastapi.dependencies.utils import (
+ from fastapi.encoders import jsonable_encoder
+ from fastapi.exceptions import (
+     EndpointContext,
+-    FastAPIDeprecationWarning,
+     FastAPIError,
++    PydanticV1NotSupportedError,
+     RequestValidationError,
+     ResponseValidationError,
+     WebSocketRequestValidationError,
+@@ -638,11 +637,9 @@ class APIRoute(routing.Route):
+             )
+             response_name = "Response_" + self.unique_id
+             if annotation_is_pydantic_v1(self.response_model):
+-                warnings.warn(
+-                    "pydantic.v1 is deprecated and will soon stop being supported by FastAPI."
+-                    f" Please update the response model {self.response_model!r}.",
+-                    category=FastAPIDeprecationWarning,
+-                    stacklevel=4,
++                raise PydanticV1NotSupportedError(
++                    "pydantic.v1 models are no longer supported by FastAPI."
++                    f" Please update the response model {self.response_model!r}."
+                 )
+             self.response_field = create_model_field(
+                 name=response_name,
+@@ -678,11 +675,9 @@ class APIRoute(routing.Route):
+                 )
+                 response_name = f"Response_{additional_status_code}_{self.unique_id}"
+                 if annotation_is_pydantic_v1(model):
+-                    warnings.warn(
+-                        "pydantic.v1 is deprecated and will soon stop being supported by FastAPI."
+-                        f" In responses={{}}, please update {model}.",
+-                        category=FastAPIDeprecationWarning,
+-                        stacklevel=4,
++                    raise PydanticV1NotSupportedError(
++                        "pydantic.v1 models are no longer supported by FastAPI."
++                        f" In responses={{}}, please update {model}."
+                     )
+                 response_field = create_model_field(
+                     name=response_name, type_=model, mode="serialization"
+diff --git a/fastapi/utils.py b/fastapi/utils.py
+index 8ae50aa1..9e1e6881 100644
+--- a/fastapi/utils.py
++++ b/fastapi/utils.py
+@@ -6,9 +6,7 @@ from typing import (
+     Any,
+     Optional,
+     Union,
+-    cast,
+ )
+-from weakref import WeakKeyDictionary
+ 
+ import fastapi
+ from fastapi._compat import (
+@@ -19,11 +17,10 @@ from fastapi._compat import (
+     UndefinedType,
+     Validator,
+     annotation_is_pydantic_v1,
+-    lenient_issubclass,
+     may_v1,
+ )
+ from fastapi.datastructures import DefaultPlaceholder, DefaultType
+-from fastapi.exceptions import FastAPIDeprecationWarning
++from fastapi.exceptions import FastAPIDeprecationWarning, PydanticV1NotSupportedError
+ from pydantic import BaseModel
+ from pydantic.fields import FieldInfo
+ from typing_extensions import Literal
+@@ -33,11 +30,6 @@ from ._compat import v2
+ if TYPE_CHECKING:  # pragma: nocover
+     from .routing import APIRoute
+ 
+-# Cache for `create_cloned_field`
+-_CLONED_TYPES_CACHE: MutableMapping[type[BaseModel], type[BaseModel]] = (
+-    WeakKeyDictionary()
+-)
+-
+ 
+ def is_body_allowed_for_status_code(status_code: Union[int, str, None]) -> bool:
+     if status_code is None:
+@@ -81,54 +73,17 @@ def create_model_field(
+     field_info: Optional[FieldInfo] = None,
+     alias: Optional[str] = None,
+     mode: Literal["validation", "serialization"] = "validation",
+-    version: Literal["1", "auto"] = "auto",
+ ) -> ModelField:
+-    class_validators = class_validators or {}
+-
+-    v1_model_config = may_v1.BaseConfig
+-    v1_field_info = field_info or may_v1.FieldInfo()
+-    v1_kwargs = {
+-        "name": name,
+-        "field_info": v1_field_info,
+-        "type_": type_,
+-        "class_validators": class_validators,
+-        "default": default,
+-        "required": required,
+-        "model_config": v1_model_config,
+-        "alias": alias,
+-    }
+-
+-    if (
+-        annotation_is_pydantic_v1(type_)
+-        or isinstance(field_info, may_v1.FieldInfo)
+-        or version == "1"
+-    ):
+-        from fastapi._compat import v1
+-
+-        try:
+-            return v1.ModelField(**v1_kwargs)  # type: ignore[return-value]
+-        except RuntimeError:
+-            raise fastapi.exceptions.FastAPIError(
+-                _invalid_args_message.format(type_=type_)
+-            ) from None
+-    else:
+-        field_info = field_info or FieldInfo(
+-            annotation=type_, default=default, alias=alias
++    if annotation_is_pydantic_v1(type_) or isinstance(field_info, may_v1.FieldInfo):
++        raise PydanticV1NotSupportedError(
++            "pydantic.v1 models are no longer supported by FastAPI."
++            f" Please update the field {name}: {type_!r}."
+         )
+-        kwargs = {"mode": mode, "name": name, "field_info": field_info}
+-        try:
+-            return v2.ModelField(**kwargs)  # type: ignore[return-value,arg-type]
+-        except PydanticSchemaGenerationError:
+-            raise fastapi.exceptions.FastAPIError(
+-                _invalid_args_message.format(type_=type_)
+-            ) from None
+-    # Pydantic v2 is not installed, but it's not a Pydantic v1 ModelField, it could be
+-    # a Pydantic v1 type, like a constrained int
+-    from fastapi._compat import v1
+-
++    field_info = field_info or FieldInfo(annotation=type_, default=default, alias=alias)
++    kwargs = {"mode": mode, "name": name, "field_info": field_info}
+     try:
+-        return v1.ModelField(**v1_kwargs)
+-    except RuntimeError:
++        return v2.ModelField(**kwargs)  # type: ignore[return-value,arg-type]
++    except PydanticSchemaGenerationError:
+         raise fastapi.exceptions.FastAPIError(
+             _invalid_args_message.format(type_=type_)
+         ) from None
+@@ -139,57 +94,9 @@ def create_cloned_field(
+     *,
+     cloned_types: Optional[MutableMapping[type[BaseModel], type[BaseModel]]] = None,
+ ) -> ModelField:
+-    if isinstance(field, v2.ModelField):
+-        return field
+-
+-    from fastapi._compat import v1
+-
+-    # cloned_types caches already cloned types to support recursive models and improve
+-    # performance by avoiding unnecessary cloning
+-    if cloned_types is None:
+-        cloned_types = _CLONED_TYPES_CACHE
+-
+-    original_type = field.type_
+-    use_type = original_type
+-    if lenient_issubclass(original_type, v1.BaseModel):
+-        original_type = cast(type[v1.BaseModel], original_type)
+-        use_type = cloned_types.get(original_type)
+-        if use_type is None:
+-            use_type = v1.create_model(original_type.__name__, __base__=original_type)
+-            cloned_types[original_type] = use_type
+-            for f in original_type.__fields__.values():
+-                use_type.__fields__[f.name] = create_cloned_field(
+-                    f,
+-                    cloned_types=cloned_types,
+-                )
+-    new_field = create_model_field(name=field.name, type_=use_type, version="1")
+-    new_field.has_alias = field.has_alias  # type: ignore[attr-defined]
+-    new_field.alias = field.alias  # type: ignore[misc]
+-    new_field.class_validators = field.class_validators  # type: ignore[attr-defined]
+-    new_field.default = field.default  # type: ignore[misc]
+-    new_field.default_factory = field.default_factory  # type: ignore[attr-defined]
+-    new_field.required = field.required  # type: ignore[misc]
+-    new_field.model_config = field.model_config  # type: ignore[attr-defined]
+-    new_field.field_info = field.field_info
+-    new_field.allow_none = field.allow_none  # type: ignore[attr-defined]
+-    new_field.validate_always = field.validate_always  # type: ignore[attr-defined]
+-    if field.sub_fields:  # type: ignore[attr-defined]
+-        new_field.sub_fields = [  # type: ignore[attr-defined]
+-            create_cloned_field(sub_field, cloned_types=cloned_types)
+-            for sub_field in field.sub_fields  # type: ignore[attr-defined]
+-        ]
+-    if field.key_field:  # type: ignore[attr-defined]
+-        new_field.key_field = create_cloned_field(  # type: ignore[attr-defined]
+-            field.key_field,  # type: ignore[attr-defined]
+-            cloned_types=cloned_types,
+-        )
+-    new_field.validators = field.validators  # type: ignore[attr-defined]
+-    new_field.pre_validators = field.pre_validators  # type: ignore[attr-defined]
+-    new_field.post_validators = field.post_validators  # type: ignore[attr-defined]
+-    new_field.parse_json = field.parse_json  # type: ignore[attr-defined]
+-    new_field.shape = field.shape  # type: ignore[attr-defined]
+-    new_field.populate_validators()  # type: ignore[attr-defined]
+-    return new_field
++    # Pydantic v2 fields don't need to be cloned, serialization already uses the
++    # declared type, not the type of the returned instance
++    return field
+ 
+ 
+ def generate_operation_id_for_path(

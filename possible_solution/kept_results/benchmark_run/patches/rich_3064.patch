@@ -1,0 +1,36 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 31ce3911..85431c90 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ - Fixed Text.expand_tabs not expanding spans.
+ - Fixed TimeElapsedColumn from showing negative.
+ - Fix for escaping strings with a trailing backslash https://github.com/Textualize/rich/issues/2987
++- Fixed markdown table cells dropping all but the last text fragment (e.g. with inline styles or links) https://github.com/Textualize/rich/issues/3053
+ 
+ ### Added
+ 
+diff --git a/rich/markdown.py b/rich/markdown.py
+index e2cedfaa..4aa94bb1 100644
+--- a/rich/markdown.py
++++ b/rich/markdown.py
+@@ -331,15 +331,13 @@ class TableDataElement(MarkdownElement):
+         return cls(justify=justify)
+ 
+     def __init__(self, justify: JustifyMethod) -> None:
+-        self.content: TextType = ""
++        self.content: Text = Text("", justify=justify)
+         self.justify = justify
+ 
+     def on_text(self, context: "MarkdownContext", text: TextType) -> None:
+-        plain = text.plain if isinstance(text, Text) else text
+-        style = text.style if isinstance(text, Text) else ""
+-        self.content = Text(
+-            plain, justify=self.justify, style=context.style_stack.current
+-        )
++        text = Text(text) if isinstance(text, str) else text
++        text.stylize(context.current_style)
++        self.content.append_text(text)
+ 
+ 
+ class ListElement(MarkdownElement):

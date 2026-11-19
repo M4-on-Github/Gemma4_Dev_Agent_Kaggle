@@ -1,0 +1,56 @@
+diff --git a/fastapi/_compat/v2.py b/fastapi/_compat/v2.py
+index 3d91814c..2ca0fc6a 100644
+--- a/fastapi/_compat/v2.py
++++ b/fastapi/_compat/v2.py
+@@ -171,6 +171,13 @@ def _get_model_config(model: BaseModel) -> Any:
+     return model.model_config
+ 
+ 
++def _has_computed_fields(field: ModelField) -> bool:
++    computed_fields = field._type_adapter.core_schema.get("schema", {}).get(
++        "computed_fields", []
++    )
++    return len(computed_fields) > 0
++
++
+ def get_schema_from_model_field(
+     *,
+     field: ModelField,
+@@ -181,7 +188,9 @@ def get_schema_from_model_field(
+     separate_input_output_schemas: bool = True,
+ ) -> Dict[str, Any]:
+     override_mode: Union[Literal["validation"], None] = (
+-        None if separate_input_output_schemas else "validation"
++        None
++        if (separate_input_output_schemas or _has_computed_fields(field))
++        else "validation"
+     )
+     # This expects that GenerateJsonSchema was already used to generate the definitions
+     json_schema = field_mapping[(field, override_mode or field.mode)]
+@@ -204,9 +213,6 @@ def get_definitions(
+     Dict[str, Dict[str, Any]],
+ ]:
+     schema_generator = GenerateJsonSchema(ref_template=REF_TEMPLATE)
+-    override_mode: Union[Literal["validation"], None] = (
+-        None if separate_input_output_schemas else "validation"
+-    )
+     validation_fields = [field for field in fields if field.mode == "validation"]
+     serialization_fields = [field for field in fields if field.mode == "serialization"]
+     flat_validation_models = get_flat_models_from_fields(
+@@ -238,7 +244,15 @@ def get_definitions(
+     }
+ 
+     inputs = [
+-        (field, override_mode or field.mode, field._type_adapter.core_schema)
++        (
++            field,
++            (
++                field.mode
++                if (separate_input_output_schemas or _has_computed_fields(field))
++                else "validation"
++            ),
++            field._type_adapter.core_schema,
++        )
+         for field in list(fields) + list(unique_flat_model_fields)
+     ]
+     field_mapping, definitions = schema_generator.generate_definitions(inputs=inputs)

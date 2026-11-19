@@ -1,0 +1,137 @@
+diff --git a/README.md b/README.md
+index 16d149f8..1618ed68 100644
+--- a/README.md
++++ b/README.md
+@@ -552,11 +552,6 @@ Additional optional Pydantic dependencies:
+ * <a href="https://docs.pydantic.dev/latest/usage/pydantic_settings/" target="_blank"><code>pydantic-settings</code></a> - for settings management.
+ * <a href="https://docs.pydantic.dev/latest/usage/types/extra_types/extra_types/" target="_blank"><code>pydantic-extra-types</code></a> - for extra types to be used with Pydantic.
+ 
+-Additional optional FastAPI dependencies:
+-
+-* <a href="https://github.com/ijl/orjson" target="_blank"><code>orjson</code></a> - Required if you want to use `ORJSONResponse`.
+-* <a href="https://github.com/esnme/ultrajson" target="_blank"><code>ujson</code></a> - Required if you want to use `UJSONResponse`.
+-
+ ## License
+ 
+ This project is licensed under the terms of the MIT license.
+diff --git a/docs/en/docs/index.md b/docs/en/docs/index.md
+index 7f9d5efb..66085e5f 100644
+--- a/docs/en/docs/index.md
++++ b/docs/en/docs/index.md
+@@ -549,11 +549,6 @@ Additional optional Pydantic dependencies:
+ * <a href="https://docs.pydantic.dev/latest/usage/pydantic_settings/" target="_blank"><code>pydantic-settings</code></a> - for settings management.
+ * <a href="https://docs.pydantic.dev/latest/usage/types/extra_types/extra_types/" target="_blank"><code>pydantic-extra-types</code></a> - for extra types to be used with Pydantic.
+ 
+-Additional optional FastAPI dependencies:
+-
+-* <a href="https://github.com/ijl/orjson" target="_blank"><code>orjson</code></a> - Required if you want to use `ORJSONResponse`.
+-* <a href="https://github.com/esnme/ultrajson" target="_blank"><code>ujson</code></a> - Required if you want to use `UJSONResponse`.
+-
+ ## License { #license }
+ 
+ This project is licensed under the terms of the MIT license.
+diff --git a/fastapi/applications.py b/fastapi/applications.py
+index 41d86143..3c4601df 100644
+--- a/fastapi/applications.py
++++ b/fastapi/applications.py
+@@ -366,9 +366,9 @@ class FastAPI(Starlette):
+ 
+                 ```python
+                 from fastapi import FastAPI
+-                from fastapi.responses import ORJSONResponse
++                from fastapi.responses import HTMLResponse
+ 
+-                app = FastAPI(default_response_class=ORJSONResponse)
++                app = FastAPI(default_response_class=HTMLResponse)
+                 ```
+                 """
+             ),
+@@ -1458,7 +1458,7 @@ class FastAPI(Starlette):
+ 
+                 ```python
+                 from fastapi import FastAPI
+-                from fastapi.responses import ORJSONResponse
++                from fastapi.responses import HTMLResponse
+ 
+                 from .internal import old_api
+ 
+@@ -1466,7 +1466,7 @@ class FastAPI(Starlette):
+ 
+                 app.include_router(
+                     old_api.router,
+-                    default_response_class=ORJSONResponse,
++                    default_response_class=HTMLResponse,
+                 )
+                 ```
+                 """
+diff --git a/fastapi/responses.py b/fastapi/responses.py
+index 6c8db6f3..81c847db 100644
+--- a/fastapi/responses.py
++++ b/fastapi/responses.py
+@@ -1,5 +1,6 @@
+ from typing import Any
+ 
++from fastapi.exceptions import FastAPIDeprecationWarning
+ from starlette.responses import FileResponse as FileResponse  # noqa
+ from starlette.responses import HTMLResponse as HTMLResponse  # noqa
+ from starlette.responses import JSONResponse as JSONResponse  # noqa
+@@ -7,6 +8,7 @@ from starlette.responses import PlainTextResponse as PlainTextResponse  # noqa
+ from starlette.responses import RedirectResponse as RedirectResponse  # noqa
+ from starlette.responses import Response as Response  # noqa
+ from starlette.responses import StreamingResponse as StreamingResponse  # noqa
++from typing_extensions import deprecated
+ 
+ try:
+     import ujson
+@@ -20,9 +22,24 @@ except ImportError:  # pragma: nocover
+     orjson = None  # type: ignore
+ 
+ 
++@deprecated(
++    "UJSONResponse is deprecated, FastAPI now serializes data directly to JSON "
++    "bytes via Pydantic when a return type or response model is set, which is "
++    "faster and doesn't need a custom response class. Read more in the FastAPI "
++    "docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model "
++    "and https://fastapi.tiangolo.com/tutorial/response-model/",
++    category=FastAPIDeprecationWarning,
++    stacklevel=2,
++)
+ class UJSONResponse(JSONResponse):
+     """
+-    JSON response using the high-performance ujson library to serialize data to JSON.
++    JSON response using the ujson library to serialize data to JSON.
++
++    **Deprecated**: `UJSONResponse` is deprecated, FastAPI now serializes data
++    directly to JSON bytes via Pydantic when a return type or response model is
++    set, which is faster and doesn't need a custom response class.
++
++    To use it, `ujson` needs to be installed explicitly.
+ 
+     Read more about it in the
+     [FastAPI docs for Custom Response - HTML, Stream, File, others](https://fastapi.tiangolo.com/advanced/custom-response/).
+@@ -33,9 +50,24 @@ class UJSONResponse(JSONResponse):
+         return ujson.dumps(content, ensure_ascii=False).encode("utf-8")
+ 
+ 
++@deprecated(
++    "ORJSONResponse is deprecated, FastAPI now serializes data directly to JSON "
++    "bytes via Pydantic when a return type or response model is set, which is "
++    "faster and doesn't need a custom response class. Read more in the FastAPI "
++    "docs: https://fastapi.tiangolo.com/advanced/custom-response/#orjson-or-response-model "
++    "and https://fastapi.tiangolo.com/tutorial/response-model/",
++    category=FastAPIDeprecationWarning,
++    stacklevel=2,
++)
+ class ORJSONResponse(JSONResponse):
+     """
+-    JSON response using the high-performance orjson library to serialize data to JSON.
++    JSON response using the orjson library to serialize data to JSON.
++
++    **Deprecated**: `ORJSONResponse` is deprecated, FastAPI now serializes data
++    directly to JSON bytes via Pydantic when a return type or response model is
++    set, which is faster and doesn't need a custom response class.
++
++    To use it, `orjson` needs to be installed explicitly.
+ 
+     Read more about it in the
+     [FastAPI docs for Custom Response - HTML, Stream, File, others](https://fastapi.tiangolo.com/advanced/custom-response/).

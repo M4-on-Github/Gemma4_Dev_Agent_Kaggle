@@ -1,0 +1,75 @@
+diff --git a/fastapi/_compat/__init__.py b/fastapi/_compat/__init__.py
+index 3dfaf9b7..c7921fc9 100644
+--- a/fastapi/_compat/__init__.py
++++ b/fastapi/_compat/__init__.py
+@@ -4,6 +4,7 @@ from .shared import annotation_is_pydantic_v1 as annotation_is_pydantic_v1
+ from .shared import field_annotation_is_scalar as field_annotation_is_scalar
+ from .shared import is_pydantic_v1_model_class as is_pydantic_v1_model_class
+ from .shared import is_pydantic_v1_model_instance as is_pydantic_v1_model_instance
++from .shared import is_typealiastype as is_typealiastype
+ from .shared import (
+     is_uploadfile_or_nonable_uploadfile_annotation as is_uploadfile_or_nonable_uploadfile_annotation,
+ )
+diff --git a/fastapi/_compat/shared.py b/fastapi/_compat/shared.py
+index 68b9bbdf..a2bd2254 100644
+--- a/fastapi/_compat/shared.py
++++ b/fastapi/_compat/shared.py
+@@ -11,6 +11,7 @@ from typing import (
+     Union,
+ )
+ 
++import typing_extensions
+ from fastapi.types import UnionType
+ from pydantic import BaseModel
+ from pydantic.version import VERSION as PYDANTIC_VERSION
+@@ -27,6 +28,23 @@ else:
+         types.UnionType,
+     )  # pyright: ignore[reportAttributeAccessIssue]
+ 
++# Vendored from typing-inspection: typing_inspection/typing_objects.py
++_t_typealiastype = getattr(typing, "TypeAliasType", None)
++_te_typealiastype = typing_extensions.TypeAliasType
++
++if _t_typealiastype is None or _t_typealiastype is _te_typealiastype:
++
++    def is_typealiastype(obj: Any) -> bool:
++        """Return whether the argument is a `TypeAliasType` instance."""
++        return type(obj) is _te_typealiastype
++
++else:
++
++    def is_typealiastype(obj: Any) -> bool:
++        """Return whether the argument is a `TypeAliasType` instance."""
++        return type(obj) in (_t_typealiastype, _te_typealiastype)
++
++
+ PYDANTIC_VERSION_MINOR_TUPLE = tuple(int(x) for x in PYDANTIC_VERSION.split(".")[:2])
+ PYDANTIC_V2 = PYDANTIC_VERSION_MINOR_TUPLE[0] == 2
+ 
+diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py
+index 3037b233..3841cb66 100644
+--- a/fastapi/dependencies/utils.py
++++ b/fastapi/dependencies/utils.py
+@@ -33,6 +33,7 @@ from fastapi._compat import (
+     is_scalar_field,
+     is_scalar_sequence_field,
+     is_sequence_field,
++    is_typealiastype,
+     is_uploadfile_or_nonable_uploadfile_annotation,
+     is_uploadfile_sequence_annotation,
+     lenient_issubclass,
+@@ -373,9 +374,13 @@ def analyze_param(
+     if annotation is not inspect.Signature.empty:
+         use_annotation = annotation
+         type_annotation = annotation
++    # Unwrap PEP 695 type aliases (`type Alias = ...`), possibly nested
++    while is_typealiastype(use_annotation):
++        use_annotation = use_annotation.__value__
++        type_annotation = use_annotation
+     # Extract Annotated info
+     if get_origin(use_annotation) is Annotated:
+-        annotated_args = get_args(annotation)
++        annotated_args = get_args(use_annotation)
+         type_annotation = annotated_args[0]
+         fastapi_annotations = [
+             arg

@@ -1,0 +1,52 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 490857b3..1fa1564e 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ 
+ ## [Unreleased]
+ 
++### Added
++
++- Added `TTY_INTERACTIVE` environment variable to force interactive mode off or on https://github.com/Textualize/rich/pull/3777
++
+ ### Changed
+ 
+ - Removed `typing_extensions` from runtime dependencies https://github.com/Textualize/rich/pull/3763
+diff --git a/docs/source/console.rst b/docs/source/console.rst
+index c0d50ca1..16234f36 100644
+--- a/docs/source/console.rst
++++ b/docs/source/console.rst
+@@ -432,6 +432,11 @@ The environment variable ``TTY_COMPATIBLE`` is used to override Rich's auto-dete
+ .. note::
+     If you want Rich output in CI or Github Actions, then you should set ``TTY_COMPATIBLE=1``.
+ 
++The environment variable ``TTY_INTERACTIVE`` is used to override Rich's auto-detection of an *interactive* terminal. If ``TTY_INTERACTIVE`` is set to ``"0"`` then Rich will disable interactive features such as animated progress bars and status spinners. If ``TTY_INTERACTIVE`` is set to ``"1"`` then Rich will assume the terminal is interactive. If the variable is not set, or set to any other value, then Rich will auto-detect interactivity.
++
++.. note::
++    In CI you may want to set ``TTY_COMPATIBLE=1`` and ``TTY_INTERACTIVE=0`` to get styled output without superfluous animations.
++
+ If ``width`` / ``height`` arguments are not explicitly provided as arguments to ``Console`` then the environment variables ``COLUMNS`` / ``LINES`` can be used to set the console width / height. ``JUPYTER_COLUMNS`` / ``JUPYTER_LINES`` behave similarly and are used in Jupyter.
+ 
+ Note that environment variables set defaults in the Console object. If you explicitly set any variables in the constructor then these will take precedence.
+diff --git a/rich/console.py b/rich/console.py
+index 5929fb1c..91e2dc1e 100644
+--- a/rich/console.py
++++ b/rich/console.py
+@@ -731,6 +731,16 @@ class Console:
+             if no_color is not None
+             else self._environ.get("NO_COLOR", "") != ""
+         )
++        if force_interactive is None:
++            tty_interactive = self._environ.get("TTY_INTERACTIVE", None)
++            if tty_interactive is not None:
++                # 0 disables interactive features (progress bars, spinners etc.)
++                if tty_interactive == "0":
++                    force_interactive = False
++                # 1 enables interactive features
++                elif tty_interactive == "1":
++                    force_interactive = True
++
+         self.is_interactive = (
+             (self.is_terminal and not self.is_dumb_terminal)
+             if force_interactive is None

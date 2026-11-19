@@ -1,0 +1,583 @@
+diff --git a/docs/en/docs/advanced/frontend.md b/docs/en/docs/advanced/frontend.md
+new file mode 100644
+index 000000000..1850359f7
+--- /dev/null
++++ b/docs/en/docs/advanced/frontend.md
+@@ -0,0 +1,44 @@
++# Frontend { #frontend }
++
++If you have a frontend, for example a single page application (SPA) built with React, Vue, Svelte, Angular, etc. you can serve its built files directly from your **FastAPI** app with `app.frontend()`.
++
++## Use `app.frontend()` { #use-app-frontend }
++
++Build your frontend, normally that would create a directory like `dist` with an `index.html` file and some other files (JavaScript, CSS, images, etc.).
++
++Then pass the path where you want to serve it and the `directory` with the files:
++
++{* ../../docs_src/frontend/tutorial001_py310.py hl[5] *}
++
++Now:
++
++* `/` will serve `dist/index.html`.
++* Existing files are served directly, for example `/assets/app.js` would serve `dist/assets/app.js`.
++* Any other `GET` request for a path without a file extension, for example `/users/42`, will also serve `dist/index.html`, so that the frontend (in the browser) can handle that route.
++* A missing file with an extension, for example `/assets/missing.js`, will return a `404` error instead of the `index.html`.
++
++## Path Operations First { #path-operations-first }
++
++The frontend has the **lowest priority**. Your *path operations* (and any other route) always take precedence, even if they are declared after `app.frontend()`.
++
++In the example above, `/api/items` is handled by the *path operation* function, and everything else that is not matched by any other route is handled by the frontend.
++
++Only `GET` and `HEAD` requests are handled by the frontend, other methods that don't match any route still return a `404` error.
++
++## Frontend in an `APIRouter` { #frontend-in-an-apirouter }
++
++You can also use `router.frontend()` in an `APIRouter`, the router prefix is applied to it as with any other route:
++
++{* ../../docs_src/frontend/tutorial002_py310.py hl[6,14] *}
++
++Here the frontend is served at `/admin`, and `/admin/api/users` is handled by the *path operation*.
++
++If there are several frontends that could handle a request, the one with the longest path is used. So, you could serve a main frontend at `/` and another one at `/admin`.
++
++## Details { #details }
++
++`app.frontend()` uses `StaticFiles` underneath, see [Static Files](../tutorial/static-files.md).
++
++You can pass a `name` to generate URLs for files in the frontend, for example with `request.url_for("frontend", path="/assets/app.js")`.
++
++By default, it checks that the directory exists when you call `app.frontend()`, raising an error if it doesn't. You can disable that check with `check_dir=False`, for example to declare it before building the frontend, it will then be checked when handling the first request to the frontend.
+diff --git a/docs/en/docs/tutorial/static-files.md b/docs/en/docs/tutorial/static-files.md
+index 0b73a35c1..5ab006d3f 100644
+--- a/docs/en/docs/tutorial/static-files.md
++++ b/docs/en/docs/tutorial/static-files.md
+@@ -35,6 +35,10 @@ The `name="static"` gives it a name that can be used internally by **FastAPI**.
+ 
+ All these parameters can be different than "`static`", adjust them to the needs and specific details of your own application.
+ 
++## Frontend { #frontend }
++
++If you want to serve a frontend, for example a single page application built with React, Vue, etc. you can use `app.frontend()`, read more about it in [Frontend](../advanced/frontend.md).
++
+ ## More info { #more-info }
+ 
+ For more details and options check [Starlette's docs about Static Files](https://www.starlette.dev/staticfiles/).
+diff --git a/docs/en/mkdocs.yml b/docs/en/mkdocs.yml
+index 2d50ce2a4..78a6f02b8 100644
+--- a/docs/en/mkdocs.yml
++++ b/docs/en/mkdocs.yml
+@@ -156,6 +156,7 @@ nav:
+     - advanced/dataclasses.md
+     - advanced/middleware.md
+     - advanced/sub-applications.md
++    - advanced/frontend.md
+     - advanced/behind-a-proxy.md
+     - advanced/templates.md
+     - advanced/websockets.md
+diff --git a/docs_src/frontend/__init__.py b/docs_src/frontend/__init__.py
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/docs_src/frontend/tutorial001_py310.py b/docs_src/frontend/tutorial001_py310.py
+new file mode 100644
+index 000000000..3b3c2fd5c
+--- /dev/null
++++ b/docs_src/frontend/tutorial001_py310.py
+@@ -0,0 +1,10 @@
++from fastapi import FastAPI
++
++app = FastAPI()
++
++app.frontend("/", directory="dist")
++
++
++@app.get("/api/items")
++def read_items():
++    return [{"name": "Portal Gun"}, {"name": "Plumbus"}]
+diff --git a/docs_src/frontend/tutorial002_py310.py b/docs_src/frontend/tutorial002_py310.py
+new file mode 100644
+index 000000000..3b456d94f
+--- /dev/null
++++ b/docs_src/frontend/tutorial002_py310.py
+@@ -0,0 +1,14 @@
++from fastapi import APIRouter, FastAPI
++
++app = FastAPI()
++router = APIRouter()
++
++router.frontend("/", directory="admin/dist")
++
++
++@router.get("/api/users")
++def read_users():
++    return [{"username": "Rick"}, {"username": "Morty"}]
++
++
++app.include_router(router, prefix="/admin")
+diff --git a/fastapi/applications.py b/fastapi/applications.py
+index c7c551e4e..f20f36d51 100644
+--- a/fastapi/applications.py
++++ b/fastapi/applications.py
+@@ -1,3 +1,4 @@
++import os
+ from collections.abc import Awaitable, Callable, Coroutine, Sequence
+ from enum import Enum
+ from typing import Annotated, Any, TypeVar
+@@ -4571,6 +4572,81 @@ class FastAPI(Starlette):
+ 
+         return decorator
+ 
++    def frontend(
++        self,
++        path: Annotated[
++            str,
++            Doc(
++                """
++                The URL path where the frontend will be served, e.g. `"/"`.
++                """
++            ),
++        ],
++        *,
++        directory: Annotated[
++            str | os.PathLike[str],
++            Doc(
++                """
++                The directory with the built frontend files, e.g. `"dist"`.
++
++                It should contain an `index.html` file.
++                """
++            ),
++        ],
++        name: Annotated[
++            str | None,
++            Doc(
++                """
++                An optional name for the route, to generate URLs with
++                `url_for(name, path="...")`.
++                """
++            ),
++        ] = None,
++        check_dir: Annotated[
++            bool,
++            Doc(
++                """
++                Check that the directory exists when the frontend is declared,
++                raising an error if it doesn't.
++
++                Set it to `False` to declare the frontend before the directory
++                exists (e.g. before building the frontend), it will then be
++                checked when handling the first request to the frontend.
++                """
++            ),
++        ] = True,
++    ) -> None:
++        """
++        Serve a frontend (e.g. a single page application built with React, Vue,
++        Svelte, etc.) from a directory with its built static files.
++
++        Existing files are served directly, and any other `GET` request for a
++        path without a file extension serves the `index.html`, so that the
++        frontend can handle its own routes.
++
++        Frontend routes have the lowest priority, so *path operations* and other
++        routes always take precedence, even if they are declared after it.
++
++        Read more about it in the
++        [FastAPI docs for Frontend](https://fastapi.tiangolo.com/advanced/frontend/).
++
++        ## Example
++
++        ```python
++        from fastapi import FastAPI
++
++        app = FastAPI()
++
++        app.frontend("/", directory="dist")
++
++
++        @app.get("/api/items")
++        def read_items():
++            return [{"name": "Portal Gun"}]
++        ```
++        """
++        self.router.frontend(path, directory=directory, name=name, check_dir=check_dir)
++
+     @deprecated(
+         """
+         on_event is deprecated, use lifespan event handlers instead.
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index 4a55fda8a..ffec4dc30 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -4,6 +4,9 @@ import email.message
+ import functools
+ import inspect
+ import json
++import os
++import posixpath
++import stat
+ import types
+ from collections.abc import (
+     AsyncIterator,
+@@ -80,12 +83,13 @@ from starlette import routing
+ from starlette._exception_handler import wrap_app_handling_exceptions
+ from starlette._utils import get_route_path, is_async_callable
+ from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
+-from starlette.datastructures import FormData, URLPath
++from starlette.datastructures import URL, FormData, URLPath
+ from starlette.exceptions import HTTPException
+ from starlette.requests import Request
+ from starlette.responses import (
+     JSONResponse,
+     PlainTextResponse,
++    RedirectResponse,
+     Response,
+     StreamingResponse,
+ )
+@@ -96,6 +100,7 @@ from starlette.routing import (
+     get_name,
+ )
+ from starlette.routing import Mount as Mount  # noqa
++from starlette.staticfiles import StaticFiles
+ from starlette.types import AppType, ASGIApp, Lifespan, Receive, Scope, Send
+ from starlette.websockets import WebSocket
+ from typing_extensions import deprecated
+@@ -824,6 +829,133 @@ _effective_route_context_var: ContextVar[Any | None] = ContextVar(
+     "fastapi_effective_route_context", default=None
+ )
+ _SCOPE_MISSING = object()
++_FASTAPI_FRONTEND_KEY = "frontend"
++
++
++@dataclass
++class _FrontendCandidates:
++    # Collects the frontends that could handle a request, to then select the
++    # most specific one (the one with the longest path prefix)
++    frontends: list["Frontend"] = field(default_factory=list)
++
++
++class Frontend(BaseRoute):
++    """
++    A route that serves a frontend (for example a single page application built
++    with React, Vue, Svelte, etc.) from a directory with static files.
++
++    Existing files are served as is (e.g. `/assets/app.js`), directories serve
++    their `index.html`, and any other `GET` or `HEAD` request for a path without
++    a file extension (e.g. `/users/42`) serves the root `index.html`, so that the
++    frontend router can handle it.
++
++    Frontend routes have the lowest priority: they are only used when no other
++    route (path operation, mount, etc.) matches the request, no matter the
++    order in which they were declared.
++
++    You would normally not create it directly, but use `app.frontend()` or
++    `router.frontend()`.
++    """
++
++    def __init__(
++        self,
++        path: str,
++        *,
++        directory: str | os.PathLike[str],
++        name: str | None = None,
++        check_dir: bool = True,
++        static_files: StaticFiles | None = None,
++    ) -> None:
++        assert path.startswith("/"), "Routed paths must start with '/'"
++        self.path = path
++        self.prefix = path.rstrip("/")
++        self.directory = directory
++        self.name = name
++        self.check_dir = check_dir
++        self.static_files = static_files or StaticFiles(
++            directory=directory, html=True, check_dir=check_dir
++        )
++        self.path_regex, self.path_format, self.param_convertors = compile_path(
++            self.prefix + "/{path:path}"
++        )
++
++    def with_path(self, path: str) -> "Frontend":
++        return Frontend(
++            path,
++            directory=self.directory,
++            name=self.name,
++            check_dir=self.check_dir,
++            static_files=self.static_files,
++        )
++
++    def matches(self, scope: Scope) -> tuple[Match, Scope]:
++        if scope["type"] != "http" or scope["method"] not in ("GET", "HEAD"):
++            return Match.NONE, {}
++        route_path = get_route_path(scope)
++        if route_path != self.prefix and not route_path.startswith(self.prefix + "/"):
++            return Match.NONE, {}
++        # When used inside an APIRouter, the router selects the frontend to use
++        # after trying all the other routes, see APIRouter.app()
++        selected = scope.get(_FASTAPI_SCOPE_KEY, {}).get(
++            _FASTAPI_FRONTEND_KEY, _SCOPE_MISSING
++        )
++        if isinstance(selected, _FrontendCandidates):
++            selected.frontends.append(self)
++            return Match.NONE, {}
++        if selected is not _SCOPE_MISSING and selected is not self:
++            return Match.NONE, {}
++        root_path = scope.get("root_path", "")
++        child_scope = {
++            "app_root_path": scope.get("app_root_path", root_path),
++            "root_path": root_path + self.prefix,
++            "endpoint": self.static_files,
++        }
++        return Match.FULL, child_scope
++
++    def url_path_for(self, name: str, /, **path_params: Any) -> URLPath:
++        if self.name is None or name != self.name or set(path_params) != {"path"}:
++            raise routing.NoMatchFound(name, path_params)
++        path = str(path_params["path"]).lstrip("/")
++        return URLPath(path=self.prefix + "/" + path)
++
++    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
++        static_files = self.static_files
++        if not static_files.config_checked:
++            await static_files.check_config()
++            static_files.config_checked = True
++        path = static_files.get_path(scope)
++        try:
++            response = await static_files.get_response(path, scope)
++        except HTTPException as exc:
++            if exc.status_code != 404 or not self._use_index_fallback(scope):
++                raise
++            response = await self._get_index_response(scope)
++        else:
++            if response.status_code == 404 and self._use_index_fallback(scope):
++                response = await self._get_index_response(scope)
++        await response(scope, receive, send)
++
++    def _use_index_fallback(self, scope: Scope) -> bool:
++        # Paths that look like files (e.g. "/assets/missing.js") are not
++        # frontend routes, keep the 404 for those
++        last_segment = posixpath.basename(get_route_path(scope).rstrip("/"))
++        return "." not in last_segment
++
++    async def _get_index_response(self, scope: Scope) -> Response:
++        static_files = self.static_files
++        full_path, stat_result = await anyio.to_thread.run_sync(
++            static_files.lookup_path, "index.html"
++        )
++        if stat_result is None or not stat.S_ISREG(stat_result.st_mode):
++            raise HTTPException(status_code=404)
++        return static_files.file_response(full_path, stat_result, scope)
++
++    def __repr__(self) -> str:
++        name = self.name or ""
++        return (
++            f"{self.__class__.__name__}(path={self.path!r}, name={name!r}, "
++            f"directory={self.directory!r})"
++        )
+ 
+ 
+ def _get_fastapi_scope(scope: Scope) -> dict[str, Any]:
+@@ -1306,7 +1438,12 @@ class _RouterIncludeContext:
+         )
+ 
+     def path_for(
+-        self, route: APIRoute | routing.Route | routing.WebSocketRoute | routing.Mount
++        self,
++        route: APIRoute
++        | routing.Route
++        | routing.WebSocketRoute
++        | routing.Mount
++        | Frontend,
+     ) -> str:
+         return self.prefix + route.path
+ 
+@@ -1567,6 +1704,11 @@ class _IncludedRouter(BaseRoute):
+                 original_route=route,
+                 starlette_route=starlette_route,
+             )
++        if isinstance(route, Frontend):
++            return _EffectiveRouteContext(
++                original_route=route,
++                starlette_route=route.with_path(self.include_context.path_for(route)),
++            )
+         if isinstance(route, routing.Mount):
+             starlette_route = copy.copy(route)
+             starlette_route.path = self.include_context.path_for(route).rstrip("/")
+@@ -2093,6 +2235,92 @@ class APIRouter(routing.Router):
+         super().add_websocket_route(path, endpoint, name=name)
+         self._mark_routes_changed()
+ 
++    def _has_frontends(self, seen: set[int] | None = None) -> bool:
++        if seen is None:
++            seen = set()
++        if id(self) in seen:
++            return False
++        seen.add(id(self))
++        for route in self.routes:
++            if isinstance(route, Frontend):
++                return True
++            if isinstance(
++                route, _IncludedRouter
++            ) and route.original_router._has_frontends(seen):
++                return True
++        return False
++
++    async def app(self, scope: Scope, receive: Receive, send: Send) -> None:
++        if scope["type"] != "http":
++            await super().app(scope, receive, send)
++            return
++
++        if "router" not in scope:
++            scope["router"] = self
++
++        # Frontend routes have the lowest priority. First try to handle the
++        # request with all the other routes (including partial matches and
++        # redirects for slashes), and only then try the frontends.
++        fastapi_scope = _get_fastapi_scope(scope)
++        previous = fastapi_scope.get(_FASTAPI_FRONTEND_KEY, _SCOPE_MISSING)
++        fastapi_scope[_FASTAPI_FRONTEND_KEY] = None
++        try:
++            partial = None
++            partial_scope: Scope = {}
++            for route in self.routes:
++                match, child_scope = route.matches(scope)
++                if match == Match.FULL:
++                    scope.update(child_scope)
++                    await route.handle(scope, receive, send)
++                    return
++                elif match == Match.PARTIAL and partial is None:
++                    partial = route
++                    partial_scope = child_scope
++
++            if partial is not None:
++                scope.update(partial_scope)
++                await partial.handle(scope, receive, send)
++                return
++
++            route_path = get_route_path(scope)
++            if self.redirect_slashes and route_path != "/":
++                redirect_scope = dict(scope)
++                if route_path.endswith("/"):
++                    redirect_scope["path"] = redirect_scope["path"].rstrip("/")
++                else:
++                    redirect_scope["path"] = redirect_scope["path"] + "/"
++
++                for route in self.routes:
++                    match, child_scope = route.matches(redirect_scope)
++                    if match != Match.NONE:
++                        redirect_url = URL(scope=redirect_scope)
++                        response = RedirectResponse(url=str(redirect_url))
++                        await response(scope, receive, send)
++                        return
++
++            if self._has_frontends():
++                candidates = _FrontendCandidates()
++                fastapi_scope[_FASTAPI_FRONTEND_KEY] = candidates
++                for route in self.routes:
++                    route.matches(scope)
++                if candidates.frontends:
++                    # The first declared frontend with the longest path prefix
++                    selected = max(
++                        candidates.frontends, key=lambda frontend: len(frontend.prefix)
++                    )
++                    fastapi_scope[_FASTAPI_FRONTEND_KEY] = selected
++                    for route in self.routes:
++                        match, child_scope = route.matches(scope)
++                        if match == Match.FULL:
++                            scope.update(child_scope)
++                            await route.handle(scope, receive, send)
++                            return
++                fastapi_scope[_FASTAPI_FRONTEND_KEY] = None
++
++            await self.default(scope, receive, send)
++        finally:
++            _restore_fastapi_scope_key(scope, _FASTAPI_FRONTEND_KEY, previous)
++
+     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+         included_router = _get_scope_included_router(scope)
+         if (
+@@ -2376,6 +2604,85 @@ class APIRouter(routing.Router):
+ 
+         return decorator
+ 
++    def frontend(
++        self,
++        path: Annotated[
++            str,
++            Doc(
++                """
++                The URL path where the frontend will be served, e.g. `"/"`.
++                """
++            ),
++        ],
++        *,
++        directory: Annotated[
++            str | os.PathLike[str],
++            Doc(
++                """
++                The directory with the built frontend files, e.g. `"dist"`.
++
++                It should contain an `index.html` file.
++                """
++            ),
++        ],
++        name: Annotated[
++            str | None,
++            Doc(
++                """
++                An optional name for the route, to generate URLs with
++                `url_for(name, path="...")`.
++                """
++            ),
++        ] = None,
++        check_dir: Annotated[
++            bool,
++            Doc(
++                """
++                Check that the directory exists when the frontend is declared,
++                raising an error if it doesn't.
++
++                Set it to `False` to declare the frontend before the directory
++                exists (e.g. before building the frontend), it will then be
++                checked when handling the first request to the frontend.
++                """
++            ),
++        ] = True,
++    ) -> None:
++        """
++        Serve a frontend (e.g. a single page application built with React, Vue,
++        Svelte, etc.) from a directory with its built static files.
++
++        Existing files are served directly, and any other `GET` request for a
++        path without a file extension serves the `index.html`, so that the
++        frontend can handle its own routes.
++
++        Frontend routes have the lowest priority, so *path operations* and other
++        routes always take precedence, even if they are declared after it.
++
++        Read more about it in the
++        [FastAPI docs for Frontend](https://fastapi.tiangolo.com/advanced/frontend/).
++
++        ## Example
++
++        ```python
++        from fastapi import FastAPI
++
++        app = FastAPI()
++
++
++        @app.get("/api/items")
++        def read_items():
++            return [{"name": "Portal Gun"}]
++
++
++        app.frontend("/", directory="dist")
++        ```
++        """
++        self.routes.append(
++            Frontend(path, directory=directory, name=name, check_dir=check_dir)
++        )
++        self._mark_routes_changed()
++
+     def include_router(
+         self,
+         router: Annotated["APIRouter", Doc("The `APIRouter` to include.")],

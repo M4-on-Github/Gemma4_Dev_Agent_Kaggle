@@ -1,0 +1,99 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c4a82307..3fcc4366 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
+ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+ 
++## Unreleased
++
++### Fixed
++
++- Fixed exception when a zero width joiner is at the end of a string, and hangs with leading zero width characters https://github.com/Textualize/rich/pull/3953
++- Fixed control codes reporting a cell width of 1 https://github.com/Textualize/rich/pull/3953
++
+ ## [14.3.1] - 2026-01-24
+ 
+ ### Fixed
+diff --git a/rich/cells.py b/rich/cells.py
+index 15fe7b65..d22f2230 100644
+--- a/rich/cells.py
++++ b/rich/cells.py
+@@ -55,6 +55,9 @@ def get_character_cell_size(character: str, unicode_version: str = "auto") -> in
+         int: Number of cells (0, 1 or 2) occupied by that character.
+     """
+     codepoint = ord(character)
++    if codepoint < 32 or 0x7F <= codepoint < 0xA0:
++        # Control codes have no width
++        return 0
+     table = load_cell_table(unicode_version).widths
+     if codepoint > table[-1][1]:
+         return 1
+@@ -140,7 +143,8 @@ def _cell_len(text: str, unicode_version: str) -> int:
+     for character in iter_characters:
+         if character in SPECIAL:
+             if character == "\u200d":
+-                next(iter_characters)
++                # Zero width joiner: the following character is joined (no width)
++                next(iter_characters, None)
+             elif last_measured_character:
+                 total_width += last_measured_character in cell_table.narrow_to_wide
+                 last_measured_character = None
+@@ -177,16 +181,19 @@ def split_graphemes(
+         if (character := text[index]) in SPECIAL:
+             if character == "\u200d":
+                 # zero width joiner
+-                index += 2
++                index = min(index + 2, codepoint_count)
+                 if spans:
+                     start, _end, cell_length = spans[-1]
+                     spans[-1] = (start, index, cell_length)
+-            elif last_measured_character:
++            else:
+                 # variation selector 16
+                 index += 1
+                 if spans:
+                     start, _end, cell_length = spans[-1]
+-                    if last_measured_character in cell_table.narrow_to_wide:
++                    if (
++                        last_measured_character
++                        and last_measured_character in cell_table.narrow_to_wide
++                    ):
+                         last_measured_character = None
+                         cell_length += 1
+                         total_width += 1
+@@ -197,10 +204,12 @@ def split_graphemes(
+             last_measured_character = character
+             spans.append((index, index := index + 1, character_width))
+             total_width += character_width
+-        elif spans:
++        else:
+             # zero width characters are associated with the previous character
+-            start, _end, cell_length = spans[-1]
+-            spans[-1] = (start, index := index + 1, cell_length)
++            index += 1
++            if spans:
++                start, _end, cell_length = spans[-1]
++                spans[-1] = (start, index, cell_length)
+ 
+     return (spans, total_width)
+ 
+@@ -224,6 +233,8 @@ def _split_text(
+         return "", text
+ 
+     spans, cell_length = split_graphemes(text, unicode_version)
++    if cell_position >= cell_length:
++        return text, ""
+ 
+     # Guess initial offset
+     offset = int((cell_position / cell_length) * len(spans))
+@@ -319,7 +330,7 @@ def chop_cells(text: str, width: int, unicode_version: str = "auto") -> list[str
+             line_offset = start
+             line_size = 0
+         line_size += cell_size
+-    if line_size:
++    if line_offset < len(text):
+         lines.append(text[line_offset:])
+ 
+     return lines

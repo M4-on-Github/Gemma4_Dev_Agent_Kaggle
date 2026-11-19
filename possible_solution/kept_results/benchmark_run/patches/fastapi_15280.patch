@@ -1,0 +1,451 @@
+diff --git a/docs/en/docs/advanced/vibe.md b/docs/en/docs/advanced/vibe.md
+new file mode 100644
+index 000000000..1ea1086a8
+--- /dev/null
++++ b/docs/en/docs/advanced/vibe.md
+@@ -0,0 +1,25 @@
++# Vibe Coding { #vibe-coding }
++
++Sometimes you don't want to decide up front which HTTP method a *path operation* uses or what shape its body has. You just want to vibe. ✨
++
++For that, use `@app.vibe()` (or `@router.vibe()` on an `APIRouter`).
++
++## Use `@app.vibe()` { #use-app-vibe }
++
++{* ../../docs_src/vibe/tutorial001_py310.py hl[9] *}
++
++This *path operation*:
++
++* Accepts **any** HTTP method: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`, `HEAD`, and `TRACE`.
++* Accepts **any** request body. A parameter named `body` with no explicit `Body()`, `Query()`, `Depends()`, etc. receives the whole request body. If the client sends no body, it is `None`, unless you set a different default.
++* Can still declare path, query, header, cookie parameters and dependencies, as with any other *path operation*.
++
++## The `prompt` { #the-prompt }
++
++You can pass a `prompt` describing what the *path operation* is supposed to do. It is included in the OpenAPI schema of each generated operation under the `x-vibe-prompt` extension.
++
++/// tip
++
++Each HTTP method is registered as its own *path operation*, so the OpenAPI schema and the docs UI show one entry per method, each with its own operation ID.
++
++///
+diff --git a/docs/en/mkdocs.yml b/docs/en/mkdocs.yml
+index 461419498..a84934f44 100644
+--- a/docs/en/mkdocs.yml
++++ b/docs/en/mkdocs.yml
+@@ -197,6 +197,7 @@ nav:
+     - advanced/advanced-python-types.md
+     - advanced/json-base64-bytes.md
+     - advanced/strict-content-type.md
++    - advanced/vibe.md
+   - fastapi-cli.md
+   - editor-support.md
+   - Deployment:
+diff --git a/docs_src/vibe/__init__.py b/docs_src/vibe/__init__.py
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/docs_src/vibe/tutorial001_py310.py b/docs_src/vibe/tutorial001_py310.py
+new file mode 100644
+index 000000000..bc4477178
+--- /dev/null
++++ b/docs_src/vibe/tutorial001_py310.py
+@@ -0,0 +1,10 @@
++from typing import Any
++
++from fastapi import FastAPI
++
++app = FastAPI()
++
++
++@app.vibe("/vibe/", prompt="return whatever the client sent, with good vibes")
++async def vibe_check(body: Any):
++    return {"vibe": body}
+diff --git a/fastapi/applications.py b/fastapi/applications.py
+index 4af1146b0..3a4a80a7e 100644
+--- a/fastapi/applications.py
++++ b/fastapi/applications.py
+@@ -1275,6 +1275,148 @@ class FastAPI(Starlette):
+ 
+         return decorator
+ 
++    def vibe(
++        self,
++        path: Annotated[
++            str,
++            Doc(
++                """
++                The URL path to be used for this *path operation*.
++
++                For example, in `http://example.com/items`, the path is `/items`.
++                """
++            ),
++        ],
++        *,
++        prompt: Annotated[
++            str,
++            Doc(
++                """
++                The prompt describing what this *path operation* should do.
++
++                It is included in the generated OpenAPI schema under the
++                `x-vibe-prompt` extension.
++                """
++            ),
++        ] = "",
++        status_code: Annotated[
++            int | None,
++            Doc(
++                """
++                The default status code to be used for the response.
++                """
++            ),
++        ] = None,
++        tags: Annotated[
++            list[str | Enum] | None,
++            Doc(
++                """
++                A list of tags to be applied to the *path operation*.
++                """
++            ),
++        ] = None,
++        dependencies: Annotated[
++            Sequence[Depends] | None,
++            Doc(
++                """
++                A list of dependencies (using `Depends()`) to be applied to the
++                *path operation*.
++                """
++            ),
++        ] = None,
++        summary: Annotated[
++            str | None,
++            Doc(
++                """
++                A summary for the *path operation*.
++                """
++            ),
++        ] = None,
++        description: Annotated[
++            str | None,
++            Doc(
++                """
++                A description for the *path operation*.
++                """
++            ),
++        ] = None,
++        deprecated: Annotated[
++            bool | None,
++            Doc(
++                """
++                Mark this *path operation* as deprecated.
++                """
++            ),
++        ] = None,
++        include_in_schema: Annotated[
++            bool,
++            Doc(
++                """
++                Include this *path operation* in the generated OpenAPI schema.
++                """
++            ),
++        ] = True,
++        response_class: Annotated[
++            type[Response],
++            Doc(
++                """
++                Response class to be used for this *path operation*.
++                """
++            ),
++        ] = Default(JSONResponse),
++        name: Annotated[
++            str | None,
++            Doc(
++                """
++                Name for this *path operation*. Only used internally.
++                """
++            ),
++        ] = None,
++        openapi_extra: Annotated[
++            dict[str, Any] | None,
++            Doc(
++                """
++                Extra metadata to be included in the OpenAPI schema for this
++                *path operation*.
++                """
++            ),
++        ] = None,
++    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
++        """
++        Add a *path operation* that just vibes: it accepts **any** HTTP method
++        and **any** request body.
++
++        Declare a parameter `body: Any` to receive whatever the client sent.
++
++        ## Example
++
++        ```python
++        from typing import Any
++
++        from fastapi import FastAPI
++
++        app = FastAPI()
++
++        @app.vibe("/vibe/", prompt="return whatever feels right")
++        def vibe_check(body: Any = None):
++            return {"vibe": body}
++        ```
++        """
++        return self.router.vibe(
++            path,
++            prompt=prompt,
++            status_code=status_code,
++            tags=tags,
++            dependencies=dependencies,
++            summary=summary,
++            description=description,
++            deprecated=deprecated,
++            include_in_schema=include_in_schema,
++            response_class=response_class,
++            name=name,
++            openapi_extra=openapi_extra,
++        )
++
+     def add_api_websocket_route(
+         self,
+         path: str,
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index 36acb6b89..56ee1e87b 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -27,6 +27,7 @@ from typing import (
+     Any,
+     TypeVar,
+     cast,
++    get_origin,
+ )
+ 
+ import anyio
+@@ -91,6 +92,56 @@ from starlette.types import AppType, ASGIApp, Lifespan, Receive, Scope, Send
+ from starlette.websockets import WebSocket
+ from typing_extensions import deprecated
+ 
++# HTTP methods accepted by `@app.vibe()` / `@router.vibe()`
++VIBE_METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "TRACE")
++
++
++def _vibe_endpoint(func: Callable[..., Any]) -> Callable[..., Any]:
++    """
++    Return an endpoint for `func` where a plain `body` parameter receives the
++    whole request body (any JSON, or nothing at all), instead of being read as
++    a query parameter.
++
++    Parameters that already declare how to be read (e.g. `Body()`, `Query()`,
++    `Depends()`, or `Annotated[...]`) are left untouched, and so is `func`
++    itself: a wrapper with an adjusted signature is returned.
++    """
++    signature = inspect.signature(func)
++    param = signature.parameters.get("body")
++    if (
++        param is None
++        or param.kind
++        in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
++        or isinstance(param.default, (params.Param, params.Body, params.Depends))
++        or get_origin(param.annotation) is Annotated
++        or (isinstance(param.annotation, str) and "Annotated" in param.annotation)
++    ):
++        return func
++    default = None if param.default is inspect.Parameter.empty else param.default
++    # FastAPI calls endpoints with keyword arguments only, so making every named
++    # parameter keyword-only keeps the signature valid now that `body` has a
++    # default, no matter where it is declared.
++    new_params = [
++        p.replace(kind=inspect.Parameter.KEYWORD_ONLY)
++        if p.kind is not inspect.Parameter.VAR_KEYWORD
++        else p
++        for p in signature.parameters.values()
++        if p.kind is not inspect.Parameter.VAR_POSITIONAL
++    ]
++    new_params = [
++        p.replace(default=params.Body(default=default)) if p.name == "body" else p
++        for p in new_params
++    ]
++
++    @functools.wraps(func)
++    def endpoint(*args: Any, **kwargs: Any) -> Any:
++        return func(*args, **kwargs)
++
++    endpoint.__signature__ = signature.replace(  # type: ignore[attr-defined]
++        parameters=new_params
++    )
++    return endpoint
++
+ 
+ # Copy of starlette.routing.request_response modified to include the
+ # dependencies' AsyncExitStack
+@@ -4869,6 +4920,166 @@ class APIRouter(routing.Router):
+             generate_unique_id_function=generate_unique_id_function,
+         )
+ 
++    def vibe(
++        self,
++        path: Annotated[
++            str,
++            Doc(
++                """
++                The URL path to be used for this *path operation*.
++
++                For example, in `http://example.com/items`, the path is `/items`.
++                """
++            ),
++        ],
++        *,
++        prompt: Annotated[
++            str,
++            Doc(
++                """
++                The prompt describing what this *path operation* should do.
++
++                It is included in the generated OpenAPI schema under the
++                `x-vibe-prompt` extension.
++                """
++            ),
++        ] = "",
++        status_code: Annotated[
++            int | None,
++            Doc(
++                """
++                The default status code to be used for the response.
++                """
++            ),
++        ] = None,
++        tags: Annotated[
++            list[str | Enum] | None,
++            Doc(
++                """
++                A list of tags to be applied to the *path operation*.
++                """
++            ),
++        ] = None,
++        dependencies: Annotated[
++            Sequence[params.Depends] | None,
++            Doc(
++                """
++                A list of dependencies (using `Depends()`) to be applied to the
++                *path operation*.
++                """
++            ),
++        ] = None,
++        summary: Annotated[
++            str | None,
++            Doc(
++                """
++                A summary for the *path operation*.
++                """
++            ),
++        ] = None,
++        description: Annotated[
++            str | None,
++            Doc(
++                """
++                A description for the *path operation*.
++                """
++            ),
++        ] = None,
++        deprecated: Annotated[
++            bool | None,
++            Doc(
++                """
++                Mark this *path operation* as deprecated.
++                """
++            ),
++        ] = None,
++        include_in_schema: Annotated[
++            bool,
++            Doc(
++                """
++                Include this *path operation* in the generated OpenAPI schema.
++                """
++            ),
++        ] = True,
++        response_class: Annotated[
++            type[Response],
++            Doc(
++                """
++                Response class to be used for this *path operation*.
++                """
++            ),
++        ] = Default(JSONResponse),
++        name: Annotated[
++            str | None,
++            Doc(
++                """
++                Name for this *path operation*. Only used internally.
++                """
++            ),
++        ] = None,
++        openapi_extra: Annotated[
++            dict[str, Any] | None,
++            Doc(
++                """
++                Extra metadata to be included in the OpenAPI schema for this
++                *path operation*.
++                """
++            ),
++        ] = None,
++    ) -> Callable[[DecoratedCallable], DecoratedCallable]:
++        """
++        Add a *path operation* that just vibes: it accepts **any** HTTP method
++        and **any** request body.
++
++        Declare a parameter `body: Any` to receive whatever the client sent.
++        Each HTTP method is registered as its own *path operation*, so the
++        OpenAPI schema stays free of duplicated operation IDs.
++
++        ## Example
++
++        ```python
++        from typing import Any
++
++        from fastapi import APIRouter, FastAPI
++
++        app = FastAPI()
++        router = APIRouter()
++
++        @router.vibe("/vibe/", prompt="return whatever feels right")
++        def vibe_check(body: Any = None):
++            return {"vibe": body}
++
++        app.include_router(router)
++        ```
++        """
++        extra: dict[str, Any] = {}
++        if prompt:
++            extra["x-vibe-prompt"] = prompt
++        if openapi_extra:
++            extra.update(openapi_extra)
++
++        def decorator(func: DecoratedCallable) -> DecoratedCallable:
++            endpoint = _vibe_endpoint(func)
++            for method in VIBE_METHODS:
++                self.add_api_route(
++                    path,
++                    endpoint,
++                    status_code=status_code,
++                    tags=tags,
++                    dependencies=dependencies,
++                    summary=summary,
++                    description=description,
++                    deprecated=deprecated,
++                    methods=[method],
++                    include_in_schema=include_in_schema,
++                    response_class=response_class,
++                    name=name,
++                    openapi_extra=extra or None,
++                )
++            return func
++
++        return decorator
++
+     # TODO: remove this once the lifespan (or alternative) interface is improved
+     async def _startup(self) -> None:
+         """

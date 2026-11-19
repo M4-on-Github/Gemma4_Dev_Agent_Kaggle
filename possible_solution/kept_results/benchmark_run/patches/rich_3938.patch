@@ -1,0 +1,27 @@
+diff --git a/rich/console.py b/rich/console.py
+index 994adfc0..d3b998bb 100644
+--- a/rich/console.py
++++ b/rich/console.py
+@@ -1742,7 +1742,21 @@ class Console:
+                 ):
+                     buffer_extend(line)
+             else:
+-                self._buffer.extend(new_segments)
++                # Ensure new lines are not styled, otherwise background
++                # styles may bleed in to the following line
++                buffer_append = self._buffer.append
++                new_line_segment = Segment.line()
++                for segment in new_segments:
++                    text, segment_style, control = segment
++                    if control or not segment_style or "\n" not in text:
++                        buffer_append(segment)
++                        continue
++                    while text:
++                        _text, new_line, text = text.partition("\n")
++                        if _text:
++                            buffer_append(Segment(_text, segment_style))
++                        if new_line:
++                            buffer_append(new_line_segment)
+ 
+     def print_json(
+         self,

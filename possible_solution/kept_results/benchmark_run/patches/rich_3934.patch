@@ -1,0 +1,68 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 13ef9279..1d3f8ba3 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ 
+ - `cells.cell_len` now has a `unicode_version` parameter (that you probably should never change) https://github.com/Textualize/rich/pull/3930
+ 
++### Fixed
++
++- Fixed empty `Live` (or `Progress` with no tasks) leaving a blank line https://github.com/Textualize/rich/issues/3796
++
+ ## [14.2.0] - 2025-10-09
+ 
+ ### Changed
+diff --git a/rich/live.py b/rich/live.py
+index cc3a39bd..2fd893b0 100644
+--- a/rich/live.py
++++ b/rich/live.py
+@@ -166,7 +166,11 @@ class Live(JupyterMixin, RenderHook):
+                 finally:
+                     self._disable_redirect_io()
+                     self.console.pop_render_hook()
+-                    if not self._alt_screen and self.console.is_terminal:
++                    if (
++                        not self._alt_screen
++                        and self.console.is_terminal
++                        and self._live_render.last_render_height
++                    ):
+                         self.console.line()
+                     self.console.show_cursor(True)
+                     if self._alt_screen:
+diff --git a/rich/live_render.py b/rich/live_render.py
+index d3da5111..2fdd41d0 100644
+--- a/rich/live_render.py
++++ b/rich/live_render.py
+@@ -30,6 +30,17 @@ class LiveRender:
+         self.vertical_overflow = vertical_overflow
+         self._shape: Optional[Tuple[int, int]] = None
+ 
++    @property
++    def last_render_height(self) -> int:
++        """The number of lines in the last render (may be 0 if nothing was rendered).
++
++        Returns:
++            int: Height in lines.
++        """
++        if self._shape is None:
++            return 0
++        return self._shape[1]
++
+     def set_renderable(self, renderable: RenderableType) -> None:
+         """Set a new renderable.
+ 
+@@ -81,7 +92,12 @@ class LiveRender:
+         lines = console.render_lines(renderable, options, style=style, pad=False)
+         shape = Segment.get_shape(lines)
+ 
+-        _, height = shape
++        width, height = shape
++        if width == 0 and height <= 1:
++            # Nothing to display; don't reserve a blank line.
++            lines = []
++            shape = (0, 0)
++            height = 0
+         if height > options.size.height:
+             if self.vertical_overflow == "crop":
+                 lines = lines[: options.size.height]

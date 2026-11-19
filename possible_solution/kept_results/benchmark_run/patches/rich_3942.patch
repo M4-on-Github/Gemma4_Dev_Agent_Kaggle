@@ -1,0 +1,133 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 33d7734c..dd4f72a7 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ 
+ - `cells.cell_len` now has a `unicode_version` parameter (that you probably should never change) https://github.com/Textualize/rich/pull/3930
+ - Live will not write a new line if there was nothing rendered https://github.com/Textualize/rich/pull/3934
++- Updated Markdown styles: left-aligned headings without a panel border, new heading colors, dimmer rules, and lighter table borders https://github.com/Textualize/rich/pull/3942
+ 
+ ## [14.2.0] - 2025-10-09
+ 
+diff --git a/rich/default_styles.py b/rich/default_styles.py
+index 3a0ad83a..c18b6095 100644
+--- a/rich/default_styles.py
++++ b/rich/default_styles.py
+@@ -149,20 +149,22 @@ DEFAULT_STYLES: Dict[str, Style] = {
+     "markdown.block_quote": Style(color="magenta"),
+     "markdown.list": Style(color="cyan"),
+     "markdown.item": Style(),
+-    "markdown.item.bullet": Style(color="yellow", bold=True),
+-    "markdown.item.number": Style(color="yellow", bold=True),
+-    "markdown.hr": Style(color="yellow"),
++    "markdown.item.bullet": Style(bold=True),
++    "markdown.item.number": Style(color="cyan"),
++    "markdown.hr": Style(dim=True),
+     "markdown.h1.border": Style(),
+-    "markdown.h1": Style(bold=True),
+-    "markdown.h2": Style(bold=True, underline=True),
+-    "markdown.h3": Style(bold=True),
+-    "markdown.h4": Style(bold=True, dim=True),
+-    "markdown.h5": Style(underline=True),
+-    "markdown.h6": Style(italic=True),
++    "markdown.h1": Style(bold=True, underline=True),
++    "markdown.h2": Style(color="magenta", underline=True),
++    "markdown.h3": Style(color="magenta", bold=True),
++    "markdown.h4": Style(color="magenta", italic=True),
++    "markdown.h5": Style(italic=True),
++    "markdown.h6": Style(dim=True),
+     "markdown.h7": Style(italic=True, dim=True),
+     "markdown.link": Style(color="bright_blue"),
+     "markdown.link_url": Style(color="blue", underline=True),
+     "markdown.s": Style(strike=True),
++    "markdown.table.border": Style(color="cyan"),
++    "markdown.table.header": Style(color="cyan", bold=False),
+     "iso8601.date": Style(color="blue"),
+     "iso8601.time": Style(color="magenta"),
+     "iso8601.timezone": Style(color="yellow"),
+diff --git a/rich/markdown.py b/rich/markdown.py
+index 12496487..3dc901b8 100644
+--- a/rich/markdown.py
++++ b/rich/markdown.py
+@@ -14,7 +14,6 @@ from ._stack import Stack
+ from .console import Console, ConsoleOptions, JustifyMethod, RenderResult
+ from .containers import Renderables
+ from .jupyter import JupyterMixin
+-from .panel import Panel
+ from .rule import Rule
+ from .segment import Segment
+ from .style import Style, StyleStack
+@@ -127,6 +126,15 @@ class Paragraph(TextElement):
+ class Heading(TextElement):
+     """A heading."""
+ 
++    LEVEL_ALIGN: ClassVar[dict[str, JustifyMethod]] = {
++        "h1": "center",
++        "h2": "left",
++        "h3": "left",
++        "h4": "left",
++        "h5": "left",
++        "h6": "left",
++    }
++
+     @classmethod
+     def create(cls, markdown: Markdown, token: Token) -> Heading:
+         return cls(token.tag)
+@@ -143,20 +151,10 @@ class Heading(TextElement):
+     def __rich_console__(
+         self, console: Console, options: ConsoleOptions
+     ) -> RenderResult:
+-        text = self.text
+-        text.justify = "center"
+-        if self.tag == "h1":
+-            # Draw a border around h1s
+-            yield Panel(
+-                text,
+-                box=box.HEAVY,
+-                style="markdown.h1.border",
+-            )
+-        else:
+-            # Styled text for h2 and beyond
+-            if self.tag == "h2":
+-                yield Text("")
+-            yield text
++        text = self.text.copy()
++        heading_justify = self.LEVEL_ALIGN.get(self.tag, "left")
++        text.justify = heading_justify
++        yield text
+ 
+ 
+ class CodeBlock(TextElement):
+@@ -219,7 +217,8 @@ class HorizontalRule(MarkdownElement):
+         self, console: Console, options: ConsoleOptions
+     ) -> RenderResult:
+         style = console.get_style("markdown.hr", default="none")
+-        yield Rule(style=style)
++        yield Rule(style=style, characters="-")
++        yield Text()
+ 
+ 
+ class TableElement(MarkdownElement):
+@@ -241,11 +240,19 @@ class TableElement(MarkdownElement):
+     def __rich_console__(
+         self, console: Console, options: ConsoleOptions
+     ) -> RenderResult:
+-        table = Table(box=box.SIMPLE_HEAVY)
++        table = Table(
++            box=box.SIMPLE,
++            pad_edge=False,
++            style="markdown.table.border",
++            show_edge=True,
++            collapse_padding=True,
++        )
+ 
+         if self.header is not None and self.header.row is not None:
+             for column in self.header.row.cells:
+-                table.add_column(column.content)
++                heading = column.content.copy()
++                heading.stylize("markdown.table.header")
++                table.add_column(heading)
+ 
+         if self.body is not None:
+             for row in self.body.rows:

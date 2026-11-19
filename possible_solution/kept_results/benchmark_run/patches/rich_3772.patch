@@ -1,0 +1,98 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index cb147695..607c0eac 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ - Removed `typing_extensions` from runtime dependencies https://github.com/Textualize/rich/pull/3763
+ - Live objects (including Progress) may now be nested https://github.com/Textualize/rich/pull/3768
+ 
++### Fixed
++
++- Fixed infinite loop / `RecursionError` in tracebacks when exceptions (or exception groups) reference each other in a cycle https://github.com/Textualize/rich/pull/3772
++
+ ## [14.0.0] - 2025-03-30
+ 
+ ### Added
+diff --git a/rich/traceback.py b/rich/traceback.py
+index b2cc6304..9d4f137d 100644
+--- a/rich/traceback.py
++++ b/rich/traceback.py
+@@ -14,6 +14,7 @@ from typing import (
+     List,
+     Optional,
+     Sequence,
++    Set,
+     Tuple,
+     Type,
+     Union,
+@@ -418,6 +419,7 @@ class Traceback:
+         locals_max_string: int = LOCALS_MAX_STRING,
+         locals_hide_dunder: bool = True,
+         locals_hide_sunder: bool = False,
++        _visited_exceptions: Optional[Set[int]] = None,
+     ) -> Trace:
+         """Extract traceback information.
+ 
+@@ -439,6 +441,12 @@ class Traceback:
+         stacks: List[Stack] = []
+         is_cause = False
+ 
++        # Identities of exceptions already extracted, to guard against cycles in
++        # __cause__ / __context__ chains and within exception groups.
++        visited_exceptions: Set[int] = (
++            set() if _visited_exceptions is None else _visited_exceptions
++        )
++
+         from rich import _IMPORT_CWD
+ 
+         notes: List[str] = getattr(exc_value, "__notes__", None) or []
+@@ -451,6 +459,7 @@ class Traceback:
+                 return "<exception str() failed>"
+ 
+         while True:
++            visited_exceptions.add(id(exc_value))
+             stack = Stack(
+                 exc_type=safe_str(exc_type.__name__),
+                 exc_value=safe_str(exc_value),
+@@ -462,6 +471,8 @@ class Traceback:
+                 if isinstance(exc_value, (BaseExceptionGroup, ExceptionGroup)):
+                     stack.is_group = True
+                     for exception in exc_value.exceptions:
++                        if id(exception) in visited_exceptions:
++                            continue
+                         stack.exceptions.append(
+                             Traceback.extract(
+                                 type(exception),
+@@ -469,8 +480,10 @@ class Traceback:
+                                 exception.__traceback__,
+                                 show_locals=show_locals,
+                                 locals_max_length=locals_max_length,
++                                locals_max_string=locals_max_string,
+                                 locals_hide_dunder=locals_hide_dunder,
+                                 locals_hide_sunder=locals_hide_sunder,
++                                _visited_exceptions=visited_exceptions,
+                             )
+                         )
+ 
+@@ -562,7 +575,7 @@ class Traceback:
+                     del stack.frames[:]
+ 
+             cause = getattr(exc_value, "__cause__", None)
+-            if cause:
++            if cause is not None and id(cause) not in visited_exceptions:
+                 exc_type = cause.__class__
+                 exc_value = cause
+                 # __traceback__ can be None, e.g. for exceptions raised by the
+@@ -572,7 +585,11 @@ class Traceback:
+                 continue
+ 
+             cause = exc_value.__context__
+-            if cause and not getattr(exc_value, "__suppress_context__", False):
++            if (
++                cause is not None
++                and id(cause) not in visited_exceptions
++                and not getattr(exc_value, "__suppress_context__", False)
++            ):
+                 exc_type = cause.__class__
+                 exc_value = cause
+                 traceback = cause.__traceback__

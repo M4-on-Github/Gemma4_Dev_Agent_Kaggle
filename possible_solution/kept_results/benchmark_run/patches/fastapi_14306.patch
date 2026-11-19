@@ -1,0 +1,272 @@
+diff --git a/fastapi/exceptions.py b/fastapi/exceptions.py
+index 0620428b..fe9452f6 100644
+--- a/fastapi/exceptions.py
++++ b/fastapi/exceptions.py
+@@ -4,7 +4,7 @@ from annotated_doc import Doc
+ from pydantic import BaseModel, create_model
+ from starlette.exceptions import HTTPException as StarletteHTTPException
+ from starlette.exceptions import WebSocketException as StarletteWebSocketException
+-from typing_extensions import Annotated
++from typing_extensions import Annotated, TypedDict
+ 
+ 
+ class HTTPException(StarletteHTTPException):
+@@ -154,31 +154,86 @@ class DependencyScopeError(FastAPIError):
+     """
+ 
+ 
++class EndpointContext(TypedDict, total=False):
++    function: str
++    path: str
++    file: str
++    line: int
++
++
+ class ValidationException(Exception):
+-    def __init__(self, errors: Sequence[Any]) -> None:
++    def __init__(
++        self,
++        errors: Sequence[Any],
++        *,
++        endpoint_ctx: Optional[EndpointContext] = None,
++    ) -> None:
+         self._errors = errors
++        self._set_endpoint_context(endpoint_ctx)
++
++    def _set_endpoint_context(self, endpoint_ctx: Optional[EndpointContext]) -> None:
++        self.endpoint_ctx = endpoint_ctx
++        ctx = endpoint_ctx or {}
++        self.endpoint_function = ctx.get("function")
++        self.endpoint_path = ctx.get("path")
++        self.endpoint_file = ctx.get("file")
++        self.endpoint_line = ctx.get("line")
+ 
+     def errors(self) -> Sequence[Any]:
+         return self._errors
+ 
++    def _format_endpoint_context(self) -> str:
++        if not (self.endpoint_file and self.endpoint_line and self.endpoint_function):
++            if self.endpoint_path:
++                return f"\n  Endpoint: {self.endpoint_path}"
++            return ""
++
++        context = (
++            f'\n  File "{self.endpoint_file}", line {self.endpoint_line}, '
++            f"in {self.endpoint_function}"
++        )
++        if self.endpoint_path:
++            context += f"\n    {self.endpoint_path}"
++        return context
++
++    def __str__(self) -> str:
++        count = len(self._errors)
++        message = f"{count} validation error{'s' if count != 1 else ''}:\n"
++        for err in self._errors:
++            message += f"  {err}\n"
++        message += self._format_endpoint_context()
++        return message.rstrip()
++
+ 
+ class RequestValidationError(ValidationException):
+-    def __init__(self, errors: Sequence[Any], *, body: Any = None) -> None:
+-        super().__init__(errors)
++    def __init__(
++        self,
++        errors: Sequence[Any],
++        *,
++        body: Any = None,
++        endpoint_ctx: Optional[EndpointContext] = None,
++    ) -> None:
++        super().__init__(errors, endpoint_ctx=endpoint_ctx)
+         self.body = body
+ 
+ 
+ class WebSocketRequestValidationError(ValidationException):
+-    pass
++    def __init__(
++        self,
++        errors: Sequence[Any],
++        *,
++        endpoint_ctx: Optional[EndpointContext] = None,
++    ) -> None:
++        super().__init__(errors, endpoint_ctx=endpoint_ctx)
+ 
+ 
+ class ResponseValidationError(ValidationException):
+-    def __init__(self, errors: Sequence[Any], *, body: Any = None) -> None:
+-        super().__init__(errors)
++    def __init__(
++        self,
++        errors: Sequence[Any],
++        *,
++        body: Any = None,
++        endpoint_ctx: Optional[EndpointContext] = None,
++    ) -> None:
++        super().__init__(errors, endpoint_ctx=endpoint_ctx)
+         self.body = body
+-
+-    def __str__(self) -> str:
+-        message = f"{len(self._errors)} validation errors:\n"
+-        for err in self._errors:
+-            message += f"  {err}\n"
+-        return message
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index c10175b1..32402e81 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -46,6 +46,7 @@ from fastapi.dependencies.utils import (
+ )
+ from fastapi.encoders import jsonable_encoder
+ from fastapi.exceptions import (
++    EndpointContext,
+     FastAPIError,
+     RequestValidationError,
+     ResponseValidationError,
+@@ -212,6 +213,54 @@ def _merge_lifespan_context(
+     return merged_lifespan  # type: ignore[return-value]
+ 
+ 
++# Cache for endpoint context to avoid re-extracting (file I/O) on every validation
++# error. Keyed by id(), storing the function itself too, so that the id can't be
++# reused by a different object while the entry exists.
++_endpoint_context_cache: Dict[int, Tuple[Any, EndpointContext]] = {}
++
++
++def _extract_endpoint_context(func: Any) -> EndpointContext:
++    """Extract endpoint context (file, line, function name) with caching."""
++    func_id = id(func)
++
++    cached = _endpoint_context_cache.get(func_id)
++    if cached is not None and cached[0] is func:
++        return cached[1]
++
++    ctx: EndpointContext = {}
++    try:
++        source_file = inspect.getsourcefile(func)
++        if source_file is not None:
++            ctx["file"] = source_file
++        line_number = inspect.getsourcelines(func)[1]
++        if line_number is not None:
++            ctx["line"] = line_number
++    except Exception:
++        pass
++    func_name = getattr(func, "__name__", None)
++    if func_name is not None:
++        ctx["function"] = func_name
++
++    _endpoint_context_cache[func_id] = (func, ctx)
++    return ctx
++
++
++def _get_endpoint_context(
++    dependant: Dependant, method: Optional[str], root_path: str = ""
++) -> EndpointContext:
++    ctx: EndpointContext = (
++        EndpointContext(**_extract_endpoint_context(dependant.call))
++        if dependant.call is not None
++        else EndpointContext()
++    )
++    if dependant.path:
++        # For mounted sub-apps, include the mount path prefix
++        mount_path = root_path.rstrip("/")
++        prefix = f"{method} " if method else ""
++        ctx["path"] = f"{prefix}{mount_path}{dependant.path}"
++    return ctx
++
++
+ async def serialize_response(
+     *,
+     field: Optional[ModelField] = None,
+@@ -223,6 +272,7 @@ async def serialize_response(
+     exclude_defaults: bool = False,
+     exclude_none: bool = False,
+     is_coroutine: bool = True,
++    endpoint_ctx: Optional[EndpointContext] = None,
+ ) -> Any:
+     if field:
+         errors = []
+@@ -246,7 +296,9 @@ async def serialize_response(
+             errors.append(errors_)
+         if errors:
+             raise ResponseValidationError(
+-                errors=_normalize_errors(errors), body=response_content
++                errors=_normalize_errors(errors),
++                body=response_content,
++                endpoint_ctx=endpoint_ctx,
+             )
+ 
+         if hasattr(field, "serialize"):
+@@ -355,6 +407,9 @@ def get_request_handler(
+                     }
+                 ],
+                 body=e.doc,
++                endpoint_ctx=_get_endpoint_context(
++                    dependant, request.method, request.scope.get("root_path", "")
++                ),
+             )
+             raise validation_error from e
+         except HTTPException:
+@@ -404,24 +459,39 @@ def get_request_handler(
+                     response_args["status_code"] = current_status_code
+                 if solved_result.response.status_code:
+                     response_args["status_code"] = solved_result.response.status_code
+-                content = await serialize_response(
+-                    field=response_field,
+-                    response_content=raw_response,
+-                    include=response_model_include,
+-                    exclude=response_model_exclude,
+-                    by_alias=response_model_by_alias,
+-                    exclude_unset=response_model_exclude_unset,
+-                    exclude_defaults=response_model_exclude_defaults,
+-                    exclude_none=response_model_exclude_none,
+-                    is_coroutine=is_coroutine,
+-                )
++                try:
++                    content = await serialize_response(
++                        field=response_field,
++                        response_content=raw_response,
++                        include=response_model_include,
++                        exclude=response_model_exclude,
++                        by_alias=response_model_by_alias,
++                        exclude_unset=response_model_exclude_unset,
++                        exclude_defaults=response_model_exclude_defaults,
++                        exclude_none=response_model_exclude_none,
++                        is_coroutine=is_coroutine,
++                    )
++                except ResponseValidationError as e:
++                    if e.endpoint_ctx is None:
++                        e._set_endpoint_context(
++                            _get_endpoint_context(
++                                dependant,
++                                request.method,
++                                request.scope.get("root_path", ""),
++                            )
++                        )
++                    raise
+                 response = actual_response_class(content, **response_args)
+                 if not is_body_allowed_for_status_code(response.status_code):
+                     response.body = b""
+                 response.headers.raw.extend(solved_result.response.headers.raw)
+         if errors:
+             validation_error = RequestValidationError(
+-                _normalize_errors(errors), body=body
++                _normalize_errors(errors),
++                body=body,
++                endpoint_ctx=_get_endpoint_context(
++                    dependant, request.method, request.scope.get("root_path", "")
++                ),
+             )
+             raise validation_error
+ 
+@@ -451,7 +521,10 @@ def get_websocket_app(
+         )
+         if solved_result.errors:
+             raise WebSocketRequestValidationError(
+-                _normalize_errors(solved_result.errors)
++                _normalize_errors(solved_result.errors),
++                endpoint_ctx=_get_endpoint_context(
++                    dependant, "WS", websocket.scope.get("root_path", "")
++                ),
+             )
+         assert dependant.call is not None, "dependant.call must be a function"
+         await dependant.call(**solved_result.values)

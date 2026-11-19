@@ -1,0 +1,27 @@
+diff --git a/docs/en/docs/tutorial/header-param-models.md b/docs/en/docs/tutorial/header-param-models.md
+index 011d5d7fc..a170e72c3 100644
+--- a/docs/en/docs/tutorial/header-param-models.md
++++ b/docs/en/docs/tutorial/header-param-models.md
+@@ -55,7 +55,7 @@ For example, if the client tries to send a `tool` header with a value of `plumbu
+ 
+ The same way as with regular header parameters, when you have underscore characters in the parameter names, they are **automatically converted to hyphens**.
+ 
+-For example, if you have a header parameter `save_data` in the code, the expected HTTP header will be `save-data`, and it will show up like that in the docs.
++For example, if you have a header parameter `save_data` in the code, the expected HTTP header will be `save-data`, and it will show up like that in the docs. A header sent with underscores, like `save_data`, will not be accepted.
+ 
+ If for some reason you need to disable this automatic conversion, you can do it as well for Pydantic models for header parameters.
+ 
+diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py
+index 7c6558c69..072158968 100644
+--- a/fastapi/dependencies/utils.py
++++ b/fastapi/dependencies/utils.py
+@@ -821,6 +821,9 @@ def request_params_to_args(
+             if convert_underscores:
+                 alias = get_validation_alias(field)
+                 if alias == field.name:
++                    # Only accept the header name with hyphens, don't accept the
++                    # original underscore version (e.g. "save_data") as a fallback
++                    processed_keys.add(alias)
+                     alias = alias.replace("_", "-")
+         value = _get_multidict_value(field, received_params, alias=alias)
+         if value is not None:

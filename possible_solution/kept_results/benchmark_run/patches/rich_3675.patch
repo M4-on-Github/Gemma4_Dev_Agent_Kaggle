@@ -1,0 +1,81 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 27a6fc01..e6e658e6 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ ### Added
+ 
+ - Rich tracebacks will now render notes on Python 3.11 onwards (added with `Exception.add_note`) https://github.com/Textualize/rich/pull/3676
++- Added env var `TTY_COMPATIBLE` to override auto-detection of TTY support (See console.rst for details). https://github.com/Textualize/rich/pull/3675
++- Added env var `TTY_INTERACTIVE` to override auto-detection of interactive mode https://github.com/Textualize/rich/pull/3675
++
++### Changed
++
++- An empty `FORCE_COLOR` env var is now ignored, as per https://force-color.org/ https://github.com/Textualize/rich/pull/3675
+ 
+ ## [13.9.4] - 2024-11-01
+ 
+diff --git a/docs/source/console.rst b/docs/source/console.rst
+index 5c0aeb32..a6b25cda 100644
+--- a/docs/source/console.rst
++++ b/docs/source/console.rst
+@@ -420,7 +420,14 @@ Rich respects some standard environment variables.
+ 
+ Setting the environment variable ``TERM`` to ``"dumb"`` or ``"unknown"`` will disable color/style and some features that require moving the cursor, such as progress bars.
+ 
+-If the environment variable ``FORCE_COLOR`` is set, then color/styles will be enabled regardless of the value of ``TERM``. This is useful on CI systems which aren't terminals but can none-the-less display ANSI escape sequences.
++If the environment variable ``FORCE_COLOR`` is set and non-empty, then color/styles will be enabled regardless of the value of ``TERM``. This is useful on CI systems which aren't terminals but can none-the-less display ANSI escape sequences. See `force-color <https://force-color.org/>`_ for details.
++
++If the environment variable ``TTY_COMPATIBLE`` is set to ``"1"``, Rich will assume it is writing to a terminal and will output ANSI escape sequences, even if the output is not a TTY. If ``TTY_COMPATIBLE`` is set to ``"0"``, Rich will assume it is *not* writing to a terminal and won't write escape sequences (this takes precedence over ``FORCE_COLOR``). If ``TTY_COMPATIBLE`` is unset (or has any other value), Rich will auto-detect terminal support. Explicitly passing ``force_terminal`` to the ``Console`` constructor takes precedence over this variable.
++
++If the environment variable ``TTY_INTERACTIVE`` is set to ``"1"``, Rich will enable interactive mode (animations such as progress bars). If it is set to ``"0"``, interactive mode is disabled. Otherwise Rich will auto-detect. The ``force_interactive`` constructor argument takes precedence.
++
++.. note::
++    Many CI systems can display ANSI escape sequences but don't support cursor movement. For these you may want to set ``TTY_COMPATIBLE=1`` and ``TTY_INTERACTIVE=0``.
+ 
+ If the environment variable ``NO_COLOR`` is set, Rich will disable all color in the output. This takes precedence over ``FORCE_COLOR``. See `no_color <https://no-color.org/>`_ for details.
+ 
+diff --git a/rich/console.py b/rich/console.py
+index 3ec9a8aa..cc9fb196 100644
+--- a/rich/console.py
++++ b/rich/console.py
+@@ -737,6 +737,14 @@ class Console:
+         self.no_color = (
+             no_color if no_color is not None else "NO_COLOR" in self._environ
+         )
++        if force_interactive is None:
++            tty_interactive = self._environ.get("TTY_INTERACTIVE", None)
++            if tty_interactive is not None:
++                if tty_interactive == "0":
++                    force_interactive = False
++                elif tty_interactive == "1":
++                    force_interactive = True
++
+         self.is_interactive = (
+             (self.is_terminal and not self.is_dumb_terminal)
+             if force_interactive is None
+@@ -948,10 +956,20 @@ class Console:
+             # return False for Jupyter, which may have FORCE_COLOR set
+             return False
+ 
+-        # If FORCE_COLOR env var has any value at all, we assume a terminal.
+-        force_color = self._environ.get("FORCE_COLOR")
+-        if force_color is not None:
+-            self._force_terminal = True
++        environ = self._environ
++
++        tty_compatible = environ.get("TTY_COMPATIBLE", "")
++        # 0 indicates device is not tty compatible
++        if tty_compatible == "0":
++            return False
++        # 1 indicates device is tty compatible
++        if tty_compatible == "1":
++            return True
++
++        # https://force-color.org/
++        # A non-empty FORCE_COLOR means we assume a terminal (an empty value is ignored)
++        force_color = environ.get("FORCE_COLOR")
++        if force_color:
+             return True
+ 
+         isatty: Optional[Callable[[], bool]] = getattr(self.file, "isatty", None)

@@ -1,0 +1,24 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 087b4b02..c279008a 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ - Thread used in progress.track will exit if an exception occurs in a generator https://github.com/Textualize/rich/pull/3402
+ - Progress track thread is now a daemon thread https://github.com/Textualize/rich/pull/3402
+ - Fixed cached hash preservation upon clearing meta and links https://github.com/Textualize/rich/issues/2942
++- Fixed `AnsiDecoder` printing private escape sequences such as `\x1b7` / `\x1b8` (store/restore cursor) https://github.com/Textualize/rich/pull/3278
+ 
+ ### Changed
+ 
+diff --git a/rich/ansi.py b/rich/ansi.py
+index 66365e65..7de86ce5 100644
+--- a/rich/ansi.py
++++ b/rich/ansi.py
+@@ -9,6 +9,7 @@ from .text import Text
+ 
+ re_ansi = re.compile(
+     r"""
++(?:\x1b[0-?])|
+ (?:\x1b\](.*?)\x1b\\)|
+ (?:\x1b([(@-Z\\-_]|\[[0-?]*[ -/]*[@-~]))
+ """,

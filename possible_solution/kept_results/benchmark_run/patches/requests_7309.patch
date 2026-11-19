@@ -1,0 +1,28 @@
+diff --git a/src/requests/utils.py b/src/requests/utils.py
+index 54959bb8..06da4c6d 100644
+--- a/src/requests/utils.py
++++ b/src/requests/utils.py
+@@ -516,13 +516,16 @@ def _parse_content_type_header(header):
+ 
+     for param in params:
+         param = param.strip()
+-        if param:
+-            key, value = param, True
+-            index_of_equals = param.find("=")
+-            if index_of_equals != -1:
+-                key = param[:index_of_equals].strip(items_to_strip)
+-                value = param[index_of_equals + 1 :].strip(items_to_strip)
+-            params_dict[key.lower()] = value
++        if not param:
++            continue
++        # A valid parameter requires an "=" (RFC 9110 §5.6.6); ignore
++        # malformed parameters rather than assigning a placeholder value.
++        key, sep, value = param.partition("=")
++        if not sep:
++            continue
++        key = key.strip(items_to_strip)
++        value = value.strip(items_to_strip)
++        params_dict[key.lower()] = value
+     return content_type, params_dict
+ 
+ 

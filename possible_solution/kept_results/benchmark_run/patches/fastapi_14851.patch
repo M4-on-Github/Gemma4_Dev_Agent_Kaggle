@@ -1,0 +1,143 @@
+diff --git a/fastapi/applications.py b/fastapi/applications.py
+index 340cabfc..d4f8daa5 100644
+--- a/fastapi/applications.py
++++ b/fastapi/applications.py
+@@ -4578,6 +4578,18 @@ class FastAPI(Starlette):
+         """
+         return self.router.on_event(event_type)
+ 
++    def add_event_handler(
++        self,
++        event_type: str,
++        func: Callable[[], Any],
++    ) -> None:
++        """
++        Add an event handler for the application, `startup` or `shutdown`.
++
++        Prefer `lifespan` event handlers instead.
++        """
++        self.router.add_event_handler(event_type, func)
++
+     def middleware(
+         self,
+         middleware_type: Annotated[
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index 9ca2f467..df88fc1f 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -17,6 +17,7 @@ from typing import (
+     Any,
+     Callable,
+     Optional,
++    TypeVar,
+     Union,
+ )
+ 
+@@ -143,6 +144,32 @@ def websocket_session(
+     return app
+ 
+ 
++_T = TypeVar("_T")
++
++
++class _DefaultLifespan:
++    """
++    Default lifespan context manager that runs the router's `on_startup` and
++    `on_shutdown` handlers.
++
++    Starlette is removing support for `on_startup`, `on_shutdown` and
++    `on_event`, FastAPI keeps its own implementation for backwards
++    compatibility.
++    """
++
++    def __init__(self, router: "APIRouter") -> None:
++        self._router = router
++
++    async def __aenter__(self) -> None:
++        await self._router._startup()
++
++    async def __aexit__(self, *exc_info: object) -> None:
++        await self._router._shutdown()
++
++    def __call__(self: _T, app: object) -> _T:
++        return self
++
++
+ def _merge_lifespan_context(
+     original_context: Lifespan[Any], nested_context: Lifespan[Any]
+ ) -> Lifespan[Any]:
+@@ -907,10 +934,19 @@ class APIRouter(routing.Router):
+             routes=routes,
+             redirect_slashes=redirect_slashes,
+             default=default,
+-            on_startup=on_startup,
+-            on_shutdown=on_shutdown,
+             lifespan=lifespan,
+         )
++        # Handle on_startup and on_shutdown in FastAPI, as Starlette is removing
++        # support for them.
++        # TODO: deprecate these once there's a better interface for lifespan
++        self.on_startup: list[Callable[[], Any]] = (
++            [] if on_startup is None else list(on_startup)
++        )
++        self.on_shutdown: list[Callable[[], Any]] = (
++            [] if on_shutdown is None else list(on_shutdown)
++        )
++        if lifespan is None:
++            self.lifespan_context: Lifespan[Any] = _DefaultLifespan(self)
+         if prefix:
+             assert prefix.startswith("/"), "A path prefix must start with '/'"
+             assert not prefix.endswith("/"), (
+@@ -4506,3 +4542,52 @@ class APIRouter(routing.Router):
+             return func
+ 
+         return decorator
++
++    def add_event_handler(
++        self,
++        event_type: str,
++        func: Callable[[], Any],
++    ) -> None:
++        """
++        Add an event handler for the router, `startup` or `shutdown`.
++
++        Prefer `lifespan` event handlers instead.
++        """
++        assert event_type in ("startup", "shutdown")
++
++        if event_type == "startup":
++            self.on_startup.append(func)
++        else:
++            self.on_shutdown.append(func)
++
++    async def _startup(self) -> None:
++        """
++        Run any `.on_startup` event handlers.
++        """
++        for handler in self.on_startup:
++            if is_async_callable(handler):
++                await handler()
++            else:
++                handler()
++
++    async def _shutdown(self) -> None:
++        """
++        Run any `.on_shutdown` event handlers.
++        """
++        for handler in self.on_shutdown:
++            if is_async_callable(handler):
++                await handler()
++            else:
++                handler()
++
++    async def startup(self) -> None:
++        """
++        Run any `.on_startup` event handlers.
++        """
++        await self._startup()
++
++    async def shutdown(self) -> None:
++        """
++        Run any `.on_shutdown` event handlers.
++        """
++        await self._shutdown()

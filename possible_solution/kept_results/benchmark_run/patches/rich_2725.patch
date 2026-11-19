@@ -1,0 +1,43 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 8735bb47..beb4b572 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
+ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+ 
++## Unreleased
++
++### Fixed
++
++- Fixed Table rendering of box elements so "footer" elements truly appear at bottom of table, "mid" elements in main table body.
++
+ ## [13.7.1] - 2024-02-28
+ 
+ ### Fixed
+diff --git a/rich/table.py b/rich/table.py
+index fe4054cf..44e457be 100644
+--- a/rich/table.py
++++ b/rich/table.py
+@@ -775,16 +775,16 @@ class Table(JupyterMixin):
+                     _Segment(_box.head_right, border_style),
+                     _Segment(_box.head_vertical, border_style),
+                 ),
+-                (
+-                    _Segment(_box.foot_left, border_style),
+-                    _Segment(_box.foot_right, border_style),
+-                    _Segment(_box.foot_vertical, border_style),
+-                ),
+                 (
+                     _Segment(_box.mid_left, border_style),
+                     _Segment(_box.mid_right, border_style),
+                     _Segment(_box.mid_vertical, border_style),
+                 ),
++                (
++                    _Segment(_box.foot_left, border_style),
++                    _Segment(_box.foot_right, border_style),
++                    _Segment(_box.foot_vertical, border_style),
++                ),
+             ]
+             if show_edge:
+                 yield _Segment(_box.get_top(widths), border_style)

@@ -1,0 +1,53 @@
+diff --git a/.github/workflows/run-tests.yml b/.github/workflows/run-tests.yml
+index c35af968..3cb8885d 100644
+--- a/.github/workflows/run-tests.yml
++++ b/.github/workflows/run-tests.yml
+@@ -57,3 +57,25 @@ jobs:
+       - name: Run tests
+         run: |
+           make ci
++
++  urllib3:
++    name: "urllib3 1.x"
++    runs-on: ubuntu-latest
++    strategy:
++      fail-fast: true
++      matrix:
++        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
++
++    steps:
++      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
++      - name: 'Set up Python ${{ matrix.python-version }}'
++        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
++        with:
++          python-version: ${{ matrix.python-version }}
++      - name: Install dependencies
++        run: |
++          make
++          python -m pip install "urllib3<2"
++      - name: Run tests
++        run: |
++          make ci
+diff --git a/src/requests/compat.py b/src/requests/compat.py
+index 095de1b6..7f9d7543 100644
+--- a/src/requests/compat.py
++++ b/src/requests/compat.py
+@@ -10,6 +10,18 @@ compatibility until the next major version.
+ import importlib
+ import sys
+ 
++# -------
++# urllib3
++# -------
++from urllib3 import __version__ as urllib3_version
++
++# Detect which major version of urllib3 is being used.
++try:
++    is_urllib3_1 = int(urllib3_version.split(".")[0]) == 1
++except (TypeError, AttributeError):
++    # If we can't discern a version, prefer old functionality.
++    is_urllib3_1 = True
++
+ # -------------------
+ # Character Detection
+ # -------------------

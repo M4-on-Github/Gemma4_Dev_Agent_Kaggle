@@ -1,0 +1,325 @@
+diff --git a/fastapi/dependencies/models.py b/fastapi/dependencies/models.py
+index 418c1172..af4f4ff2 100644
+--- a/fastapi/dependencies/models.py
++++ b/fastapi/dependencies/models.py
+@@ -1,8 +1,10 @@
++import inspect
+ from dataclasses import dataclass, field
+-from typing import Any, Callable, List, Optional, Sequence, Tuple
++from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+ 
+ from fastapi._compat import ModelField
+ from fastapi.security.base import SecurityBase
++from typing_extensions import Literal
+ 
+ 
+ @dataclass
+@@ -31,7 +33,40 @@ class Dependant:
+     security_scopes: Optional[List[str]] = None
+     use_cache: bool = True
+     path: Optional[str] = None
+-    cache_key: Tuple[Optional[Callable[..., Any]], Tuple[str, ...]] = field(init=False)
++    scope: Union[Literal["function", "request"], None] = None
++    cache_key: Tuple[Optional[Callable[..., Any]], Tuple[str, ...], str] = field(
++        init=False
++    )
+ 
+     def __post_init__(self) -> None:
+-        self.cache_key = (self.call, tuple(sorted(set(self.security_scopes or []))))
++        self.cache_key = (
++            self.call,
++            tuple(sorted(set(self.security_scopes or []))),
++            self.computed_scope or "",
++        )
++
++    @property
++    def is_gen_callable(self) -> bool:
++        if self.call is None:
++            return False
++        if inspect.isgeneratorfunction(self.call):
++            return True
++        dunder_call = getattr(self.call, "__call__", None)  # noqa: B004
++        return inspect.isgeneratorfunction(dunder_call)
++
++    @property
++    def is_async_gen_callable(self) -> bool:
++        if self.call is None:
++            return False
++        if inspect.isasyncgenfunction(self.call):
++            return True
++        dunder_call = getattr(self.call, "__call__", None)  # noqa: B004
++        return inspect.isasyncgenfunction(dunder_call)
++
++    @property
++    def computed_scope(self) -> Union[str, None]:
++        if self.scope:
++            return self.scope
++        if self.is_gen_callable or self.is_async_gen_callable:
++            return "request"
++        return None
+diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py
+index 6477a2cb..7ca4058f 100644
+--- a/fastapi/dependencies/utils.py
++++ b/fastapi/dependencies/utils.py
+@@ -55,6 +55,7 @@ from fastapi.concurrency import (
+     contextmanager_in_threadpool,
+ )
+ from fastapi.dependencies.models import Dependant, SecurityRequirement
++from fastapi.exceptions import DependencyScopeError
+ from fastapi.logger import logger
+ from fastapi.security.base import SecurityBase
+ from fastapi.security.oauth2 import OAuth2, SecurityScopes
+@@ -74,7 +75,7 @@ from starlette.datastructures import (
+ from starlette.requests import HTTPConnection, Request
+ from starlette.responses import Response
+ from starlette.websockets import WebSocket
+-from typing_extensions import Annotated, get_args, get_origin
++from typing_extensions import Annotated, Literal, get_args, get_origin
+ 
+ from .. import temp_pydantic_v1_params
+ 
+@@ -133,11 +134,14 @@ def get_parameterless_sub_dependant(*, depends: params.Depends, path: str) -> De
+     if isinstance(depends, params.Security) and depends.scopes:
+         use_security_scopes.extend(depends.scopes)
+     return get_dependant(
+-        path=path, call=depends.dependency, security_scopes=use_security_scopes
++        path=path,
++        call=depends.dependency,
++        security_scopes=use_security_scopes,
++        scope=depends.scope,
+     )
+ 
+ 
+-CacheKey = Tuple[Optional[Callable[..., Any]], Tuple[str, ...]]
++CacheKey = Tuple[Optional[Callable[..., Any]], Tuple[str, ...], str]
+ 
+ 
+ def get_flat_dependant(
+@@ -237,6 +241,7 @@ def get_dependant(
+     name: Optional[str] = None,
+     security_scopes: Optional[List[str]] = None,
+     use_cache: bool = True,
++    scope: Union[Literal["function", "request"], None] = None,
+ ) -> Dependant:
+     dependant = Dependant(
+         call=call,
+@@ -244,6 +249,7 @@ def get_dependant(
+         path=path,
+         security_scopes=security_scopes,
+         use_cache=use_cache,
++        scope=scope,
+     )
+     path_param_names = get_path_param_names(path)
+     endpoint_signature = get_typed_signature(call)
+@@ -266,6 +272,17 @@ def get_dependant(
+         )
+         if param_details.depends is not None:
+             assert param_details.depends.dependency
++            if (
++                (dependant.is_gen_callable or dependant.is_async_gen_callable)
++                and dependant.computed_scope == "request"
++                and param_details.depends.scope == "function"
++            ):
++                assert dependant.call
++                raise DependencyScopeError(
++                    f'The dependency "{getattr(dependant.call, "__name__", dependant.call)}" '
++                    'has a scope of "request", it cannot depend on dependencies with '
++                    'scope "function".'
++                )
+             use_security_scopes = security_scopes or []
+             if isinstance(param_details.depends, params.Security):
+                 if param_details.depends.scopes:
+@@ -276,6 +293,7 @@ def get_dependant(
+                 name=param_name,
+                 security_scopes=use_security_scopes,
+                 use_cache=param_details.depends.use_cache,
++                scope=param_details.depends.scope,
+             )
+             dependant.dependencies.append(sub_dependant)
+             continue
+@@ -571,7 +589,7 @@ class SolvedDependency:
+     errors: List[Any]
+     background_tasks: Optional[StarletteBackgroundTasks]
+     response: Response
+-    dependency_cache: Dict[Tuple[Callable[..., Any], Tuple[str]], Any]
++    dependency_cache: Dict[CacheKey, Any]
+ 
+ 
+ async def solve_dependencies(
+@@ -582,10 +600,18 @@ async def solve_dependencies(
+     background_tasks: Optional[StarletteBackgroundTasks] = None,
+     response: Optional[Response] = None,
+     dependency_overrides_provider: Optional[Any] = None,
+-    dependency_cache: Optional[Dict[Tuple[Callable[..., Any], Tuple[str]], Any]] = None,
++    dependency_cache: Optional[Dict[CacheKey, Any]] = None,
+     async_exit_stack: AsyncExitStack,
+     embed_body_fields: bool,
+ ) -> SolvedDependency:
++    # Dependencies with scope "request" (the default for dependencies with yield)
++    # are closed after the response is sent, using the request AsyncExitStack.
++    # Dependencies with scope "function" are closed right after the path operation
++    # function finishes, before the response is sent.
++    request_astack = async_exit_stack
++    function_astack = request.scope.get("fastapi_function_astack")
++    if not isinstance(function_astack, AsyncExitStack):
++        function_astack = async_exit_stack
+     values: Dict[str, Any] = {}
+     errors: List[Any] = []
+     if response is None:
+@@ -597,9 +623,6 @@ async def solve_dependencies(
+     sub_dependant: Dependant
+     for sub_dependant in dependant.dependencies:
+         sub_dependant.call = cast(Callable[..., Any], sub_dependant.call)
+-        sub_dependant.cache_key = cast(
+-            Tuple[Callable[..., Any], Tuple[str]], sub_dependant.cache_key
+-        )
+         call = sub_dependant.call
+         use_sub_dependant = sub_dependant
+         if (
+@@ -616,6 +639,7 @@ async def solve_dependencies(
+                 call=call,
+                 name=sub_dependant.name,
+                 security_scopes=sub_dependant.security_scopes,
++                scope=sub_dependant.scope,
+             )
+ 
+         solved_result = await solve_dependencies(
+@@ -636,8 +660,11 @@ async def solve_dependencies(
+         if sub_dependant.use_cache and sub_dependant.cache_key in dependency_cache:
+             solved = dependency_cache[sub_dependant.cache_key]
+         elif is_gen_callable(call) or is_async_gen_callable(call):
++            use_astack = request_astack
++            if sub_dependant.scope == "function":
++                use_astack = function_astack
+             solved = await solve_generator(
+-                call=call, stack=async_exit_stack, sub_values=solved_result.values
++                call=call, stack=use_astack, sub_values=solved_result.values
+             )
+         elif is_coroutine_callable(call):
+             solved = await call(**solved_result.values)
+diff --git a/fastapi/exceptions.py b/fastapi/exceptions.py
+index bb775fcb..0620428b 100644
+--- a/fastapi/exceptions.py
++++ b/fastapi/exceptions.py
+@@ -147,6 +147,13 @@ class FastAPIError(RuntimeError):
+     """
+ 
+ 
++class DependencyScopeError(FastAPIError):
++    """
++    A dependency declared that it depends on another dependency with an invalid
++    (narrower) scope.
++    """
++
++
+ class ValidationException(Exception):
+     def __init__(self, errors: Sequence[Any]) -> None:
+         self._errors = errors
+diff --git a/fastapi/param_functions.py b/fastapi/param_functions.py
+index f88937e2..e32f7559 100644
+--- a/fastapi/param_functions.py
++++ b/fastapi/param_functions.py
+@@ -4,7 +4,7 @@ from annotated_doc import Doc
+ from fastapi import params
+ from fastapi._compat import Undefined
+ from fastapi.openapi.models import Example
+-from typing_extensions import Annotated, deprecated
++from typing_extensions import Annotated, Literal, deprecated
+ 
+ _Unset: Any = Undefined
+ 
+@@ -2245,6 +2245,26 @@ def Depends(  # noqa: N802
+             """
+         ),
+     ] = True,
++    scope: Annotated[
++        Union[Literal["function", "request"], None],
++        Doc(
++            """
++            Mainly for dependencies with `yield`, define when the dependency function
++            should start (the code before `yield`) and when it should end (the code
++            after `yield`).
++
++            * `"function"`: start the dependency before the *path operation function*
++                that handles the request, end the dependency after the *path operation
++                function* ends, but **before** the response is sent back to the client.
++                So, the dependency function will be executed **around** the *path operation
++                **function***.
++            * `"request"`: start the dependency before the *path operation function*
++                that handles the request (similar to when using `"function"`), but end
++                **after** the response is sent back to the client. So, the dependency
++                function will be executed **around** the **request** and response cycle.
++            """
++        ),
++    ] = None,
+ ) -> Any:
+     """
+     Declare a FastAPI dependency.
+@@ -2275,7 +2295,7 @@ def Depends(  # noqa: N802
+         return commons
+     ```
+     """
+-    return params.Depends(dependency=dependency, use_cache=use_cache)
++    return params.Depends(dependency=dependency, use_cache=use_cache, scope=scope)
+ 
+ 
+ def Security(  # noqa: N802
+diff --git a/fastapi/params.py b/fastapi/params.py
+index 2dc04be1..6a58d580 100644
+--- a/fastapi/params.py
++++ b/fastapi/params.py
+@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+ 
+ from fastapi.openapi.models import Example
+ from pydantic.fields import FieldInfo
+-from typing_extensions import Annotated, deprecated
++from typing_extensions import Annotated, Literal, deprecated
+ 
+ from ._compat import (
+     PYDANTIC_V2,
+@@ -766,6 +766,7 @@ class File(Form):  # type: ignore[misc]
+ class Depends:
+     dependency: Optional[Callable[..., Any]] = None
+     use_cache: bool = True
++    scope: Union[Literal["function", "request"], None] = None
+ 
+ 
+ @dataclass
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index 0b59d250..6d3f9c6f 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -104,10 +104,12 @@ def request_response(
+         async def app(scope: Scope, receive: Receive, send: Send) -> None:
+             # Starts customization
+             response_awaited = False
+-            async with AsyncExitStack() as stack:
+-                scope["fastapi_inner_astack"] = stack
+-                # Same as in Starlette
+-                response = await f(request)
++            async with AsyncExitStack() as request_stack:
++                scope["fastapi_inner_astack"] = request_stack
++                async with AsyncExitStack() as function_stack:
++                    scope["fastapi_function_astack"] = function_stack
++                    # Same as in Starlette
++                    response = await f(request)
+                 await response(scope, receive, send)
+                 # Continues customization
+                 response_awaited = True
+@@ -141,10 +143,12 @@ def websocket_session(
+ 
+         async def app(scope: Scope, receive: Receive, send: Send) -> None:
+             # Starts customization
+-            async with AsyncExitStack() as stack:
+-                scope["fastapi_inner_astack"] = stack
+-                # Same as in Starlette
+-                await func(session)
++            async with AsyncExitStack() as request_stack:
++                scope["fastapi_inner_astack"] = request_stack
++                async with AsyncExitStack() as function_stack:
++                    scope["fastapi_function_astack"] = function_stack
++                    # Same as in Starlette
++                    await func(session)
+ 
+         # Same as in Starlette
+         await wrap_app_handling_exceptions(app, session)(scope, receive, send)

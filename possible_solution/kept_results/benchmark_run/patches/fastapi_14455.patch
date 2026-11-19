@@ -1,0 +1,57 @@
+diff --git a/fastapi/dependencies/models.py b/fastapi/dependencies/models.py
+index 9b545e4e..e094a865 100644
+--- a/fastapi/dependencies/models.py
++++ b/fastapi/dependencies/models.py
+@@ -83,11 +83,23 @@ class Dependant:
+             return True
+         if self.security_scopes_param_name is not None:
+             return True
++        if self._is_security_scheme:
++            # Security schemes declare the scopes in OpenAPI, so the same scheme
++            # with different scopes has to be kept as a different dependency
++            return True
+         for sub_dep in self.dependencies:
+             if sub_dep._uses_scopes:
+                 return True
+         return False
+ 
++    @cached_property
++    def _is_security_scheme(self) -> bool:
++        if self.call is None:
++            return False  # pragma: no cover
++        return isinstance(self.call, SecurityBase) or isinstance(
++            _unwrapped_call(self.call), SecurityBase
++        )
++
+     @cached_property
+     def is_gen_callable(self) -> bool:
+         if self.call is None:
+diff --git a/fastapi/openapi/utils.py b/fastapi/openapi/utils.py
+index dbc93d28..a50efd44 100644
+--- a/fastapi/openapi/utils.py
++++ b/fastapi/openapi/utils.py
+@@ -79,7 +79,8 @@ def get_openapi_security_definitions(
+     flat_dependant: Dependant,
+ ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+     security_definitions = {}
+-    operation_security = []
++    # Merge the scopes of the same security scheme into a single requirement
++    operation_security_dict: Dict[str, List[str]] = {}
+     for security_requirement in flat_dependant.security_requirements:
+         security_definition = jsonable_encoder(
+             security_requirement.security_scheme.model,
+@@ -88,7 +89,13 @@ def get_openapi_security_definitions(
+         )
+         security_name = security_requirement.security_scheme.scheme_name
+         security_definitions[security_name] = security_definition
+-        operation_security.append({security_name: security_requirement.scopes})
++        scopes = operation_security_dict.setdefault(security_name, [])
++        for scope in security_requirement.scopes or []:
++            if scope not in scopes:
++                scopes.append(scope)
++    operation_security = [
++        {name: scopes} for name, scopes in operation_security_dict.items()
++    ]
+     return security_definitions, operation_security
+ 
+ 

@@ -1,0 +1,25 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index e1a04224..bdd38a62 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ - Progress track thread is now a daemon thread https://github.com/Textualize/rich/pull/3402
+ - Fixed cached hash preservation upon clearing meta and links https://github.com/Textualize/rich/issues/2942
+ - Fixed overriding the `background_color` of `Syntax` not including padding https://github.com/Textualize/rich/issues/3295
++- Fixed `ReprHighlighter` URL highlighting stopping at `@` https://github.com/Textualize/rich/issues/3327
+ 
+ ### Changed
+ 
+diff --git a/rich/highlighter.py b/rich/highlighter.py
+index 27714b25..e4c462e2 100644
+--- a/rich/highlighter.py
++++ b/rich/highlighter.py
+@@ -98,7 +98,7 @@ class ReprHighlighter(RegexHighlighter):
+             r"(?P<number>(?<!\w)\-?[0-9]+\.?[0-9]*(e[-+]?\d+?)?\b|0x[0-9a-fA-F]*)",
+             r"(?P<path>\B(/[-\w._+]+)*\/)(?P<filename>[-\w._+]*)?",
+             r"(?<![\\\w])(?P<str>b?'''.*?(?<!\\)'''|b?'.*?(?<!\\)'|b?\"\"\".*?(?<!\\)\"\"\"|b?\".*?(?<!\\)\")",
+-            r"(?P<url>(file|https|http|ws|wss)://[-0-9a-zA-Z$_+!`(),.?/;:&=%#~]*)",
++            r"(?P<url>(file|https|http|ws|wss)://[-0-9a-zA-Z$_+!`(),.?/;:&=%#~@]*)",
+         ),
+     ]
+ 

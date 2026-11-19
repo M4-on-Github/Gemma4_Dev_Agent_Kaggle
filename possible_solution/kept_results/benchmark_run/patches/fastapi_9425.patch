@@ -1,0 +1,17 @@
+diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py
+index 8dd0a14c..ffc050ca 100644
+--- a/fastapi/dependencies/utils.py
++++ b/fastapi/dependencies/utils.py
+@@ -264,6 +264,12 @@ def get_typed_return_annotation(call: Callable[..., Any]) -> Any:
+     if annotation is inspect.Signature.empty:
+         return None
+ 
++    # A string annotation of exactly "None" (e.g. with
++    # `from __future__ import annotations`) means no response body, the same
++    # as an unquoted `-> None`, so a bodiless status code like 204 can be used.
++    if annotation == "None":
++        return None
++
+     globalns = getattr(call, "__globals__", {})
+     return get_typed_annotation(annotation, globalns)
+ 

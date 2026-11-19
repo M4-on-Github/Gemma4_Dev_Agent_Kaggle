@@ -1,0 +1,129 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index ced2cc25..49972e19 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
+ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+ 
++## Unreleased
++
++### Added
++
++- Tracebacks now highlight the fine grained error location (PEP 657) on Python 3.11+ https://github.com/Textualize/rich/pull/3486
++
+ ## [13.8.1] - 2024-09-10
+ 
+ ### Fixed
+diff --git a/rich/default_styles.py b/rich/default_styles.py
+index 031b94a1..28e8f6f9 100644
+--- a/rich/default_styles.py
++++ b/rich/default_styles.py
+@@ -120,6 +120,7 @@ DEFAULT_STYLES: Dict[str, Style] = {
+     "traceback.exc_type": Style(color="bright_red", bold=True),
+     "traceback.exc_value": Style.null(),
+     "traceback.offset": Style(color="bright_red", bold=True),
++    "traceback.error_range": Style(underline=True, bold=True, dim=False),
+     "bar.back": Style(color="grey23"),
+     "bar.complete": Style(color="rgb(249,38,114)"),
+     "bar.finished": Style(color="rgb(114,156,31)"),
+diff --git a/rich/traceback.py b/rich/traceback.py
+index fcefeb23..cdbe4bd0 100644
+--- a/rich/traceback.py
++++ b/rich/traceback.py
+@@ -2,7 +2,7 @@ import linecache
+ import os
+ import sys
+ from dataclasses import dataclass, field
+-from traceback import walk_tb
++from itertools import islice
+ from types import ModuleType, TracebackType
+ from typing import (
+     Any,
+@@ -179,6 +179,55 @@ class Frame:
+     name: str
+     line: str = ""
+     locals: Optional[Dict[str, pretty.Node]] = None
++    last_instruction: Optional[Tuple[Tuple[int, int], Tuple[int, int]]] = None
++
++
++def _walk_tb(
++    traceback: Optional[TracebackType],
++) -> Iterable[Tuple[TracebackType, Any, int]]:
++    """Walk a traceback, yielding the traceback object, frame, and line number."""
++    while traceback is not None:
++        yield traceback, traceback.tb_frame, traceback.tb_lineno
++        traceback = traceback.tb_next
++
++
++def _get_last_instruction(
++    traceback: TracebackType,
++) -> Optional[Tuple[Tuple[int, int], Tuple[int, int]]]:
++    """Get the fine grained location (PEP 657) of the last executed instruction.
++
++    Returns:
++        Optional[Tuple[Tuple[int, int], Tuple[int, int]]]: ((start line, start column),
++            (end line, end column)), or None if not available.
++    """
++    if sys.version_info < (3, 11):
++        return None
++    try:
++        lasti = traceback.tb_lasti
++        if lasti < 0:
++            return None
++        instruction_index = lasti // 2
++        position = next(
++            islice(
++                traceback.tb_frame.f_code.co_positions(),
++                instruction_index,
++                instruction_index + 1,
++            ),
++            None,
++        )
++    except Exception:
++        return None
++    if position is None:
++        return None
++    start_line, end_line, start_column, end_column = position
++    if (
++        start_line is None
++        or end_line is None
++        or start_column is None
++        or end_column is None
++    ):
++        return None
++    return ((start_line, start_column), (end_line, end_column))
+ 
+ 
+ @dataclass
+@@ -440,7 +489,7 @@ class Traceback:
+                         continue
+                     yield key, value
+ 
+-            for frame_summary, line_no in walk_tb(traceback):
++            for tb, frame_summary, line_no in _walk_tb(traceback):
+                 filename = frame_summary.f_code.co_filename
+                 if filename and not filename.startswith("<"):
+                     if not os.path.isabs(filename):
+@@ -462,6 +511,7 @@ class Traceback:
+                     }
+                     if show_locals
+                     else None,
++                    last_instruction=_get_last_instruction(tb),
+                 )
+                 append(frame)
+                 if frame_summary.f_locals.get("_rich_traceback_guard", False):
+@@ -705,6 +755,13 @@ class Traceback:
+                         indent_guides=self.indent_guides,
+                         dedent=False,
+                     )
++                    if frame.last_instruction is not None:
++                        start, end = frame.last_instruction
++                        syntax.stylize_range(
++                            style="traceback.error_range",
++                            start=start,
++                            end=end,
++                        )
+                     yield ""
+                 except Exception as error:
+                     yield Text.assemble(

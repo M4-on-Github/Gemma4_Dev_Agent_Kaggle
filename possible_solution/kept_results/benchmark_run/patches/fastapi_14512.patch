@@ -1,0 +1,18 @@
+diff --git a/fastapi/_compat/v2.py b/fastapi/_compat/v2.py
+index 46a30b3e..1da1d8e4 100644
+--- a/fastapi/_compat/v2.py
++++ b/fastapi/_compat/v2.py
+@@ -386,6 +386,13 @@ def copy_field_info(*, field_info: FieldInfo, annotation: Any) -> FieldInfo:
+     new_field_info = copy(field_info)
+     new_field_info.metadata = merged_field_info.metadata
+     new_field_info.annotation = merged_field_info.annotation
++    if new_field_info.discriminator is None and get_origin(annotation) is Annotated:
++        # Preserve a discriminator declared in another `FieldInfo` inside of
++        # `Annotated`, e.g. `Annotated[Union[A, B], Field(discriminator="t"), Body()]`
++        for arg in reversed(get_args(annotation)[1:]):
++            if isinstance(arg, FieldInfo) and arg.discriminator is not None:
++                new_field_info.discriminator = arg.discriminator
++                break
+     return new_field_info
+ 
+ 

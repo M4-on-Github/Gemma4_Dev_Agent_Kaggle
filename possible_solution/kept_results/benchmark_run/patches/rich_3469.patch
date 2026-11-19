@@ -1,0 +1,28 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 7f9a8329..a45eaff0 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ - Fixed overriding the `background_color` of `Syntax` not including padding https://github.com/Textualize/rich/issues/3295
+ - Fixed selective enabling of highlighting when disabled in the `Console` https://github.com/Textualize/rich/issues/3419
+ - Fixed BrokenPipeError writing an error message https://github.com/Textualize/rich/pull/3468
++- Fixed superfluous space above Markdown tables https://github.com/Textualize/rich/pull/3469
+ 
+ ### Changed
+ 
+diff --git a/rich/markdown.py b/rich/markdown.py
+index a58a04fc..48fd9648 100644
+--- a/rich/markdown.py
++++ b/rich/markdown.py
+@@ -683,7 +683,10 @@ class Markdown(JupyterMixin):
+ 
+                 if exiting or self_closing:
+                     element.on_leave(context)
+-                    new_line = element.new_line
++                    if should_render:
++                        # Only elements rendered at the top level determine
++                        # whether a blank line separates them from the next.
++                        new_line = element.new_line
+ 
+ 
+ if __name__ == "__main__":  # pragma: no cover

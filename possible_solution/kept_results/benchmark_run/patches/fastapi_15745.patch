@@ -1,0 +1,651 @@
+diff --git a/fastapi/openapi/utils.py b/fastapi/openapi/utils.py
+index 1c7a17c4c..150aa7e6a 100644
+--- a/fastapi/openapi/utils.py
++++ b/fastapi/openapi/utils.py
+@@ -322,7 +322,7 @@ def get_openapi_path(
+                     operation["requestBody"] = request_body_oai
+             if route.callbacks:
+                 callbacks = {}
+-                for callback in route.callbacks:
++                for callback in routing._flatten_routes(route.callbacks):
+                     if isinstance(callback, routing.APIRoute):
+                         (
+                             cb_path,
+@@ -485,7 +485,7 @@ def get_fields_from_routes(
+     responses_from_routes: list[ModelField] = []
+     request_fields_from_routes: list[ModelField] = []
+     callback_flat_models: list[ModelField] = []
+-    for route in routes:
++    for route in routing._flatten_routes(routes):
+         if not isinstance(route, routing.APIRoute):
+             continue
+         if route.include_in_schema:
+@@ -546,7 +546,9 @@ def get_openapi(
+     paths: dict[str, dict[str, Any]] = {}
+     webhook_paths: dict[str, dict[str, Any]] = {}
+     operation_ids: set[str] = set()
+-    all_fields = get_fields_from_routes(list(routes or []) + list(webhooks or []))
++    routes = routing._flatten_routes(routes or [])
++    webhooks = routing._flatten_routes(webhooks or [])
++    all_fields = get_fields_from_routes(list(routes) + list(webhooks))
+     flat_models = get_flat_models_from_fields(all_fields, known_models=set())
+     model_name_map = get_model_name_map(flat_models)
+     field_mapping, definitions = get_definitions(
+diff --git a/fastapi/routing.py b/fastapi/routing.py
+index 21a1385a2..57c5649ac 100644
+--- a/fastapi/routing.py
++++ b/fastapi/routing.py
+@@ -11,6 +11,7 @@ from collections.abc import (
+     Collection,
+     Coroutine,
+     Generator,
++    Iterable,
+     Iterator,
+     Mapping,
+     Sequence,
+@@ -76,13 +77,14 @@ from starlette import routing
+ from starlette._exception_handler import wrap_app_handling_exceptions
+ from starlette._utils import is_async_callable
+ from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
+-from starlette.datastructures import FormData
++from starlette.datastructures import FormData, URLPath
+ from starlette.exceptions import HTTPException
+ from starlette.requests import Request
+ from starlette.responses import JSONResponse, Response, StreamingResponse
+ from starlette.routing import (
+     BaseRoute,
+     Match,
++    NoMatchFound,
+     compile_path,
+     get_name,
+ )
+@@ -1314,6 +1316,51 @@ class APIRouter(routing.Router):
+         self.generate_unique_id_function = generate_unique_id_function
+         self.strict_content_type = strict_content_type
+ 
++    def matches(self, scope: Scope) -> tuple[Match, Scope]:
++        """
++        Check if this router can handle the request in `scope`, when it is
++        included in another router (or app).
++
++        By default, it matches if any of its routes (including the routes of the
++        routers included in it) matches.
++
++        This can be overridden in subclasses to customize how a router matches
++        requests, e.g. to match only requests with some specific header.
++        """
++        key, routes = _get_router_context(self, scope)
++        partial: tuple[BaseRoute, Scope] | None = None
++        for route in routes:
++            match, child_scope = route.matches(scope)
++            if match == Match.FULL:
++                return Match.FULL, _add_router_match(child_scope, key, route)
++            if match == Match.PARTIAL and partial is None:
++                partial = (route, child_scope)
++        if partial is not None:
++            route, child_scope = partial
++            return Match.PARTIAL, _add_router_match(child_scope, key, route)
++        return Match.NONE, {}
++
++    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
++        """
++        Handle a request that was matched by `.matches()`, when this router is
++        included in another router (or app).
++
++        By default, it passes the request to the route that matched it.
++
++        This can be overridden in subclasses to customize how a router handles
++        requests.
++        """
++        key, _ = _get_router_context(self, scope)
++        route = scope.get(_ROUTER_MATCHES_SCOPE_KEY, {}).get(key)
++        if route is None:
++            match, child_scope = self.matches(scope)
++            if match == Match.NONE:
++                await self.default(scope, receive, send)
++                return
++            scope.update(child_scope)
++            route = child_scope[_ROUTER_MATCHES_SCOPE_KEY][key]
++        await route.handle(scope, receive, send)
++
+     def route(
+         self,
+         path: str,
+@@ -1333,7 +1380,7 @@ class APIRouter(routing.Router):
+ 
+         return decorator
+ 
+-    def add_api_route(
++    def _create_api_route(
+         self,
+         path: str,
+         endpoint: Callable[..., Any],
+@@ -1364,7 +1411,7 @@ class APIRouter(routing.Router):
+         generate_unique_id_function: Callable[[APIRoute], str]
+         | DefaultPlaceholder = Default(generate_unique_id),
+         strict_content_type: bool | DefaultPlaceholder = Default(True),
+-    ) -> None:
++    ) -> APIRoute:
+         route_class = route_class_override or self.route_class
+         responses = responses or {}
+         combined_responses = {**self.responses, **responses}
+@@ -1414,6 +1461,69 @@ class APIRouter(routing.Router):
+                 strict_content_type, self.strict_content_type
+             ),
+         )
++        return route
++
++    def add_api_route(
++        self,
++        path: str,
++        endpoint: Callable[..., Any],
++        *,
++        response_model: Any = Default(None),
++        status_code: int | None = None,
++        tags: list[str | Enum] | None = None,
++        dependencies: Sequence[params.Depends] | None = None,
++        summary: str | None = None,
++        description: str | None = None,
++        response_description: str = "Successful Response",
++        responses: dict[int | str, dict[str, Any]] | None = None,
++        deprecated: bool | None = None,
++        methods: set[str] | list[str] | None = None,
++        operation_id: str | None = None,
++        response_model_include: IncEx | None = None,
++        response_model_exclude: IncEx | None = None,
++        response_model_by_alias: bool = True,
++        response_model_exclude_unset: bool = False,
++        response_model_exclude_defaults: bool = False,
++        response_model_exclude_none: bool = False,
++        include_in_schema: bool = True,
++        response_class: type[Response] | DefaultPlaceholder = Default(JSONResponse),
++        name: str | None = None,
++        route_class_override: type[APIRoute] | None = None,
++        callbacks: list[BaseRoute] | None = None,
++        openapi_extra: dict[str, Any] | None = None,
++        generate_unique_id_function: Callable[[APIRoute], str]
++        | DefaultPlaceholder = Default(generate_unique_id),
++        strict_content_type: bool | DefaultPlaceholder = Default(True),
++    ) -> None:
++        route = self._create_api_route(
++            path,
++            endpoint,
++            response_model=response_model,
++            status_code=status_code,
++            tags=tags,
++            dependencies=dependencies,
++            summary=summary,
++            description=description,
++            response_description=response_description,
++            responses=responses,
++            deprecated=deprecated,
++            methods=methods,
++            operation_id=operation_id,
++            response_model_include=response_model_include,
++            response_model_exclude=response_model_exclude,
++            response_model_by_alias=response_model_by_alias,
++            response_model_exclude_unset=response_model_exclude_unset,
++            response_model_exclude_defaults=response_model_exclude_defaults,
++            response_model_exclude_none=response_model_exclude_none,
++            include_in_schema=include_in_schema,
++            response_class=response_class,
++            name=name,
++            route_class_override=route_class_override,
++            callbacks=callbacks,
++            openapi_extra=openapi_extra,
++            generate_unique_id_function=generate_unique_id_function,
++            strict_content_type=strict_content_type,
++        )
+         self.routes.append(route)
+ 
+     def api_route(
+@@ -1486,18 +1596,30 @@ class APIRouter(routing.Router):
+         *,
+         dependencies: Sequence[params.Depends] | None = None,
+     ) -> None:
++        route = self._create_api_websocket_route(
++            path, endpoint, name=name, dependencies=dependencies
++        )
++        self.routes.append(route)
++
++    def _create_api_websocket_route(
++        self,
++        path: str,
++        endpoint: Callable[..., Any],
++        name: str | None = None,
++        *,
++        dependencies: Sequence[params.Depends] | None = None,
++    ) -> APIWebSocketRoute:
+         current_dependencies = self.dependencies.copy()
+         if dependencies:
+             current_dependencies.extend(dependencies)
+ 
+-        route = APIWebSocketRoute(
++        return APIWebSocketRoute(
+             self.prefix + path,
+             endpoint=endpoint,
+             name=name,
+             dependencies=current_dependencies,
+             dependency_overrides_provider=self.dependency_overrides_provider,
+         )
+-        self.routes.append(route)
+ 
+     def websocket(
+         self,
+@@ -1714,111 +1836,35 @@ class APIRouter(routing.Router):
+             "Cannot include the same APIRouter instance into itself. "
+             "Did you mean to include a different router?"
+         )
++        if _router_includes(router, self):
++            raise FastAPIError(
++                "Cannot include an APIRouter that already includes (directly or "
++                "indirectly) the router it is being included into, this would "
++                "create a cycle."
++            )
+         if prefix:
+             assert prefix.startswith("/"), "A path prefix must start with '/'"
+             assert not prefix.endswith("/"), (
+                 "A path prefix must not end with '/', as the routes will start with '/'"
+             )
+-        else:
+-            for r in router.routes:
+-                path = getattr(r, "path")  # noqa: B009
+-                name = getattr(r, "name", "unknown")
+-                if path is not None and not path:
+-                    raise FastAPIError(
+-                        f"Prefix and path cannot be both empty (path operation: {name})"
+-                    )
+-        if responses is None:
+-            responses = {}
+-        for route in router.routes:
+-            if isinstance(route, APIRoute):
+-                combined_responses = {**responses, **route.responses}
+-                use_response_class = get_value_or_default(
+-                    route.response_class,
+-                    router.default_response_class,
+-                    default_response_class,
+-                    self.default_response_class,
+-                )
+-                current_tags = []
+-                if tags:
+-                    current_tags.extend(tags)
+-                if route.tags:
+-                    current_tags.extend(route.tags)
+-                current_dependencies: list[params.Depends] = []
+-                if dependencies:
+-                    current_dependencies.extend(dependencies)
+-                if route.dependencies:
+-                    current_dependencies.extend(route.dependencies)
+-                current_callbacks = []
+-                if callbacks:
+-                    current_callbacks.extend(callbacks)
+-                if route.callbacks:
+-                    current_callbacks.extend(route.callbacks)
+-                current_generate_unique_id = get_value_or_default(
+-                    route.generate_unique_id_function,
+-                    router.generate_unique_id_function,
+-                    generate_unique_id_function,
+-                    self.generate_unique_id_function,
+-                )
+-                self.add_api_route(
+-                    prefix + route.path,
+-                    route.endpoint,
+-                    response_model=route.response_model,
+-                    status_code=route.status_code,
+-                    tags=current_tags,
+-                    dependencies=current_dependencies,
+-                    summary=route.summary,
+-                    description=route.description,
+-                    response_description=route.response_description,
+-                    responses=combined_responses,
+-                    deprecated=route.deprecated or deprecated or self.deprecated,
+-                    methods=route.methods,
+-                    operation_id=route.operation_id,
+-                    response_model_include=route.response_model_include,
+-                    response_model_exclude=route.response_model_exclude,
+-                    response_model_by_alias=route.response_model_by_alias,
+-                    response_model_exclude_unset=route.response_model_exclude_unset,
+-                    response_model_exclude_defaults=route.response_model_exclude_defaults,
+-                    response_model_exclude_none=route.response_model_exclude_none,
+-                    include_in_schema=route.include_in_schema
+-                    and self.include_in_schema
+-                    and include_in_schema,
+-                    response_class=use_response_class,
+-                    name=route.name,
+-                    route_class_override=type(route),
+-                    callbacks=current_callbacks,
+-                    openapi_extra=route.openapi_extra,
+-                    generate_unique_id_function=current_generate_unique_id,
+-                    strict_content_type=get_value_or_default(
+-                        route.strict_content_type,
+-                        router.strict_content_type,
+-                        self.strict_content_type,
+-                    ),
+-                )
+-            elif isinstance(route, routing.Route):
+-                methods = list(route.methods or [])
+-                self.add_route(
+-                    prefix + route.path,
+-                    route.endpoint,
+-                    methods=methods,
+-                    include_in_schema=route.include_in_schema,
+-                    name=route.name,
+-                )
+-            elif isinstance(route, APIWebSocketRoute):
+-                current_dependencies = []
+-                if dependencies:
+-                    current_dependencies.extend(dependencies)
+-                if route.dependencies:
+-                    current_dependencies.extend(route.dependencies)
+-                self.add_api_websocket_route(
+-                    prefix + route.path,
+-                    route.endpoint,
+-                    dependencies=current_dependencies,
+-                    name=route.name,
+-                )
+-            elif isinstance(route, routing.WebSocketRoute):
+-                self.add_websocket_route(
+-                    prefix + route.path, route.endpoint, name=route.name
+-                )
++        included = _IncludedRouter(
++            parent=self,
++            router=router,
++            prefix=prefix,
++            tags=tags,
++            dependencies=dependencies,
++            default_response_class=default_response_class,
++            responses=responses,
++            callbacks=callbacks,
++            deprecated=deprecated,
++            include_in_schema=include_in_schema,
++            generate_unique_id_function=generate_unique_id_function,
++        )
++        # Resolve the currently declared routes right away, to report invalid
++        # configurations (e.g. empty prefix and empty path) as early as possible.
++        # Routes added later to the included router are resolved lazily.
++        included.routes  # noqa: B018
++        self.routes.append(included)
+         for handler in router.on_startup:
+             self.add_event_handler("startup", handler)
+         for handler in router.on_shutdown:
+@@ -4954,3 +5000,280 @@ class APIRouter(routing.Router):
+             return func
+ 
+         return decorator
++
++
++# Private scope keys used while matching and handling requests through included
++# routers.
++# The node (included router) currently being matched or handled.
++_ROUTER_NODE_SCOPE_KEY = "fastapi.router_node"
++# A mapping of the id of each router context (node) to the route it matched.
++_ROUTER_MATCHES_SCOPE_KEY = "fastapi.router_matches"
++
++
++def _same_items(a: Sequence[Any], b: Sequence[Any]) -> bool:
++    return len(a) == len(b) and all(x is y for x, y in zip(a, b, strict=True))
++
++
++def _router_includes(router: APIRouter, target: APIRouter) -> bool:
++    """
++    Check if `router` includes `target`, directly or indirectly.
++    """
++    pending: list[APIRouter] = [router]
++    seen: set[int] = set()
++    while pending:
++        current = pending.pop()
++        if id(current) in seen:
++            continue
++        seen.add(id(current))
++        for route in current.routes:
++            if isinstance(route, _RouterNode):
++                if route.router is target:
++                    return True
++                pending.append(route.router)
++    return False
++
++
++def _flatten_routes(routes: Iterable[BaseRoute]) -> list[BaseRoute]:
++    """
++    Get the plain list of the final (effective) routes, expanding the tree of
++    included routers.
++    """
++    result: list[BaseRoute] = []
++    for route in routes:
++        if isinstance(route, _RouterNode):
++            result.extend(_flatten_routes(route.routes))
++        else:
++            result.append(route)
++    return result
++
++
++def _get_router_context(router: APIRouter, scope: Scope) -> tuple[int, list[BaseRoute]]:
++    node = scope.get(_ROUTER_NODE_SCOPE_KEY)
++    if isinstance(node, _RouterNode) and node.router is router:
++        return id(node), node.routes
++    return id(router), router.routes
++
++
++def _add_router_match(child_scope: Scope, key: int, route: BaseRoute) -> Scope:
++    matches = {**child_scope.get(_ROUTER_MATCHES_SCOPE_KEY, {}), key: route}
++    return {**child_scope, _ROUTER_MATCHES_SCOPE_KEY: matches}
++
++
++class _RouterNode(BaseRoute):
++    """
++    Base class for the intermediate objects stored in `router.routes` that
++    represent another router included in it.
++
++    The included router (and its routes) are preserved as is, the final
++    (effective) routes, with the prefix, tags, dependencies, etc. from each
++    inclusion applied, are computed lazily (and cached) from them, so that any
++    route added to the included router later is also reflected.
++    """
++
++    router: APIRouter
++
++    def __init__(self) -> None:
++        self._sources: list[BaseRoute] = []
++        self._resolved: list[BaseRoute] = []
++        self._cache: dict[int, tuple[BaseRoute, BaseRoute | None]] = {}
++
++    def _get_sources(self) -> Sequence[BaseRoute]:
++        raise NotImplementedError()  # pragma: no cover
++
++    def _resolve(self, source: BaseRoute) -> BaseRoute | None:
++        raise NotImplementedError()  # pragma: no cover
++
++    @property
++    def routes(self) -> list[BaseRoute]:
++        """
++        The effective routes (and nested included routers) for this inclusion.
++        """
++        sources = self._get_sources()
++        if _same_items(sources, self._sources):
++            return self._resolved
++        cache: dict[int, tuple[BaseRoute, BaseRoute | None]] = {}
++        resolved: list[BaseRoute] = []
++        for source in sources:
++            cached = self._cache.get(id(source))
++            if cached is not None and cached[0] is source:
++                route = cached[1]
++            else:
++                route = self._resolve(source)
++            cache[id(source)] = (source, route)
++            if route is not None:
++                resolved.append(route)
++        self._sources = list(sources)
++        self._resolved = resolved
++        self._cache = cache
++        return resolved
++
++    def matches(self, scope: Scope) -> tuple[Match, Scope]:
++        return self.router.matches({**scope, _ROUTER_NODE_SCOPE_KEY: self})
++
++    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
++        scope[_ROUTER_NODE_SCOPE_KEY] = self
++        await self.router.handle(scope, receive, send)
++
++    def url_path_for(self, name: str, /, **path_params: Any) -> URLPath:
++        for route in self.routes:
++            try:
++                return route.url_path_for(name, **path_params)
++            except NoMatchFound:
++                pass
++        raise NoMatchFound(name, path_params)
++
++
++class _IncludedRouter(_RouterNode):
++    """
++    A router included in another router (the `parent`), with the parameters
++    passed to `parent.include_router()`.
++    """
++
++    def __init__(
++        self,
++        *,
++        parent: APIRouter,
++        router: APIRouter,
++        prefix: str = "",
++        tags: list[str | Enum] | None = None,
++        dependencies: Sequence[params.Depends] | None = None,
++        default_response_class: type[Response] = Default(JSONResponse),
++        responses: dict[int | str, dict[str, Any]] | None = None,
++        callbacks: list[BaseRoute] | None = None,
++        deprecated: bool | None = None,
++        include_in_schema: bool = True,
++        generate_unique_id_function: Callable[[APIRoute], str]
++        | DefaultPlaceholder = Default(generate_unique_id),
++    ) -> None:
++        super().__init__()
++        self.parent = parent
++        self.router = router
++        self.prefix = prefix
++        self.tags: list[str | Enum] = list(tags or [])
++        self.dependencies: list[params.Depends] = list(dependencies or [])
++        self.default_response_class = default_response_class
++        self.responses: dict[int | str, dict[str, Any]] = dict(responses or {})
++        self.callbacks: list[BaseRoute] = list(callbacks or [])
++        self.deprecated = deprecated
++        self.include_in_schema = include_in_schema
++        self.generate_unique_id_function = generate_unique_id_function
++
++    def __repr__(self) -> str:
++        return (
++            f"{self.__class__.__name__}(router={self.router!r}, prefix={self.prefix!r})"
++        )
++
++    def _get_sources(self) -> Sequence[BaseRoute]:
++        return self.router.routes
++
++    def _resolve(self, source: BaseRoute) -> BaseRoute | None:
++        if isinstance(source, _RouterNode):
++            return _IncludedRouterView(base=source, outer=self)
++        return self._include_route(source)
++
++    def _include_route(self, route: BaseRoute) -> BaseRoute | None:
++        parent = self.parent
++        router = self.router
++        prefix = self.prefix
++        if not prefix:
++            path = getattr(route, "path", None)
++            if path is not None and not path:
++                name = getattr(route, "name", "unknown")
++                raise FastAPIError(
++                    f"Prefix and path cannot be both empty (path operation: {name})"
++                )
++        if isinstance(route, APIRoute):
++            combined_responses = {**self.responses, **route.responses}
++            use_response_class = get_value_or_default(
++                route.response_class,
++                router.default_response_class,
++                self.default_response_class,
++                parent.default_response_class,
++            )
++            current_tags = [*self.tags, *route.tags]
++            current_dependencies = [*self.dependencies, *route.dependencies]
++            current_callbacks = [*self.callbacks, *(route.callbacks or [])]
++            current_generate_unique_id = get_value_or_default(
++                route.generate_unique_id_function,
++                router.generate_unique_id_function,
++                self.generate_unique_id_function,
++                parent.generate_unique_id_function,
++            )
++            return parent._create_api_route(
++                prefix + route.path,
++                route.endpoint,
++                response_model=route.response_model,
++                status_code=route.status_code,
++                tags=current_tags,
++                dependencies=current_dependencies,
++                summary=route.summary,
++                description=route.description,
++                response_description=route.response_description,
++                responses=combined_responses,
++                deprecated=route.deprecated or self.deprecated or parent.deprecated,
++                methods=route.methods,
++                operation_id=route.operation_id,
++                response_model_include=route.response_model_include,
++                response_model_exclude=route.response_model_exclude,
++                response_model_by_alias=route.response_model_by_alias,
++                response_model_exclude_unset=route.response_model_exclude_unset,
++                response_model_exclude_defaults=route.response_model_exclude_defaults,
++                response_model_exclude_none=route.response_model_exclude_none,
++                include_in_schema=route.include_in_schema
++                and parent.include_in_schema
++                and self.include_in_schema,
++                response_class=use_response_class,
++                name=route.name,
++                route_class_override=type(route),
++                callbacks=current_callbacks,
++                openapi_extra=route.openapi_extra,
++                generate_unique_id_function=current_generate_unique_id,
++                strict_content_type=get_value_or_default(
++                    route.strict_content_type,
++                    router.strict_content_type,
++                    parent.strict_content_type,
++                ),
++            )
++        elif isinstance(route, routing.Route):
++            return routing.Route(
++                prefix + route.path,
++                endpoint=route.endpoint,
++                methods=list(route.methods or []),
++                name=route.name,
++                include_in_schema=route.include_in_schema,
++            )
++        elif isinstance(route, APIWebSocketRoute):
++            return parent._create_api_websocket_route(
++                prefix + route.path,
++                route.endpoint,
++                name=route.name,
++                dependencies=[*self.dependencies, *route.dependencies],
++            )
++        elif isinstance(route, routing.WebSocketRoute):
++            return routing.WebSocketRoute(
++                prefix + route.path, endpoint=route.endpoint, name=route.name
++            )
++        return None
++
++
++class _IncludedRouterView(_RouterNode):
++    """
++    A nested included router (`base`), as seen through an outer inclusion
++    (`outer`), e.g. when `app` includes `router` and `router` includes
++    `sub_router`, the view of `sub_router` from `app`.
++    """
++
++    def __init__(self, *, base: _RouterNode, outer: _IncludedRouter) -> None:
++        super().__init__()
++        self.base = base
++        self.outer = outer
++        self.router = base.router
++
++    def __repr__(self) -> str:
++        return f"{self.__class__.__name__}(base={self.base!r}, outer={self.outer!r})"
++
++    def _get_sources(self) -> Sequence[BaseRoute]:
++        return self.base.routes
++
++    def _resolve(self, source: BaseRoute) -> BaseRoute | None:
++        return self.outer._resolve(source)

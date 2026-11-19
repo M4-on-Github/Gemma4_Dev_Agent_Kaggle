@@ -1,0 +1,30 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 20ec85bd..355c2e5e 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
+ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+ 
++## Unreleased
++
++### Fixed
++
++- Fixed `Console.print` with no objects ignoring `end` https://github.com/Textualize/rich/issues/3740
++
+ ## [14.3.4] - 2026-04-11
+ 
+ ### Changed
+diff --git a/rich/console.py b/rich/console.py
+index 58eaee22..c5912ec6 100644
+--- a/rich/console.py
++++ b/rich/console.py
+@@ -1687,7 +1687,7 @@ class Console:
+             new_line_start (bool, False): Insert a new line at the start if the output contains more than one line. Defaults to ``False``.
+         """
+         if not objects:
+-            objects = (NewLine(),)
++            objects = ("",)
+ 
+         if soft_wrap is None:
+             soft_wrap = self.soft_wrap

@@ -1,0 +1,36 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index c5b18772..225f273c 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
+ ### Fixed
+ 
+ - Fixed extraction of recursive exceptions https://github.com/Textualize/rich/pull/3772
++- Fixed Syntax wrapping not accounting for padding https://github.com/Textualize/rich/pull/3782
+ 
+ ### Added
+ 
+diff --git a/rich/syntax.py b/rich/syntax.py
+index cff8fd23..974e6d91 100644
+--- a/rich/syntax.py
++++ b/rich/syntax.py
+@@ -625,11 +625,17 @@ class Syntax(JupyterMixin):
+     def __rich_console__(
+         self, console: Console, options: ConsoleOptions
+     ) -> RenderResult:
+-        segments = Segments(self._get_syntax(console, options))
+         if self.padding:
++            # Render the code at the width remaining after horizontal padding,
++            # so that wrapping (and cropping) accounts for the padding.
++            _, right, _, left = Padding.unpack(self.padding)
++            syntax_options = options.update_width(
++                max(0, options.max_width - left - right)
++            )
++            segments = Segments(self._get_syntax(console, syntax_options))
+             yield Padding(segments, style=self._get_base_style(), pad=self.padding)
+         else:
+-            yield segments
++            yield Segments(self._get_syntax(console, options))
+ 
+     def _get_syntax(
+         self,
