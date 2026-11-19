@@ -13,8 +13,8 @@ filled in 2026-11-19 with R-011; before that several rows still said open after 
 | A1 | More tool calls | 6 small-gold tasks lost at the 28-call cap in both Kaggle baseline arms; one Ada decodes ~35 tok/s alone, so time is not the binding limit at 28 | `max_tool_calls` 28 -> 40, prompt budget line to match | dropped (R-001 T-31b-001: the same tasks moved onto the time cap) |
 | A2 | Sibling-site sweep (bug-fix mechanics) | most 31B losses are partial fixes on multi-region gold patches | prompt rule: after the first edit, grep the changed identifier and patch every sibling site before testing | dropped (R-001 T-31b-002: +1, inside the margin) |
 | A3 | Cheaper thinking | thinking tokens are most of the decode time; fewer thinking tokens buy calls inside 8 min | `thinking_budget` 4096 -> 1024 | dropped (R-002 T-31b-003: no wall time saved; R-004 output cap 2048 also dropped) |
-| A4 | Bounded observations | compaction fires at 14,336 prompt tokens and drops what the model read | prompt rule: every command output piped through `head`, reads <= 80 lines | active (R-011 T-31b-011, screen) |
-| A5 | Sampling temperature | T=1.0 gives wide draw-to-draw spread | T 1.0 -> 0.6 | active (R-011 T-31b-010, screen) |
+| A4 | Bounded observations | compaction fires at 14,336 prompt tokens and drops what the model read | prompt rule: every command output piped through `head`, reads <= 80 lines | dropped (R-011 T-31b-011: 8.5 vs 8.5; only 20% of commands bounded, so the idea is untested in prompt form) |
+| A5 | Sampling temperature | T=1.0 gives wide draw-to-draw spread | T 1.0 -> 0.6 | dropped (R-011 T-31b-010: 8.5 vs 8.5, time cap + empty 22 vs 17) |
 | A6 | Process order (invariant) | the "edit by call 12" rule may force early wrong edits | reproduce-first variant: one failing check before the edit | dropped 2026-11-19 (R-010: failing 31B draws commit late, and this would delay the edit further) |
 
 ## E4B (`trees/e4b-base`, same tree, model line differs)

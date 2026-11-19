@@ -147,3 +147,47 @@ env/py313-scorer/bin/python3.13 --task-envs env/taskenvs`, the R-008 flags.
     the gate is that the stages run.
 - **22:07Z, the 16 E4B draws submitted** on pleiades-1-10, interleaved: jobs 59706 (base d1), 59707 (reviewer
   d1) and so on, through 59720 (base d8) and 59721 (reviewer d8).
+- **22:52Z, `S-011-31b-boundedout-s1` done** (59693, 2517 s, 20/20 rows). Flagged OUT_OF_MEMORY with one cgroup oom-kill (MaxRSS 66 GB); this is the known `rich_3480` grading loop (README Setup results 8; base S-008 s2 had the same flag). Rows are complete, so the draw is used.
+- **22:55Z, `S-011-31b-temp06-s1` done** (59692, 43:37, 20/20 rows, no OOM flag).
+- **23:30Z, `S-011-31b-boundedout-s2` done** (59695, 36:54, 20/20 rows).
+
+### Reading 4, boundedout (T-31b-011): dropped
+
+| Draw | Resolved | Empty patch | Time cap | Median per-task peak prompt tokens | Tasks with a compaction |
+|---|---|---|---|---|---|
+| S-008 base s1 | 8 | 4 | 4 | 14,794 | 13 |
+| S-008 base s2 | 9 | 5 | 4 | 14,257 | 8 |
+| boundedout s1 | 9 | 6 | 6 | 14,639 | 12 |
+| boundedout s2 | 8 | 7 | 8 | 13,935 | 9 |
+
+- **Resolves.** The mean is 8.5, equal to the base (8.5). It misses both bars: 10.0, and 9.0 with the endpoint met.
+- **Endpoint missed.**
+  - Median peak prompt tokens fell 1.6% (14,287 against 14,525), against a 15% bar.
+  - Tasks with a compaction stayed at 21 against 21.
+  - A compaction is a drop of over 40% in prompt tokens from above 8,000, as in R-004.
+- **Uptake was partial.** The rule was taken up in only some commands, so this is a weak test of the idea.
+  - The share of `run_command` calls piped through `head`/`tail` rose from 0.07 (25 of 354) to 0.20 (70 of 354).
+  - `read_file` ranges over 80 lines went from 36 of 201 to 31 of 166.
+  - Even the base's own `git grep ... | head -20` template is rarely copied by the 31B.
+- **Empty patches and time caps rose:** empty 13 against 9, time cap 14 against 8, summed over two draws. That is
+  small-count, but it goes the wrong way.
+- **~23:35Z, `S-011-31b-temp06-s2` done** (59694, 37:19, 20/20 rows). The chains moved on to
+  `R-011-31b-base-te-d3` (59696) and `-d4` (59697).
+
+### Reading 4, temp06 (T-31b-010): dropped
+
+| Draw | Resolved | Empty patch | Time cap | Median thought characters per task |
+|---|---|---|---|---|
+| S-008 base s1 | 8 | 4 | 4 | 18,527 |
+| S-008 base s2 | 9 | 5 | 4 | 14,538 |
+| temp06 s1 | 8 | 5 | 6 | 18,934 |
+| temp06 s2 | 9 | 4 | 7 | 18,424 |
+
+- **Resolves.** The mean is 8.5, equal to the base. It misses both bars.
+- **Endpoint missed.** Time-cap plus empty-patch task-draws came to 22, against the base's 17; the bar was under 17.
+- **Thoughts.** Thought length did not shrink.
+- **Spread did not narrow.** 11 tasks were resolved in at least one temp06 draw, against 10 for the base; the
+  two arms together reach 13.
+- **Both 31B arms of R-011 are dropped.** With A1-A6 now closed, the 31B backlog in `directions.md` is empty.
+  The pivot rule says to refill it from a trace synthesis. That waits for the d3/d4 base draws, which also give
+  the cdev2-79 SD.
