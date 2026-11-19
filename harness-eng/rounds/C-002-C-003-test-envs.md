@@ -37,3 +37,16 @@ Run with: `sbatch --export=ALL,HENG_EVAL_ARGS="--py313 env/py313-scorer/bin/pyth
 | fastapi_14186 | required node `test_model_description_escaped_with_formfeed` did not pass | not checked |
 | rich_3472 | pretty-repr assertion differs | passed under Python 3.12; likely a 3.13 behaviour change, so it would fail in the scorer too |
 | rich_3486 | required node `test_traceback_finely_grained_missing` did not pass | traceback layout; likely Python-version dependent |
+
+## C-004 (2026-11-19): the eight gold failures checked
+
+| Task | Cause found | Fixable here? |
+|---|---|---|
+| requests_6592 | httpbin 0.10.0 needs werkzeug < 3; the date cap picked 3.0.1 | **Fixed.** `EXTRA_REQS` in `tools/build_task_envs.py` adds `werkzeug<3` (built 2.3.8, flask 2.3.3). C-004 gold 1/1, empty 0/1 (jobs 59429, 59430). |
+| fastapi_15745, 15763, 15785 | the failing tests are `@pytest.mark.anyio` async tests; swegemma's own verification runs pytest with `-p no:anyio` (`harness/verification.py:631`, `container_setup.py:892`) | No. They pass when run by hand without that flag (34 passed under pytest 9.2.0 and 9.1.1), so this is the harness's own rule and the public scorer fails them too. |
+| requests_6757 | `SSLV3_ALERT_CERTIFICATE_EXPIRED`: the repo's bundled test certificates have expired | No; it depends on the date, not on packages. It fails on the scorer too unless the scorer fakes the clock. |
+| fastapi_14186 | the required test `test_model_description_escaped_with_formfeed` is skipped (it needs pydantic v1; the env has 2.12.3) and a skipped test counts as not passed | Not without a pydantic-v1 env, which would break the task's other tests. |
+| rich_3472, rich_3486 | Python 3.13 output differences (see above) | No; the scorer runs 3.13 too. |
+
+Gradeable under C-003 + C-004: **120/129**. The remaining 8 are ungradeable by the scorer's own rules or
+Python version, as far as can be told from the harness code; that last point is an inference.

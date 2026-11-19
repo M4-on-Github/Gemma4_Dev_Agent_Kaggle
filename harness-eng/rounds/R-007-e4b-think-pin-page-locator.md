@@ -389,3 +389,18 @@ against the proposer's absolute bar and against the base as counted here.
 - The cdevx-23 base draws R-000-e4b-base-x1..x3 already existed (started 18:26Z), so the re-queued jobs exited on "already holds a run" and nothing was rerun. They resolved 2, 1 and 1.
 - The pooled base on cdev2-79 is 6.0 (cdev-56 d1..d3) + 1.33 (cdevx-23 x1..x3) = 7.33 per draw. The L2 bar is 10.33.
 - d1's 8 is under the bar. d2 and d3 are queued, and the reading waits for all three.
+
+### pagedread L2 result (2026-11-19T01:15Z)
+
+| Run | cdev-56 | cdevx-23 | cdev2-79 |
+|---|---|---|---|
+| R-007-e4b-pagedread-d1 | 7 | 1 | 8 |
+| R-007-e4b-pagedread-d2 | 9 | 1 | 10 |
+| R-007-e4b-pagedread-d3 | 7 | 1 | 8 |
+| pagedread mean | 7.67 | 1.0 | 8.67 |
+| pooled base mean (R-000-e4b-base-d1..d3, x1..x3) | 6.0 | 1.33 | 7.33 |
+
+- **Reading:** 8.67 is under the L2 bar of 10.33 (base + 3), so pagedread is **not kept**. The base stays `e4b-base`.
+- **Per task:** 6 tasks went up and 5 went down. All the gain is on cdev-56 (+1.67); cdevx-23 is -0.33.
+- **Shim caveat:** the base's cdev-56 draws ran without shims and pagedread's ran with them. This touches only what the agent sees when it runs tests, not grading: no cdev-56 task needs the shims to grade (C-000 vs C-001).
+- **OOM flag:** all three jobs ended with the teardown oom-kill flag after writing all 79 rows.

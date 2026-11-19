@@ -34,3 +34,5 @@ Status: open / active / kept / dropped / pivoted-away. Update after every round.
 - ~~Per-task dependency install in the sandbox~~ done 2026-11-18 with the user's permission:
   `--py313 ... --task-envs env/taskenvs` makes 119/129 tasks gradeable (was 101); see
   `rounds/C-002-C-003-test-envs.md`. Agent runs that should use it must pass the same flags.
+  2026-11-19: C-004 pins werkzeug for requests_6592 (120/129 gradeable); R-008 moves agent runs onto it
+  and re-baselines both models (`rounds/R-008-taskenv-base.md`).

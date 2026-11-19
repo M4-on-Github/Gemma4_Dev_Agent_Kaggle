@@ -145,6 +145,12 @@ NOW = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 DROP = ("pytest", "pluggy", "iniconfig", "py", "pytest-timeout")
+# Per-task constraints the declarations miss, each with the failure it fixes. Rebuild with --force.
+EXTRA_REQS = {
+    # httpbin 0.10.0 imports werkzeug.http.parse_authorization_header, removed in werkzeug 3.0
+    # (2023-09-30), which the date cap (2023-12-16) would otherwise pick. 2026-11-19, C-004.
+    "requests_6592": ["werkzeug<3"],
+}
 
 
 def remove_dist(target, name):
@@ -210,6 +216,7 @@ def build(task, force=False):
         project = norm(task["repo"].split("/")[-1])
         reqs = [r for r in reqs if req_name(r) != project or r.startswith(str(root))]
         reqs = [r for r in reqs if r.startswith(str(root)) or not SKIP.match(req_name(r) or "")]
+        reqs += EXTRA_REQS.get(iid, [])
         rec.update(source=source, pinned=pinned, n_reqs=len(reqs),
                    reqs=[r.replace(str(root), ".") for r in reqs])
         code, out = install(reqs, target, task["created_at"], pinned, tmp)
