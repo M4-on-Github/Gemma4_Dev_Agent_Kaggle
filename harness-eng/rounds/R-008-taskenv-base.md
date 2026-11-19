@@ -64,3 +64,20 @@ nothing in `trees/` changes, and no promotion rule applies. Approved by the user
      checked by hand before the base is used.
 5. **Later, not in this round.** The cohorts stay as they are so the comparison with the old base is paired.
    Rebuilding cohorts over the 119 C-003-gradeable tasks is a separate decision.
+
+## Log
+
+- **2026-11-19T01:14Z, smoke `S-008-e4b-te-smoke` (job 59431, 2 tasks), passed.**
+  - 0 of 2 task-draws had import errors, and the one pytest header said Python 3.13.
+  - `orjson`, `flask`, `inline_snapshot` and `dirty_equals.IsInt`/`IsStr`/`IsUUID`/`IsList`/`AnyThing` import
+    from `env/taskenvs/fastapi_14301` and `_14459`.
+  - It is thin evidence for check 1 (one pytest call), so check 1 is read again on every draw.
+  - Counter: `envcheck.py` matches `No module named` / `cannot import name` in tool output. For calibration,
+    on old draws it reads 10/79 (`R-007-e4b-pagedread-d1`) and 5/20 (`S-000-e4b-base-s1`), with every pytest
+    header saying 3.12.
+- **2026-11-19T01:16Z, E4B launched without `HENG_SHIMS`.**
+  - `S-008-e4b-base-te-s1..s3`: jobs 59432, 59434, 59436.
+  - `R-008-e4b-base-te-d1..d3`: jobs 59433, 59435, 59437.
+- **31B queued `afterany:59096`, concurrency 4 (same as the old base).**
+  - `S-008-31b-base-te-s1, s2`: jobs 59438, 59440.
+  - `R-008-31b-base-te-d1, d2`: jobs 59439, 59441.
