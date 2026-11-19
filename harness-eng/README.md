@@ -197,3 +197,15 @@ if the cluster cannot run jobs, report and wait.
    tuning tasks, all fastapi), `cdev2-79` (cdev-56 + cdevx-23), `cheld2-22` (locked). Runs on
    cdev-56 before this had no shims; a tree's cdev2-79 result is its cdev-56 draws plus cdevx-23
    draws, so nothing is rerun. Still failing: 10 requests, 5 rich, 7 fastapi, 1 httpx.
+
+8. Task envs for agent runs (2026-11-19, `rounds/R-008-taskenv-base.md`). From R-008 on, every eval
+   job appends `--py313 env/py313-scorer/bin/python3.13 --task-envs env/taskenvs` and leaves
+   `HENG_SHIMS` off:
+   - The agent's sandbox and grading both run Python 3.13 with each task's own declared test deps
+     at the task date (C-003).
+   - `tools/build_task_envs.py` `EXTRA_REQS` adds two fixes the declarations miss: `werkzeug<3`
+     for requests_6592 (C-004), and setuptools (for `pkg_resources`) in 10 rich tasks.
+   - Gradeable: 120/129.
+   - Import errors in the agent's test runs went from about 1 in 5 E4B task-draws to 1 in 357.
+   - The new E4B bases are screen-e4b-20 3.67 and cdev2-79 6.67. The 31B bases are pending.
+   - Runs before R-008 are not comparable to runs after it as a base.

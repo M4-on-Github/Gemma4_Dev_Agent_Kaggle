@@ -108,3 +108,30 @@ nothing in `trees/` changes, and no promotion rule applies. Approved by the user
   - `S-008-e4b-base-te2-s1..s3` and `R-008-e4b-base-te2-d1..d3`.
   - The 31B jobs 59438-59441 have not started, so they keep their ids and pick up the fixed envs (envs are
     read at run time).
+
+## Results: E4B (2026-11-19T02:40Z)
+
+| Run | Resolved | cdev-56 | cdevx-23 | Empty patches | Import errors (task-draws) | Pytest headers |
+|---|---|---|---|---|---|---|
+| S-008-e4b-base-te2-s1 (job 59444) | 4/20 | - | - | 1 | 0/20 | 3.13 x 25 |
+| S-008-e4b-base-te2-s2 (59446) | 5/20 | - | - | 4 | 0/20 | 3.13 x 13 |
+| S-008-e4b-base-te2-s3 (59448) | 2/20 | - | - | 3 | 0/20 | 3.13 x 27 |
+| R-008-e4b-base-te2-d1 (59445) | 7/79 | 6 | 1 | 13 | 1/79 (`coverage`, called by the agent) | 3.13 x 115 |
+| R-008-e4b-base-te2-d2 (59447) | 8/79 | 6 | 2 | 9 | 0/79 | 3.13 x 67 |
+| R-008-e4b-base-te2-d3 (59449) | 5/79 | 5 | 0 | 10 | 0/79 | 3.13 x 74 |
+
+- **Check 1 holds.** 1 of 357 task-draws (0.3%) had an import error, against 2% allowed. The one hit is
+  `coverage`, a tool the agent called, not a test dependency.
+- **Check 2 holds.** Every pytest header is Python 3.13.
+- **New E4B bases (reading 3):**
+  - screen-e4b-20: **3.67** (4, 5, 2);
+  - cdev2-79: **6.67** (7, 8, 5), of which cdev-56 5.67 and cdevx-23 1.0.
+  - The next E4B screens and L2 runs are read against these, with the same flags.
+  - The L2 bar (base + 3) becomes 9.67.
+- **Environment effect (reading 4).** Screen +0.67 (against 3.0), cdev2-79 -0.67 (against 7.33). Both are
+  under the no-change lines (1.5 and 3).
+  - Per task on cdev2-79, 7 tasks went up and 9 went down, all by a third or two thirds of a draw.
+  - Removing the import errors did not change the E4B's resolve rate.
+- **Harness errors.** "Agent completed execution without calling ..." came up 1, 0 and 3 times on d1-d3 and
+  once on the screen. This is a harness message, not an env error.
+- **Teardown flag.** Jobs 59445 and 59449 ended with the usual OUT_OF_MEMORY flag after writing all rows.
