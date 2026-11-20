@@ -1,0 +1,10 @@
+# cohort reader-e4b-8: 8 task ids, a subset of dev-48, chosen by the rule in experiments/EXP-086-reader-orchestrator-e4b-smoke8.md section 2 (E4B draws 038, 077, 075, 078 at stage F, then R, ties by id; EXP-080 section 6.1 table); fastapi/fastapi=6, Textualize/rich=2
+# ids only, no competition data
+fastapi_14583
+fastapi_5624
+rich_3105
+fastapi_14448
+fastapi_14962
+fastapi_11355
+fastapi_15661
+rich_3480

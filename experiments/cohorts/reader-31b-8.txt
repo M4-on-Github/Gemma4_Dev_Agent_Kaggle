@@ -1,0 +1,10 @@
+# cohort reader-31b-8: 8 task ids, a subset of dev-48, chosen by the rule in experiments/EXP-085-reader-orchestrator-31b-smoke8.md section 2 (arm R stage F first, then R, ties by id; EXP-080 section 6.1 table); fastapi/fastapi=7, Textualize/rich=1
+# ids only, no competition data
+fastapi_14512
+fastapi_14583
+rich_3935
+fastapi_14962
+fastapi_15030
+fastapi_15800
+fastapi_5624
+rich_3468

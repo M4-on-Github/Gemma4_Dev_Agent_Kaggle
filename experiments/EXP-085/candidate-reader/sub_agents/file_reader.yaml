@@ -1,0 +1,11 @@
+# EXP-085 2026-11-20: new read-only sub-agent, reached from the root through agent_tool. Same model as the root (single-base-model rule).
+# skip_summarization is left out on purpose (default false): true would make the reader's notes the tool's final response and end the root's turn.
+# Own sampling file: low temperature for verbatim copying, thinking budget 512 and 1536 output tokens so one reader call is time-bounded.
+# The call count is NOT bounded by this config (EXP-046 2.2: only the model ends a stage that holds a tool); the prompt asks for one read_file.
+name: file_reader
+model: gemma-4-31b-it-qat-w4a16-ct
+description: Reads one source file around given hit lines and returns compact notes - what the file does, the relevant functions with line numbers and those lines copied, and whether the file must change and where. Pass the file path, the hit line numbers and one sentence on what the issue needs.
+instruction: !include ../prompts/file_reader.md
+tools:
+  - read_file
+generate_content_config: !include ../configs/reader_sampling.yaml

@@ -1,0 +1,9 @@
+# EXP-085 2026-11-20: reader-only sampling. temperature 0.2 for verbatim line copying; thinking_budget 512 and max_output_tokens 1536 bound one reader call in time.
+# [V] include_thoughts false does not turn thinking off; only thinking_budget 0 does (HARNESS_README 4). VERIFY(Q3): the budget may not be enforced.
+temperature: 0.2
+top_p: 0.95
+top_k: 64
+max_output_tokens: 1536
+thinking_config:
+  thinking_budget: 512
+  include_thoughts: false
