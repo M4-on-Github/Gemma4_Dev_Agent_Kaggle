@@ -121,3 +121,41 @@ Budget: under 1.5 GPU-h in total on Turing, none on Ada.
 | Step time, longest row (first step, forward + backward) | 149.0 s |
 
 P2 does not run, since one GPU suffices. P3 runs next on one GPU, as pre-registered.
+
+### P3, job 59867 (23 min 53 s): **fails reading 2 as written**
+
+| Reading | Value |
+|---|---|
+| Steps / non-finite loss or grad norm | 128 / 0 |
+| Mean loss, first 16 steps / last 16 steps | 0.1366 / 0.0831 (ratio 0.61; the bar was <= 0.5) |
+| Speed (reading 3) | 10.94 s per step at 2508 tokens per step: 4.36 ms per token |
+
+Bug search, done before any re-run. None found:
+
+- **Same rows, epoch 1 against epoch 2.** All 64 rows have distinct token counts, so each epoch-1 step pairs
+  with its epoch-2 step. Mean loss is 0.1096 against 0.0830 (ratio 0.757), lower on 61 of 64 rows.
+- **Optimizer and schedule.**
+  - lr follows the warmup and cosine as set: 4e-5 at step 1, 1.9e-4 at step 17, 7e-6 at step 113.
+  - grad norm falls from 1.47 to 0.07-0.32.
+- **Mask and loss.** The mask was checked by hand in L-001's dry run. The new loss path equals the stock one
+  exactly (P1).
+
+Reading: the trainer learns. The bar was set without knowing the starting loss: D1's trained tokens are tool calls
+that copy from a file the model has just read, and the base model already scores them at 0.137 nats per token.
+Two passes per row at a decaying lr do not halve that. This is recorded as a failure of reading 2. The bar is not
+re-read after the fact.
+
+### P3b addendum (pre-registered here, before the job is submitted)
+
+The decision for a failed reading 2 is "fix the trainer, re-run P3", but no bug was found, so re-running P3
+unchanged would tell nothing. P3b is a stricter test for a trainer bug: memorization.
+
+- **Setup.** The first 8 D1 rows after the seeded shuffle, 16 epochs, accumulation 1 (128 steps), lr 2e-4,
+  warmup 10. Otherwise the same as P3. Output goes to `/data/mmyatmau/gemma4-lora/adapters/L-002-p3b/` and is
+  never served.
+- **Reading 2b.**
+  - Passes if the mean of the last 16 steps is at most 0.25x the mean of the first 16, with no non-finite value.
+  - If it passes, the trainer has no learning bug. P3's miss is attributed to too few passes per row, and the
+    first adapter round sets its lr and epochs in its own pre-registration.
+  - If it fails, there is a trainer bug: stop and look again.
+- **Budget.** About 0.4 GPU-h. The round total stays under the 1.5 GPU-h budget (P1 runs 0.1, P3 0.4).
