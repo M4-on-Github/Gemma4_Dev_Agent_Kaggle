@@ -173,3 +173,50 @@ Results are appended below as new sections and apply these readings as written.
   - Editor first call: `read_file` then `edit_file` (call 2) on one task, `edit_file` at call 1 on the other.
   - Both patches change one source file.
   - Scout d1 (job 59859) and base d5 (job 59860) submitted on Ada, 2 GPUs, `HENG_SHIMS` off as in R-011.
+
+## Results, draw 1 (reading 3 applied as written), 2026-11-20
+
+Gates from `tools/r014_gates.py` on each run dir; only counts are recorded here.
+
+**Health (reading 2).** All three draws have 79/79 rows and 0 rows with a status other than SUCCESS.
+- Base d5 (job 59860) ended in state OUT_OF_MEMORY after its last row was written (`done in 7294 s`,
+  `RESOLVED 32/79`). The batch step peaked at 64.1 GB of its 64 G. The one kill seen in the log is
+  inside an agent's own command on task 67 (rich_3772): the agent's next thought reads its exit as -9, and the task
+  ended unresolved at the session cap (789.6 s). That is 1 of 79 task-draws (1.3%, under the 2% line), an agent
+  outcome inside the sandbox, not an engine error. The draw is kept as recorded. A later 31B round on this tree
+  asks for more than 64 G or records the cause before reading a draw with another kill.
+
+**31B scout, `R-014-31b-scout-d1` (job 59859, 2:27:23): killed.**
+
+| Gate | Value | Kill line | Result |
+|---|---|---|---|
+| scout median calls per task | 12 (p90 24) | > 10 | **kill** |
+| tasks reaching the editor with 20+ calls used | 12 of 79 = 15.2% | > 15% | **kill** |
+| second scout turn after an editor turn | 0 of 79 | > 15% | pass |
+| arm mean task wall | 425.6 s, projected 11.84 h | > 395 s (11.0 h) | **kill** |
+| resolved | 26 | ≤ 24 | pass |
+
+- Recorded, not read: time cap 38 of 79 task-draws, call cap 11, empty patch 31; 65 reached the editor; the editor
+  searched again before its first edit on 7.
+- Recorded, not read: base d5 beside it resolved 32 (mean wall 348.6 s, time cap 15, call cap 16, empty 13). With
+  it the base draws are 28, 27, 30, 28, 32 (mean 29.0).
+
+**E4B applier, `R-014-e4b-applier-tu5-d1` (job 59858, 5:42:00): killed.**
+
+| Gate | Value | Kill line | Result |
+|---|---|---|---|
+| `apply_edit` on task-draws that change a source file | 75 of 75 = 100% | < 60% | pass |
+| task-draws with a failed edit | 45 of 79 = 57.0% (base 46.5%) | > 25% | **kill** |
+| empty patches | 4 of 79 = 5.1% | > 24.4% | pass |
+| resolved | 2 | ≤ 4 | **kill** |
+
+- Recorded, not read: 212 `apply_edit` calls, helper answered APPLIED 166, FAILED 42, other 1; not-found task-draws
+  30 of 79 = 38.0% (base 35.0%); call cap 19, time cap 3; mean task wall 1008.5 s (median 969.1 s). The job took
+  5:42 against 3.2-4 h for the R-011 base draws on the same node.
+
+**What follows (reading 3).** Both arms stop at draw 1. No d2-d8 draws, no reading 4 or 5, no extension.
+- Cost: Ada about 4.7 GPU-h (smoke, scout d1, base d5); Turing about 5.9 GPU-h (smoke, applier d1).
+- The scout made the 31B slower and longer per task rather than shorter: 12 scout calls is more than the editor
+  saved, and the time cap rose from 15 (base d5) to 38. The applier moved the E4B's edit failures inside a helper
+  instead of removing them: 42 of 212 helper calls failed, and failed-edit draws rose above base.
+- Both lanes are free: 2 Ada and 7 of 8 Turing GPUs (a1 training holds one).
