@@ -159,3 +159,37 @@ unchanged would tell nothing. P3b is a stricter test for a trainer bug: memoriza
     first adapter round sets its lr and epochs in its own pre-registration.
   - If it fails, there is a trainer bug: stop and look again.
 - **Budget.** About 0.4 GPU-h. The round total stays under the 1.5 GPU-h budget (P1 runs 0.1, P3 0.4).
+
+### P3b, job 59868 (24 min 6 s): passes reading 2b
+
+| Reading | Value |
+|---|---|
+| Steps / non-finite | 128 / 0 |
+| Mean loss, first 16 / last 16 | 0.1153 / 0.0002 (ratio 0.002; the bar was <= 0.25) |
+| Loss every 8 steps | 0.152, 0.102, 0.080, 0.063, 0.057, 0.052, 0.050, 0.013, 0.002, 0.016, 0.002, 0.000, 0.004, 0.000, 0.000, 0.000 |
+
+The trainer memorizes 8 rows, so it has no learning bug. P3's miss on reading 2 is too few passes per row at a
+decaying lr over a low starting loss.
+
+## Outcome (2026-11-20)
+
+- **Reading 1 passes** on one Turing GPU (P1 fifth run). It took four trainer fixes, each recorded above before
+  the run that used it:
+  1. the head and cross-entropy computed only at the trained positions;
+  2. query-chunked attention;
+  3. the per-layer table and the towers moved to CPU;
+  4. `inputs_embeds` passed with them.
+- **Reading 2 fails as written (P3); reading 2b passes (P3b).**
+- **Reading 3, speed.** 4.36 ms per token at about 2.5k tokens per row (P3, accumulation 1). The 16359-token row
+  took 149 s (9.1 ms per token, its first step).
+  - Projection for the L-001 mix (5.27M tokens, about 3.8M of them D1 at 4.4 ms and 1.5M D2 at up to 9 ms):
+    about 6.5-8.5 h per epoch on one GPU. One epoch fits in 12 h; two do not, on one GPU, in one job.
+  - `lora_train.sbatch` has a 6 h default limit and no resume. The first adapter round has to set `--time`
+    and the epochs to fit, or split the data.
+- **GPU-h used.** About 1.0 on Turing (P1 runs 0.1, P3 0.4, P3b 0.4), none on Ada. Under the 1.5 budget.
+- **Decision, as pre-registered.** The first E4B adapter round trains on pleiades-1-10. It gets its own
+  pre-registration: data mix, lr, epochs, `--time`, and the fold-B evaluation.
+  - Its lr and epochs are set from P3 and P3b: a constant or slower-decaying lr over more than two passes on
+    D1-like rows.
+  - It must also state the serving cost. R-013 measured E4B adapter decoding at 0.296 of base on Turing, and
+    that number has not been measured on the Kaggle L4.
