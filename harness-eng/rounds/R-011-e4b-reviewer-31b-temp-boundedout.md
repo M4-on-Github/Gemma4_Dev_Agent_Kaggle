@@ -191,3 +191,28 @@ env/py313-scorer/bin/python3.13 --task-envs env/taskenvs`, the R-008 flags.
 - **Both 31B arms of R-011 are dropped.** With A1-A6 now closed, the 31B backlog in `directions.md` is empty.
   The pivot rule says to refill it from a trace synthesis. That waits for the d3/d4 base draws, which also give
   the cdev2-79 SD.
+- **01:21Z (11-20), `R-011-e4b-base-tu5-d3` done** (59710, 3:13:36, 79/79 rows, 0 task-draws at the time cap). Wave 2 began with base d5 (59714).
+- **01:2xZ, `R-011-31b-base-te-d4` done** (59697, 2:02:47, 79/79 rows): 28 resolved, empty 17, time cap 17.
+- **`R-011-e4b-base-tu5-d2` done** (59708, 3:24:03, 79/79 rows): 5 resolved, 0 at the time cap. Base d6 (59715) took its slot.
+- **~01:45Z, `R-011-e4b-base-tu5-d4` done** (59712, 3:27:24, 79/79 rows): 8 resolved, 1 at the time cap.
+- **~01:45Z, `R-011-31b-base-te-d3` done** (59696, 2:09:20, 79/79 rows). Both Ada slots are free. No 31B arm was
+  promoted, so nothing follow-up was queued (reading 4).
+
+### Reading 5, 31B base SD on cdev2-79 (reported)
+
+| Draw | CPUs | Resolved | Empty patch | Time cap |
+|---|---|---|---|---|
+| R-008 d1 | 8 | 28 | 13 | 19 |
+| R-008 d2 | 8 | 27 | 17 | 19 |
+| R-011 d3 | 4 | 30 | 17 | 21 |
+| R-011 d4 | 4 | 28 | 17 | 17 |
+
+- **Spread.** The mean is 28.25 and the SD 1.26 over four draws.
+- **The CPU change does not matter.** The d3/d4 mean (29.0) is 1.5 above d1/d2 (27.5), under the gap of 3 that
+  would have flagged it. Later 31B draws at 4 CPUs are comparable with the R-008 base.
+- **Per-task split.**
+  - 20 tasks are resolved in all 4 draws.
+  - 16 are resolved in 1-3 draws (6 in one, 3 in two, 7 in three).
+  - 43 are resolved in none.
+  - The draw-to-draw noise sits in those 16 tasks. A 31B arm read on two draws needs a mean gain of about +3
+    (about 2.4 SD of one draw) to stand clear of it.
