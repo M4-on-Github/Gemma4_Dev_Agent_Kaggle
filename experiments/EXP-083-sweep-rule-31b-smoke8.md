@@ -89,7 +89,7 @@ python -I -X utf8 tools/run_forensics.py forensics runs/EXP-083-sweep
 If the download nests the run, move the inner directory up one level first.
 
 ## 7. Defects in this pre-registration, logged after the fact
-None yet.
+1. (2026-11-20, lead ruling, recorded by the experimenter before any baseline uptake was computed) **Row 2's second clause takes the grammatical reading.** "No baseline draw has an uptake within 2 tasks of 8 below it" means no baseline draw has an uptake of 6 of 8 or more ("within 2 tasks of 8" is 8 minus 2). The ruling applies to EXP-083 and EXP-084 alike and is applied as given.
 
 ## 8. Built and pushed (below the line; nothing above changes)
 
@@ -127,9 +127,9 @@ None yet.
 
 ## Status
 
-**DOWNLOADED AND READ PROVISIONALLY (2026-11-20).** Kernel `rainm4/gemma4-exp083-sweep` v1 is COMPLETE, with a kernel wall of 1.048 h. Rows 1 and 2 do not fire. **Row 3 fires**: the projected worst case is 11.68 h against 11.0 h. The rule is killed for this tree as written (section 9). Still owed: the primary endpoint, beside row 3, and the final run of `screen_read.py`. Next, once `data/raw/tasks.jsonl` and `runs/EXP-028-armR` and `runs/EXP-028-armRH` are restored: the section 6 `screen_read.py` command, then finalize section 9.
+**READ IN FULL (2026-11-20).** Kernel `rainm4/gemma4-exp083-sweep` v1 is COMPLETE, with a kernel wall of 1.048 h. The baselines were re-downloaded and match their committed summaries; `screen_read.py` ran as written. **Row 3 governs**: the projected worst case is 11.68 h against 11.0 h. The rule is killed for this tree as written. Primary, recorded beside it: 3 tasks above, 2 below and 3 equal; mean 0.750 against 0.688. No dev-48 arm. See the full section 9.
 
-## 9. Results, 2026-11-20 (provisional). Section 4's readings applied as written.
+## 9 (provisional, SUPERSEDED 2026-11-20 by the full section 9 at the end of this file). Section 4's readings applied as written.
 
 **Provisional, for one reason.** The section 6 reading script `screen_read.py` could not run, because `data/raw/tasks.jsonl` and the baseline run directories are absent (section 8). Rows 1 to 3 do not need the gold patches. They are read here from the inputs described in section 8: the arm's run directory, `screen_read.uptake` unchanged, and the committed baseline `summary.jsonl` copies. The primary endpoint is not computed. This section becomes final when `screen_read.py` runs on restored inputs; that run also gives the primary to record beside row 3.
 
@@ -176,3 +176,72 @@ The primary is to be recorded beside this reading. It is **not yet computed**: g
 ### 9.6 Observations, not readings
 - The arm hit a call or time cap on 6 of 8 tasks (`provisional_guards.py`). analyze_traces reports calls-cap 50.0% and time-cap 37.5%. rich_3480 ran 772 s against the 8-minute cap.
 - The 11.68 h figure rests on 8 tasks and two baseline draws, so its noise is large. The row is read as written regardless.
+
+## 9. Results, 2026-11-20 (full). Section 4's readings applied as written.
+
+This section supersedes the provisional section 9 above, which is kept unchanged except for its heading.
+
+**Inputs restored by re-download.**
+- **Tasks file.** The lead restored `data/raw/tasks.jsonl` from the competition files. Its sha256 is `e4b3fd60...8ad6`, matching `harness-eng/inputs.sha256` line 400.
+- **Baseline runs.** The experimenter re-downloaded the baselines with `kaggle kernels output rainm4/gemma4-exp028-armr -p runs/EXP-028-armR` and `... gemma4-exp028-armrh -p runs/EXP-028-armRH`. Each nested bundle was moved up one level, then `analyze_traces.py --cap-minutes 8 --max-calls 28` was run on it.
+- **Download check.** `python -I -X utf8 experiments/EXP-083/check_baselines.py EXP-028-armR EXP-028-armRH` compares each download against its committed summary. It checks the same task ids, the same resolved flag per task, and walls within 0.5 s. **Both MATCH**:
+  - 48 of 48 ids;
+  - resolved 9 for arm R and 10 for arm RH, with 0 resolved mismatches;
+  - 0 wall mismatches, 0 empty-patch mismatches, 0 n_calls mismatches.
+- **The section 6 command ran as written, on the first try.** It was `python -I -X utf8 experiments/EXP-083/screen_read.py --cohort experiments/cohorts/sweep-31b-8.txt --arm EXP-083-sweep --base EXP-028-armR --base EXP-028-armRH --proj-base-h 10.04`, and it finished without error. There is no script fix.
+- **Section 7, item 1** (the lead's reading of row 2) was recorded before the baseline uptakes were counted.
+
+### 9.1 The rows, in order
+- **Row 1, infrastructure: does not fire.** The run has 8 of 8 rows, and 0 of them are infrastructure rows. The model is the 31B, the zip sha matches, and the kernel finished (section 8).
+- **Row 2, not run: does not fire.**
+  - Uptake was 6 of 8 in the arm, against 1 of 8 in arm R and 1 of 8 in arm RH.
+  - Row 2 needs the arm at 1 or fewer, so it fails on its first clause.
+- **Row 3, limit breached: FIRES, and governs.**
+  - The projected worst case is `10.04 h + 120 x (+49.1 s) / 3600` = **11.68 h**, against the 11.0 h gate.
+  - The mean wall was 410.2 s in the arm, against 361.1 s, the mean of the two baselines' per-task means.
+  - The call-or-time-cap clause does not fire on its own: the arm had 6 tasks at a cap, against 3 and 4 (mean 3.50), and the clause needs the mean plus 3 or more.
+
+**Verdict:** row 3. **The rule costs the budget the tree runs inside. The sibling-site sweep rule is killed for the 31B v24-at-8 tree as written.** No dev-48 arm. A shorter form (the list only, or the sweep only) would be a new claim.
+
+### 9.2 Primary, recorded beside row 3 (an observation; row 3 governs)
+
+| Task | Regions | Arm touched (class) | Baseline mean touched | Direction |
+|---|---|---|---|---|
+| rich_3953 | 2 | 1 (C) | 1.00 | = |
+| fastapi_14448 | 3 | 0 (E) | 1.00 | - |
+| rich_3468 | 3 | 0 (R) | 0.50 | - |
+| rich_3480 | 2 | 1 (C) | 0.50 | + |
+| fastapi_14953 | 3 | 1 (C) | 1.00 | = |
+| fastapi_11355 | 3 | 2 (C) | 1.00 | + |
+| rich_3063 | 2 | 1 (C, resolved) | 0.50 | + |
+| rich_3934 | 3 | 0 (R) | 0.00 | = |
+
+- **Tasks above, below and equal: 3 / 2 / 3.** The mean regions touched is 0.750 in the arm, against 0.688 for the baselines.
+- **This would not have met row 4 or row 5.** Row 4 needs 6 or more of 8 above, plus a mean 0.5 or more higher. Row 5 needs 6 or more of 8 below.
+- **Tasks with every region touched** (class S or resolved): arm 1, arm R 0, arm RH 0.
+
+### 9.3 Resolves (recorded, not an endpoint)
+The arm resolved **1 of 8** (rich_3063). Arms R and RH resolved 0 of 8 each on the same ids.
+
+### 9.4 Guards
+
+| Guard | Arm | EXP-028-armR | EXP-028-armRH |
+|---|---|---|---|
+| Calls per task (mean) | 23.88 | 22.75 | 22.12 |
+| Tasks at a call or time cap | 6 | 3 | 4 |
+| Text-form or tool-free tasks | 0 | 0 | 0 |
+| Malformed calls (arm) | 0 | | |
+| Empty patches | 1 | 1 | 2 |
+
+The projection is 11.68 h; mean walls are in 9.1. Kernel wall is 1.048 h (section 8).
+
+### 9.5 Blind predictions, against the outcome
+- **Uptake held.** It was predicted at 5 to 8 of 8 and came in at 6. Baseline post-edit grep was predicted at 2 to 4 of 8 and came in at 1 and 1, so that part missed low.
+- **Touched held.** It was predicted at 3 or 4 above and 1 or 2 below, and came in at 3 above and 2 below. Row 6 would have been read had row 3 not fired.
+- **Row 3 governed.** It had been given about 0.25.
+- **Resolves missed.** They were predicted at 2 to 4 and came in at 1.
+
+### 9.6 Observations, not readings
+- **The rule was run, and it cost time.** Uptake rose from 1 to 6 of 8. The mean wall rose 49.1 s per task, against 28.8 s of room.
+- **The regions touched barely moved.** 0.750 against 0.688. The cohort was selected low on this measure, so some rise is expected without any rule (section 4, "not rows").
+- **The two tasks that fell.** fastapi_14448 submitted an empty patch and had no uptake. rich_3468 ran the sweep and ended in class R (right file, wrong region).

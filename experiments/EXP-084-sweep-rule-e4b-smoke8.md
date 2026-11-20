@@ -87,6 +87,7 @@ If the download nests the run, move the inner directory up one level first.
 
 ## 7. Defects in this pre-registration, logged after the fact
 1. (2026-11-20, experimenter) **Row 2's second clause has two readings.** It says "and no baseline draw has an uptake within 2 tasks of 8 below it"; EXP-083's row 2 uses the same wording. It can be read as "no draw's uptake is 6 of 8 or more", or as "no draw's uptake is within 2 tasks of the arm's". The arm's uptake is 1 of 8, so the clause decides whether row 2 fires. The lead fixes which reading applies before it is applied. Either way it needs the baseline traces, which were not on disk on 2026-11-20.
+2. (2026-11-20, lead ruling, recorded by the experimenter before any baseline uptake was computed) **Row 2's second clause takes the grammatical reading.** "No baseline draw has an uptake within 2 tasks of 8 below it" means no baseline draw has an uptake of 6 of 8 or more ("within 2 tasks of 8" is 8 minus 2). The ruling applies to EXP-083 and EXP-084 alike and is applied as given.
 
 ## 8. Built and pushed (below the line; nothing above changes)
 
