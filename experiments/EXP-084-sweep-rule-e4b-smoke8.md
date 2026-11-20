@@ -133,4 +133,74 @@ If the download nests the run, move the inner directory up one level first.
 
 ## Status
 
-**DOWNLOADED, READING BLOCKED AT ROW 2 (2026-11-20).** Kernel `rainm4/gemma4-exp084-sweep` v1 is COMPLETE, with a kernel wall of 0.307 h. Row 1 does not fire. Row 2 cannot be decided: the arm's uptake is 1 of 8, and the clause on the baselines needs the baseline traces and the lead's reading of section 7, item 1. No section 9 yet. Next, once `data/raw/tasks.jsonl` and the four draws' run directories (`runs/EXP-038-e4b-dev48`, `runs/EXP-077-base`, `runs/EXP-075-t02`, `runs/EXP-078-t02r`) are restored: both section 6 `screen_read.py` commands, then section 9.
+**READ (2026-11-20).** Kernel `rainm4/gemma4-exp084-sweep` v1 is COMPLETE, with a kernel wall of 0.307 h. The four baseline draws were re-downloaded and match their committed summaries, and both `screen_read.py` commands ran as written. **Row 2 governs:** uptake is 1 of 8, and no draw reaches 6 of 8 (section 7, item 2). The sweep wording is killed for the E4B, and the primary is not read. No dev-48. See section 9.
+
+## 9. Results, 2026-11-20. Section 4's readings applied as written.
+
+This section supersedes the provisional inputs recorded in section 8 under "Download and analysis record", including the line "Row 2 is not decidable on these inputs".
+
+**How the inputs were restored and checked**
+- The lead restored `data/raw/tasks.jsonl` from the competition files; its sha256 is `e4b3fd60...8ad6`.
+- The experimenter re-downloaded the four baseline draws with `kaggle kernels output rainm4/gemma4-<slug> -p runs/<run>`:
+  - `exp038-e4b-dev48` to `EXP-038-e4b-dev48`;
+  - `exp075-t02` to `EXP-075-t02`;
+  - `exp077-base` to `EXP-077-base`;
+  - `exp078-t02r` to `EXP-078-t02r`.
+- Each bundle was un-nested one level, then run through `analyze_traces.py --cap-minutes 8 --max-calls 28`, the command each EXP file records.
+- `python -I -X utf8 experiments/EXP-083/check_baselines.py` checked each download against its committed summary (`experiments/EXP-038/e4b/`, `EXP-075/`, `EXP-077/`, `EXP-078/`). **All four MATCH:**
+  - 48 of 48 ids each;
+  - resolved 5, 6, 3 and 5, with 0 mismatches;
+  - 0 wall, empty-patch or n_calls mismatches.
+- **Section 7, item 2** (the lead's ruling on row 2) was recorded before any baseline uptake was counted.
+- **Both section 6 `screen_read.py` commands ran as written without error,** so there is no script fix. One is pooled over the four draws; the other uses the two temperature-1.0 draws alone.
+
+### 9.1 The rows, in order
+- **Row 1, infrastructure: does not fire.** All 8 of 8 rows are present, with 0 infrastructure rows. The model is the E4B, the zip sha matches, and the kernel finished.
+- **Row 2, not run: FIRES and governs.**
+  - Uptake is **1 of 8** in the arm (rich_3953), so the first clause, 1 or fewer, holds.
+  - Baseline uptake is 1 in EXP-038, 0 in EXP-077, 1 in EXP-075 and 1 in EXP-078.
+  - Under the section 7 ruling, the second clause asks that no baseline draw reach 6 of 8 or more. None does, so the clause holds.
+
+**Verdict: row 2. The E4B does not run the sweep at this wording, so the knob is not enforced.** The wording is killed for the E4B; the idea is not, and a different form would be a new claim. No dev-48. The primary is not read (row 2), and rows 3 to 6 are not read.
+
+### 9.2 Primary, as printed (not read; row 2 governs)
+
+| Task | Regions | Arm touched (class) | Baseline mean, 4 draws | Direction | Baseline mean, T 1.0 draws | Direction |
+|---|---|---|---|---|---|---|
+| fastapi_9753 | 2 | 2 (S, resolved) | 0.50 | + | 0.50 | + |
+| fastapi_13207 | 2 | 0 (F) | 0.25 | - | 0.50 | - |
+| fastapi_14964 | 2 | 2 (S) | 1.75 | + | 1.50 | + |
+| rich_3063 | 2 | 0 (E) | 0.75 | - | 0.50 | - |
+| rich_3953 | 2 | 1 (C) | 0.25 | + | 0.00 | + |
+| fastapi_14873 | 2 | 0 (R) | 0.25 | - | 0.00 | = |
+| fastapi_15280 | 2 | 0 (E) | 0.00 | = | 0.00 | = |
+| rich_3180 | 3 | 1 (C) | 1.00 | = | 1.00 | = |
+
+**Summary of the primary:**
+- **Pooled over the four draws:** 3 tasks above, 3 below, 2 equal. Mean regions touched 0.750 in the arm against 0.594.
+- **The two temperature-1.0 draws alone** (EXP-038, EXP-077): 3 above, 2 below, 3 equal. Mean 0.750 in the arm against 0.500.
+
+**Tasks with every region touched** (class S or resolved): 2 in the arm; EXP-038 1, EXP-077 0, EXP-075 2, EXP-078 2.
+
+### 9.3 Resolves (recorded, not an endpoint)
+The arm resolves **1 of 8** (fastapi_9753). On the same ids the draws resolve 0 (EXP-038), 0 (EXP-077), 1 (EXP-075) and 0 (EXP-078).
+
+### 9.4 Guards (recorded; row 3 is not read)
+- **Calls per task (mean):** arm 9.75; draws 10.88, 8.88, 11.12 and 9.12.
+- **Tasks at a call or time cap:** arm 0; every draw 0.
+- **Text-form or tool-free tasks:** arm 0; every draw 0.
+- **Malformed calls:** arm 0.
+- **Empty patches:** arm 2; draws 2, 2, 2 and 1.
+- **Mean wall:** arm 82.7 s.
+  - Against the pooled draws (89.7 s mean of per-task means), the delta is -7.0 s.
+  - Against the temperature-1.0 draws alone (96.7 s), it is -14.0 s.
+- **Kernel wall:** 0.307 h (section 8).
+
+### 9.5 Blind predictions, against the outcome
+- **Uptake missed low.** The prediction was 2 to 5 of 8; the arm reached 1.
+- **Baseline post-edit grep mostly held.** The prediction was 1 to 3 of 8; the draws came in at 1, 0, 1 and 1.
+- **Row 2 governed,** where it had been given about 0.07. Row 6 had been the favourite, at about 0.6.
+- **Resolves held.** The prediction was 0 to 2; the arm resolved 1.
+
+### 9.6 Observations, not readings
+- **The arm rarely ran a command after its first edit.** It made no `run_command` after the first `edit_file` on fastapi_15280, rich_3063 and rich_3180. On four other tasks it ran one or two, none of them a `grep`. This matches EXP-082's DROP for the E4B, though EXP-082 dropped the E4B for findability, not uptake.
