@@ -111,3 +111,33 @@ Each job asks for 1 GPU, 4 CPUs and 64G. Run `squeue -w pleiades-1-10` before th
 
 Nothing here ships; the projected Kaggle time for an adapter tree is worked out in S6. No competition text goes
 into the probes, and this file holds counts only.
+
+## Results (2026-11-20; jobs 59852-59855, all COMPLETED, 13.6-16.2 min each)
+
+| Reading | 31B (Ada, 59852 probe / 59853 agent path) | E4B (Turing pleiades-1-10, 59854 / 59855) |
+|---|---|---|
+| 1. Flags | pass: `--enable-lora --max-loras 1`, rank 16 (`full_zero`) and 8 (`loud_l0`); `/v1/models` lists each adapter | pass, same |
+| 2. Applied: floor (base repeat) | 0.0 over 39 positions | 0.0 over 39 positions |
+| 2. `full_zero` mean abs delta (≤ 1e-3) | 0.0 (max 0.0): pass | 0.0 (max 0.0): pass |
+| 2. `loud_l0` mean abs delta (> 0.01 and > 10 × floor) | 0.0803 (max 0.262): pass | 0.0430 (max 0.179): pass |
+| 3. Routing | pass: 72 of 72 trace model names are `full_zero`; 0 HTTP or adapter errors; 4 rows, status SUCCESS. One task ended at the 8.0 min session cap, an agent outcome that base runs also show, not an exception | pass: 36 of 36 trace model names are `full_zero`; 0 HTTP or adapter errors; 4 rows, status SUCCESS. The log's FileEditErrors are the agent's own failed edits |
+| 4. Decode at 4 streams, `full_zero` / base | 35.95 / 39.25 tok/s = **0.916** (gate 0.913): pass | 25.05 / 84.65 tok/s = **0.296** (gate 0.27): pass |
+| 4. Decode at 1 stream | 37.20 / 40.95 = 0.908 | 26.20 / 99.65 = 0.263 |
+| 4. 12k prefill, adapter / base | 7.41 / 7.28 s = 1.02 | 28.41 / 25.22 s = 1.13 |
+| `loud_l0` (layer 0 only) decode at 4 streams / base | 35.70 / 39.25 = 0.910 | 23.15 / 84.55 = 0.274 |
+| Boot | 453 s | 331 s |
+
+**Decisions, applied as written.**
+- Readings 1-3 pass for both models, so both LoRA tracks move to data (S2) and training (S3).
+- 31B reading 4 passes, so no attention-only probe is run. The margin is 0.003 over the gate, which leaves no room
+  for a slower adapter. A trained 31B adapter's Kaggle time is checked in S6 before anything else.
+- E4B reading 4 passes.
+
+**Not pre-registered, recorded as observed.**
+- On the Turing lane, the E4B adapter cost is fixed: a layer-0-only rank-8 adapter decodes as slowly as a
+  full rank-16 one (0.274 vs 0.296), so the cost comes from serving with LoRA on, not from adapter size.
+- The 31B on Ada shows the same pattern at a much smaller size (0.910 vs 0.916).
+- The probe does not keep the vLLM server log, so the cause (kernel path, CUDA graphs) cannot be read from these
+  jobs. Kaggle serves on L4 (sm89), not Turing (sm75), so the E4B number does not carry over. S6 measures it there.
+- An E4B adapter arm on the Turing lane runs at about 0.3× decode speed, and `--time-scale 5.0` may then no longer
+  be the right scale. A later E4B adapter round sets its scale from a base-with-`full_zero` draw, not from R-011.

@@ -150,3 +150,17 @@ env/py313-scorer/bin/python3.13 --task-envs env/taskenvs`, the R-008/R-011 flags
      - the harm check: resolve rate on tasks the base resolves in at least 4 of 8 draws.
 
 Results are appended below as new sections and apply these readings as written.
+
+## Smoke log
+
+- **E4B smoke `S-014-e4b-applier-smoke` (job 59856, 11.0 min): pass.**
+  - 2 rows, status SUCCESS, no engine error. 0 of 2 resolved; not read.
+  - 4 `apply_edit` calls, all with the three-part request (FILE, LINES, NEW). The helper's final step answered
+    APPLIED in 4 of 4. One helper run had a not-found `edit_file`, then re-read and applied on its retry.
+  - Both patches change source files only (1 and 2 files), with no test files.
+  - **Inner steps visible:** the helper's `read_file`/`edit_file` calls appear in the trace with `extra.author =
+    apply_edit`, so readings 3 and 5 count failed edits from inner steps, as designed.
+  - **Source switch, logged before d1 is read:** the root's `apply_edit` step has an empty observation in the trace,
+    while the run log shows the root receiving `{"raw": "APPLIED ..."}`. The APPLIED/FAILED split is therefore read
+    from the helper's own final step (`extra.author = apply_edit`, event `final`), not from the root's observation.
+  - Applier d1 submitted as job 59858 (pleiades-1-10, no other users' jobs on the node, `HENG_SHIMS` off as in R-011).
