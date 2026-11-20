@@ -86,7 +86,7 @@ python -I -X utf8 tools/run_forensics.py forensics runs/EXP-084-sweep
 If the download nests the run, move the inner directory up one level first.
 
 ## 7. Defects in this pre-registration, logged after the fact
-None yet.
+1. (2026-11-20, experimenter) **Row 2's second clause has two readings.** It says "and no baseline draw has an uptake within 2 tasks of 8 below it"; EXP-083's row 2 uses the same wording. It can be read as "no draw's uptake is 6 of 8 or more", or as "no draw's uptake is within 2 tasks of the arm's". The arm's uptake is 1 of 8, so the clause decides whether row 2 fires. The lead fixes which reading applies before it is applied. Either way it needs the baseline traces, which were not on disk on 2026-11-20.
 
 ## 8. Built and pushed (below the line; nothing above changes)
 
@@ -103,6 +103,33 @@ None yet.
 - **Push time:** about 2026-11-18 03:54 UTC (2026-11-17 22:54 -0500; file stamp as in EXP-083 section 8).
 - **First status reading:** `KernelWorkerStatus.QUEUED` (EXP-083's was RUNNING at the same check).
 
+### Download and analysis record (2026-11-20, experimenter)
+- **Status at download:** `kaggle kernels status rainm4/gemma4-exp084-sweep` read `KernelWorkerStatus.COMPLETE`.
+- **Download:** `kaggle kernels output rainm4/gemma4-exp084-sweep -p runs/EXP-084-sweep`. This is the section 6 name; the dispatch said `runs/EXP-084`. The bundle nested, and its contents were moved up one level.
+- **Kernel wall-clock for the GPU ledger: 0.307 h.** This is 1105 s, the last log entry of `gemma4-exp084-sweep.log`. vLLM came up in 324.4 s (tp=4, gpus=4), and the served model is `gemma-4-e4b-it-qat-w4a16-ct`.
+- **Embedded zip:** the zip in the committed notebook has sha256 `6806d356b20f34d9621ac76fc503db8ecf44542a5aea6330bc73f3d4c46a2248`. All four extracted `agent/` files are byte-identical to the committed `experiments/EXP-084/candidate-sweep/` files.
+- **`analyze_traces.py`:** `python -I -X utf8 tools/analyze_traces.py runs/EXP-084-sweep --cap-minutes 8 --max-calls 28`, copied to `experiments/EXP-084/sweep/summary.jsonl`. It reports:
+  - resolved 1/8 (Wilson 95% 2-47%);
+  - empty patch 25.0%; time-cap 0.0%, calls-cap 0.0%, overflow 0.0%; submit_patch 100.0%;
+  - malformed turns 0.0%, spin 10.3%, edit failures 26.9%;
+  - wall median 1.34 min, p90 1.68 min; nudges 0, compactions 3;
+  - text-form calls 0, tool-free tasks 0.
+- **`screen_read.py` was not run to completion.** Both section 6 commands fail at the first data read with `FileNotFoundError: ... data\raw\tasks.jsonl`. On 2026-11-20 the main checkout has no `data/`, `runs/` or `untrusted/` directory, so the four baseline draws' run directories and the gold patches are not on disk. This is missing input, not a script defect. The script is unchanged.
+- **Provisional inputs** come from `python -I -X utf8 experiments/EXP-083/provisional_guards.py`. For the arm it uses `screen_read.uptake` unchanged. For the baselines it uses the committed `summary.jsonl` copies of EXP-038 (`e4b/`), EXP-077, EXP-075 and EXP-078.
+  - **Row 1 does not fire.** The run has 8 rows and the model is the E4B. The zip sha256 matches. There are 0 infrastructure rows: `llm_calls` runs 8 to 17, `n_turns` 9 to 18, and no row has an error.
+  - **Row 2 is not decidable on these inputs.**
+    - The arm's uptake is **1 of 8** (rich_3953), which meets row 2's first clause, "1 or fewer".
+    - The second clause concerns the baseline draws' uptake (section 7, item 1), and that needs the baseline traces, which are absent.
+    - After its first `edit_file`, the arm made no `run_command` on fastapi_15280, rich_3063 and rich_3180. On fastapi_13207, fastapi_14873, fastapi_14964 and fastapi_9753 it ran one or two commands, none containing `grep`.
+  - **Rows 3 onward are not read, because row 2 comes first.** Their guard inputs, for the record:
+    - tasks at a call or time cap: arm 0; EXP-038 0, EXP-077 0, EXP-075 0, EXP-078 0;
+    - text-form or `tool_free` tasks: arm 0; all draws 0;
+    - malformed calls: arm 0; all draws 0;
+    - empty patches: arm 2; EXP-038 2, EXP-077 2, EXP-075 2, EXP-078 1 (mean 1.75);
+    - calls per task (mean): arm 9.75; EXP-038 10.88, EXP-077 8.88, EXP-075 11.12, EXP-078 9.12;
+    - mean wall: arm 82.7 s against 89.7 s (mean of per-task means), delta -7.0 s.
+  - **Resolves, recorded only:** arm 1 of 8 (fastapi_9753); EXP-038 0, EXP-077 0, EXP-075 1, EXP-078 0.
+
 ## Status
 
-**PUSHED, QUEUED (2026-11-18 03:54 UTC).** Kernel `rainm4/gemma4-exp084-sweep` v1. Next: when `kaggle kernels status rainm4/gemma4-exp084-sweep` reads COMPLETE, `kaggle kernels output rainm4/gemma4-exp084-sweep -p runs/EXP-084-sweep`, then the section 6 commands, then section 9.
+**DOWNLOADED, READING BLOCKED AT ROW 2 (2026-11-20).** Kernel `rainm4/gemma4-exp084-sweep` v1 is COMPLETE, with a kernel wall of 0.307 h. Row 1 does not fire. Row 2 cannot be decided: the arm's uptake is 1 of 8, and the clause on the baselines needs the baseline traces and the lead's reading of section 7, item 1. No section 9 yet. Next, once `data/raw/tasks.jsonl` and the four draws' run directories (`runs/EXP-038-e4b-dev48`, `runs/EXP-077-base`, `runs/EXP-075-t02`, `runs/EXP-078-t02r`) are restored: both section 6 `screen_read.py` commands, then section 9.

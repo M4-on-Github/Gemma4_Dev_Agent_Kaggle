@@ -106,6 +106,73 @@ None yet.
 - **Push time:** about 2026-11-18 03:54 UTC (2026-11-17 22:54 -0500; the shell has no `date` under the guard, so the time is the file stamp of `out/push-stamp-exp083-084.txt`, 22:55:33 -0500, written after both pushes and both status checks).
 - **First status reading:** `KernelWorkerStatus.RUNNING`.
 
+### Download and analysis record (2026-11-20, experimenter)
+- **Status at download:** `kaggle kernels status rainm4/gemma4-exp083-sweep` read `KernelWorkerStatus.COMPLETE`.
+- **Download:** `kaggle kernels output rainm4/gemma4-exp083-sweep -p runs/EXP-083-sweep`. This is the section 6 directory name, which `screen_read.py` needs as the arm name; the dispatch said `runs/EXP-083`. The bundle nested as `runs/EXP-083-sweep/runs/EXP-083-sweep/`, and its contents were moved up one level.
+- **Kernel wall-clock for the GPU ledger: 1.048 h.** This is 3774 s, the last log entry of `gemma4-exp083-sweep.log`. vLLM came up in 368.5 s (tp=4, gpus=4), and the served model is `gemma-4-31b-it-qat-w4a16-ct`.
+- **Embedded zip:** the zip in the committed notebook `notebooks/exp083_sweep/kaggle_eval_l4x4.ipynb` (`SUBMISSION_B64`) has sha256 `4005033fda1bfd19e52859dfa44a32f0b2af270f12609f09e5e5602be603a0f4`. All four files the run extracted to `runs/EXP-083-sweep/agent/` are byte-identical to the committed `experiments/EXP-083/candidate-sweep/` files.
+- **`analyze_traces.py`:** `python -I -X utf8 tools/analyze_traces.py runs/EXP-083-sweep --cap-minutes 8 --max-calls 28`, copied to `experiments/EXP-083/sweep/summary.jsonl`. It reports:
+  - resolved 1/8 (Wilson 95% 2-47%);
+  - empty patch 12.5%, time-cap 37.5%, calls-cap 50.0%, overflow 0.0%, submit_patch 75.0%;
+  - malformed turns 0.0%, spin 18.8%, edit failures 8.4%;
+  - wall median 6.94 min, p90 8.11 min; nudges 0, compactions 7;
+  - text-form calls 0, tool-free tasks 0;
+  - projected hidden-run total 13.67 h (its own formula, not the section 3 one).
+- **`screen_read.py` was not run to completion.** The section 6 command fails at its first data read with `FileNotFoundError: ... data\raw\tasks.jsonl`. On 2026-11-20 the main checkout has no `data/`, `runs/` or `untrusted/` directory. The baselines `runs/EXP-028-armR` and `runs/EXP-028-armRH`, and the gold patches that the primary endpoint needs, are not on disk; the only run directories are the two downloaded here. This is missing input, not a defect of the script, so the script is unchanged and section 7 records no fix.
+- **Provisional rows 1 to 3:** `python -I -X utf8 experiments/EXP-083/provisional_guards.py`, written 2026-11-20 after the arm was downloaded. It reads none of the primary endpoint.
+  - For the arm, it calls `screen_read.uptake` unchanged and reads the arm `summary.jsonl`.
+  - For the baselines, it uses the committed copies `experiments/EXP-028/armR/summary.jsonl` and `experiments/EXP-028/armRH/summary.jsonl` instead of `runs/`.
+  - Its guard arithmetic is copied from `screen_read.main`.
+  - Row 1's inputs were counted by reading `task_results.jsonl` and `summary.jsonl` directly. The script's output is in section 9.
+
 ## Status
 
-**PUSHED, RUNNING (2026-11-18 03:54 UTC).** Kernel `rainm4/gemma4-exp083-sweep` v1. Next: when `kaggle kernels status rainm4/gemma4-exp083-sweep` reads COMPLETE, `kaggle kernels output rainm4/gemma4-exp083-sweep -p runs/EXP-083-sweep`, then the section 6 commands, then section 9. The first reading of `screen_read.py` is the first run of that script.
+**DOWNLOADED AND READ PROVISIONALLY (2026-11-20).** Kernel `rainm4/gemma4-exp083-sweep` v1 is COMPLETE, with a kernel wall of 1.048 h. Rows 1 and 2 do not fire. **Row 3 fires**: the projected worst case is 11.68 h against 11.0 h. The rule is killed for this tree as written (section 9). Still owed: the primary endpoint, beside row 3, and the final run of `screen_read.py`. Next, once `data/raw/tasks.jsonl` and `runs/EXP-028-armR` and `runs/EXP-028-armRH` are restored: the section 6 `screen_read.py` command, then finalize section 9.
+
+## 9. Results, 2026-11-20 (provisional). Section 4's readings applied as written.
+
+**Provisional, for one reason.** The section 6 reading script `screen_read.py` could not run, because `data/raw/tasks.jsonl` and the baseline run directories are absent (section 8). Rows 1 to 3 do not need the gold patches. They are read here from the inputs described in section 8: the arm's run directory, `screen_read.uptake` unchanged, and the committed baseline `summary.jsonl` copies. The primary endpoint is not computed. This section becomes final when `screen_read.py` runs on restored inputs; that run also gives the primary to record beside row 3.
+
+### 9.1 Row 1, infrastructure: does not fire
+- **Rows:** 8 of 8 in `task_results.jsonl`. The kernel finished, and the status read COMPLETE.
+- **Model and zip:** the served model is `gemma-4-31b-it-qat-w4a16-ct`. The embedded zip sha256 is `4005033f...a0f4`, which matches.
+- **Infrastructure rows: 0 of 8.**
+  - `llm_calls` runs 18 to 51 and `n_turns` 18 to 52, so none is 0.
+  - Errors: 2 are the cap string `Agent exceeded session timeout (8.0 min)`, on rich_3934 and rich_3953. The other 6 have none.
+
+### 9.2 Row 2, uptake: does not fire
+- Sweep uptake (a `run_command` containing `grep` after the first `edit_file`) is **6 of 8**: rich_3468, rich_3480, fastapi_14953, fastapi_11355, rich_3063, rich_3934.
+- Row 2 needs 1 or fewer, so it does not fire whatever the baselines read.
+- The two tasks without uptake, fastapi_14448 and rich_3953, made no `run_command` at all after their first `edit_file`.
+- Baseline uptake is not computed: the baseline traces are not on disk.
+
+### 9.3 Row 3, limit breached: **fires**
+
+| Guard | Arm | EXP-028-armR | EXP-028-armRH | Baseline mean | Row 3 bar |
+|---|---|---|---|---|---|
+| Tasks at a call or time cap | 6 | 3 | 4 | 3.50 | baseline mean + 3 or more. **Not met**: 6 is below 3.50 + 3 |
+| Mean wall (s) | 410.2 | | | 361.1 (mean of per-task means) | delta **+49.1 s**, against a limit of 28.8 s |
+| Projected worst case | **11.68 h** | | | 10.04 h | 11.0 h or less. **Breached** |
+| Calls per task (mean) | 23.88 | 22.75 | 22.12 | | recorded |
+| Empty patches | 1 | 1 | 2 | 1.50 | recorded |
+| Text-form or tool-free tasks; malformed calls | 0; 0 | 0; 0 | 0; 0 | | recorded |
+
+The projected worst case is `10.04 h + 120 x 49.1 s / 3600 = 11.68 h`. It exceeds 11.0 h, so **row 3 governs**.
+
+**Reading:** the rule costs the budget the tree runs inside, whatever the primary reads. **The sweep rule is killed for the 31B v24-at-8 tree as written.** A shorter form (the list only, or the sweep only) would be a new claim. No dev-48 arm.
+
+The primary is to be recorded beside this reading. It is **not yet computed**: gold regions touched needs `data/raw/tasks.jsonl` and the baseline patches.
+
+### 9.4 Resolves (recorded, not an endpoint)
+- Arm **1 of 8** (rich_3063). EXP-028-armR 0 of 8, EXP-028-armRH 0 of 8 on the same ids.
+- This is inside noise at n = 8 (the ladder's bar is 6 of 8 flipping the same way).
+
+### 9.5 Blind predictions, against the outcome
+- **Uptake held:** 6 of 8 was predicted as 5 to 8.
+- **Row 3 governed.** It was given about 0.25. The prediction said 1 to 2 extra calls plus a possible compaction "come close" to the 28.8 s room. The measured mean-wall rise was 49.1 s, against 28.8 s of room, with mean calls 23.88 against 22.75 and 22.12. It was not close.
+- **Resolves missed:** 1 was predicted as 2 to 4.
+- **Touched:** not yet readable.
+
+### 9.6 Observations, not readings
+- The arm hit a call or time cap on 6 of 8 tasks (`provisional_guards.py`). analyze_traces reports calls-cap 50.0% and time-cap 37.5%. rich_3480 ran 772 s against the 8-minute cap.
+- The 11.68 h figure rests on 8 tasks and two baseline draws, so its noise is large. The row is read as written regardless.
