@@ -1,0 +1,19 @@
+name: swe_agent
+# EXP-033 2026-11-05: model gemma-4-31b-it-qat-w4a16-ct -> gemma-4-e4b-it-qat-w4a16-ct, nothing else changed from experiments/EXP-027/candidate-v24-at-8 (small-model prize screen on smoke-8; the prompt was written for the 31B)
+# harness-eng R-014 2026-11-20 (T-e4b-016): tool edit_file -> agent_tool apply_edit (sub_agents/apply_edit.yaml).
+# Target: copy fidelity (R-012: 47% of E4B draws have a failed edit_file; 265 of 808 not-found old_strings quote
+# lines the agent never read). The root names FILE, LINES and NEW code; the helper runs in a fresh session
+# (agent_tool, no history), re-reads the range and builds old_string from that read. Calls inside the helper count
+# against the shared 28-call cap; no E4B base draw reached 28 calls (R-009). Prompt section 3 changed to match.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include prompts/system.md
+tools:
+  - run_command
+  - read_file
+  - write_file
+  - get_status
+  - submit_patch
+  - agent_tool:
+      config_path: sub_agents/apply_edit.yaml
+      skip_summarization: true
+generate_content_config: !include configs/sampling.yaml

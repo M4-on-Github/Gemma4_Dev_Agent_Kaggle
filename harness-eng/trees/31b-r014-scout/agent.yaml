@@ -1,0 +1,12 @@
+name: swe_agent
+# harness-eng R-014 2026-11-20 (T-31b-012): single LlmAgent (trees/31b-base, EXP-027 candidate-v24-at-8) ->
+# SequentialAgent of a scout and an editor on the same model. Target: late commitment (R-012: unresolved draws make
+# their first edit at call 14-15 against 9 for resolved ones; no-edit draws on the 16 noisy tasks are 3.5 per draw).
+# The scout has no edit tools and ends with a three-line target message; the editor is the base agent with all six
+# tools, sees the scout's history (include_contents default; `none` starved the EXP-032 editor) and is told to
+# edit within two calls. Both share the 28-call and 8-minute caps (eval_config.yaml unchanged); no per-agent cap
+# exists in the harness. The editor submits, so the root ends on a submit (EXP-052 crash avoided, as in R-011).
+agent_class: SequentialAgent
+sub_agents:
+  - config_path: sub_agents/scout.yaml
+  - config_path: sub_agents/editor.yaml

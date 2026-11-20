@@ -1,0 +1,9 @@
+name: scout
+description: Finds the file, lines and change the issue requires, without editing, and hands the target to the editor.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include ../prompts/scout.md
+tools:
+  - run_command
+  - read_file
+  - get_status
+generate_content_config: !include ../configs/sampling.yaml

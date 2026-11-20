@@ -16,6 +16,7 @@ filled in 2026-11-19 with R-011; before that several rows still said open after 
 | A4 | Bounded observations | compaction fires at 14,336 prompt tokens and drops what the model read | prompt rule: every command output piped through `head`, reads <= 80 lines | dropped (R-011 T-31b-011: 8.5 vs 8.5; only 20% of commands bounded, so the idea is untested in prompt form) |
 | A5 | Sampling temperature | T=1.0 gives wide draw-to-draw spread | T 1.0 -> 0.6 | dropped (R-011 T-31b-010: 8.5 vs 8.5, time cap + empty 22 vs 17) |
 | A6 | Process order (invariant) | the "edit by call 12" rule may force early wrong edits | reproduce-first variant: one failing check before the edit | dropped 2026-11-19 (R-010: failing 31B draws commit late, and this would delay the edit further) |
+| A7 | Commit-forcing orchestration (2026-11-20, R-012 pool) | unresolved noisy-task draws land no source edit 3.5 per draw (ceiling 1.92, the largest group); first edit ~4 calls later than in resolved draws of the same task; the prompt rule A6/T-31b-007 was not followed | SequentialAgent scout (no edit tools, 3-line TARGET) -> editor (edit within 2 calls) | active (R-014 T-31b-012) |
 
 ## E4B (`trees/e4b-base`, same tree, model line differs)
 
@@ -28,6 +29,7 @@ filled in 2026-11-19 with R-011; before that several rows still said open after 
 | B4 | Use the unused budget | E4B tasks end in ~30-50 s of 480 s and under 10 calls | prompt: required second look (re-read the diff against the contract list, fix, then submit) | not kept (R-011 T-e4b-015: editor then reviewer 7.5 vs 7.0 over 8 draws each, CI includes 0; the reviewer edits only 21% of diffs) |
 | B5 | Thinking budget | 4096 may be more than the E4B uses well, or too little | 1024 and 8192 | 2048 dropped (R-007 T-e4b-011); 8192 closed at L0 2026-11-20 (R-012 review: 67 of 7,378 E4B turns reach 4,096 thinking tokens; 8192 equals `max_output_tokens`, so tool calls would be cut) |
 | B6 | Shorter prompt | 3.1 kB of rules may exceed what the E4B follows | cut to the contract, locate, edit, submit skeleton | dropped (R-003 T-e4b-005: same score at 1.2 kB) |
+| B7 | Edit applier in a fresh context (2026-11-20, R-012 recount) | 46.5% of Turing base task-draws have a failed edit, 35.0% a not-found; 265 of 808 not-found anchors quote lines never read | `edit_file` -> agent_tool `apply_edit` that re-reads LINES and copies `old_string` | active (R-014 T-e4b-016) |
 
 ## Later (not in the first 24 h)
 
