@@ -25,8 +25,45 @@ Every task result under `runs/`, split by the eval cohort `cdev2-79`:
 - All 129 tasks come from 4 public repos. The hidden set is private repos, so trajectory data teaches process,
   not repo content, and the eval must be on tasks the adapter never saw.
 - Traces (schema 9) keep the system prompt, the task prompt, and per model turn the thought text, tool calls with
-  arguments, and observations. A conversation can be rebuilt turn by turn. Compacted turns need care, because the
-  model saw a shortened prompt there.
+  arguments, and observations. A conversation can be rebuilt turn by turn. Over the 316 31B base traces
+  (R-008/R-011), each step carries exactly one tool call. The step kinds are 7090 thinking-plus-call, 211 final, 138
+  without an event type, 27 text, and 21 continuation nudges.
+- **Compaction is on.** An earlier draft of this file said it was off; that was wrong. `tools/cluster_eval.py:37`
+  sets ADK events compaction to interval 15, threshold 14336 tokens, retention 5 and overlap 2, as the official
+  harness does. The recorded `prompt_tokens` falls from about 14.5k to 2.7-5k at that point, and the compaction
+  summary is not in the trace. Turns after a compaction therefore cannot be rebuilt exactly.
+- **Fidelity check (6 traces of R-011-31b-base-te-d3, 31B tokenizer, the served template, the dumped tool
+  schema).**
+  - Re-rendering each call's prefix with the earlier `reasoning_content` gives the recorded `prompt_tokens` to within
+    16 tokens. The gap is 16 at call 1 and shrinks by 2 per call.
+  - Without the thoughts it falls 100-3000 tokens short.
+  - So ADK sends the thoughts back (`lite_llm.py` sets `reasoning_content`), and the served template keeps them for
+    the current model turn. It drops them for turns before the last user message (a nudge).
+  - Two of the 6 traces have a single larger gap (one call +1392, one drift to -5).
+- **Observation encoding.** ADK sends tool results as `json.dumps(..., ensure_ascii=False)`. The trace stores the
+  default ASCII-escaped dump, which differs in 41 of 1815 observations in R-008 d1. Re-serializing them closes
+  part of the gap.
+- **`tools/lora/trace_to_sft.py` (D2 converter).** It writes chat-format samples under
+  `/data/mmyatmau/gemma4-lora/data/` only and prints counts only.
+  - It keeps a resolved trace's faithful prefix: from the start up to the `submit_patch` response (`complete`), or
+    cut before the first nudge or the first LLM call whose re-rendered prefix is more than 64 tokens from the
+    recorded count. A recorded drop of more than 3000 tokens is labelled `compaction`, anything else `mismatch`.
+  - Smoke over R-008 d1 + R-011 d3 (31B base, all of cdev2-79, no fold yet):
+
+    | Outcome | Draws |
+    |---|---|
+    | Resolved | 58 |
+    | Kept, complete | 36 |
+    | Kept, cut at compaction | 17 |
+    | Kept, cut at mismatch | 2 |
+    | Kept, no submit | 1 |
+    | Too short (fewer than 3 calls) | 2 |
+
+  - That is 802 LLM calls over 32 tasks. The median worst prefix gap among kept samples is 16 tokens.
+  - Before the re-serialization fix, 30 samples were complete.
+- **Open for the trainer.** The samples carry the 31B's system prompt. The E4B adapter must be trained under the
+  frozen E4B config's system prompt and tool list, so the trainer swaps the system message and renders with the
+  E4B tokenizer. That is a distribution shift to note in the round that trains on it.
 
 ## 2. Format and weights (checked in `env/harness.sif`)
 
@@ -43,6 +80,10 @@ Every task result under `runs/`, split by the eval cohort `cdev2-79`:
   plain-torch LoRA (A/B matrices on the target linears, PEFT-format save) is enough. R-013's
   `make_lora_canary.py` already writes the PEFT layout the harness loads.
 - `/data/mmyatmau/gemma4-lora` is visible inside apptainer with no extra bind (1.6 TB free).
+- `tools/lora/tool_schema.py` dumps the six tool declarations exactly as served to
+  `/data/mmyatmau/gemma4-lora/schema/tools.json`. It builds them through `swegemma.tools.create_tools`, then ADK
+  `FunctionTool`, then the LiteLlm converter.
+- Tool responses reach the template as JSON strings and render as `response:<name>{value:<|"|>...<|"|>}`.
 
 ## 3. Feasibility per model (inference, to be measured)
 
