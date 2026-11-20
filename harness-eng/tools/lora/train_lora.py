@@ -299,6 +299,8 @@ def main():
         sys.exit("served targets missing from the loaded model: " + ", ".join(missing[:5]))
     model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     model.train()
+    lm = model.model.language_model
+    ple_cpu = [False]
 
     cap = model.config.get_text_config().final_logit_softcapping
     head = model.lm_head
@@ -315,7 +317,11 @@ def main():
         ids = torch.tensor([ex["input_ids"]], device=dev)
         lab = ex["labels"]
         pos = [t for t in range(len(lab) - 1) if lab[t + 1] != -100]
-        hs = model.model(input_ids=ids, use_cache=False, return_dict=True).last_hidden_state[0]
+        kw = {}
+        if ple_cpu[0]:  # text-only input: exactly what Gemma4Model computes when per_layer_inputs is None
+            with torch.no_grad():
+                kw["per_layer_inputs"] = lm.get_per_layer_inputs(ids.cpu(), None).to(dev)
+        hs = model.model(input_ids=ids, use_cache=False, return_dict=True, **kw).last_hidden_state[0]
         p = torch.tensor(pos, device=hs.device)
         tgt = torch.tensor([lab[t + 1] for t in pos], device=hs.device)
         total = 0.0
@@ -341,18 +347,32 @@ def main():
                "use_rslora": False}
         (d / "adapter_config.json").write_text(json.dumps(cfg, indent=2) + "\n")
 
+    # Reference loss on a row stock SDPA can hold, with everything on the GPU (no grad).
+    mid = [e for e in train if 2 * QCHUNK < len(e["input_ids"]) <= 4096]
+    if a.load_check and mid:
+        chunked_on[0] = False
+        with torch.no_grad():
+            l_ref = loss_of(mid[0]).item()
+        chunked_on[0] = True
+
+    # Frozen lookups and unused towers go to the CPU: the per-layer embedding table is 5.25 GiB of the 15.15
+    # after loading, and the audio and vision towers are never called on text (L-002 P1, third run).
+    lm.embed_tokens_per_layer.to("cpu")
+    for t in ("vision_tower", "audio_tower", "embed_vision", "embed_audio"):
+        if getattr(model.model, t, None) is not None:
+            getattr(model.model, t).to("cpu")
+    ple_cpu[0] = True
+    torch.cuda.empty_cache()
+    print(json.dumps({"gpu_mem_gib_after_offload": [round(torch.cuda.memory_allocated(i) / 2**30, 2)
+                                                    for i in range(ngpu)]}))
+
     if a.load_check:
-        # chunked attention against stock SDPA on a row both can hold (no grad)
-        mid = [e for e in train if 2 * QCHUNK < len(e["input_ids"]) <= 4096]
-        if mid:
+        if mid:  # chunked attention + CPU per-layer inputs against the stock all-GPU reference
             with torch.no_grad():
-                l_chunk = loss_of(mid[0]).item()
-                chunked_on[0] = False
-                l_sdpa = loss_of(mid[0]).item()
-                chunked_on[0] = True
-            print(json.dumps({"chunk_check_len": len(mid[0]["input_ids"]), "loss_chunked": round(l_chunk, 5),
-                              "loss_sdpa": round(l_sdpa, 5), "abs_diff": round(abs(l_chunk - l_sdpa), 6)}))
-            torch.cuda.reset_peak_memory_stats()
+                l_new = loss_of(mid[0]).item()
+            print(json.dumps({"chunk_check_len": len(mid[0]["input_ids"]), "loss_new": round(l_new, 5),
+                              "loss_ref": round(l_ref, 5), "abs_diff": round(abs(l_new - l_ref), 6)}))
+        torch.cuda.reset_peak_memory_stats()
         t0 = time.time()
         ex = max(train, key=lambda e: len(e["input_ids"]))
         loss = loss_of(ex)

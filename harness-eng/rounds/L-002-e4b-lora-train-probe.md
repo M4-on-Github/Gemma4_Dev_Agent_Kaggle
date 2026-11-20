@@ -85,3 +85,18 @@ Budget: under 1.5 GPU-h in total on Turing, none on Ada.
   - rows of at most 1024 tokens still go through stock SDPA.
   `--load-check` now first compares the chunked and stock losses on one 2k-4k row, without gradients. P1 runs
   once more at the commit that records this. Readings and decisions are unchanged.
+
+### P1 third run, job 59863 (1 min 29 s): attention fixed, out of memory in the head
+
+- The chunked attention matches stock SDPA on a 2905-token row: loss 0.18217 both, abs diff 0.0.
+- On the 16359-token row it ran out of memory allocating 1.00 GiB: the fp32 logits of one 1024-position head
+  chunk (1024 x 262144 x 4 bytes), with 22.05 GiB already allocated.
+- Of the 15.15 GiB resident after loading:
+  - 5.25 GiB is the per-layer embedding table, which training only looks rows up in;
+  - 0.90 GiB is the audio and vision towers, which text input never calls.
+- **Third deviation, recorded before the next run.** `train_lora.py` moves the per-layer table and the towers to
+  the CPU after wrapping. It computes `per_layer_inputs` there and passes them to `Gemma4Model`, which is what
+  the model computes itself for text-only input.
+  - `--load-check` now takes its reference loss before the move, with everything on the GPU and stock SDPA.
+    It compares that against the new path.
+  - P1 runs once more. Readings and decisions are unchanged.
