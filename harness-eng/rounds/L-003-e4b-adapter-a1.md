@@ -46,18 +46,72 @@ on the frozen config.
      validation loss is lower (`epoch1` or `final`) is the one evaluated. If both are above step 0, nothing is
      evaluated: record it and redesign.
 
-## Part 2: evaluation on fold B
+## Part 2: evaluation on fold B (pre-registered 2026-11-20, before any evaluation job)
 
-Pre-registered in this file, in its own commit, **before any evaluation job** and before any adapter is served.
-Nothing about fold-B outcomes is known when it is written. What it must fix:
+Written while a1 is at step 98 of 401. No fold-B draw with any adapter has run, and a1 has never been served.
 
-- the arms:
-  - `e4b-full0`: base tree plus the zero adapter, so both arms serve with LoRA on at the same speed;
-  - `e4b-a1`: the same tree with the trained adapter;
-- the draw count and the paired test;
-- the `--time-scale`. R-013 says it is set from a base-with-`full_zero` draw, not from R-011's 5.0;
-- the mechanism endpoints (failed-edit draws, not-found draws, empty patches);
-- the decision readings.
+### Arms
+
+| Arm | Tree | Cohort | Draws | Run ids |
+|---|---|---|---|---|
+| full0 | `adapters/trees/e4b-full0` (R-013: base tree + rank-16 zero adapter `full_zero`) | `cohorts/lfold-b.txt` (40) | 8 | `L-003-e4b-full0-tu127-d1..d8` |
+| smoke (not read) | `adapters/trees/e4b-a1` | `runs/_cohorts/smoke-te.txt` (2), concurrency 2 | 1 | `S-003-e4b-a1-smoke` |
+| a1 | `adapters/trees/e4b-a1` | `cohorts/lfold-b.txt` | 8 | `L-003-e4b-a1-tu127-d1..d8` |
+
+- **`e4b-a1`** is `e4b-full0` with `adapter: a1` and `adapters/a1/` holding the adapter that training reading 2
+  selects (`final`, or `epoch1` under reading 2's rule). Nothing else in the tree changes. It is built after
+  training ends and before the smoke.
+- **Both arms serve with LoRA on.** R-013 measured the Turing LoRA cost as fixed and independent of adapter size,
+  so the arms run at the same speed and differ only in the weights.
+- **Flags**, every job: `sbatch -J heng_e4b_tu --constraint=QUADRORTX6000 -w pleiades-1-10 slurm/eval.sbatch <run>
+  <tree> cohorts/lfold-b.txt --concurrency 4 --py313 env/py313-scorer/bin/python3.13 --task-envs env/taskenvs
+  --time-scale 12.7`, at 4 CPUs and 64G, `HENG_SHIMS` off, with `squeue -w pleiades-1-10` checked first.
+- **Order.** full0 d1-d7 start now on the 7 free GPUs and d8 starts when one frees. The a1 smoke, then a1 d1-d8,
+  start after training readings 1-2. The arms are therefore not interleaved in time. This is a stated limit; the
+  node is otherwise ours.
+
+### Time scale: 12.7, a deviation from R-013's wording
+
+R-013 says a later E4B adapter round sets its scale "from a base-with-`full_zero` draw". Here the `full_zero` draws
+are themselves the comparison arm, so the scale has to be fixed before them. It is fixed from measured decode
+rates:
+- E4B base on this lane is scaled 5.0 (R-011).
+- LoRA on costs 0.296× decode on Turing (R-013) and 0.75× on Kaggle L4 (EXP-047: 116.6 → 86.9 tok/s).
+- 5.0 × 0.75 / 0.296 = **12.7**. This is the decode-bound upper value. Prefill and tool time slow less, so the
+  real ratio lies between 5.0 and 12.7, and the caps here are, if anything, looser than Kaggle's.
+
+The arms share the scale, so the comparison does not depend on it. The scale only changes how many task-draws reach
+the 101.6-minute session cap. Recorded, not read: the full0 mean task wall against the R-011 base mean on the same
+40 tasks, which is the measured Turing ratio. A shipped adapter's Kaggle time is measured on L4 (S6), not here.
+
+### Readings
+
+1. **Health.**
+   - At most 2% of task-draws per arm have a status other than SUCCESS.
+   - The a1 smoke passes when vLLM loads `a1` (`/v1/models` lists it), every model-named step in both traces names
+     `a1`, and there is no engine error. If it fails, no a1 draw runs; the cause is recorded first.
+2. **Decision.** Paired over the 40 fold-B tasks, using each task's resolve rate over 8 draws per arm. The
+   statistic is the mean of a1 rate − full0 rate, times 40, so it is in solves per draw. The CI is a 90% bootstrap
+   over the 40 tasks (10,000 resamples, seed 0).
+   - **Helps:** the CI lower bound is above 0. The E4B LoRA direction is kept. Next is S6: the L4 speed measurement
+     on Kaggle, run only with the user's OK. After that, the adapter is retrained on the frozen config.
+   - **Extend:** a point estimate of +1.0 or more without the CI above 0 extends once, by 8 more draws per arm
+     (d9-d16). The same rule is then applied to all 16 and 16, and there is no further extension.
+   - **Harm:** a point estimate of −1.0 or less. Not kept; the data mix is redesigned before any new adapter.
+   - **Not kept:** anything else.
+3. **Mechanism** (reported for every outcome; it does not override reading 2).
+   - Failed-edit task-draws and not-found task-draws per arm, counted by `tools/r014_gates.py applier` exactly as
+     in R-014 reading 3: not-found, not-unique, no-op or malformed `edit_file`.
+   - **Met** if the a1 failed-edit share is at least 10 points below full0's.
+   - Also reported: empty patches, time-cap and call-cap task-draws per draw, and tool calls per task.
+4. **Harm check** (reported): the a1 resolve rate on tasks that full0 resolves in at least 4 of 8 draws.
+5. **Speed** (reported): a1/full0 mean task wall, expected near 1.0.
+
+**Cost.** About 5-8 h per draw at 40 tasks and concurrency 4, so 16 draws are about 80-130 Turing GPU-h. That is
+outside the Ada ledger. An extension doubles it.
+
+**Blind guess (not a reading).** Helps 25%, extend 20%, not kept 40%, harm 15%. Failed-edit share: full0 about
+55%, a1 about 45%.
 
 ## Results
 
