@@ -124,8 +124,12 @@ None yet.
 
 ---
 
-Not built yet at the time of the pre-registration commit.
+- **Pre-registration commit:** 8eaa438 (this file at sections 1 to 7, the candidate tree, the cohort file, `screen_read.py`, the README row), made before the build.
+- **Zip:** `dist/EXP-085-reader.zip`, sha256 `623f32f1790cd7bccaf8bc10b368ff85dac0d49823efd954c6efa053efb859c9`, 7 members: `agent.yaml`, `configs/reader_sampling.yaml`, `configs/sampling.yaml`, `eval_config.yaml`, `prompts/file_reader.md`, `prompts/system.md`, `sub_agents/file_reader.yaml`. The packer's closure followed the `agent_tool` `config_path` into the reader file and its includes. Pack result VALID with 2 warnings (the gate, demoted, and `timeout_seconds=240 < 300`). The worktree blobs are LF.
+- **Notebook:** `notebooks/exp085_reader/kaggle_eval_l4x4.ipynb`, built with the section 6 command; `TASK_IDS` equals the 8 ids of `experiments/cohorts/reader-31b-8.txt`, `N_TASKS = 8`, `EXP_ID = "EXP-085-reader"`, `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`. Notebook sha256 `8a96e4c098ecc7e9235b87359e4cd19e60be6d6933374cdd29ae5a9581b88362`.
+- **Kernel metadata:** `notebooks/exp083_sweep/kernel-metadata.json` (a working 31B arm) with `id` `rainm4/gemma4-exp085-reader` and `title` `gemma4-exp085-reader`, nothing else changed. The builder printed `kernel-metadata.json id -> rainm4/gemma4-eval-l4x4` but wrote no metadata file in the output directory; the file was written by hand from the arm named.
+- **Kernels live at push time:** `rainm4/gemma4-exp083-sweep` and `rainm4/gemma4-exp084-sweep` both read `KernelWorkerStatus.COMPLETE` before this push, so 0 live before and 2 live after EXP-085 and EXP-086.
 
 ## Status
 
-**PRE-REGISTERED, NOT BUILT.**
+**BUILT, NOT PUSHED.**

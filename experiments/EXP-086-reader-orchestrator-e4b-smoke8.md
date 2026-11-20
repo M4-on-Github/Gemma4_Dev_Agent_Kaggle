@@ -91,8 +91,12 @@ None yet.
 
 ---
 
-Not built yet at the time of the pre-registration commit.
+- **Pre-registration commit:** 8eaa438 (this file at sections 1 to 7, the candidate tree, the cohort file, the README row), made before the build.
+- **Zip:** `dist/EXP-086-reader.zip`, sha256 `371761696f84737ada8f1a1485919d468a7f05b79b9a1f997e1a9ad6b151b96e`, 7 members as in EXP-085 (the reader file is pulled in by the `agent_tool` closure). Pack result VALID with 2 warnings (the gate, demoted, and `timeout_seconds=240 < 300`). The worktree blobs are LF.
+- **Notebook:** `notebooks/exp086_reader/kaggle_eval_l4x4.ipynb`, built with the section 6 command; `TASK_IDS` equals the 8 ids of `experiments/cohorts/reader-e4b-8.txt`, `N_TASKS = 8`, `EXP_ID = "EXP-086-reader"`, `RUN_AGENT = True`, `RUN_GOLD_CONTROL = False`. Notebook sha256 `939cce4167f49a7e4c488fadd897b2a3af306d8b6f1035a3756cb0774c39fd6b`.
+- **Kernel metadata:** `notebooks/exp084_sweep/kernel-metadata.json` (a working E4B arm) with `id` `rainm4/gemma4-exp086-reader` and `title` `gemma4-exp086-reader`, nothing else changed (model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`). Written by hand, as for EXP-085.
+- **Kernels live at push time:** see EXP-085 section 8 (EXP-083 and EXP-084 COMPLETE, so 2 live after the two pushes).
 
 ## Status
 
-**PRE-REGISTERED, NOT BUILT.**
+**BUILT, NOT PUSHED.**
