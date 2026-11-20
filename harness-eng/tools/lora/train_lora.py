@@ -429,6 +429,10 @@ def main():
         log.write(json.dumps(rec) + "\n")
         log.flush()
         print(json.dumps(rec), flush=True)
+        per_epoch = max(1, int(math.ceil(len(train) / a.accum)))
+        if a.epochs > 1 and step % per_epoch == 0 and step < steps:
+            save(f"epoch{step // per_epoch}")
+            log.write(json.dumps({"event": "saved", "dir": f"epoch{step // per_epoch}", "step": step}) + "\n")
     save("final")
     log.write(json.dumps({"event": "saved", "dir": "final", "elapsed_s": round(time.time() - t0, 1)}) + "\n")
 
