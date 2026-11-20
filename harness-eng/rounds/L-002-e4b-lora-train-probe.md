@@ -59,12 +59,29 @@ Budget: under 1.5 GPU-h in total on Turing, none on Ada.
 - Load passes: `wrapped` 258 = `served_targets` 258, `missing_in_model` 0 (q 42, k 24, v 24, o 42, gate 42,
   up 42, down 42), 34.9M LoRA parameters. `bf16_supported` is true on Turing. GPU memory after loading:
   15.15 GiB of 23.46.
-- The forward on the longest row (16359 tokens) ran out of memory allocating 7.98 GiB: the full-vocabulary
-  logits (16359 x 262144 in bf16) that `model(..., labels=...)` builds before the loss.
-- **Deviation, recorded before the re-run.** This is the trainer's loss, not the model's memory, so P2 (two
+- The forward on the longest row (16359 tokens) ran out of memory allocating 7.98 GiB.
+  - *Corrected 2026-11-20 after the second run:* the allocation was the attention scores in
+    `scaled_dot_product_attention` (traceback at `modeling_gemma4.py:1282`), not the logits. The first reading
+    named the full-vocabulary logits because their size is also 7.98 GiB (16359 x 262144 x 2 bytes, against
+    8 heads x 16359^2 x 4 bytes). The logit change below is still needed: the logits would have run out of
+    memory next.
+- **Deviation, recorded before the re-run.** This is the trainer's memory use, not the model's, so P2 (two
   GPUs) is not the right next job. The fix is in `train_lora.py`:
   - run the decoder alone (`model.model`);
   - apply `lm_head`, the final logit softcap and the cross-entropy only at the trained positions, in checkpointed
     chunks of 1024;
   - load with `attn_implementation="sdpa"`.
   P1 is re-run once at the commit that records this. Readings and decisions are unchanged.
+
+### P1 re-run, job 59862 (41 s): failed again, out of memory in attention
+
+- Same load readings as 59861. Same 7.98 GiB allocation, inside `scaled_dot_product_attention` in a
+  checkpointed decoder layer. `attn_implementation="sdpa"` falls back to the math kernel here: the fused kernels
+  need sm80 for bf16 (Turing is sm75), and the global layers' head_dim of 512 is over their limit of 256. The
+  math kernel builds the whole 8 x 16359 x 16359 score matrix.
+- **Second deviation, recorded before the next run.** `train_lora.py` registers a query-chunked attention under
+  the name `sdpa`:
+  - chunks of 1024 queries, each checkpointed, with the same SDPA masks;
+  - rows of at most 1024 tokens still go through stock SDPA.
+  `--load-check` now first compares the chunked and stock losses on one 2k-4k row, without gradients. P1 runs
+  once more at the commit that records this. Readings and decisions are unchanged.

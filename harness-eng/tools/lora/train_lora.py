@@ -221,6 +221,42 @@ def main():
 
     torch.manual_seed(a.seed)
     dev = torch.device("cuda")
+
+    # Query-chunked attention in place of "sdpa". On Turing in bf16 (and for the 512-wide global heads anywhere)
+    # SDPA falls back to the math kernel, which builds the whole heads x L x L score matrix: 7.98 GiB for the
+    # 16359-token row (L-002 P1, both runs). Each chunk of QCHUNK queries is checkpointed, so the backward
+    # recomputes one chunk's scores at a time. Same masks as SDPA (the sdpa mask functions are kept).
+    from torch.utils.checkpoint import checkpoint
+    from transformers import AttentionInterface
+    from transformers.integrations.sdpa_attention import repeat_kv, sdpa_attention_forward
+    QCHUNK = 1024
+    chunked_on = [True]
+
+    def _attn(q, k, v, m, scale):
+        return torch.nn.functional.scaled_dot_product_attention(q, k, v, attn_mask=m, scale=scale)
+
+    def chunked_sdpa(module, query, key, value, attention_mask, dropout=0.0, scaling=None, is_causal=None, **kw):
+        L = query.shape[2]
+        if not chunked_on[0] or L <= QCHUNK:
+            return sdpa_attention_forward(module, query, key, value, attention_mask, dropout=dropout,
+                                          scaling=scaling, is_causal=is_causal, **kw)
+        n = getattr(module, "num_key_value_groups", 1)
+        k, v = repeat_kv(key, n), repeat_kv(value, n)
+        S = k.shape[2]
+        outs = []
+        for i in range(0, L, QCHUNK):
+            q = query[:, :, i:i + QCHUNK]
+            if attention_mask is None:  # SDPA skipped a plain causal mask; rebuild this chunk's rows
+                qi = torch.arange(i, i + q.shape[2], device=q.device)[:, None] + (S - L)
+                m = (torch.arange(S, device=q.device)[None, :] <= qi)[None, None]
+            elif attention_mask.shape[2] == 1:
+                m = attention_mask
+            else:
+                m = attention_mask[:, :, i:i + QCHUNK]
+            outs.append(checkpoint(_attn, q, k, v, m, scaling, use_reentrant=False))
+        return torch.cat(outs, 2).transpose(1, 2).contiguous(), None
+
+    AttentionInterface.register("sdpa", chunked_sdpa)
     model = AutoModelForImageTextToText.from_pretrained(
         a.model, dtype=torch.bfloat16, attn_implementation="sdpa", device_map={"": 0} if a.device_map == "single" else "auto",
         quantization_config=CompressedTensorsConfig(run_compressed=False))
@@ -264,7 +300,6 @@ def main():
     model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     model.train()
 
-    from torch.utils.checkpoint import checkpoint
     cap = model.config.get_text_config().final_logit_softcapping
     head = model.lm_head
 
@@ -307,6 +342,17 @@ def main():
         (d / "adapter_config.json").write_text(json.dumps(cfg, indent=2) + "\n")
 
     if a.load_check:
+        # chunked attention against stock SDPA on a row both can hold (no grad)
+        mid = [e for e in train if 2 * QCHUNK < len(e["input_ids"]) <= 4096]
+        if mid:
+            with torch.no_grad():
+                l_chunk = loss_of(mid[0]).item()
+                chunked_on[0] = False
+                l_sdpa = loss_of(mid[0]).item()
+                chunked_on[0] = True
+            print(json.dumps({"chunk_check_len": len(mid[0]["input_ids"]), "loss_chunked": round(l_chunk, 5),
+                              "loss_sdpa": round(l_sdpa, 5), "abs_diff": round(abs(l_chunk - l_sdpa), 6)}))
+            torch.cuda.reset_peak_memory_stats()
         t0 = time.time()
         ex = max(train, key=lambda e: len(e["input_ids"]))
         loss = loss_of(ex)
