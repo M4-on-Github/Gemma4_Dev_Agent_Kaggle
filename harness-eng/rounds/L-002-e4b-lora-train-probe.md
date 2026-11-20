@@ -54,4 +54,17 @@ Budget: under 1.5 GPU-h in total on Turing, none on Ada.
 
 ## Results
 
-(appended after the jobs finish)
+### P1, job 59861 (pleiades-1-10, 1 Quadro RTX 6000, 41 s): failed, out of memory in the trainer's loss
+
+- Load passes: `wrapped` 258 = `served_targets` 258, `missing_in_model` 0 (q 42, k 24, v 24, o 42, gate 42,
+  up 42, down 42), 34.9M LoRA parameters. `bf16_supported` is true on Turing. GPU memory after loading:
+  15.15 GiB of 23.46.
+- The forward on the longest row (16359 tokens) ran out of memory allocating 7.98 GiB: the full-vocabulary
+  logits (16359 x 262144 in bf16) that `model(..., labels=...)` builds before the loss.
+- **Deviation, recorded before the re-run.** This is the trainer's loss, not the model's memory, so P2 (two
+  GPUs) is not the right next job. The fix is in `train_lora.py`:
+  - run the decoder alone (`model.model`);
+  - apply `lm_head`, the final logit softcap and the cross-entropy only at the trained positions, in checkpointed
+    chunks of 1024;
+  - load with `attn_implementation="sdpa"`.
+  P1 is re-run once at the commit that records this. Readings and decisions are unchanged.

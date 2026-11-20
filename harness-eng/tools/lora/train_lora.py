@@ -222,7 +222,7 @@ def main():
     torch.manual_seed(a.seed)
     dev = torch.device("cuda")
     model = AutoModelForImageTextToText.from_pretrained(
-        a.model, dtype=torch.bfloat16, device_map={"": 0} if a.device_map == "single" else "auto",
+        a.model, dtype=torch.bfloat16, attn_implementation="sdpa", device_map={"": 0} if a.device_map == "single" else "auto",
         quantization_config=CompressedTensorsConfig(run_compressed=False))
     model.config.use_cache = False
     for prm in model.parameters():
@@ -264,10 +264,29 @@ def main():
     model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     model.train()
 
+    from torch.utils.checkpoint import checkpoint
+    cap = model.config.get_text_config().final_logit_softcapping
+    head = model.lm_head
+
+    def head_ce(h, tgt):
+        z = head(h).float()
+        if cap is not None:
+            z = torch.tanh(z / cap) * cap
+        return torch.nn.functional.cross_entropy(z, tgt, reduction="sum")
+
     def loss_of(ex):
+        # Decoder only, then the head at the trained positions in checkpointed chunks: full-vocab logits for a 16k
+        # row are 8 GiB in bf16 (L-002 P1 ran out of memory there). Same softcap as Gemma4ForConditionalGeneration.
         ids = torch.tensor([ex["input_ids"]], device=dev)
-        lab = torch.tensor([ex["labels"]], device=dev)
-        return model(input_ids=ids, labels=lab).loss
+        lab = ex["labels"]
+        pos = [t for t in range(len(lab) - 1) if lab[t + 1] != -100]
+        hs = model.model(input_ids=ids, use_cache=False, return_dict=True).last_hidden_state[0]
+        p = torch.tensor(pos, device=hs.device)
+        tgt = torch.tensor([lab[t + 1] for t in pos], device=hs.device)
+        total = 0.0
+        for i in range(0, len(pos), 1024):
+            total = total + checkpoint(head_ce, hs[p[i:i + 1024]], tgt[i:i + 1024], use_reentrant=False)
+        return total / len(pos)
 
     os.makedirs(a.out, exist_ok=True)
     log = open(os.path.join(a.out, "train_log.jsonl"), "a")
