@@ -97,6 +97,11 @@ None yet.
 - **Kernel metadata:** `notebooks/exp084_sweep/kernel-metadata.json` (a working E4B arm) with `id` `rainm4/gemma4-exp086-reader` and `title` `gemma4-exp086-reader`, nothing else changed (model source `google/gemma-4/other/gemma-4-e4b-it-qat-w4a16-ct/2`). Written by hand, as for EXP-085.
 - **Kernels live at push time:** see EXP-085 section 8 (EXP-083 and EXP-084 COMPLETE, so 2 live after the two pushes).
 
+### Push record
+- **Pushed** with `kaggle kernels push -p notebooks/exp086_reader` (bare, after the build commit a49ba50), no guard block. CLI output: `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp086-reader`.
+- **Kernel:** `rainm4/gemma4-exp086-reader`, version 1, pushed right after EXP-085's, so two kernels live.
+- **First status reading:** `KernelWorkerStatus.RUNNING`.
+
 ## Status
 
-**BUILT, NOT PUSHED.**
+**PUSHED, RUNNING (2026-11-20).** Kernel `rainm4/gemma4-exp086-reader` v1. Next: when `kaggle kernels status rainm4/gemma4-exp086-reader` reads COMPLETE, `kaggle kernels output rainm4/gemma4-exp086-reader -p runs/EXP-086-reader`, then the section 6 commands, then a section 9 that applies section 4 as written.

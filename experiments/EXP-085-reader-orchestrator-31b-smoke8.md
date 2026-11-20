@@ -130,6 +130,12 @@ None yet.
 - **Kernel metadata:** `notebooks/exp083_sweep/kernel-metadata.json` (a working 31B arm) with `id` `rainm4/gemma4-exp085-reader` and `title` `gemma4-exp085-reader`, nothing else changed. The builder printed `kernel-metadata.json id -> rainm4/gemma4-eval-l4x4` but wrote no metadata file in the output directory; the file was written by hand from the arm named.
 - **Kernels live at push time:** `rainm4/gemma4-exp083-sweep` and `rainm4/gemma4-exp084-sweep` both read `KernelWorkerStatus.COMPLETE` before this push, so 0 live before and 2 live after EXP-085 and EXP-086.
 
+### Push record
+- **Pushed** with `kaggle kernels push -p notebooks/exp085_reader` (bare, after the build commit a49ba50), no guard block. CLI output: `Kernel version 1 successfully pushed.  Please check progress at https://www.kaggle.com/code/rainm4/gemma4-exp085-reader`.
+- **Kernel:** `rainm4/gemma4-exp085-reader`, version 1. Pushed first; EXP-086 pushed right after, so two kernels live.
+- **Push time:** 2026-11-20 (the shell has no `date` under the guard; the time is not recorded more finely).
+- **First status reading:** `KernelWorkerStatus.RUNNING`.
+
 ## Status
 
-**BUILT, NOT PUSHED.**
+**PUSHED, RUNNING (2026-11-20).** Kernel `rainm4/gemma4-exp085-reader` v1. Next: when `kaggle kernels status rainm4/gemma4-exp085-reader` reads COMPLETE, `kaggle kernels output rainm4/gemma4-exp085-reader -p runs/EXP-085-reader`, then the section 6 commands (the reading script needs an agent whose Bash admits `python -I -X utf8 experiments/EXP-085/screen_read.py`), then a section 9 that applies section 4 as written.
