@@ -118,7 +118,15 @@ python -I -X utf8 tools/run_forensics.py forensics runs/EXP-085-reader
 If the download nests the run, move the inner directory up one level first.
 
 ## 7. Defects in this pre-registration, logged after the fact
-None yet.
+1. **`screen_read.py` counter accounting is 0 by construction** (found 2026-11-20 at its first run, after the results).
+   - **The defect.** `trace_counts` treats every `source: "agent"` step and tool call as the root's. The trace also carries the reader's inner steps and calls, which are marked `extra.author == "file_reader"`. So the "counted calls visible in the root trace" include the reader's inner `read_file` calls, and `unaccounted` (n_calls minus root-visible minus reader calls) is 0 on every task, whatever the counter does.
+   - **A second gap.** `n_calls` in `summary.jsonl` is analyze_traces' trace count, not the harness counter (`tool_calls` in `task_results.jsonl`). On EXP-085 fastapi_14962 the trace count is 43 against a harness count of 27. That task made no reader call, hit the 80-turn budget, and carries 4 budget-refusal observations.
+   - **No reading changes.** The inputs to rows 1 to 7 do not use these two counts:
+     - `file_reader` calls are counted by function name, on calls the root makes;
+     - starved, empty patch, the caps and the primary come from `summary.jsonl` and the patches, as for the baselines.
+     - The analyze_traces `calls_cap_hit` uses the trace count, the same way on arm and baselines. Row 4's cap test needs 3 or more above a baseline mean of 4.00, and the arm has 4 cap tasks under either count.
+   - **The fix.** `screen_read.py` is left unchanged. The accounting is measured instead by a new script, `experiments/EXP-085/counter_check.py`, written after the runs. Per task, it compares the harness counter with the trace calls split by `extra.author`. Its output is in section 9.
+2. **Row 1's clause "an `agent_tool` call fails to run"** is not computed by `screen_read.py`. `counter_check.py` flags `file_reader` responses that begin as an error envelope, and finds 0 in this arm.
 
 ## 8. Built and pushed (below the line; nothing above changes)
 
@@ -136,6 +144,131 @@ None yet.
 - **Push time:** 2026-11-20 (the shell has no `date` under the guard; the time is not recorded more finely).
 - **First status reading:** `KernelWorkerStatus.RUNNING`.
 
+### Download and analysis record (2026-11-20, experimenter)
+- **Status:** `kaggle kernels status rainm4/gemma4-exp085-reader` read `KernelWorkerStatus.COMPLETE` (one check).
+- **Download:** `kaggle kernels output rainm4/gemma4-exp085-reader -p runs/EXP-085-reader`. The bundle nested as `runs/EXP-085-reader/runs/EXP-085-reader/`, and its contents were moved up one level. A copy `runs/EXP-085-reader/runs/EXP-085-reader.zip` stays, as in the baseline downloads.
+- **Kernel wall-clock for the GPU ledger: 0.838 h.** That is 3018.3 s, the last log entry of `gemma4-exp085-reader.log`.
+  - vLLM came up in 357.9 s (tp=4, gpus=4).
+  - The served model is `gemma-4-31b-it-qat-w4a16-ct`.
+- **Embedded zip.** The `SUBMISSION_B64` zip in the committed notebook has sha256 `623f32f1790cd7bccaf8bc10b368ff85dac0d49823efd954c6efa053efb859c9`, which is section 8's. The extracted `runs/EXP-085-reader/agent/` is identical to `experiments/EXP-085/candidate-reader/` (`diff -r` empty).
+- **Baselines.** `runs/EXP-028-armR` and `runs/EXP-028-armRH` were re-downloaded on 2026-11-20 for EXP-083. Both MATCH their committed summaries (`experiments/EXP-083/check_baselines.py`; EXP-083 section 9).
+- **`analyze_traces.py --cap-minutes 8 --max-calls 28`** results are copied to `experiments/EXP-085/reader/summary.jsonl`:
+  - resolved 1/8 (Wilson 95% 2-47%);
+  - empty patch 0.0%, time-cap 0.0%, calls-cap 50.0%, overflow 0.0%, submit_patch 100.0%;
+  - malformed turns 0.3%, spin 48.4%, edit failures 7.5%;
+  - wall median 5.14 min, p90 6.46 min;
+  - nudges 1, compactions 10;
+  - text-form calls 0, tool-free tasks 0;
+  - projected hidden-run total 10.54 h (its own formula).
+  - Two tasks ended on `Agent exceeded turns budget (80 turns)`: fastapi_14962 and rich_3468. This is a cap string, not infrastructure.
+- **`run_forensics.py forensics`:**
+  - total agent wall 41.6 min;
+  - `run_command` 42.1% of the wall, `read_file` 31.2%;
+  - `file_reader` 8 calls at 0.7%. The reader's inner time is filed under `read_file` and `<no-tool>`.
+  - 0 of 8 tasks never edited.
+
 ## Status
 
-**PUSHED, RUNNING (2026-11-20).** Kernel `rainm4/gemma4-exp085-reader` v1. Next: when `kaggle kernels status rainm4/gemma4-exp085-reader` reads COMPLETE, `kaggle kernels output rainm4/gemma4-exp085-reader -p runs/EXP-085-reader`, then the section 6 commands (the reading script needs an agent whose Bash admits `python -I -X utf8 experiments/EXP-085/screen_read.py`), then a section 9 that applies section 4 as written.
+**READ (2026-11-20).** Kernel `rainm4/gemma4-exp085-reader` v1 is COMPLETE, with 0.838 h of kernel wall. `screen_read.py` ran as written; its counter line is defective (section 7) and no reading uses it. **Row 7 governs.** Gold file hit is 5 of 8 against 5.00 (0 above, 0 below, 8 equal), and 2 of 8 tasks touch a region. The reader-orchestrator is not promoted and is killed at L2 for the 31B. No dev-48. Projected 9.35 h. The agent_tool call is not counted against the 28 and the reader inner calls are (section 9.5). See section 9.
+
+## 9. Results, 2026-11-20. Section 4's readings applied as written.
+
+`python -I -X utf8 experiments/EXP-085/screen_read.py --cohort experiments/cohorts/reader-31b-8.txt --arm EXP-085-reader --base EXP-028-armR --base EXP-028-armRH --proj-base-h 10.04` ran as written without error. Its counter-accounting line is defective (section 7 item 1); no reading uses it.
+
+### 9.1 The rows, in order
+- **Row 1, infrastructure: does not fire.**
+  - 8 of 8 rows;
+  - model is the 31B; zip sha matches; kernel finished;
+  - 0 infrastructure rows. The two turn-budget endings are cap strings.
+  - `file_reader` error responses: 0 tasks (`counter_check.py`).
+- **Row 2, not used: does not fire.** `file_reader` was called in 5 of 8 tasks.
+- **Row 3, starved: does not fire.** 0 of 8 tasks are starved; no patch is empty.
+- **Row 4, limit breached: does not fire.**
+  - Projected worst case 10.04 + 120 x (-20.7 s) / 3600 = **9.35 h**, against 11.0 h. The mean wall is 316.2 s against 336.9 s.
+  - Tasks at a call or time cap: arm 4, against R 5 and RH 3 (mean 4.00).
+  - Mean `file_reader` calls per task: **1.00**, against a limit of 3.
+- **Row 5, promote: does not fire.** Regions touched: 2 of 8, below the bar of 4.
+- **Row 6, falls: does not fire.** Gold file hit: 5 of 8, above 3.
+- **Row 7, flat or mixed: FIRES and governs.**
+
+**Verdict: row 7. Not promoted; the reader-orchestrator architecture is killed at L2 for the 31B as written.** No dev-48.
+
+### 9.2 Primary: gold file hit
+- Arm **5 of 8**, against R 5 and RH 5 (mean 5.00); the difference is +0.00.
+- Per task: 0 above, 0 below, 8 equal.
+- **The arm's class letters match arm R's file outcome on every id:**
+  - the three F ids of arm R (fastapi_14512, fastapi_14583, rich_3935) stay F in the arm, although each got 1 or 2 reader calls;
+  - the five R ids stay at a gold file.
+
+| Task | Arm class | Resolved | Calls (trace) | Turns | Wall s | Caps (calls, time) | file_reader calls | Baseline file-hit share | Baseline region share |
+|---|---|---|---|---|---|---|---|---|---|
+| fastapi_14512 | F | 0 | 23 | 25 | 299.8 | (0,0) | 2 | 0.00 | 0.00 |
+| fastapi_14583 | F | 0 | 26 | 27 | 446.6 | (0,0) | 2 | 0.00 | 0.00 |
+| rich_3935 | F | 0 | 28 | 30 | 317.5 | (1,0) | 1 | 0.00 | 0.00 |
+| fastapi_14962 | C | 0 | 43 | 80 | 387.5 | (1,0) | 0 | 1.00 | 0.50 |
+| fastapi_15030 | R | 0 | 14 | 16 | 257.6 | (0,0) | 0 | 1.00 | 0.00 |
+| fastapi_15800 | R | 0 | 20 | 23 | 204.2 | (0,0) | 0 | 1.00 | 0.00 |
+| fastapi_5624 | S | 1 | 30 | 32 | 302.8 | (1,0) | 2 | 1.00 | 0.50 |
+| rich_3468 | R | 0 | 29 | 79 | 313.8 | (1,0) | 1 | 1.00 | 0.50 |
+
+**Then, regions touched (class C, S or resolved):** arm 2 (fastapi_14962, fastapi_5624); R 0; RH 3.
+
+**Class letters:**
+- arm: CFFFRRRS;
+- R: FFFRRRRR;
+- RH: CCFFFRRS.
+
+### 9.3 Resolves (recorded, not an endpoint)
+The arm resolves 1 of 8 (fastapi_5624), against R 0 and RH 1. fastapi_5624 is not one of the grading-gap ids (EXP-036 `g`: fastapi_14512, fastapi_14583, fastapi_14962, fastapi_15030).
+
+### 9.4 Guards
+- **Calls (analyze_traces trace count):** mean 26.62, against R 26.12 and RH 20.88.
+- **Turns:** mean 39.00, against 27.88 and 31.12. Two tasks reached the 80-turn budget, fastapi_14962 and rich_3468, the second with one reader call.
+- **Caps, starvation, call form:**
+  - starved 0;
+  - empty patches 0, as in both baselines;
+  - text-form or tool-free tasks 0;
+  - malformed calls 1.
+- **Mean wall:** 316.2 s, against 336.9 s (delta -20.7 s); projection 9.35 h.
+- **Kernel wall:** 0.838 h.
+
+### 9.5 Observation 1: the `agent_tool` call and the 28-call cap
+Source: `python -I -X utf8 experiments/EXP-085/counter_check.py runs/EXP-085-reader runs/EXP-086-reader`. It compares the harness counter (`tool_calls` in `task_results.jsonl`) with the trace calls split by `extra.author`. Counted calls exclude `get_status` and `submit_patch`.
+
+**Result: the `agent_tool` call itself is not counted, and the reader's inner `read_file` calls are.**
+- Over the 5 tasks with a reader call, the harness counter equals:
+  - root calls plus reader inner calls in **5 of 5**;
+  - root calls plus `agent_tool` calls plus inner calls in **0 of 5**.
+- The one task where the two single additions differ is fastapi_14583 (2 `file_reader` calls, 3 inner reads; harness 24). There, only root plus inner matches.
+- On the E4B (EXP-086 section 9.5) the same split holds in 4 of 6 reader tasks, and the version that counts the `agent_tool` call matches 0 of 6.
+- **Consequence:** a reader call costs the shared 28 calls exactly its own `read_file` calls (here 1 to 3 per reader call). The delegation adds no charge.
+- Turns are not settled. Reader model steps appear in the trace, and the harness `llm_calls` exceeds the root's model steps on the reader tasks. But step counts do not reproduce `llm_calls` even on reader-free E4B tasks.
+
+**Per task (31B):**
+
+| Task | Harness count | Root calls | `file_reader` calls | Reader inner calls | Matches |
+|---|---|---|---|---|---|
+| fastapi_14512 | 21 | 19 | 2 | 2 | root + agent_tool, root + inner |
+| fastapi_5624 | 28 | 26 | 2 | 2 | root + agent_tool, root + inner |
+| rich_3935 | 27 | 26 | 1 | 1 | root + agent_tool, root + inner |
+| fastapi_14583 | 24 | 21 | 2 | 3 | root + inner |
+| rich_3468 | 28 | 27 | 1 | 1 | root + agent_tool, root + inner |
+
+### 9.6 Observation 2: reader calls per task
+- **Totals:** 8 `file_reader` calls over 8 tasks, mean 1.00, in 5 of 8 tasks.
+- **Per task:** 2, 2, 1, 0, 0, 0, 2, 1 (cohort order).
+- **Inner reads per reader-using task:** 1 to 3.
+- Whether a reader was called after the first edit or twice for one file is not measured; `screen_read.py` does not test it.
+- **The three tasks with no reader call** (fastapi_14962, fastapi_15030, fastapi_15800) are all arm R class R ids, and they stayed at a gold file.
+- **The prompt's 3-file ceiling held on every task** (at most 2 reader calls).
+
+### 9.7 Blind predictions, against the outcome
+- `file_reader` used in 7 or 8 of 8: **missed low**, 5.
+- Reader calls 3 to 8 per task: **missed low**, mean 1.00 and at most 2.
+- Gold file hit 5 to 7: **held**, 5.
+- Regions touched 1 to 3: **held**, 2.
+- Wall rise 25 to 50 s: **contradicted**, -20.7 s, so the projection is 9.35 h, not near 11 h.
+- Row probabilities:
+  - row 7 had about 0.3 and governed;
+  - the favourite, row 4 at about 0.45 (the time test), did not fire.
+- Resolves 1 to 3: **held**, 1.

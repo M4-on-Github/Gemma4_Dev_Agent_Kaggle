@@ -85,7 +85,13 @@ python -I -X utf8 tools/run_forensics.py forensics runs/EXP-086-reader
 ```
 
 ## 7. Defects in this pre-registration, logged after the fact
-None yet.
+1. **The `screen_read.py` counter accounting is 0 by construction.** This is the same defect as EXP-085 section 7 item 1, found at the script's first run on 2026-11-20 after the results.
+   - The trace carries the reader's inner steps and calls (`extra.author == "file_reader"`), and `trace_counts` counts them as the root's. `unaccounted` is therefore 0 on every task.
+   - `n_calls` is analyze_traces' trace count, not the harness `tool_calls`.
+   - No reading uses either count. Row inputs are `file_reader` calls by name, starved, the caps, text-form, empties and the primary, and all come from `summary.jsonl` and the patches, as for the four draws.
+   - `screen_read.py` is unchanged. The accounting is measured by `experiments/EXP-085/counter_check.py`, written after the runs (section 9.5).
+2. **Row 1's `agent_tool` failure clause is not computed by `screen_read.py`.** `counter_check.py` flags `file_reader` responses that begin as an error envelope. It finds one: the first `file_reader` call on fastapi_14962 returned `{"status": "error", "error_type": "KeyError", "error": "'request'"}`, the error raised when the call lacks a `request` argument. That is 1 task against the clause's 4.
+3. **Row 4's empty-patch clause** compares against "the baseline mean". `screen_read.py` prints each draw's empty-patch count but not that mean. The arm count (1) is not 3 or more above any single draw (1, 1, 0, 0), so the clause cannot fire whatever the mean.
 
 ## 8. Built and pushed (below the line; nothing above changes)
 
@@ -102,6 +108,126 @@ None yet.
 - **Kernel:** `rainm4/gemma4-exp086-reader`, version 1, pushed right after EXP-085's, so two kernels live.
 - **First status reading:** `KernelWorkerStatus.RUNNING`.
 
+### Download and analysis record (2026-11-20, experimenter)
+- **Status:** `kaggle kernels status rainm4/gemma4-exp086-reader` read `KernelWorkerStatus.COMPLETE` (one check).
+- **Download:** `kaggle kernels output rainm4/gemma4-exp086-reader -p runs/EXP-086-reader`. The bundle nested one level and was moved up; the copy `runs/EXP-086-reader/runs/EXP-086-reader.zip` stays.
+- **Kernel wall-clock for the GPU ledger: 0.453 h** (1629.3 s, the last log entry of `gemma4-exp086-reader.log`).
+  - vLLM came up in 348.9 s (tp=4, gpus=4).
+  - The served model is `gemma-4-e4b-it-qat-w4a16-ct`. The log line `model: gemma-4-e4b-it-qat-w4a16-ct -> /kaggle/input/models/google/gemma-4/other/gemma-4-e4b-...` is the served model. The `gemma-4-31b` strings earlier in the log are a config echo.
+  - Both `agent.yaml` and `sub_agents/file_reader.yaml` in the run's `agent/` name the E4B.
+- **Embedded zip:** the `SUBMISSION_B64` zip in the committed notebook has sha256 `371761696f84737ada8f1a1485919d468a7f05b79b9a1f997e1a9ad6b151b96e`, which is section 8's. `runs/EXP-086-reader/agent/` is identical to `experiments/EXP-086/candidate-reader/`.
+- **Baselines:** all four draws were re-downloaded on 2026-11-20 for EXP-084, and all four MATCH their committed summaries (EXP-084 section 9).
+- **`analyze_traces.py --cap-minutes 8 --max-calls 28`** output is copied to `experiments/EXP-086/reader/summary.jsonl`.
+  - Resolved 1/8 (Wilson 95% 2-47%).
+  - Empty patch 12.5%, time-cap 0.0%, calls-cap 0.0%, overflow 0.0%, submit_patch 100.0%.
+  - Malformed turns 0.0%, spin 3.6%, edit failures 9.1%.
+  - Wall median 1.50 min, p90 3.50 min.
+  - Nudges 1, compactions 1.
+  - Text-form calls 1 on 1 task, tool-free tasks 0.
+  - Projected hidden-run total 4.76 h, by its own formula.
+  - No task has an `error`.
+- **`run_forensics.py forensics`:**
+  - Total agent wall 13.5 min.
+  - `edit_file` 35.7%, `<no-tool>` 33.6%, `read_file` 18.0%, `file_reader` 22 calls at 3.6%.
+  - 0 of 8 tasks never edited.
+
 ## Status
 
-**PUSHED, RUNNING (2026-11-20).** Kernel `rainm4/gemma4-exp086-reader` v1. Next: when `kaggle kernels status rainm4/gemma4-exp086-reader` reads COMPLETE, `kaggle kernels output rainm4/gemma4-exp086-reader -p runs/EXP-086-reader`, then the section 6 commands, then a section 9 that applies section 4 as written.
+**READ (2026-11-20).** Kernel `rainm4/gemma4-exp086-reader` v1 is COMPLETE, with 0.453 h of kernel wall. `screen_read.py` ran as written; its counter line is defective (section 7) and no reading uses it. **Row 7 governs.** Gold file hit is 2 of 8 against a mean of 0.75 (2 above, 2 below, 4 equal). The reader-orchestrator is not promoted and is killed at L2 for the E4B. No dev-48. Reader calls average 2.75 per task, 6 at most, and the prompt ceiling broke on 3 tasks. One agent_tool KeyError. See section 9.
+
+## 9. Results, 2026-11-20. Section 4's readings applied as written.
+
+`python -I -X utf8 experiments/EXP-085/screen_read.py --cohort experiments/cohorts/reader-e4b-8.txt --arm EXP-086-reader --base EXP-038-e4b-dev48 --base EXP-077-base --base EXP-075-t02 --base EXP-078-t02r` ran as written without error. Its counter-accounting line is defective (section 7 item 1), and no reading uses it.
+
+### 9.1 The rows, in order
+- **Row 1, infrastructure: does not fire.**
+  - All 8 of 8 rows; the model is the E4B; the zip sha matches; the kernel finished.
+  - 0 infrastructure rows.
+  - One `agent_tool` tool error (KeyError, fastapi_14962), in 1 task against the clause's 4.
+- **Row 2, not used: does not fire.** `file_reader` was called in 6 of 8 tasks.
+- **Row 3, starved: does not fire.** 0 of 8 starved; the one empty patch (fastapi_15661) had no cap hit and no reader call.
+- **Row 4, limit breached: does not fire.**
+  - Tasks at a call or time cap: arm 0, against draws 0, 0, 0 and 1 (mean 0.25).
+  - Tasks with a text-form call or tool_free: arm 1, against 0 in every draw (mean 0.00).
+  - Mean `file_reader` calls per task: **2.75**, against the limit of 3.
+  - Empty patches: arm 1, against draws 1, 1, 0 and 0 (section 7 item 3).
+- **Row 5, promote: does not fire.** Gold file hit 2 of 8, below the bar of 4.
+- **Row 6, no uplift: does not fire.** Gold file hit is 2, not 0.
+- **Row 7, flat or mixed: FIRES and governs** (a file-hit count of 1 to 3).
+
+**Verdict: row 7. Not promoted. The reader-orchestrator architecture is killed at L2 for the E4B as written.** No dev-48.
+
+### 9.2 Primary: gold file hit
+- Arm **2 of 8**, against the draws 0, 1, 1 and 1 (mean 0.75); arm minus mean +1.25.
+- Per task: 2 above (fastapi_5624, fastapi_14448), 2 below (fastapi_14962, fastapi_11355), 4 equal.
+
+| Task | Arm class | Resolved | Calls (trace) | Turns | Wall s | file_reader calls | Baseline file-hit share | Direction |
+|---|---|---|---|---|---|---|---|---|
+| fastapi_14583 | F | 0 | 19 | 24 | 81.7 | 0 | 0.00 | = |
+| fastapi_5624 | S | 1 | 17 | 20 | 123.6 | 6 | 0.00 | + |
+| rich_3105 | F | 0 | 7 | 10 | 41.0 | 1 | 0.00 | = |
+| fastapi_14448 | C | 0 | 7 | 10 | 68.6 | 1 | 0.25 | + |
+| fastapi_14962 | F | 0 | 13 | 16 | 93.5 | 3 | 0.25 | - |
+| fastapi_11355 | F | 0 | 22 | 25 | 209.9 | 6 | 0.25 | - |
+| fastapi_15661 | E | 0 | 8 | 12 | 86.7 | 0 | 0.00 | = |
+| rich_3480 | F | 0 | 17 | 22 | 435.8 | 5 | 0.00 | = |
+
+**Regions touched** (class C, S or resolved): arm 2, against draws 0, 1, 0 and 0. Class letters by run:
+- arm: CEFFFFFS;
+- EXP-038: EFFFFFFF;
+- EXP-077: CEFFFFFF;
+- EXP-075: FFFFFFFR;
+- EXP-078: FFFFFFFR.
+
+Read against regression to the mean, which the cohort rule builds in. The two hits are on tasks the readers were called for, but this screen cannot say whether the readers caused them (section 5).
+
+### 9.3 Resolves (recorded, not an endpoint)
+The arm resolves 1 of 8 (fastapi_5624, not a gated id). The draws resolve 0 of these 8 ids in each of the four runs.
+
+### 9.4 Guards
+- **Calls (trace count):** mean 13.75, against 9.12, 7.62, 8.25 and 6.50.
+- **Turns:** mean 17.38, against 12.12, 11.38, 11.25 and 9.25.
+- **Caps:** 0.
+- **Text-form:** 1 task.
+- **Malformed:** 0.
+- **Empty patches:** 1.
+- **Mean wall:** 142.6 s, against 116.6 s, a delta of +26.0 s. This is recorded only; no projection is read for the E4B.
+- **Kernel wall:** 0.453 h.
+
+### 9.5 Observation 1: the `agent_tool` call against the 28-call cap
+The source is `experiments/EXP-085/counter_check.py`, run as in EXP-085 section 9.5.
+
+**Over the 6 tasks with a reader call:**
+- root calls plus reader inner calls equal the harness counter in **4 of 6**;
+- root calls plus `agent_tool` calls plus inner calls equal it in **0 of 6**.
+
+**The two exceptions:**
+- fastapi_11355: harness 15, against root 7 plus inner 9.
+- rich_3105: harness 5, which equals root alone; its one inner read is not reflected.
+
+Both are off by one in the direction of fewer counted calls. With the 31B's 5 of 5, the reading is that **the `agent_tool` call does not count, and the reader's inner calls do.** That holds in 9 of 11 reader tasks, with no task where the `agent_tool` call is counted.
+
+| Task | Harness count | Root calls | `file_reader` calls | Reader inner calls | Matches |
+|---|---|---|---|---|---|
+| fastapi_14962 | 10 | 8 | 3 (1 KeyError) | 2 | root + inner |
+| fastapi_11355 | 15 | 7 | 6 | 9 | none |
+| fastapi_14448 | 6 | 5 | 1 | 1 | root + agent_tool, root + inner |
+| fastapi_5624 | 11 | 4 | 6 | 7 | root + inner |
+| rich_3480 | 12 | 3 | 5 | 9 | root + inner |
+| rich_3105 | 5 | 5 | 1 | 1 | root |
+
+### 9.6 Observation 2: reader calls per task
+- **Overall:** 22 `file_reader` calls in 6 of 8 tasks, a mean of 2.75 per task.
+- **Per task, in cohort order:** 0, 6, 1, 1, 3, 6, 0, 5.
+- **The prompt's ceiling broke on 3 tasks.** The prompt allows at most 3 candidate files, one reader call each. fastapi_5624 and fastapi_11355 made 6 calls and rich_3480 made 5.
+- **Inner reads:** up to 9 per task, on fastapi_11355 and rich_3480.
+- **On the reader-heavy tasks the readers did most of the reading.** On rich_3480 the root made 3 counted calls and the readers 9. This is the EXP-032 P1 pattern: a prompt-only limit does not hold.
+- **Budget:** the E4B never came near the 28 calls. The harness maximum was 19, on fastapi_14583, which used no reader.
+
+### 9.7 Blind predictions, against the outcome
+- **`file_reader` used in 6 to 8 of 8:** held, at 6.
+- **Reader calls 4 to 10 per task:** missed low on `file_reader` calls (mean 2.75, at most 6). Inner reads reached 9 on two tasks.
+- **Gold file hit 1 to 3:** held, at 2.
+- **Text-form or malformed calls rising on 2 to 4 of 8:** missed low. There was 1 text-form task and 0 malformed calls.
+- **Row probabilities:** row 7, given about 0.3, governed. The favourite, row 4 at about 0.35, did not fire; its closest input was mean reader calls at 2.75 against 3.
+- **Resolves 0 to 1:** held, at 1.
