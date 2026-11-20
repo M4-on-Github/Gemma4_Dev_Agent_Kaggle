@@ -9,7 +9,7 @@ Inputs:
   - 31B: R-008 d1/d2 and R-011 d3/d4, 4 draws.
   - E4B: R-011 Turing scale-5 base, 8 draws, and the reviewer arm, 8 draws.
 
-The analysis scripts were one-off and are not kept. Every number below is a count over those rows and traces.
+The analysis scripts were one-off and are not kept (the review's own recount scripts are not kept either; see below). Every number below is a count over those rows and traces.
 
 ## Headline
 
@@ -21,7 +21,8 @@ The analysis scripts were one-off and are not kept. Every number below is a coun
 - **The E4B's ceiling is set by the tasks it can solve at all.**
   - Over 16 draws, only 20 of 79 tasks were ever resolved.
   - On tasks whose reference patch has 3 or more hunks, it resolved 0 of 216 base draws.
-  - The 31B resolves some draw of 22 of the tasks the E4B never solves.
+  - The 31B resolves some draw of 22 of the tasks the E4B never solves. [Review: 17 against the 31B's 4 base draws;
+    22 counts any 31B draw in the ledger.]
 - **The E4B's edit failures are a fidelity limit, not a prompt problem.**
   - 48-71% of its `edit_file` calls fail in every E4B arm since R-000, including the edit-rules arm R-002.
   - Of 812 "old_string not found" failures in the R-011 base:
@@ -34,8 +35,8 @@ The analysis scripts were one-off and are not kept. Every number below is a coun
 
   | Draw state at the end | 31B draws | 31B resolved | E4B draws | E4B resolved |
   |---|---|---|---|---|
-  | check after the last edit passed | 142 | 96 (68%) | 47 | 5 (11%) |
-  | check after the last edit failed | 19 | 3 (16%) | 282 | 34 (12%) |
+  | check after the last edit passed | 138 [was 142, corrected in review] | 92 (67%) | 47 | 5 (11%) |
+  | check after the last edit failed | 18 [was 19] | 3 (17%) | 282 | 34 (12%) |
   | edited, no check after the last edit | 83 | 13 (16%) | 224 | 17 (8%) |
   | no successful source edit | 77 | 5 (6%) | 79 | 0 (0%) |
 
@@ -55,8 +56,8 @@ The analysis scripts were one-off and are not kept. Every number below is a coun
   - Unresolved draws use a median of 23 calls and 448 s, against 14 calls and 241 s for resolved ones.
 - **Malformed edit calls.**
   - 516 of 1,065 31B `edit_file` calls fail with missing mandatory parameters, in 68 of 316 draws.
-  - In 228 of them `old_string` is absent. In others, part of the code text arrives as an argument name,
-    so the tool-call arguments were split.
+  - [Review: all 516 lack `old_string`; 228 carry no stray keys, and in the other 288]  part of the code text arrives as an
+    argument name, so the tool-call arguments were split.
   - These calls cost 5,723 s over 316 draws.
   - On the noisy tasks, 9 of the 31 unresolved draws have at least one malformed edit, and 3 of those ended at a
     cap.
@@ -88,3 +89,46 @@ Dropped from consideration by this synthesis:
 - More E4B edit-rule prompts: five arms, no change in the failure rate.
 - Graph tools: C-012, they lose to grep.
 - A 31B "check before submit" rule: it is confounded with difficulty, and late commitment is the binding limit.
+
+## Independent review (2026-11-20)
+
+A Fable reviewer at xhigh effort re-derived the numbers from `trace_vs_reference.jsonl` and the traces. It ran
+read-only and used no GPU. The user's instruction was to proceed with rows 1-3 if the reviewer approved them.
+
+Corrections. The 31B check table is fixed in place above (138/92 and 18/3; recounted here too). Other corrections:
+- The E4B not-found classes were recounted over 808 failures; the synthesis's 812 sums to 781. The recount:
+  - 88 stale: the text was already replaced by the agent's own earlier edit;
+  - 31 whitespace-only;
+  - 118 lines it had read, but not contiguous;
+  - 306 mostly lines it had read;
+  - 265 mostly lines it had never read.
+
+  Single-line `old_string`s still fail 41%. "Paraphrases" is too strong: a tenth of the failures are stale edits,
+  and a third are anchors the agent never read.
+- The 31B check signal is a difficulty artifact. On the 16 noisy tasks, a passed check resolves 24 of 35 draws and
+  an edit with no later check resolves 8 of 10.
+- The E4B check never focuses. 268 of 414 pytest calls target a directory or the whole suite. 223 of 236 failing
+  outputs are cut near 5 kB with no summary line. It wrote 1 script check in 632 draws, against 665 for the 31B in
+  316. The research ledger already tried focused-check levers (EXP-055/056/057/072/073), with no gain.
+- The malformed-edit ceiling is about 0.5 task per draw (90% CI -1.3 to +0.35), not 1. Same-task draws with 3 or
+  more malformed calls resolve 4.8 pp less than clean ones over 30 tasks, at 10.5 such draws per cdev2-79 draw.
+- "Never" is not a hard ceiling. Four of the 6 ledger-solved never tasks are solved by other 31B draws, at 3-7 of
+  13-29 draws each.
+- Ladder power:
+  - L1 promotes a null arm 15% of the time at the +1.5 bar, against 25-37% for a true +0.5 to +1 (pooled screen SD
+    1.46).
+  - L2 at 2 draws per arm has 26% power at a true +2 if SD is 1.8.
+  - The 31B base SD of 1.26 (4 draws) is probably low; the per-task binomial floor is 1.79.
+
+Verdicts on "What is left":
+
+| # | Verdict | Reason |
+|---|---|---|
+| 1 | REJECT | The fourth test of an idea the research ledger marks refuted: `../knowledge/claims.md` C-005; EXP-028 compliance 0/6, 10 vs 9 of 48; upload #10 scored 6/58. In S-004 a scripted replace followed only 4 of 28 malformed calls. An L1 screen holds 8 of the 16 noisy tasks, so it cannot see the effect. An L2 test needs 14-29 draws per arm for +1. |
+| 2 | REJECT, closed at L0 | 67 of 7,378 E4B turns reach 4,096 thinking tokens. The 79 task-draws with a 3,900+ turn resolve 2; lifting them to the cohort rate gives about +0.7 per draw, against an 8v8 MDE of 1.4. 8192 equals `max_output_tokens`. |
+| 3 | APPROVE WITH CHANGES: stage 0 desk only | The repo already knows: E4B adapters load on the harness vLLM path (EXP-047/054/058, C-013, C-024). An exact-copy adapter failed its drift gates and decoded 17-25% slower, and C-024 caps its gain at 1 of 48. Stage 0 gates as read today: budget fails for the 31B (10.04 h x 1.17 = 11.7 h); pool fails (nothing worth +3); feasibility partial (no peft, no BF16 parent, the 31B handle is unverified). Stage 1, a <=0.5 Ada GPU-h canary with the organisers' zero-B sample adapter, needs those gates to pass. |
+
+Outcome: no GPU job was started. Row 4 (stop) is the reviewer's first alternative. Its second is one composed 31B
+arm of the positive-point-estimate levers at 8v8 on cdev2-79, about 25 GPU-h, which it ranks below stopping. It
+also recommends fixing the ladder before any further lever: drop the L1 resolve bars and size L2 from SD 1.8 or
+more. The paper outlet for row 4 needs the user: the Writeup was declined (`../knowledge/plan.md:159`).
