@@ -148,6 +148,58 @@ Every task result under `runs/`, split by the eval cohort `cdev2-79`:
   - The 6 samples from `R-003-31b-nothoughts` were made without thinking and are filtered out at training.
 - Output: `/data/mmyatmau/gemma4-lora/data/d2/31b-all-lfold-a.jsonl`, outside git.
 
+### D1 case mix from the E4B base failures, and the generator (2026-11-20)
+
+- **What E4B gets wrong in `edit_file` (R-011 d1-d8, 2055 calls).** 876 were ok, 808 not found, and 371 another
+  error.
+  - The 808 not-found calls, by what the old_string holds compared with every earlier read of that file:
+
+    | old_string | Calls |
+    |---|---|
+    | At least one line never shown in any read (1 line: 346; 2 or more: 242) | 588 |
+    | All lines shown, but not contiguous or with blank-line differences | 184 |
+    | All lines shown, modulo indentation | 34 |
+    | File never read | 2 |
+
+  - Of the 346 single-missing-line cases, the closest shown line is a near-copy (similarity at least 0.9) in 148,
+    0.7-0.9 in 61, and below 0.7 in 137. In 99 the missing line also appears in new_string, so the model typed
+    new code into old_string.
+  - Other errors: 142 had a mandatory argument missing, about 150 were "occurs N times", and 20 had identical
+    old and new strings.
+- **The harness tolerates small differences.** `swegemma.edit.apply_replacement` matches in tiers (exact, then
+  flexible, then regex). Of the corruptions the generator tried, it applied 324 of 330 re-indentations, 10
+  dropped blank lines and 11 altered lines. Indentation is therefore not worth training on. What fails is a line
+  that is not in the file.
+- **`tools/lora/synth_edits.py` (D1).**
+  - Source: the CPython standard library inside `env/harness.sif`, PSF License 2.0. Each file used is listed with
+    its sha256 in `<out>.sources.tsv`.
+  - Edits come from ast: rename a local, change a literal, flip a comparison, insert a None guard.
+  - Each sample is `read_file` on a window, then `edit_file` with old_string copied from that output. The tool
+    responses come from the harness's own `read_file`/`edit_file` on a local workspace (a fake ctx mapping
+    `/workspace`).
+  - A sample is kept only if the final edit returned ok and the file equals the target computed independently.
+  - Recovery samples carry one copy error that the harness's own matcher rejects as not-found, then the real
+    error, a re-read and the exact copy. The failed call is marked `train: none` (context only).
+  - The system prompt is the placeholder `{SYSTEM}`, filled by the trainer with the frozen config's prompt.
+- **First set: `/data/mmyatmau/gemma4-lora/data/d1/synth-s1.jsonl`** (seed 1, 4000 samples, 4645 tries, 271
+  source files).
+
+  | Variant | Samples |
+  |---|---|
+  | Plain | 2865 |
+  | Recover after not-found | 937 |
+  | Context added for a non-unique line | 133 |
+  | Recover after "occurs N times" | 65 |
+
+  - By edit kind: rename 1202, literal 1193, guard 913, flip 692.
+  - The not-found errors used: altered identifier 552, new code in old_string 176, invented line 128, skipped
+    line 81.
+  - Rendered with the E4B tokenizer and the served template, a 400-sample smoke ran from 1187 to 2932 tokens
+    (median 1558) including the six tool declarations.
+- **Gap to the real failures.** D1's edits are single-site, the reads are one window, and the task text names
+  the function. Real failures follow long searches over many reads. D1 teaches the copy step only, so it is mixed
+  with D2 rather than used alone.
+
 Proposed first adapter: E4B, D1 plus D2 fold A, evaluated on fold-B tasks against the base on the same tasks. It
 needs no download, keeps the held-out cohorts unspent and, if R-014's applier is kept, is trained on the frozen
 config. The 31B waits for R-013 reading 4.
