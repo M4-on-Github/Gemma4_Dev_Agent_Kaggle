@@ -1,0 +1,291 @@
+# R-011: E4B editor→reviewer on the Turing lane; 31B temperature 0.6 and bounded output on the Ada screen
+
+Written 2026-11-19, before any R-011 job. The user approved the plan on 2026-11-19 ("go ahead"), with
+pleiades-1-10 lent for the E4B jobs and the two Ada GPUs for the 31B, and asked that each job request only the
+resources it needs.
+
+## Why
+
+- **E4B.** R-010's synthesis over 9 base draws (3 Ada, 6 Turing; 641 unresolved task-draws) found:
+  - wrong file 196, wrong region 143, partial 110, wrong change 54, edit-tool failure 52, others 83;
+  - 182 of the 641 are on tasks that some E4B draw resolved;
+  - 14 E4B tweaks so far, none kept.
+
+  The E4B commits early and in the wrong place. Prompt rules about locating were followed (R-005 search
+  template, R-007 locator stage with 19 and 20 of 20 LOCATION messages) and moved nothing. Direction B4 (a
+  second look at the diff) has not been tried. It is tried here as a structural stage rather than a prompt rule,
+  because the E4B leaves most of its budget unused (tasks end in about 30-50 s of 480 s on Ada, in under 10
+  calls).
+- **31B.** The pivot rule fired for prompt-process rules (9 tweaks, none kept). R-010 showed:
+  - time cap and empty patch are draw-level events;
+  - failing draws are hesitant, with 23-27k characters of thoughts against 15.5k, and 3.0 long turns against 1.7.
+
+  The two untried levers in `directions.md` are A5 (temperature) and A4 (bounded observations). A6
+  (reproduce first) is dropped: R-010 shows the 31B fails by committing late, and A6 would delay the edit further.
+
+## Changes
+
+| ID | Arm | Tree | Change from base |
+|---|---|---|---|
+| T-e4b-015 | reviewer | `trees/e4b-r011-reviewer` | SequentialAgent: editor, then reviewer, same model. The editor is the base agent without `submit_patch`; its section 4 ends in a three-line hand-over. The reviewer reads `git diff`, checks it against the issue's contract strings and sibling sites, fixes, and submits. Both stages share the 28-call cap and the time cap. |
+| T-31b-010 | temp06 | `trees/31b-r011-temp06` | `configs/sampling.yaml`: temperature 1.0 -> 0.6 |
+| T-31b-011 | boundedout | `trees/31b-r011-boundedout` | prompt section 2: every `run_command` ends in `head -40` (`tail -40` for a check); `read_file` ranges 120 -> 80 lines. Section 4's check examples carry the same tail. |
+
+- **Why the editor cannot submit.** The harness ends the run at the first agent text message after a submit
+  (`swegemma/harness/agent_runner.py:854-863`, then 920). An editor that submitted would cut the reviewer off.
+- **Patch safety.** The reviewer can only add to the editor's work or change it. If the reviewer never reaches
+  `submit_patch`, the on-disk diff is graded (`agent_runner.py:1054-1078`), exactly as in the base.
+- **Validation.** `tools/validate_submission.py` gives each tree the same profile as its base: the 8-minute
+  packing-gate error and the `timeout_seconds` warning that every cluster tree has, and no lint errors. The
+  reviewer tree also gets the expected "sub-agent with submit_patch" warning.
+
+## Design
+
+**Resources.** Every job asks for 1 GPU, 4 CPUs and 64G (`slurm/eval.sbatch`, changed from 8 CPUs in this
+round). The partition bills CPUs, and these jobs average about 2.1 cores. This is the one setup difference
+between the R-011 base draws and the R-008/R-009 bases (8 CPUs). The E4B readings use only R-011 draws, so they
+are unaffected. For the 31B screen, see reading 4.
+
+**E4B, Turing lane** (pleiades-1-10, `--constraint=QUADRORTX6000 -w pleiades-1-10`). Flags:
+`--concurrency 4 --py313 env/py313-scorer/bin/python3.13 --task-envs env/taskenvs --time-scale 5.0`, with
+`HENG_SHIMS` off.
+
+- **Why scale 5.** R-009 measured a median model-step gap of 18.5 s on Turing, against 3.3 s on Ada (about
+  5.6x). At scale 2, 60 of 474 base task-draws hit the 16-minute cap, against 0 on Ada. At scale 5 the cap is
+  40 minutes, which is close to Ada's effective budget.
+- **Fresh base.** The R-009 base was drawn at scale 2, so it is not reused. The prompt still says 8 minutes,
+  as at scale 2. `get_status` reports the real remaining time.
+
+| Arm | Tree | Cohort | Draws | Run ids |
+|---|---|---|---|---|
+| smoke (not read) | `trees/e4b-r011-reviewer` | `runs/_cohorts/smoke-te.txt` (2 tasks), concurrency 2 | 1 | `S-011-e4b-reviewer-smoke` |
+| base | `trees/e4b-base` | `cdev2-79` | 8 | `R-011-e4b-base-tu5-d1..d8` |
+| reviewer | `trees/e4b-r011-reviewer` | `cdev2-79` | 8 | `R-011-e4b-reviewer-tu5-d1..d8` |
+
+- **Smoke gate.** The smoke runs first. It passes when:
+  - both tasks have a reviewer step in the trace (`extra.author == "reviewer"`);
+  - there is no engine error.
+
+  If it fails, the tree is fixed and the smoke re-run before any of the 16 jobs. Any fix is logged below.
+- **Order.** The 16 jobs are submitted interleaved (base d1, reviewer d1, base d2, ...). That gives two waves
+  of 8 on the node's 8 GPUs, sharing load evenly.
+- **Cost.** About 4-6 h per job, so about 70-90 GPU-h on pleiades-1-10, outside the Ada ledger.
+
+**31B, Ada** (`--constraint=RTX6000ADA`, at most two jobs at once). Flags: `--concurrency 4 --py313
+env/py313-scorer/bin/python3.13 --task-envs env/taskenvs`, the R-008 flags.
+
+| Arm | Tree | Cohort | Draws | Run ids |
+|---|---|---|---|---|
+| temp06 | `trees/31b-r011-temp06` | `screen-31b-20` | 2 | `S-011-31b-temp06-s1, s2` |
+| boundedout | `trees/31b-r011-boundedout` | `screen-31b-20` | 2 | `S-011-31b-boundedout-s1, s2` |
+| base (SD) | `trees/31b-base` | `cdev2-79` | 2 | `R-011-31b-base-te-d3, d4` |
+
+- **Chains.** The jobs run as two `afterany` chains: temp06-s1 → s2 → base-d3, and boundedout-s1 → s2 → base-d4.
+- **Cost.** About 0.6 GPU-h per screen and 2.1 GPU-h per cdev2-79 draw, about 6.6 GPU-h in all.
+- **Promotion.** An arm promoted by reading 4 gets 2 cdev2-79 draws (L2) in a follow-up, logged below. Nothing
+  goes to cdev2-79 before its screen is read.
+
+## Checks and readings (written before the draws)
+
+1. **Health, per draw.**
+   - No engine crash.
+   - A draw with fewer rows than its cohort is reported and not used.
+   - Import errors on at most 2% of task-draws.
+2. **E4B lane at scale 5 (reported, not a promotion).**
+   - The base mean, compared with the R-009 scale-2 Turing base (8.33).
+   - Task-draws at the time cap per draw, against 60 of 474 at scale 2.
+   - The draw-to-draw SD of the 8 base draws.
+3. **E4B reviewer (T-e4b-015), the L2 rule against the R-011 Turing base, as in R-009.**
+   - **Compliance first.** A reviewer step must appear in at least 70% of task-draws. Under 50% means the editor
+     used up the caps or the hand-over failed. That is a compliance reading, not a verdict on the idea, and the
+     resolve readings below are reported only.
+   - **Kept:** reviewer mean ≥ base mean + 3.
+   - **Candidate:** reviewer mean ≥ base mean + 1.5, and the paired per-task difference over the 79 tasks
+     (per-task resolve rate over 8 draws) has a 90% bootstrap CI above 0. A candidate is re-drawn on Ada
+     before it is kept.
+   - **Not kept:** anything else.
+   - **Process endpoints, reported for every outcome:**
+     - **Reviewer changes.** The share of task-draws where the reviewer made at least one accepted
+       `edit_file`/`write_file` call. This is "reviewer changed the diff", counted from trace steps with
+       `extra.author == "reviewer"`.
+     - **Harm check.** Among task-draws where the reviewer edited, the resolve rate, against the base arm's
+       per-task resolve rate on the same tasks. A lower rate on tasks the base resolves at least half the time
+       is a resolved→unresolved warning. The editor's own diff is not graded separately, so this is the
+       closest available measure.
+     - Per draw, both arms: empty patches, time-cap task-draws, task wall time, and model calls per task.
+     - Thought characters per task, and the zlib repetition check (compressed/raw ratio of the visible text
+       under 0.2 flags a loop).
+     - Editor calls to the missing `submit_patch` tool.
+4. **31B screens (the L1 rule), against S-008-31b-base-te-s1/s2 on screen-31b-20 (8, 9; mean 8.5).**
+   - **Promoted:** the two-draw mean is 10.0 or more (+1.5), or 9.0 or more (+0.5) with the arm's process
+     endpoint met.
+     - temp06 endpoint: summed over the two draws, time-cap plus empty-patch task-draws fall below the
+       base's 17 (S-008 s1 + s2: empty 4 + 5, time cap 4 + 4).
+     - boundedout endpoint: the median per-task peak prompt tokens falls by 15% or more against S-008 (the
+       compaction trigger is 14,336), and fewer tasks compact.
+   - **Dropped:** anything else.
+   - **CPU caveat.** The base screens ran at 8 CPUs. If a promoted arm's lift is under +2, 2 base screens at
+     4 CPUs are drawn before its L2 draws.
+5. **31B base SD (reported).** The SD of the four cdev2-79 base draws: R-008 d1, d2 (28, 27) and R-011 d3, d4.
+   The 4-CPU draws d3, d4 are also compared with d1, d2. A gap above 3 means the CPU change matters, and it is
+   recorded before any further 31B run.
+6. **No other comparison is read.** That excludes temp06 against boundedout, per-repo splits, and partial draws.
+
+## Log
+- **2026-11-19T21:53Z, pre-registration committed** as 051ea98 and pushed.
+- **21:53Z, 31B chains submitted** (Ada, 4 CPUs, 64G each):
+  - chain 1: `S-011-31b-temp06-s1` 59692 → `-s2` 59694 → `R-011-31b-base-te-d3` 59696;
+  - chain 2: `S-011-31b-boundedout-s1` 59693 → `-s2` 59695 → `R-011-31b-base-te-d4` 59697.
+
+  At submission another user's jobs held all 16 Ada GPUs, so the chains wait for two to free.
+- **21:53-22:06Z, smoke `S-011-e4b-reviewer-smoke`** (job 59691, 741 s): **gate passed.**
+  - Both tasks show the editor ending with a hand-over, then a reviewer stage that called `submit_patch`.
+  - No engine error, and no editor call to `submit_patch`.
+  - Resolved 0/2 (not read).
+  - One reviewer opened with `read_file` instead of the `git diff` the prompt asks for, and submitted an empty
+    diff after the editor's two edit calls left nothing on disk. Recorded for the compliance count, not fixed:
+    the gate is that the stages run.
+- **22:07Z, the 16 E4B draws submitted** on pleiades-1-10, interleaved: jobs 59706 (base d1), 59707 (reviewer
+  d1) and so on, through 59720 (base d8) and 59721 (reviewer d8).
+- **22:52Z, `S-011-31b-boundedout-s1` done** (59693, 2517 s, 20/20 rows). Flagged OUT_OF_MEMORY with one cgroup oom-kill (MaxRSS 66 GB); this is the known `rich_3480` grading loop (README Setup results 8; base S-008 s2 had the same flag). Rows are complete, so the draw is used.
+- **22:55Z, `S-011-31b-temp06-s1` done** (59692, 43:37, 20/20 rows, no OOM flag).
+- **23:30Z, `S-011-31b-boundedout-s2` done** (59695, 36:54, 20/20 rows).
+
+### Reading 4, boundedout (T-31b-011): dropped
+
+| Draw | Resolved | Empty patch | Time cap | Median per-task peak prompt tokens | Tasks with a compaction |
+|---|---|---|---|---|---|
+| S-008 base s1 | 8 | 4 | 4 | 14,794 | 13 |
+| S-008 base s2 | 9 | 5 | 4 | 14,257 | 8 |
+| boundedout s1 | 9 | 6 | 6 | 14,639 | 12 |
+| boundedout s2 | 8 | 7 | 8 | 13,935 | 9 |
+
+- **Resolves.** The mean is 8.5, equal to the base (8.5). It misses both bars: 10.0, and 9.0 with the endpoint met.
+- **Endpoint missed.**
+  - Median peak prompt tokens fell 1.6% (14,287 against 14,525), against a 15% bar.
+  - Tasks with a compaction stayed at 21 against 21.
+  - A compaction is a drop of over 40% in prompt tokens from above 8,000, as in R-004.
+- **Uptake was partial.** The rule was taken up in only some commands, so this is a weak test of the idea.
+  - The share of `run_command` calls piped through `head`/`tail` rose from 0.07 (25 of 354) to 0.20 (70 of 354).
+  - `read_file` ranges over 80 lines went from 36 of 201 to 31 of 166.
+  - Even the base's own `git grep ... | head -20` template is rarely copied by the 31B.
+- **Empty patches and time caps rose:** empty 13 against 9, time cap 14 against 8, summed over two draws. That is
+  small-count, but it goes the wrong way.
+- **~23:35Z, `S-011-31b-temp06-s2` done** (59694, 37:19, 20/20 rows). The chains moved on to
+  `R-011-31b-base-te-d3` (59696) and `-d4` (59697).
+
+### Reading 4, temp06 (T-31b-010): dropped
+
+| Draw | Resolved | Empty patch | Time cap | Median thought characters per task |
+|---|---|---|---|---|
+| S-008 base s1 | 8 | 4 | 4 | 18,527 |
+| S-008 base s2 | 9 | 5 | 4 | 14,538 |
+| temp06 s1 | 8 | 5 | 6 | 18,934 |
+| temp06 s2 | 9 | 4 | 7 | 18,424 |
+
+- **Resolves.** The mean is 8.5, equal to the base. It misses both bars.
+- **Endpoint missed.** Time-cap plus empty-patch task-draws came to 22, against the base's 17; the bar was under 17.
+- **Thoughts.** Thought length did not shrink.
+- **Spread did not narrow.** 11 tasks were resolved in at least one temp06 draw, against 10 for the base; the
+  two arms together reach 13.
+- **Both 31B arms of R-011 are dropped.** With A1-A6 now closed, the 31B backlog in `directions.md` is empty.
+  The pivot rule says to refill it from a trace synthesis. That waits for the d3/d4 base draws, which also give
+  the cdev2-79 SD.
+- **01:21Z (11-20), `R-011-e4b-base-tu5-d3` done** (59710, 3:13:36, 79/79 rows, 0 task-draws at the time cap). Wave 2 began with base d5 (59714).
+- **01:2xZ, `R-011-31b-base-te-d4` done** (59697, 2:02:47, 79/79 rows): 28 resolved, empty 17, time cap 17.
+- **`R-011-e4b-base-tu5-d2` done** (59708, 3:24:03, 79/79 rows): 5 resolved, 0 at the time cap. Base d6 (59715) took its slot.
+- **~01:45Z, `R-011-e4b-base-tu5-d4` done** (59712, 3:27:24, 79/79 rows): 8 resolved, 1 at the time cap.
+- **~01:45Z, `R-011-31b-base-te-d3` done** (59696, 2:09:20, 79/79 rows). Both Ada slots are free. No 31B arm was
+  promoted, so nothing follow-up was queued (reading 4).
+
+### Reading 5, 31B base SD on cdev2-79 (reported)
+
+| Draw | CPUs | Resolved | Empty patch | Time cap |
+|---|---|---|---|---|
+| R-008 d1 | 8 | 28 | 13 | 19 |
+| R-008 d2 | 8 | 27 | 17 | 19 |
+| R-011 d3 | 4 | 30 | 17 | 21 |
+| R-011 d4 | 4 | 28 | 17 | 17 |
+
+- **Spread.** The mean is 28.25 and the SD 1.26 over four draws.
+- **The CPU change does not matter.** The d3/d4 mean (29.0) is 1.5 above d1/d2 (27.5), under the gap of 3 that
+  would have flagged it. Later 31B draws at 4 CPUs are comparable with the R-008 base.
+- **Per-task split.**
+  - 20 tasks are resolved in all 4 draws.
+  - 16 are resolved in 1-3 draws (6 in one, 3 in two, 7 in three).
+  - 43 are resolved in none.
+  - The draw-to-draw noise sits in those 16 tasks. A 31B arm read on two draws needs a mean gain of about +3
+    (about 2.4 SD of one draw) to stand clear of it.
+- **~01:47Z, `R-011-e4b-reviewer-tu5-d1` done** (59707, 3:40:57, 79/79 rows, 0 at the time cap). Health: every task-draw has a reviewer step (79/79), so the compliance gate is met on this draw; 4 editor submit_patch calls (the tool is absent, so they fail). Not read until all 8 draws per arm are in.
+- **~05:20Z (11-20), all 16 E4B draws done** (59706-59721, 3:13-4:18 each, every one 79/79 rows, no engine crash).
+
+### Readings 1-3, E4B (all 8 draws per arm)
+
+Counts come from `task_results.jsonl` and the traces.
+- Import errors use the R-008 counter: a tool output matching `No module named` or `cannot import name`.
+- Thought characters are summed per task. The median is shown.
+- The zlib flag means visible agent text whose compressed/raw ratio is under 0.2.
+
+| Arm | Draw | Resolved | Empty patch | Time cap | Import err | Median wall s | Median calls | Median thought chars | zlib < 0.2 |
+|---|---|---|---|---|---|---|---|---|---|
+| base | d1 | 8 | 8 | 1 | 1 | 612 | 12 | 22,817 | 0 |
+| base | d2 | 5 | 9 | 0 | 0 | 491 | 10 | 19,439 | 0 |
+| base | d3 | 7 | 10 | 0 | 2 | 499 | 10 | 18,216 | 0 |
+| base | d4 | 8 | 14 | 1 | 0 | 459 | 10 | 18,198 | 0 |
+| base | d5 | 6 | 10 | 0 | 1 | 498 | 9 | 19,447 | 0 |
+| base | d6 | 7 | 17 | 0 | 1 | 501 | 11 | 19,934 | 0 |
+| base | d7 | 6 | 14 | 0 | 0 | 438 | 10 | 20,393 | 0 |
+| base | d8 | 9 | 9 | 0 | 0 | 477 | 10 | 19,249 | 0 |
+| reviewer | d1 | 7 | 18 | 0 | 0 | 592 | 13 | 22,089 | 2 |
+| reviewer | d2 | 6 | 12 | 0 | 0 | 581 | 14 | 25,623 | 0 |
+| reviewer | d3 | 8 | 13 | 1 | 1 | 574 | 13 | 24,953 | 1 |
+| reviewer | d4 | 5 | 12 | 1 | 1 | 639 | 12 | 23,172 | 0 |
+| reviewer | d5 | 11 | 13 | 0 | 0 | 604 | 14 | 25,322 | 0 |
+| reviewer | d6 | 8 | 15 | 0 | 1 | 509 | 10 | 22,463 | 0 |
+| reviewer | d7 | 7 | 6 | 0 | 0 | 558 | 11 | 21,097 | 0 |
+| reviewer | d8 | 8 | 11 | 0 | 0 | 560 | 12 | 23,221 | 0 |
+
+- **Reading 1, health: passed.**
+  - All 16 draws are used.
+  - Import errors: 5 of 632 base task-draws (0.8%) and 3 of 632 reviewer task-draws (0.5%), under 2%.
+- **Reading 2, the scale-5 lane (reported).**
+  - The base mean is 7.0 (SD 1.31), against 8.33 for the R-009 scale-2 base.
+  - Time-cap task-draws fell to 2 of 632, against 60 of 474 at scale 2. Scale 5 removes the cap as a cause.
+  - The resolve count did not rise; it is 1.3 lower. The R-009 base ran at 8 CPUs, so that comparison is
+    read only as "no gain from more time".
+- **Reading 3, reviewer (T-e4b-015): not kept.**
+  - **Compliance: met.** A reviewer step appears in 632 of 632 task-draws.
+  - **Resolves.** The reviewer mean is 7.5 (SD 1.77), against the base's 7.0: +0.5. That is under +1.5 (the
+    candidate bar) and under +3 (kept).
+  - **Paired difference.** The paired per-task difference sums to +0.5 resolves per draw, with a 90% bootstrap
+    CI of [-0.5, +1.5] (10,000 resamples of the 79 tasks, seed 11). The CI includes 0.
+  - **Spread.** Tasks resolved in at least one draw: base 18, reviewer 17, together 20.
+  - **Reviewer changes.** The reviewer made at least one accepted edit in 130 of 632 task-draws (20.6%).
+  - **Harm check: no warning.**
+    - Where the reviewer edited, 11 of 130 resolved, against 8.8 expected from the base's per-task rates on the
+      same tasks.
+    - On the 6 such task-draws whose task the base resolves at least half the time, 6 resolved, against 5.0
+      expected.
+    - Where the reviewer did not edit, 49 of 502 resolved, against 47.2 expected.
+  - **Cost.**
+    - The median task wall time rose from about 490 s to about 575 s.
+    - Median calls rose from 10 to 12-13.
+    - Median thought characters per task rose from about 19.4k to about 23.2k.
+    - Empty patches were about the same: 100 against 91 over 8 draws.
+  - **Editor calls to the missing `submit_patch`:** 16 over 632 task-draws. Each failed harmlessly and the
+    hand-over went ahead.
+  - **zlib flags:** 3 task-draws, all in the reviewer arm.
+- **What it says.** A second stage does run reliably on the E4B; the hand-over works on every task. But it
+  changes the diff on only a fifth of task-draws, and those changes do not move resolves beyond draw noise. The
+  E4B's ceiling on cdev2-79 is in locating and writing the fix, not in reviewing a finished diff.
+
+## Round closed (2026-11-20)
+
+- All three arms were not kept or were dropped: the E4B reviewer, 31B temp06 and 31B boundedout.
+- The round adds three measurements:
+  - the 31B cdev2-79 base SD (1.26 over 4 draws);
+  - the E4B Turing scale-5 base (7.0, SD 1.31, 8 draws);
+  - the finding that 4 CPUs per job do not change 31B results.
+- pleiades-1-10 was lent for this round only, and no further job is queued there.
+- Both backlogs are now empty or close to it, so the next step is a zero-GPU trace synthesis for each model
+  before any new round.

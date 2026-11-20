@@ -1,0 +1,23 @@
+# cheld2-22: 22 ids. Built 2026-11-18 from runs/C-001-gold-all-shims and C-001-empty-all-shims (reference passes, empty fails, HENG_SHIMS=1). LOCKED, L3 only. cheld-16 plus the held-out tasks that grade with the shims. Run with HENG_SHIMS=1.
+fastapi_14986
+fastapi_14978
+rich_4006
+fastapi_14786
+fastapi_14492
+fastapi_14479
+fastapi_14372
+fastapi_14485
+fastapi_14458
+fastapi_14455
+fastapi_14361
+fastapi_14246
+rich_3942
+rich_3938
+fastapi_14791
+fastapi_14616
+fastapi_11194
+rich_3777
+rich_3471
+rich_3052
+rich_2943
+rich_3043

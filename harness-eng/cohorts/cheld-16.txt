@@ -1,0 +1,17 @@
+# cheld-16: 16 task ids. Built 2026-11-18 from runs/C-000-gold-all and runs/C-000-empty-all: the reference patch passes and the empty patch fails in this image's subprocess sandbox. The such tasks inside held-out-24. LOCKED: run only at L3.
+fastapi_11194
+fastapi_14372
+fastapi_14458
+fastapi_14479
+fastapi_14492
+fastapi_14616
+fastapi_14786
+fastapi_14986
+rich_2943
+rich_3043
+rich_3052
+rich_3471
+rich_3777
+rich_3938
+rich_3942
+rich_4006

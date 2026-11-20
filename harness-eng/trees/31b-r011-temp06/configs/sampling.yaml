@@ -1,0 +1,10 @@
+# harness-eng R-011 2026-11-19 (T-31b-010): temperature 1.0 -> 0.6, nothing else changed from trees/31b-base.
+# Direction A5. Time cap and empty patch are draw-level events on the 31B (R-010), and failing draws carry longer,
+# hesitant thoughts; a lower temperature is the untried lever on that spread.
+temperature: 0.6
+top_p: 0.95
+top_k: 64
+max_output_tokens: 8192
+thinking_config:
+  thinking_budget: 4096
+  include_thoughts: true

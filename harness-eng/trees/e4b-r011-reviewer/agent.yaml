@@ -1,0 +1,12 @@
+name: swe_agent
+# EXP-033 2026-11-05: model gemma-4-31b-it-qat-w4a16-ct -> gemma-4-e4b-it-qat-w4a16-ct, nothing else changed from experiments/EXP-027/candidate-v24-at-8 (small-model prize screen on smoke-8; the prompt was written for the 31B)
+# harness-eng R-011 2026-11-19 (T-e4b-015): single LlmAgent -> SequentialAgent of an editor and a reviewer on the
+# same model. Direction B4 (a required second look, made structural). The editor is the base agent with
+# submit_patch removed and section 4 ending in a three-line hand-over (prompts/editor.md); the harness ends the
+# run at the first agent text after a submit (swegemma agent_runner.py:854-863), so a submitting editor would cut
+# the reviewer off. The reviewer reads git diff, checks it against the issue's contract strings and sibling sites,
+# fixes, and submits (prompts/reviewer.md). Both share the 28-call and time caps (eval_config.yaml unchanged).
+agent_class: SequentialAgent
+sub_agents:
+  - config_path: sub_agents/editor.yaml
+  - config_path: sub_agents/reviewer.yaml

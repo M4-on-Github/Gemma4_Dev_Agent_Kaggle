@@ -1,0 +1,7 @@
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+max_output_tokens: 8192
+thinking_config:
+  thinking_budget: 4096
+  include_thoughts: false  # harness-eng R-004 T-e4b-006 2026-11-18: true -> false (thinking stays on each turn; thought text is no longer kept in the history, where it was 46-51% of context growth and brought compaction at call 6-16 on 21, 29, 24 of 56 tasks)

@@ -1,0 +1,7 @@
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+max_output_tokens: 8192
+thinking_config:
+  thinking_budget: 2048  # harness-eng R-007 2026-11-18: 4096 -> 2048 (T-e4b-011)
+  include_thoughts: true
