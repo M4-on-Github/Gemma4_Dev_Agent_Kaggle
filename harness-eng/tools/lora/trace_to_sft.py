@@ -20,7 +20,7 @@ Per sample:
   - an LLM call whose re-rendered prefix is more than --max-gap tokens from the recorded `prompt_tokens`. Most
     of these are ADK events compaction (cluster_eval.py: interval 15, threshold 14336 tokens), whose summary is
     not in the trace; a recorded drop of more than 3000 tokens is labelled `compaction`, the rest `mismatch`.
-Kept only when the task resolved and the faithful prefix has at least --min-calls LLM calls.
+Kept only when the trace has a single agent author, the task resolved, and the faithful prefix has at least --min-calls LLM calls.
 """
 import argparse
 import collections
@@ -45,6 +45,9 @@ def served_json(o):
 def convert(trace):
     """Messages up to the first submit_patch response or the first nudge; recorded = [(prefix end, tokens)]."""
     st = trace["steps"]
+    authors = {s["extra"].get("author") for s in st if s["source"] == "agent"}
+    if len(authors) > 1:
+        return None, "multi_agent"
     sysm = next((s["message"] for s in st if s["extra"].get("event_type") == "system_instruction"), None)
     task = next((s["message"] for s in st if s["extra"].get("event_type") == "task_prompt"), None)
     if sysm is None or task is None:

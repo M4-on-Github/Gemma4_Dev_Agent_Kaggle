@@ -103,6 +103,51 @@ Every task result under `runs/`, split by the eval cohort `cdev2-79`:
 | D3 | Public SWE agent-trajectory datasets | thousands | none on our repos | process | a download (the user's yes per dataset); conversion to our 6-tool schema |
 | D4 | New trajectories on the 19 clean tasks | about 19 × draws | none | small top-up for D2 | GPU-h |
 
+### D2 folds and fold-A inventory (2026-11-20)
+
+- `tools/lora/make_folds.py` split cdev2-79 into `cohorts/lfold-a.txt` (39 ids, train) and `cohorts/lfold-b.txt`
+  (40 ids, evaluate).
+  - The split is per repo, in snake order over (E4B base resolves over R-011 d1-d8, 31B base resolves over R-008
+    d1/d2 and R-011 d3/d4, sha1 of the id).
+  - It was fixed before any training sample was looked at.
+
+  | Fold | Tasks | fastapi / rich | E4B base resolves | E4B tasks ever solved | 31B base resolves | 31B tasks ever solved |
+  |---|---|---|---|---|---|---|
+  | A | 39 | 22 / 17 | 24 | 8 | 53 | 18 |
+  | B | 40 | 22 / 18 | 32 | 10 | 60 | 18 |
+
+  - The E4B base solves only 4.0 fold-B tasks per draw, so an adapter reading on fold B needs many draws. The
+    round that trains on fold A sets its draw count from this.
+- `trace_to_sft.py` now also drops multi-agent traces (more than one agent author).
+- **Fold-A inventory.** I ran it over all 31 completed 31B run dirs, excluding gold/empty controls and the
+  R-013/R-014 dirs.
+
+  | Outcome | Draws |
+  |---|---|
+  | Kept, complete | 140 |
+  | Kept, cut at compaction | 94 |
+  | Kept, cut at a nudge | 16 |
+  | Kept, no submit | 2 |
+  | Kept, cut at mismatch | 2 |
+  | Unresolved | 397 |
+  | Multi-agent (dropped) | 1 |
+
+  - **Totals:** 254 samples, 3669 LLM calls, 21 tasks, from 16 arms.
+  - **Calls by tool:**
+
+    | Tool | Calls |
+    |---|---|
+    | `run_command` | 1780 |
+    | `read_file` | 1061 |
+    | `edit_file` | 558 |
+    | `write_file` | 138 |
+    | `submit_patch` | 140 |
+    | `get_status` | 1 |
+
+  - **Samples per task are skewed:** min 3, median 13, max 29. The trainer caps samples per task.
+  - The 6 samples from `R-003-31b-nothoughts` were made without thinking and are filtered out at training.
+- Output: `/data/mmyatmau/gemma4-lora/data/d2/31b-all-lfold-a.jsonl`, outside git.
+
 Proposed first adapter: E4B, D1 plus D2 fold A, evaluated on fold-B tasks against the base on the same tasks. It
 needs no download, keeps the held-out cohorts unspent and, if R-014's applier is kept, is trained on the frozen
 config. The 31B waits for R-013 reading 4.
