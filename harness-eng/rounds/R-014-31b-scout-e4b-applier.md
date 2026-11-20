@@ -164,3 +164,12 @@ Results are appended below as new sections and apply these readings as written.
     while the run log shows the root receiving `{"raw": "APPLIED ..."}`. The APPLIED/FAILED split is therefore read
     from the helper's own final step (`extra.author = apply_edit`, event `final`), not from the root's observation.
   - Applier d1 submitted as job 59858 (pleiades-1-10, no other users' jobs on the node, `HENG_SHIMS` off as in R-011).
+- **31B smoke `S-014-31b-scout-smoke` (job 59857, 11.9 min): pass.**
+  - 2 rows, status SUCCESS, no engine error. 2 of 2 resolved; not read.
+  - Both traces run scout then editor (`extra.author`), with no second scout turn. The scout used only
+    `run_command` and `read_file` and made no edit. Both hand-overs carry TARGET, CHANGE and ALSO.
+  - Scout calls were 5 and 21. The soft limit of 8 is not kept on the second task; the draw-1 gate on the scout
+    median (> 10) reads this on 79 tasks.
+  - Editor first call: `read_file` then `edit_file` (call 2) on one task, `edit_file` at call 1 on the other.
+  - Both patches change one source file.
+  - Scout d1 (job 59859) and base d5 (job 59860) submitted on Ada, 2 GPUs, `HENG_SHIMS` off as in R-011.
