@@ -91,4 +91,25 @@ recorded.
 
 ## Results
 
-(appended after the jobs finish)
+### P1, job 59897 (pleiades-0-17, 1 RTX 6000 Ada, 5 min 36 s in total, load included)
+
+| Reading | Value |
+|---|---|
+| Packed vs library dequantization, first and last layer | 13 of 13 modules bit-exact (max abs diff 0.0) |
+| wrapped / served targets / missing | 410 / 410 / 0 (q 60, k 60, v 50, o 60, gate 60, up 60, down 60) |
+| LoRA parameters | 122.4M |
+| GPU memory after load | 18.43 GiB of 48 |
+| Longest row: tokens / loss / grad norm | 16359 / 0.1918 / 0.4871 (finite) |
+| Peak GPU memory, longest row | 40.41 GiB |
+| Step time, longest row (first step, forward + backward) | 109.9 s (6.7 ms per token) |
+| Chunked-vs-stock attention check | **did not run** (see below) |
+
+- The D2 data under the 31B tokenizer: 103 train rows and 13 validation rows, 1.55M tokens (0.62M trained). Median
+  length is 14253 tokens, p90 15775. Nine rows are over 16384.
+- The job's whole wall time, CPU load included, was 336 s. Loading is not a cost that matters.
+- **The chunked-vs-stock check did not run.** It needs a 2k-4k-token training row, and the D2 rows have none at the
+  31B's lengths. Reading 1 asks for this check, so it is not yet met. L-002 passed the chunked attention on the
+  E4B, but the 31B has 512-wide global heads and a 1024-token sliding window, so the check is not carried over.
+- **Deviation, recorded before the next job.** P1c is P1 with D1 data (`synth-s1.jsonl:64`, which has 2k-4k rows)
+  in place of D2, still with `--packed --load-check`. It gives the chunk check, plus a second packed load. P3b runs
+  only if P1c's abs diff is at most 1e-3. The readings and decisions are unchanged.
