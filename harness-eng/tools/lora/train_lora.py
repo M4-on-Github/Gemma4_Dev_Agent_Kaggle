@@ -182,6 +182,9 @@ def main():
     p.add_argument("--load-check", action="store_true", help="load, wrap, one forward/backward, then exit")
     p.add_argument("--device-map", default="single", choices=("single", "auto"),
                    help="single: all on cuda:0; auto: layers split over the visible GPUs")
+    p.add_argument("--packed", action="store_true",
+                   help="L-004: load dequantized on the CPU, then keep each LoRA target's served int4 weight packed on "
+                        "the GPU and dequantize it inside its own forward (the 31B is ~62 GB in bf16, one Ada has 48)")
     a = p.parse_args()
     if not os.path.abspath(a.out).startswith(OUT_ROOTS):
         sys.exit(f"--out must be under {OUT_ROOTS}")
@@ -257,30 +260,96 @@ def main():
         return torch.cat(outs, 2).transpose(1, 2).contiguous(), None
 
     AttentionInterface.register("sdpa", chunked_sdpa)
+    dmap = {"": "cpu"} if a.packed else ({"": 0} if a.device_map == "single" else "auto")
     model = AutoModelForImageTextToText.from_pretrained(
-        a.model, dtype=torch.bfloat16, attn_implementation="sdpa", device_map={"": 0} if a.device_map == "single" else "auto",
+        a.model, dtype=torch.bfloat16, attn_implementation="sdpa", device_map=dmap,
         quantization_config=CompressedTensorsConfig(run_compressed=False))
     model.config.use_cache = False
     for prm in model.parameters():
         prm.requires_grad_(False)
+
+    class Packed(nn.Module):
+        """A served int4 linear kept packed (int32, 8 values per word, offset 8, one bf16 scale per 32 inputs).
+        The bf16 weight exists only inside forward; under gradient checkpointing the backward rebuilds it."""
+
+        def __init__(self, packed, scale, out_f, in_f):
+            super().__init__()
+            self.register_buffer("packed", packed, persistent=False)
+            self.register_buffer("scale", scale, persistent=False)
+            self.out_features, self.in_features = out_f, in_f
+
+        def dequant(self):
+            o, i = self.out_features, self.in_features
+            q = torch.empty((o, self.packed.shape[1] * 8), dtype=torch.int32, device=self.packed.device)
+            for k in range(8):
+                q[:, k::8] = (self.packed >> (4 * k)) & 15
+            q = q[:, :i] - 8
+            w = q.view(o, i // 32, 32).float() * self.scale.float()[..., None]
+            return w.view(o, i).to(torch.bfloat16)
+
+        def forward(self, x):
+            return torch.nn.functional.linear(x, self.dequant())
+
+    want = served_modules(a.model)
+    pack_check = None
+    if a.packed:
+        from safetensors import safe_open
+        files = {}
+        for f in sorted(Path(a.model).glob("*.safetensors")):
+            with safe_open(str(f), "pt", device="cpu") as fh:
+                for k in fh.keys():
+                    files[k] = f
+        probe = set()  # first and last layer, every kind: exact match against the library's CPU dequantization
+        layers = sorted({int(n.split(".layers.")[1].split(".")[0]) for n in want})
+        for n in want:
+            li = int(n.split(".layers.")[1].split(".")[0])
+            if li in (layers[0], layers[-1]):
+                probe.add(n)
+        exact, maxdiff = 0, 0.0
+        for name in sorted(want):
+            mod = model.get_submodule(name)
+            if not isinstance(mod, nn.Linear) or mod.bias is not None:
+                sys.exit(f"target {name} is {type(mod).__name__} (bias {mod.bias is not None}); --packed expects a bias-free Linear")
+            with safe_open(str(files[name + ".weight_packed"]), "pt", device="cpu") as fh:
+                pk = fh.get_tensor(name + ".weight_packed").to(dev)
+            with safe_open(str(files[name + ".weight_scale"]), "pt", device="cpu") as fh:
+                sc = fh.get_tensor(name + ".weight_scale").to(dev)
+            pm = Packed(pk, sc, mod.out_features, mod.in_features)
+            if name in probe:
+                d = (pm.dequant().cpu() - mod.weight.data).abs().max().item()
+                exact += d == 0.0
+                maxdiff = max(maxdiff, d)
+            parent = model.get_submodule(name.rsplit(".", 1)[0])
+            setattr(parent, name.rsplit(".", 1)[1], pm)
+            del mod
+        pack_check = {"pack_probe_modules": len(probe), "pack_exact": exact, "pack_max_abs_diff": maxdiff}
+        print(json.dumps(pack_check), flush=True)
+        if exact != len(probe):
+            sys.exit("packed dequantization differs from the loaded weights")
+        lm0 = model.model.language_model
+        lm0.to(dev)  # everything the text path uses; the towers stay on the CPU
+        if model.lm_head.weight.device.type != "cuda":
+            model.lm_head.to(dev)
+
+    def dev_of(m):
+        return m.packed.device if isinstance(m, Packed) else m.weight.device
 
     class LoRA(nn.Module):
         def __init__(self, base, r, alpha):
             super().__init__()
             self.base = base
             self.scale = alpha / r
-            self.A = nn.Parameter(torch.empty(r, base.in_features, device=base.weight.device, dtype=torch.float32))
-            self.B = nn.Parameter(torch.zeros(base.out_features, r, device=base.weight.device, dtype=torch.float32))
+            self.A = nn.Parameter(torch.empty(r, base.in_features, device=dev_of(base), dtype=torch.float32))
+            self.B = nn.Parameter(torch.zeros(base.out_features, r, device=dev_of(base), dtype=torch.float32))
             nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))  # PEFT's default init
 
         def forward(self, x):
             return self.base(x) + (x @ self.A.t().to(x.dtype)) @ self.B.t().to(x.dtype) * self.scale
 
-    want = served_modules(a.model)
     wrapped = {}
     for name, mod in list(model.named_modules()):
         if name in want:
-            if not isinstance(mod, nn.Linear):
+            if not isinstance(mod, (nn.Linear, Packed)):
                 sys.exit(f"target is {type(mod).__name__}, not a dequantized nn.Linear; run_compressed=False failed")
             parent = model.get_submodule(name.rsplit(".", 1)[0])
             lo = LoRA(mod, a.rank, a.alpha)
@@ -359,11 +428,12 @@ def main():
 
     # Frozen lookups and unused towers go to the CPU: the per-layer embedding table is 5.25 GiB of the 15.15
     # after loading, and the audio and vision towers are never called on text (L-002 P1, third run).
-    lm.embed_tokens_per_layer.to("cpu")
     for t in ("vision_tower", "audio_tower", "embed_vision", "embed_audio"):
         if getattr(model.model, t, None) is not None:
             getattr(model.model, t).to("cpu")
-    ple_cpu[0] = True
+    if getattr(lm, "embed_tokens_per_layer", None) is not None:  # E4B only; the 31B has no per-layer inputs
+        lm.embed_tokens_per_layer.to("cpu")
+        ple_cpu[0] = True
     torch.cuda.empty_cache()
     print(json.dumps({"gpu_mem_gib_after_offload": [round(torch.cuda.memory_allocated(i) / 2**30, 2)
                                                     for i in range(ngpu)]}))
