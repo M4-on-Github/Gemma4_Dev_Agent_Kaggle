@@ -26,12 +26,15 @@ filled in 2026-11-19 with R-011; before that several rows still said open after 
 | B2 | Sibling-site sweep | partial fix 9.5 tasks lost per draw | same rule as A2 | dropped (R-001 T-e4b-002, reclassified as noise in R-006) |
 | B3 | Sampling | small model at T=1.0 | T 1.0 -> 0.3 | dropped (R-003 T-e4b-004) |
 | B4 | Use the unused budget | E4B tasks end in ~30-50 s of 480 s and under 10 calls | prompt: required second look (re-read the diff against the contract list, fix, then submit) | not kept (R-011 T-e4b-015: editor then reviewer 7.5 vs 7.0 over 8 draws each, CI includes 0; the reviewer edits only 21% of diffs) |
-| B5 | Thinking budget | 4096 may be more than the E4B uses well, or too little | 1024 and 8192 | 2048 dropped (R-007 T-e4b-011); 8192 open |
+| B5 | Thinking budget | 4096 may be more than the E4B uses well, or too little | 1024 and 8192 | 2048 dropped (R-007 T-e4b-011); 8192 closed at L0 2026-11-20 (R-012 review: 67 of 7,378 E4B turns reach 4,096 thinking tokens; 8192 equals `max_output_tokens`, so tool calls would be cut) |
 | B6 | Shorter prompt | 3.1 kB of rules may exceed what the E4B follows | cut to the contract, locate, edit, submit skeleton | dropped (R-003 T-e4b-005: same score at 1.2 kB) |
 
 ## Later (not in the first 24 h)
 
 - LoRA adapters (public data only unless the user says otherwise); canary on the 31B serving path first.
+  2026-11-20 R-012 review, stage 0 desk check: the budget gate fails for the 31B (10.04 h Kaggle projection x 1.17
+  decode slowdown = 11.7 h); the pool gate fails (no target worth +3 per draw); feasibility is partial (no peft, no BF16
+  parent on disk). Stage 1, the 31B canary with the organisers' sample adapter, waits for the user's decisions.
 - ~~Per-task dependency install in the sandbox~~ done 2026-11-18 with the user's permission:
   `--py313 ... --task-envs env/taskenvs` makes 119/129 tasks gradeable (was 101); see
   `rounds/C-002-C-003-test-envs.md`. Agent runs that should use it must pass the same flags.
