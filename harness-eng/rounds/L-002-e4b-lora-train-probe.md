@@ -107,3 +107,17 @@ Budget: under 1.5 GPU-h in total on Turing, none on Ada.
 - `Gemma4Model.forward` rejects `per_layer_inputs` together with `input_ids`. The trainer now passes
   `inputs_embeds = get_input_embeddings()(ids)` with them. That is the same embedding the model computes from
   `input_ids` when the input is text-only. The reference check stands. P1 runs once more.
+
+### P1 fifth run, job 59866 (3 min 20 s): passes reading 1
+
+| Reading | Value |
+|---|---|
+| wrapped / served targets / missing | 258 / 258 / 0 |
+| `bf16_supported` | true |
+| GPU memory after load / after moving the per-layer table and towers to CPU | 15.15 / 9.02 GiB |
+| New path vs all-GPU stock-SDPA reference, 2905-token row | 0.18217 vs 0.18217 (abs diff 0.0) |
+| Longest row: tokens / loss / grad norm | 16359 / 0.5731 / 0.4868 (finite) |
+| Peak GPU memory, longest row | 17.95 of 23.46 GiB |
+| Step time, longest row (first step, forward + backward) | 149.0 s |
+
+P2 does not run, since one GPU suffices. P3 runs next on one GPU, as pre-registered.
