@@ -100,3 +100,10 @@ Budget: under 1.5 GPU-h in total on Turing, none on Ada.
   - `--load-check` now takes its reference loss before the move, with everything on the GPU and stock SDPA.
     It compares that against the new path.
   - P1 runs once more. Readings and decisions are unchanged.
+
+### P1 fourth run, job 59864 (47 s): offload works, wrong call
+
+- GPU memory after the move: 9.02 GiB (from 15.15).
+- `Gemma4Model.forward` rejects `per_layer_inputs` together with `input_ids`. The trainer now passes
+  `inputs_embeds = get_input_embeddings()(ids)` with them. That is the same embedding the model computes from
+  `input_ids` when the input is text-only. The reference check stands. P1 runs once more.

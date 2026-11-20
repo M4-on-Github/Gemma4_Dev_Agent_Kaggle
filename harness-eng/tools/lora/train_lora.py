@@ -317,11 +317,13 @@ def main():
         ids = torch.tensor([ex["input_ids"]], device=dev)
         lab = ex["labels"]
         pos = [t for t in range(len(lab) - 1) if lab[t + 1] != -100]
-        kw = {}
-        if ple_cpu[0]:  # text-only input: exactly what Gemma4Model computes when per_layer_inputs is None
+        if ple_cpu[0]:  # text-only input: the embeddings Gemma4Model computes itself when given input_ids
             with torch.no_grad():
-                kw["per_layer_inputs"] = lm.get_per_layer_inputs(ids.cpu(), None).to(dev)
-        hs = model.model(input_ids=ids, use_cache=False, return_dict=True, **kw).last_hidden_state[0]
+                kw = {"inputs_embeds": model.model.get_input_embeddings()(ids),
+                      "per_layer_inputs": lm.get_per_layer_inputs(ids.cpu(), None).to(dev)}
+        else:
+            kw = {"input_ids": ids}
+        hs = model.model(use_cache=False, return_dict=True, **kw).last_hidden_state[0]
         p = torch.tensor(pos, device=hs.device)
         tgt = torch.tensor([lab[t + 1] for t in pos], device=hs.device)
         total = 0.0
