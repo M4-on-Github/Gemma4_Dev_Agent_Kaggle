@@ -25,7 +25,7 @@ filled in 2026-11-19 with R-011; before that several rows still said open after 
 | B1 | Localization (wrong file 10.0, wrong region 8.2 tasks lost per draw) | R-005 proposer: the reference file appears in a search output in only 5 of 43 wrong-file task-draws; 'edits the first grep hit' held on 7 of 27 | prompt rule: two greps (symbol and error string), list candidate files, read the definition before editing | closed 2026-11-18 (R-005: the hit-count search was taken up and named the reference file more often, but wrong-file did not fall; two-search was not followed) |
 | B2 | Sibling-site sweep | partial fix 9.5 tasks lost per draw | same rule as A2 | dropped (R-001 T-e4b-002, reclassified as noise in R-006) |
 | B3 | Sampling | small model at T=1.0 | T 1.0 -> 0.3 | dropped (R-003 T-e4b-004) |
-| B4 | Use the unused budget | E4B tasks end in ~30-50 s of 480 s and under 10 calls | prompt: required second look (re-read the diff against the contract list, fix, then submit) | active (R-011 T-e4b-015, as an editor then reviewer SequentialAgent on the Turing lane) |
+| B4 | Use the unused budget | E4B tasks end in ~30-50 s of 480 s and under 10 calls | prompt: required second look (re-read the diff against the contract list, fix, then submit) | not kept (R-011 T-e4b-015: editor then reviewer 7.5 vs 7.0 over 8 draws each, CI includes 0; the reviewer edits only 21% of diffs) |
 | B5 | Thinking budget | 4096 may be more than the E4B uses well, or too little | 1024 and 8192 | 2048 dropped (R-007 T-e4b-011); 8192 open |
 | B6 | Shorter prompt | 3.1 kB of rules may exceed what the E4B follows | cut to the contract, locate, edit, submit skeleton | dropped (R-003 T-e4b-005: same score at 1.2 kB) |
 

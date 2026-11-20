@@ -216,3 +216,76 @@ env/py313-scorer/bin/python3.13 --task-envs env/taskenvs`, the R-008 flags.
   - 43 are resolved in none.
   - The draw-to-draw noise sits in those 16 tasks. A 31B arm read on two draws needs a mean gain of about +3
     (about 2.4 SD of one draw) to stand clear of it.
+- **~01:47Z, `R-011-e4b-reviewer-tu5-d1` done** (59707, 3:40:57, 79/79 rows, 0 at the time cap). Health: every task-draw has a reviewer step (79/79), so the compliance gate is met on this draw; 4 editor submit_patch calls (the tool is absent, so they fail). Not read until all 8 draws per arm are in.
+- **~05:20Z (11-20), all 16 E4B draws done** (59706-59721, 3:13-4:18 each, every one 79/79 rows, no engine crash).
+
+### Readings 1-3, E4B (all 8 draws per arm)
+
+Counts come from `task_results.jsonl` and the traces.
+- Import errors use the R-008 counter: a tool output matching `No module named` or `cannot import name`.
+- Thought characters are summed per task. The median is shown.
+- The zlib flag means visible agent text whose compressed/raw ratio is under 0.2.
+
+| Arm | Draw | Resolved | Empty patch | Time cap | Import err | Median wall s | Median calls | Median thought chars | zlib < 0.2 |
+|---|---|---|---|---|---|---|---|---|---|
+| base | d1 | 8 | 8 | 1 | 1 | 612 | 12 | 22,817 | 0 |
+| base | d2 | 5 | 9 | 0 | 0 | 491 | 10 | 19,439 | 0 |
+| base | d3 | 7 | 10 | 0 | 2 | 499 | 10 | 18,216 | 0 |
+| base | d4 | 8 | 14 | 1 | 0 | 459 | 10 | 18,198 | 0 |
+| base | d5 | 6 | 10 | 0 | 1 | 498 | 9 | 19,447 | 0 |
+| base | d6 | 7 | 17 | 0 | 1 | 501 | 11 | 19,934 | 0 |
+| base | d7 | 6 | 14 | 0 | 0 | 438 | 10 | 20,393 | 0 |
+| base | d8 | 9 | 9 | 0 | 0 | 477 | 10 | 19,249 | 0 |
+| reviewer | d1 | 7 | 18 | 0 | 0 | 592 | 13 | 22,089 | 2 |
+| reviewer | d2 | 6 | 12 | 0 | 0 | 581 | 14 | 25,623 | 0 |
+| reviewer | d3 | 8 | 13 | 1 | 1 | 574 | 13 | 24,953 | 1 |
+| reviewer | d4 | 5 | 12 | 1 | 1 | 639 | 12 | 23,172 | 0 |
+| reviewer | d5 | 11 | 13 | 0 | 0 | 604 | 14 | 25,322 | 0 |
+| reviewer | d6 | 8 | 15 | 0 | 1 | 509 | 10 | 22,463 | 0 |
+| reviewer | d7 | 7 | 6 | 0 | 0 | 558 | 11 | 21,097 | 0 |
+| reviewer | d8 | 8 | 11 | 0 | 0 | 560 | 12 | 23,221 | 0 |
+
+- **Reading 1, health: passed.**
+  - All 16 draws are used.
+  - Import errors: 5 of 632 base task-draws (0.8%) and 3 of 632 reviewer task-draws (0.5%), under 2%.
+- **Reading 2, the scale-5 lane (reported).**
+  - The base mean is 7.0 (SD 1.31), against 8.33 for the R-009 scale-2 base.
+  - Time-cap task-draws fell to 2 of 632, against 60 of 474 at scale 2. Scale 5 removes the cap as a cause.
+  - The resolve count did not rise; it is 1.3 lower. The R-009 base ran at 8 CPUs, so that comparison is
+    read only as "no gain from more time".
+- **Reading 3, reviewer (T-e4b-015): not kept.**
+  - **Compliance: met.** A reviewer step appears in 632 of 632 task-draws.
+  - **Resolves.** The reviewer mean is 7.5 (SD 1.77), against the base's 7.0: +0.5. That is under +1.5 (the
+    candidate bar) and under +3 (kept).
+  - **Paired difference.** The paired per-task difference sums to +0.5 resolves per draw, with a 90% bootstrap
+    CI of [-0.5, +1.5] (10,000 resamples of the 79 tasks, seed 11). The CI includes 0.
+  - **Spread.** Tasks resolved in at least one draw: base 18, reviewer 17, together 20.
+  - **Reviewer changes.** The reviewer made at least one accepted edit in 130 of 632 task-draws (20.6%).
+  - **Harm check: no warning.**
+    - Where the reviewer edited, 11 of 130 resolved, against 8.8 expected from the base's per-task rates on the
+      same tasks.
+    - On the 6 such task-draws whose task the base resolves at least half the time, 6 resolved, against 5.0
+      expected.
+    - Where the reviewer did not edit, 49 of 502 resolved, against 47.2 expected.
+  - **Cost.**
+    - The median task wall time rose from about 490 s to about 575 s.
+    - Median calls rose from 10 to 12-13.
+    - Median thought characters per task rose from about 19.4k to about 23.2k.
+    - Empty patches were about the same: 100 against 91 over 8 draws.
+  - **Editor calls to the missing `submit_patch`:** 16 over 632 task-draws. Each failed harmlessly and the
+    hand-over went ahead.
+  - **zlib flags:** 3 task-draws, all in the reviewer arm.
+- **What it says.** A second stage does run reliably on the E4B; the hand-over works on every task. But it
+  changes the diff on only a fifth of task-draws, and those changes do not move resolves beyond draw noise. The
+  E4B's ceiling on cdev2-79 is in locating and writing the fix, not in reviewing a finished diff.
+
+## Round closed (2026-11-20)
+
+- All three arms were not kept or were dropped: the E4B reviewer, 31B temp06 and 31B boundedout.
+- The round adds three measurements:
+  - the 31B cdev2-79 base SD (1.26 over 4 draws);
+  - the E4B Turing scale-5 base (7.0, SD 1.31, 8 draws);
+  - the finding that 4 CPUs per job do not change 31B results.
+- pleiades-1-10 was lent for this round only, and no further job is queued there.
+- Both backlogs are now empty or close to it, so the next step is a zero-GPU trace synthesis for each model
+  before any new round.
