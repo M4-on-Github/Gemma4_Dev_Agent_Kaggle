@@ -120,3 +120,9 @@ The served adapters, from their d1 traces (tool-call counts only):
     served `full_zero` of each model.
   - The validator gives the same two cluster-only errors and two warnings as the `full0` trees.
 - `S-006-31b-l6-smoke` submitted on Ada. The a2 smoke waits for a free Turing GPU (a1 d1-d8 hold all 8).
+
+### Smoke (`S-006-31b-l6-smoke`, job 59989, 16 min 01 s)
+
+- Reading 1 passes: 2 of 2 SUCCESS, no engine error, 21/21 and 23/23 model-named steps name `l6`.
+- Reported: 1 submit_patch call over the 2 tasks (the l5 smoke repeated submits); 42 tool calls in all.
+- `L-006-31b-l6-d1` submitted on fold B.
