@@ -138,3 +138,9 @@ projected = 10.04 h × (W_a / W_b) × (f / r_L4 + 1 − f) / (f / 0.916 + 1 − 
   two errors and two warnings as `adapters/trees/31b-full0`, which R-013 served (the 8-minute cluster cap fails the
   11 h pack gate; the harness's `compile_submission` signature).
 - Smoke `S-005-31b-l5-smoke` submitted.
+
+### Smoke (`S-005-31b-l5-smoke`, job 59971, pleiades-0-23, 12 min 46 s)
+
+- **Reading 1 passes.** 2 of 2 rows SUCCESS; no engine error or traceback in the job log; every model-named step in
+  both traces names `l5` (11 of 11 and 32 of 32), none names `full_zero`. Resolves and wall not read.
+- `L-005-31b-l5-d1` submitted on fold B.
