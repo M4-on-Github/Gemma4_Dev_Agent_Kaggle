@@ -140,3 +140,10 @@ no-submit solver changes the base: 35% that control resolved differs from R-008 
   VERIFY(Q1), skill scripts rely on `run_skill_script`.
 - Re-run: retry smoke `S-020b-e4b-retry-smoke` on `smoke-empty4`, then the 24 draws `afterok` on it alone.
   Gates as before. Also checked by hand: at least 1 skill count printed an integer.
+- Re-queued 2026-11-22 under new run ids, so no run directory of the cancelled jobs is reused. Those directories
+  hold 13 rows in all and are not read.
+  - Smoke `S-020b-e4b-retry-smoke`: job 60138.
+  - Draws `R-020b-e4b-{ctl,retry}-ada-dN`, all `afterok:60138`, as (control, retry): d1 60139/60140,
+    d2 60141/60142, d3 60143/60144, d4 60145/60146, d5 60147/60148, d6 60149/60150, d7 60151/60152, d8 60153/60154,
+    d9 60155/60156, d10 60157/60158, d11 60159/60160, d12 60161/60162.
+  - Gate actors: the smoke on 60138; retry d1 on 60140; control d1 on 60139. Gates as above.
