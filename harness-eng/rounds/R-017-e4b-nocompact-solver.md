@@ -150,3 +150,15 @@ queued now on the user's instruction to queue everything before analysis (2026-1
   `swe_agent`. Every repository tool call is made by `solve`.
 - Root model calls 3 and 1 (the bar is at most 3). One `solve` call per task. No compaction.
 - 1 resolved, 0 empty patches.
+
+### Draw 1 (`R-017-e4b-nocompact-tu5-d1`, job 60016, pleiades-1-10, 3 h 47 min): **passes its draw-1 gates**
+
+- Gate values, read by `tools/gate_actor.sh`:
+  - resolved 8 (bar ≤ 3);
+  - empty patches 13 (bar ≥ 23);
+  - time caps 1 (bar ≥ 7);
+  - compaction within one `solve` session 0 (bar more than 2).
+- **Stated: the pass depends on the deviation above.** The original test (`compacted`) gives 8 of 79, which would
+  have fired its bar. All 8 come from tasks with a second `solve` call: 10 tasks have more than one, and the root
+  makes up to 7 model calls.
+- d2-d8 continue. The decision (reading 3) waits for all eight draws.
