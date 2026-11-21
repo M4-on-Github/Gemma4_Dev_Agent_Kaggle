@@ -11,6 +11,7 @@ The cluster's full record (rounds R-001..R-015, LoRA rounds L-001..L-005, lesson
 | Id | Date | What | Why it needs Kaggle | Status |
 |---|---|---|---|---|
 | H-001 | 2026-11-21 | 31B LoRA-on vs LoRA-off decode on L4x4, zero-adapter probe, no tasks | the 31B L4 LoRA cost is unmeasured; the 31B adapter (L-005) must fit 11.0 h on L4 | open; suggested EXP-087 |
+| H-002 | 2026-11-21 | validator false error `root agent has no way to modify files` on agent_tool roots; pack-closure test | the fix is on this branch's `tools/`, and a kept R-016/R-017 solver tree must pack and pass the Kaggle validator | open; needed only if R-016 or R-017 is kept |
 
 ## Cluster facts this branch does not have yet (counts only)
 
