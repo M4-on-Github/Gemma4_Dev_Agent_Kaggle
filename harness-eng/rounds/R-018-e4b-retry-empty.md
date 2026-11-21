@@ -114,3 +114,18 @@ Tweak id **T-e4b-018**. The `tweaks.md` row is added with the results. Part of t
   prompt changed the first attempt. Read the first-attempt empty rate of each arm.
 
 **Blind guess (not a reading).** Passes the smoke and d1 gates: 75%. Helps: 15%. Kept on mechanism: 30%.
+
+## Queued (2026-11-21)
+
+- Smoke `S-018-e4b-retry-smoke`: job 60087. Draws, all `afterok:60087`, as (control, retry): d1 60088/60089,
+  d2 60090/60091, d3 60092/60093, d4 60094/60095, d5 60096/60097, d6 60098/60099, d7 60100/60101,
+  d8 60102/60103, d9 60104/60105, d10 60106/60107, d11 60108/60109, d12 60110/60111.
+- Gate actors: smoke gate on 60087; retry d1 kill gates on 60089 (cancels every other R-018 job on a kill).
+
+## Smoke gate (reading 1), 2026-11-21
+
+- 60087 COMPLETED in 4 min 25 s. 2 rows, both SUCCESS, no engine error; resolved 1; empty 0; root model calls at most
+  1 per task; `solve` calls more than 3: 0; first attempt non-empty in both tasks.
+- Traces: both tasks show `solve` steps that make the repository tool calls (checked by step counts by author).
+- **PASS.** The draws were released. Stated limit: neither smoke task had an empty first attempt, so the retry
+  branch itself was not exercised by the smoke; the d1 `retry_miss` and `solve_calls_gt3` gates cover it.

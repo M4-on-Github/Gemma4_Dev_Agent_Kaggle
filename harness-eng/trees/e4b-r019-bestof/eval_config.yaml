@@ -1,0 +1,5 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 64   # harness-eng R-019 2026-11-21: 28 -> 64, the counter is shared by up to 3 attempts and the root's 7 calls
+  max_time_minutes: 8
+  max_turns: 80
