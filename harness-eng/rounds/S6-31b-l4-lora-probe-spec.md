@@ -1,6 +1,6 @@
 # S6 spec: 31B LoRA decode cost on Kaggle L4x4 (handoff, not a pre-registration)
 
-Written 2026-11-21 on pleiades. It cannot run from here: pleiades has no Kaggle CLI (installing it needs the user's
+Written 2026-11-21 on pleiades. Handed off as `harness-eng/handoff/H-001-*.md` on `all-work-consolidated-2026-11-20` (ec9cd31), suggested EXP-087. It cannot run from here: pleiades has no Kaggle CLI (installing it needs the user's
 OK), and EXP-NNN files are kept on the other machine (memory note of 2026-11-17). The session there turns this into
 the next free EXP-NNN, pre-registers it, and pushes it. Counts only.
 
