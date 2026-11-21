@@ -30,3 +30,12 @@ unchanged. This is R-020's design, re-registered with a smoke gate that does not
 
 - Draws `R-021-e4b-{ctl,retry}-ada-d1..d12`, cohort `cohorts/cdev2-79.txt`, interleaved, all `afterok` on the smoke.
   Gate actors on the smoke, retry d1 and control d1, as in R-020.
+
+## Queued (2026-11-22)
+
+- Smoke `S-021-e4b-retry-smoke`: job 60195.
+- Draws, all `afterok:60195`, as (control, retry): d1 60196/60197, d2 60198/60199, d3 60200/60201, d4 60202/60203,
+  d5 60204/60205, d6 60206/60207, d7 60208/60209, d8 60210/60211, d9 60212/60213, d10 60214/60215, d11 60216/60217,
+  d12 60218/60219.
+- Gate actors: the smoke on 60195, retry d1 on 60197, control d1 on 60196. Each cancels every other R-021 job on a
+  kill.
