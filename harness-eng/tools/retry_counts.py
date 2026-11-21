@@ -7,7 +7,8 @@ Per task the steps are cut into attempts at each root `solve` call. An attempt i
 result inside it reports files_changed 0, non-empty when one reports more than 0, and unknown when it holds no
 submit_patch result. From R-020 on, the root's count command (a bare integer on stdout) is read the same way. Prints, per run: the histogram of solve calls per task; first-attempt empty / non-empty /
 unknown; retried (first attempt empty and a second solve call followed); over-retry (a second solve call after a
-non-empty first attempt); retry_miss (first attempt empty, not retried); rescued (resolved, first attempt empty); and tasks with more than 3 solve calls.
+non-empty first attempt); retry_miss (first attempt empty, not retried); rescued (resolved, first attempt empty); tasks with more than 3 solve calls; and solve_after_submit
+(R-021, tasks with a root solve call after any submit_patch, which cannot change the outcome).
 """
 import collections, json, os, re, sys
 
@@ -54,7 +55,20 @@ for run in sys.argv[1:]:
         if not os.path.exists(tp):
             agg["no_trace"] += 1
             continue
-        segs = attempts(json.load(open(tp))["steps"])
+        steps = json.load(open(tp))["steps"]
+        segs = attempts(steps)
+        # R-021 (reported, not a gate): a root solve call after any submit_patch cannot change the outcome, since the
+        # solver's final text then ends the task with the earlier patch already submitted.
+        sub_seen = False
+        for s in steps:
+            if s.get("source") != "agent":
+                continue
+            names = [c["function_name"] for c in (s.get("tool_calls") or [])]
+            if s["extra"].get("author") == "swe_agent" and "solve" in names and sub_seen:
+                agg["solve_after_submit"] += 1
+                break
+            if "submit_patch" in names:
+                sub_seen = True
         hist[len(segs)] += 1
         agg["solve_calls_gt3"] += len(segs) > 3
         if not segs:

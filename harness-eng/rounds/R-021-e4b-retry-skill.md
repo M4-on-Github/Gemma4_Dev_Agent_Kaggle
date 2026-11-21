@@ -39,3 +39,29 @@ unchanged. This is R-020's design, re-registered with a smoke gate that does not
   d12 60218/60219.
 - Gate actors: the smoke on 60195, retry d1 on 60197, control d1 on 60196. Each cancels every other R-021 job on a
   kill.
+
+## Smoke (reading 1), 2026-11-21 23:20Z: PASS as written; one mechanism defect recorded before any draw lands
+
+- 60195: 8 rows SUCCESS; resolved 1; empty 3. `solve` calls {1: 5, 2: 3}; root model calls at most 6. Every skill
+  count printed an integer: 7 of 8 tasks ran the count, and none printed anything else. `retry_miss` 0. So the
+  pre-registered gates pass, and the draws were released by `afterok`.
+- **Defect the `retry_miss` definition does not see.** Event order, tool names only:
+  - 3 first attempts were empty.
+  - In 1, the retry ran as designed: count 0, `solve`, count 1, `submit_patch`.
+  - In 2, the root called `submit_patch` before its second `solve`. In one of them the root never ran the count;
+    in the other the count printed 0 and the root submitted anyway.
+  - A `solve` after a submit cannot change the outcome. The solver's final text then ends the task with the empty
+    patch already submitted. So the effective retry rate in the smoke is 1 of 3.
+- **Also seen:** 1 task where the count printed 1 but the patch was empty. The changed file was most likely one
+  `submit_patch` strips, or an ignored scratch file. That error leads only to not retrying.
+- **Handling.**
+  - The gates are not re-read, and the draws run as queued. The arm is the layout as the E4B follows it, so the
+    decision reading measures it as it is.
+  - `tools/retry_counts.py` gains `solve_after_submit`, reported per draw under reading 4 and not a gate. It
+    reads 2 in this smoke and 0 in both R-020 smokes.
+  - **Expectation, written now:** with 1 of 3 retries effective, the simulated +1.0 per draw on Ada shrinks to
+    about +0.3. "Helps" is unlikely. "Kept on mechanism" needs a point estimate of at least +0.5 and rescued of at
+    least 0.5 per draw, which is also unlikely.
+  - If the round is dropped for this reason, the next variant puts the decision in the script: it prints SOLVE
+    AGAIN or SUBMIT NOW instead of a number. Not queued: Ada is near full (asingal2 holds 15 of the 16 GPUs) and
+    R-021 already holds the queue.
