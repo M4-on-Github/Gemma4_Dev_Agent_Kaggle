@@ -113,6 +113,56 @@ outside the Ada ledger. An extension doubles it.
 **Blind guess (not a reading).** Helps 25%, extend 20%, not kept 40%, harm 15%. Failed-edit share: full0 about
 55%, a1 about 45%.
 
+## Part 3: the 1-epoch adapter as its own arm (pre-registered 2026-11-21T01:55Z)
+
+Written while a1 is at step 198 of 401, before `epoch1/` is saved and before any adapter has been served. Parts 1
+and 2 are unchanged. full0 d1-d7 are finished. Their counts have been looked at, so this part does not touch the
+full0 arm or any rule that reads it. The user freed every GPU for the weekend (2026-11-20, Friday night), and 6
+Turing GPUs are idle until a1 finishes (about 10:30Z).
+
+**Why.** The shipped adapter is retrained on the frozen config at about Nov 26, and an epoch on Turing takes
+about 8 h. Whether 1 epoch does as well as 2 decides how much of the last week that retrain uses. Training
+reading 2 picks one adapter by validation loss only; this arm measures the other one too.
+
+### Arm
+
+| Arm | Tree | Cohort | Draws | Run ids |
+|---|---|---|---|---|
+| smoke (not read) | `adapters/trees/e4b-a1e1` | `runs/_cohorts/smoke-te.txt` (2), concurrency 2 | 1 | `S-003-e4b-a1e1-smoke` |
+| a1e1 | `adapters/trees/e4b-a1e1` | `cohorts/lfold-b.txt` (40) | 8 | `L-003-e4b-a1e1-tu127-d1..d8` |
+
+- **`e4b-a1e1`** is `e4b-full0` with `adapter: a1e1`, and `adapters/a1e1/` holds a copy of
+  `/data/mmyatmau/gemma4-lora/adapters/L-003-a1/epoch1/`. Nothing else in the tree changes. `adapters/` is
+  gitignored, so the weights never enter git.
+- **Flags.** The same as Part 2: `--concurrency 4 --time-scale 12.7`, 4 CPUs, 64G, `HENG_SHIMS` off,
+  `squeue -w pleiades-1-10` checked before each submit.
+- **Order.** The smoke runs as soon as `epoch1/` exists, then d1-d8 on the free Turing GPUs. The a1 (final) arm
+  of Part 2 still starts after training readings 1-2, so a1e1 is not interleaved with full0 or a1.
+- **Blind until training reading 2.** Only health is checked on a1e1 runs before training reading 2 is applied
+  and written here: status, the adapter name in the traces, engine errors. No a1e1 resolve count is opened before
+  that.
+
+### Readings
+
+1. **Smoke and health.** The same as Part 2 reading 1, with `a1e1` in place of `a1`. If the smoke fails, no a1e1
+   draw runs; the cause is recorded first.
+2. **If training reading 2 selects `epoch1`.** The a1e1 draws are Part 2's a1 arm, and readings 2-5 of Part 2
+   apply to them unchanged. The final adapter is then served only as a reported arm, if at all.
+3. **If training reading 2 selects `final`** (its default). Part 2 is read on the a1 (final) draws exactly as
+   written. a1e1 is reported, not read for keeping the E4B LoRA direction:
+   - The paired statistic of Part 2 reading 2 (solves per draw, 90% bootstrap over the 40 tasks, seed 0), for
+     a1e1 against full0 and for a1e1 against a1.
+   - Part 2 readings 3-5 for a1e1.
+4. **Epoch-count rule, for planning only.** It applies only if Part 2 keeps the direction (helps, or helps after
+   the extension). The shipped retrain then uses **1 epoch** if the a1e1 point estimate against full0 is at least
+   the kept arm's minus 0.5 solves per draw. Otherwise it uses **2**. It moves no claim. It picks a training length
+   that the frozen-config retrain then has to earn again on its own evaluation.
+
+**Cost.** 8 draws at about 2.1 h each (the full0 draws took 2.0-2.3 h), about 17 Turing GPU-h, plus the smoke.
+
+**Blind guess (not a reading).** a1e1 against a1 (final): within 0.5 solves per draw, 60%; a1 better, 30%;
+a1e1 better, 10%.
+
 ## Results
 
 (appended after the jobs finish)
