@@ -1,0 +1,15 @@
+name: swe_agent
+# harness-eng R-016 2026-11-21 (T-31b-014): single LlmAgent -> a root that calls one agent_tool `solve`.
+# agent_tool runs `solve` in its own Runner with no App, so the scorer's EventsCompactionConfig (summarize at
+# 14,336 prompt tokens) does not apply inside it (google_adk 1.36.1 tools/agent_tool.py Runner(...) without app;
+# runners.py:1429 passes None; flows/llm_flows/compaction.py:39-41 returns). The solver is trees/31b-base's agent
+# with the same tools and sampling; its instruction is the base prompt plus the task (issue via
+# {problem_description}, which the child session copies from state), since it no longer sees the harness task prompt.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/root.md
+tools:
+  - submit_patch
+  - agent_tool:
+      config_path: sub_agents/solver.yaml
+      skip_summarization: true
+generate_content_config: !include configs/sampling_root.yaml
