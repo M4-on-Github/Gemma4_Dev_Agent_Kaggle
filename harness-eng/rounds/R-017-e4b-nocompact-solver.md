@@ -129,7 +129,12 @@ queued now on the user's instruction to queue everything before analysis (2026-1
   - d1: `resolved<=3`, `empty>=23`, `timecap>=7`, `compacted>2`.
   - The `solve`-steps check in reading 1 is read by hand from the smoke traces.
 
-## Deviation, compaction test (2026-11-21, recorded before d1 has any row)
+## Deviation, compaction test (2026-11-21, recorded while d1 was running, before any d1 row was read)
+
+- Correction (2026-11-21, 18:27Z): the heading first said "before d1 has any row". That was wrong.
+  - d1 (job 60016) started at about 17:23Z, and its first row was written at 17:31Z.
+  - When this section was committed at 18:26Z (f67e1fa), about 15 of 79 rows were on disk.
+  - None of them had been read. The change comes from R-016's d1 only.
 
 - R-016 d1 showed that reading 1's test counts a second `solve` call as compaction: the new child session's first
   prompt is short (R-016 Results, draw 1). The test is meant to detect the scorer's summary inside a session.
