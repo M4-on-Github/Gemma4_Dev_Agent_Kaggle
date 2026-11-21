@@ -217,3 +217,34 @@ entry (`squeue -w pleiades-1-10`: only our a1e1 d8), so d8 queues until a GPU fr
   - In d1 traces, a1e1 calls submit_patch 833 times over 37 submitting tasks (full0 44 over 39), with a median of
     33 identical repeated calls per task (full0 0). The adapter does not stop after submitting. Diagnosis and fix:
     `rounds/L-006-stop-turn.md` (L-007, E4B a2).
+
+### Part 2 draws (`L-003-e4b-a1-tu127-d1..d8`, jobs 59974-59981, 5 h 46 min to 9 h 10 min each), read 2026-11-21
+
+Read after all 8 a1 draws finished, with the readings exactly as written. Statistic by `tools/paired_boot.py` (new;
+it reproduces the a1e1 figures above exactly); failed edits by `tools/r014_gates.py applier`; end reasons by
+`tools/round_counts.py`.
+
+1. **Health: pass.** 320 of 320 a1 task-draws SUCCESS.
+2. **Decision: not kept.**
+   - Resolved per draw: a1 5, 5, 3, 5, 3, 7, 4, 4 (mean 4.5); full0 5, 5, 2, 4, 3, 4, 4, 7 (mean 4.25).
+   - a1 − full0 = **+0.25 solves per draw, 90% CI −0.88 to +1.50** (40 tasks, none dropped).
+   - The CI lower bound is not above 0 (not "helps"), and the point estimate is below +1.0 (no extension) and
+     above −1.0 (not "harm"). Both arms resolve at least once on 10 of the 40 tasks.
+3. **Mechanism: met as written, with a stated limit.**
+   - Failed-edit task-draws: a1 80 of 320 (25.0%), full0 144 of 320 (45.0%), 20 points lower. Not-found: a1 62,
+     full0 100.
+   - Limit: the share is over all task-draws, and a1 changes a source file in 130 task-draws against full0's 274.
+     The lower share mostly follows from a1 attempting fewer edits. It is not read as better editing.
+   - Per draw, a1 against full0: empty patches 23.8 against 5.8; time caps (101.6 min) 6.75 against 0; tool calls
+     per task 27.0 against 8.6; task-draws at 28 or more tool calls 36.4 against 0.2.
+   - End reasons over a1's 320 task-draws: 119 at the 80-turn budget, 54 at the session cap, 12 at the 28-call
+     error, 1 model timeout, 134 with none.
+   - The submit loop seen in a1e1 is present: submit_patch calls per draw 977, 943, 872, 685, 682, 785, 935, 679,
+     which is 19.4-26.4 per submitting task; model calls after the 28th tool call 950-1,321 per draw. The cause and
+     fix are L-006 (a2), now running.
+4. **Harm check:** full0 resolves 4 tasks in at least 4 of 8 draws. On those, full0's rate is 0.812 and a1's 0.688.
+5. **Speed:** a1/full0 mean task wall 2,529.9 / 720.4 s = **3.51**, against "near 1.0". a1e1 was 2.05. The extra
+   time is the submit loop; it is not an adapter serving cost (both arms serve with LoRA on).
+
+**Outcome.** a1 is not kept. The E4B LoRA direction now rests on a2 (L-007), which keeps the a1 data mix and changes
+only the stop turn. The data-mix redesign in reading 2's "harm" branch does not apply.
