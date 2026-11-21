@@ -166,3 +166,18 @@ a1e1 better, 10%.
 ## Results
 
 (appended after the jobs finish)
+
+### Part 3 smoke (`S-003-e4b-a1e1-smoke`, job 59919, pleiades-1-10, 2026-11-21T02:07-02:25Z)
+
+Reading 1 (Part 2 reading 1 with `a1e1`): **pass.** The resolve count was not read.
+
+- 2 of 2 rows SUCCESS; no Traceback, EngineDead or CUDA error in the job log.
+- Every model-named step in both traces names `a1e1` (80 of 80 in each).
+- `/v1/models` was not printed by the runner, so the adapter check is indirect, and that is recorded here. The
+  server is a `VllmServer` with `enable_lora=True` and the tree's adapter manifest (`tools/cluster_eval.py:210-217`).
+  Per `harness-stack/reference/adapters.md`, only a server without LoRA falls through silently. With LoRA on, a
+  request naming an unloaded model gets an error from vLLM, so 160 accepted `a1e1` requests mean the adapter was
+  served.
+- vLLM came up in 266.3 s. Decode probe: 50.3 tok/s on one stream, 95.7 tok/s on two.
+
+a1e1 d1-d8 submitted to pleiades-1-10 after this entry.
