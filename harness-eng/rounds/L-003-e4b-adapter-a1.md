@@ -195,3 +195,9 @@ a1e1 d1-d8 submitted to pleiades-1-10 after this entry.
   (516 tensors, names and shapes equal to `full_zero`; the file differs from `epoch1`). The validator gives the same
   two cluster-only errors and two warnings as `e4b-full0`.
 - Smoke `S-003-e4b-a1-smoke` submitted to pleiades-1-10 (`squeue -w pleiades-1-10`: only our a1e1 d8).
+
+### Part 2 smoke (`S-003-e4b-a1-smoke`, job 59973, pleiades-1-10, 21 min 10 s)
+
+Reading 1: **pass.** 2 of 2 rows SUCCESS; no Traceback, EngineDead or CUDA error; every model-named step in both
+traces names `a1` (58 of 58 and 32 of 32); vLLM up in 269.3 s. Resolves not read. a1 d1-d8 submitted after this
+entry (`squeue -w pleiades-1-10`: only our a1e1 d8), so d8 queues until a GPU frees.
