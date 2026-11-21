@@ -147,3 +147,15 @@ no-submit solver changes the base: 35% that control resolved differs from R-008 
     d2 60141/60142, d3 60143/60144, d4 60145/60146, d5 60147/60148, d6 60149/60150, d7 60151/60152, d8 60153/60154,
     d9 60155/60156, d10 60157/60158, d11 60159/60160, d12 60161/60162.
   - Gate actors: the smoke on 60138; retry d1 on 60140; control d1 on 60139. Gates as above.
+
+## Re-run smoke (reading 1 after fix 1), 2026-11-22: FAIL; round stopped
+
+- 60138: 4 rows SUCCESS; resolved 0; empty 0. `solve` calls {1: 3, 2: 1}; root model calls at most 8.
+- The `change-count` skill printed an integer in 4 of 4 tasks: 1, 2, 1, 1. Each time `submit_patch` followed.
+  Every task ended with the root's own `submit_patch`. No root shell use, since the root has no shell.
+- **Gate `retried<1` fired.** None of the 4 first attempts was empty this time, although all 4 tasks were empty in
+  R-018 retry d1. The retry branch had nothing to act on.
+- The gate actor cancelled all 24 draws before any started.
+- **The one allowed fix has been used, so R-020 stops here with no draw read.** The gate was ill-posed: it needed
+  the solver to produce an empty attempt, which is a chance event. The plumbing itself passed every other check.
+  Follow-up: R-021.
