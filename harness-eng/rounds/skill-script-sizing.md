@@ -93,4 +93,5 @@ about 0.3 resolves per draw, below the MDE, and would write wrong lines.
 - The L-003 full0 numbers are partial and on a different cohort.
 - Neither ceiling says whether an edit would be correct.
 
-Scripts and per-draw counts are kept outside git (session scratch).
+The per-draw counts are kept outside git (session scratch). The scripts are in `tools/sizing/` (added with R-015,
+2026-11-21); `tools/r015_gates.py` reuses `locate_31b.py`'s call parsing.
