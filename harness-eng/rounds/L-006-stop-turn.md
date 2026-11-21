@@ -183,3 +183,20 @@ set changes.
     same way as l5.
   - A 31B adapter can pass only if the solver gives back time (R-016) or the L4 ratio is near 1. The stop turn stays
     in every later adapter's data.
+
+### a2 draw 1 (`L-007-e4b-a2-tu127-d1`, job 60007, pleiades-1-10, 6 h 56 min): **killed at the draw-1 gate**
+
+- Health: 40 of 40 rows SUCCESS; draw used.
+- **The call-cap gate fires: 38 of 40 tasks reach 28 tool calls (bar ≥ 20).** The 7 held draws (60008-60014)
+  were cancelled by `tools/gate_actor.sh` before any ran.
+- **Stop reading: the fix did not work for the E4B.**
+  - 408 submit_patch calls over 36 submitting tasks, 11.3 per submitting task (a1e1 22.5, full0 1.1).
+  - Calls after the 28th tool call: 728 over the draw.
+- Reported, not read:
+  - resolved 5; empty 24; time caps 4; turn-budget ends 6; tool-budget ends 3; context compaction in 37 tasks.
+  - Mean task wall 2232 s at Turing time scale 5.
+- **What it means (L-007 "fix did not work").**
+  - The stop turn added in D2 halved the E4B submit loop (22.5 → 11.3) but did not end it.
+  - The 31B learned the stop from the same data (l6: 1.0 per submitting task); the E4B did not.
+  - No E4B adapter is a framework candidate before the freeze. The E4B stays on the base weights, and its
+    orchestration question is R-021.
