@@ -246,5 +246,5 @@ it reproduces the a1e1 figures above exactly); failed edits by `tools/r014_gates
 5. **Speed:** a1/full0 mean task wall 2,529.9 / 720.4 s = **3.51**, against "near 1.0". a1e1 was 2.05. The extra
    time is the submit loop; it is not an adapter serving cost (both arms serve with LoRA on).
 
-**Outcome.** a1 is not kept. The E4B LoRA direction now rests on a2 (L-007), which keeps the a1 data mix and changes
-only the stop turn. The data-mix redesign in reading 2's "harm" branch does not apply.
+**Outcome.** a1 is not kept. The E4B LoRA direction now rests on a2 (L-007), which keeps the a1 data mix and adds a
+closing stop turn to the D2 rows (trained on Ada, a stated second difference). The data-mix redesign in reading 2's "harm" branch does not apply.
