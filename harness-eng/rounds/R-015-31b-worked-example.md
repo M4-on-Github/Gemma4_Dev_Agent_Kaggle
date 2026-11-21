@@ -120,4 +120,9 @@ Results are appended below as new sections and apply these readings as written.
 
 ## Smoke log
 
-(appended after the smoke)
+- `S-015-31b-example-smoke`, job 59920, pleiades-0-23, 2026-11-21, 10 min 9 s. **Smoke gate passes.**
+  - Both rows SUCCESS, no engine error in the job log.
+  - Both traces carry the R-015 system instruction ("A worked example" in 2 of 2).
+  - No tool call or patch names `ledgerkit` or `format_amount` (`r015_gates.py` example-leak tasks 0).
+  - Not read, as written: resolves, wall, calls.
+- Example d1 and base d6 submitted next, side by side.
