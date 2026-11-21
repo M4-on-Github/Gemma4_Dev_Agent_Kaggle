@@ -99,3 +99,24 @@ The served adapters, from their d1 traces (tool-call counts only):
 - l6 passes its draw-1 gates: 35%.
 - a2 passes its call-cap gate: 70%.
 - a2 helps on reading 2: 20%.
+
+## Results
+
+(appended after the jobs finish)
+
+### Training
+
+- **L-006-f1** (job 59983, pleiades-0-17, 3 h 06 min).
+  - Health passes: 66 steps, none non-finite; packed check 13/13 exact (max abs diff 0.0); `epoch1/` and
+    `final/` written; 6.78 ms per token.
+  - Fit passes: validation 0.1858 at step 0, 0.1684 at the end, minimum 0.1680 at step 32 (0.2% above, bar
+    10%). `final` is evaluated.
+- **L-007-a2** (job 59984, pleiades-0-23, 2 h 00 min).
+  - Health passes: 401 steps, none non-finite; `epoch1/` and `final/` written; 0.70 ms per token on Ada (a1 5.73
+    on Turing).
+  - Fit passes: validation 0.501 at step 0, 0.3637 at the end, which is its minimum. `final` is evaluated.
+- Trees built (gitignored).
+  - `adapters/trees/31b-l6` (820 tensors) and `adapters/trees/e4b-a2` (516 tensors). Names and shapes equal the
+    served `full_zero` of each model.
+  - The validator gives the same two cluster-only errors and two warnings as the `full0` trees.
+- `S-006-31b-l6-smoke` submitted on Ada. The a2 smoke waits for a free Turing GPU (a1 d1-d8 hold all 8).
