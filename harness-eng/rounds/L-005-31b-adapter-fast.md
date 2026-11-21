@@ -124,3 +124,17 @@ projected = 10.04 h × (W_a / W_b) × (f / r_L4 + 1 − f) / (f / 0.916 + 1 − 
 
 - 2026-11-21: L-004 P1c (chunk check, abs diff 0.000344) and P3b (learns, ratio 0.074) both pass. Training
   `L-005-f1` submitted as written.
+
+### Training (`L-005-f1`, job 59938, pleiades-0-23, 2026-11-21T05:29-08:39Z)
+
+- **Training reading 1, health: passes.** 67 steps, no non-finite loss or grad norm; packed check 13/13 exact (max
+  abs diff 0.0); `epoch1/` (step 34) and `final/` written. Training 11,067 s (6.91 ms per token); job wall 11,397 s,
+  CPU load included (3.2 Ada GPU-h, as budgeted).
+- **Training reading 2, fit: passes.** Validation loss (8 held-out rows) 0.1809 at step 0, 0.1643 at the end; the
+  minimum is 0.1637 at step 32, so the end is 0.4% above it (bar 10%). `final` is the adapter evaluated.
+  - Training loss, mean of the first 8 steps 0.197, last 8 steps 0.163.
+- `adapters/trees/31b-l5` (gitignored) is `trees/31b-base` plus `adapter: l5` and `final/` copied as
+  `adapters/l5` (820 tensors, BF16, names and shapes equal to the served `full_zero`). The validator gives the same
+  two errors and two warnings as `adapters/trees/31b-full0`, which R-013 served (the 8-minute cluster cap fails the
+  11 h pack gate; the harness's `compile_submission` signature).
+- Smoke `S-005-31b-l5-smoke` submitted.
