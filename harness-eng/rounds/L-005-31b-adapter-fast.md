@@ -121,3 +121,6 @@ projected = 10.04 h × (W_a / W_b) × (f / r_L4 + 1 − f) / (f / 0.916 + 1 − 
 ## Results
 
 (appended after the jobs finish)
+
+- 2026-11-21: L-004 P1c (chunk check, abs diff 0.000344) and P3b (learns, ratio 0.074) both pass. Training
+  `L-005-f1` submitted as written.

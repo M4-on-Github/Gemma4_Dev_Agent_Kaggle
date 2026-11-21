@@ -124,3 +124,11 @@ recorded.
 - Data: 64 D1 rows, all encoded; 160,522 tokens, 8,849 trained; median length 2,458.
 - Job wall 221 s, CPU load included.
 - P3b is submitted next, as written.
+
+### P3b (`L-004-p3b`, job 59931, pleiades-0-23, 2026-11-21T04:48-05:22Z)
+
+- **Reading 2, learns: passes.** Mean loss of the first 16 steps 0.159, last 16 steps 0.0117, ratio 0.074 (bar 0.25).
+  No non-finite loss or grad norm in 128 steps (largest grad norm 155.5, early; last step 0.16).
+- **Reading 3, speed.** 128 steps in 1,838 s of training: 14.4 s per step, 5.67 ms per token over 324,304 tokens
+  (about 2.5k tokens per row). P1's longest row ran at 6.7 ms per token. Job wall 2,034 s, CPU load included.
+- All three readings pass, so the packed 31B trainer is cleared for L-005. The P3b adapter is never served.
