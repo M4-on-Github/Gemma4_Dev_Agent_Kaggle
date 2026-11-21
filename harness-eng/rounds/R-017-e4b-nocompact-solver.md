@@ -119,3 +119,12 @@ queued now on the user's instruction to queue everything before analysis (2026-1
 **Blind guess (not a reading).**
 - Passes its draw-1 gates: 70%.
 - Helps: 15%.
+
+## Queued (2026-11-21)
+
+- Smoke: job 60015 (Ada). d1-d8: jobs 60016-60023 (Turing), `afterok:60015`.
+- The smoke gate and the draw-1 gates are applied mechanically by `tools/gate_actor.sh` (it calls
+  `tools/d1_gate.py`). These are the gates as written in readings 1-2, with no change:
+  - smoke: `status_SUCCESS<2`, `root_calls_max>3`, `compacted>0`;
+  - d1: `resolved<=3`, `empty>=23`, `timecap>=7`, `compacted>2`.
+  - The `solve`-steps check in reading 1 is read by hand from the smoke traces.
