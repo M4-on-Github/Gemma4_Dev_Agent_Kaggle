@@ -156,3 +156,30 @@ set changes.
   - They are released only if d1 passes its call-cap gate. If d1 hits the cap in 20 or more of 40 tasks, they are
     cancelled.
   - This restores the pre-registered order (d1 first) for this arm; no bar changes.
+
+### l6 draw 1 (`L-006-31b-l6-d1`, job 59990, pleiades-0-17, 1 h 08 min): **killed at the draw-1 gate**
+
+- Health: 40 of 40 rows SUCCESS; draw used.
+- **Gate 2 fires: projected 13.5 h, bar 12.0 h.**
+  - Mean task wall W_a is 373.8 s against W_b 334.0 s (the six base draws' fold-B rows, as in L-005), ratio 1.119.
+  - At r_L4 = 0.75 (EXP-087 has not reported): 10.04 × 1.119 × 1.199 = 13.47 h.
+  - Gate 1 does not fire: resolved 14 (bar ≤ 12; base 14-16).
+  - Gate 3 does not fire: empty patches 8 (bar ≥ 12; base 5-8).
+- l6 d2-d8 (jobs 59995-60001, queued under the deviation above) were cancelled after 14 min each, about 1.6 Ada
+  GPU-h. Their rows are not read.
+- **Stop reading: the fix works for the 31B.**
+  - 22 submit_patch calls over 22 submitting tasks, 1.0 per submitting task (bar 3.0; l5 6.8, base 2.0).
+  - Calls after the 28th tool call: 30 over the draw.
+- Reported, not read (L-005 reading 4, `tools/r015_gates.py`, one draw against the base fold-B rows):
+  - Named-to-edit median 8 (resolved 5.5, unresolved 11; n = 33), against the base's pooled 9 (l5: 7).
+  - First edit at call 10, 196.5 s median.
+  - No-edit-attempt draws 7.
+  - Time caps 15 (base 3-11 per draw, l5 14); call caps 3 (base 4-8).
+  - Not a reading: at the Ada ratio (r_L4 = 0.916) the projection would be 10.04 × 1.119 = 11.2 h, still above the
+    11.0 h ship gate.
+- **What it means (L-006 "Stop fixed but no gain").**
+  - Stopping cleanly removed the submit loop and about 12 s of the l5 wall excess (385.7 → 373.8 s).
+  - The time caps did not fall, and the LoRA decode cost is paid on every call. The 31B adapter is wall-bound in the
+    same way as l5.
+  - A 31B adapter can pass only if the solver gives back time (R-016) or the L4 ratio is near 1. The stop turn stays
+    in every later adapter's data.
