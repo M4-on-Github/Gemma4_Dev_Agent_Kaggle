@@ -182,3 +182,20 @@ Recorded:
   model time.
 
 d1 (job 59994) started at once on `afterok`. d2 (job 60002) is running; d3-d6 are queued.
+
+### Draw 1 (`R-016-31b-nocompact-d1`, job 59994, pleiades-0-17, 2 h 04 min): **killed at the draw-1 gate**
+
+- **Gate "mechanism fails" fires as written: compaction (reading 1's test) in 9 of 79, bar more than 2.**
+  `tools/gate_actor.sh` cancelled d2-d6 (60002-60006) at once. Their rows are not read.
+- **What the 9 are.** Each is a task where the root called `solve` a second time; a new child session opens with a
+  short first prompt, which reading 1's test reads as a drop. 12 of 79 tasks called `solve` twice; 9 of those show
+  the drop, and 0 tasks show a drop within one `solve` session (`tools/round_counts.py` field
+  `compacted_in_session`, added after this result; the `compacted` field is unchanged). The gate is not re-read:
+  the arm is dropped as written.
+- The other draw-1 gates do not fire:
+  - resolved 25 (bar ≤ 24);
+  - mean task wall 355.4 s (bar above 368.5);
+  - empty patches 18 (bar ≥ 23);
+  - time caps 16 (bar ≥ 27).
+- Reported, not read: wall ratio 355.4 / 354.6 = 1.002 on one draw, against the "kept for time" bar of ≤ 0.97;
+  root model calls up to 4 per task; 14 call caps; 233 model calls after the 28th tool call.

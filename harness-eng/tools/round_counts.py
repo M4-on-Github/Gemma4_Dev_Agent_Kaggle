@@ -34,6 +34,20 @@ for r in rows:
     pt = [s["metrics"]["prompt_tokens"] for s in st if s["extra"].get("author") == worker and s.get("metrics")]
     comp = any(a > 8000 and b < 0.6 * a for a, b in zip(pt, pt[1:]))
     agg["compacted"] += comp
+    # R-016 d1 (2026-11-21): a second `solve` call opens a fresh child session whose first prompt is short, which the
+    # test above reads as compaction. compacted_in_session compares calls within one solve session only.
+    segs, cur = [], []
+    for s in st:
+        if s["extra"].get("author") == "swe_agent" and any(c["function_name"] == "solve" for c in (s.get("tool_calls") or [])):
+            segs.append(cur); cur = []
+        elif s["extra"].get("author") == worker and s.get("metrics"):
+            cur.append(s["metrics"]["prompt_tokens"])
+    segs.append(cur)
+    agg["compacted_in_session"] += any(a > 8000 and b < 0.6 * a for g in segs for a, b in zip(g, g[1:]))
+    if worker == "solve":
+        nsolve = sum(1 for s in st if s["extra"].get("author") == "swe_agent"
+                     for c in (s.get("tool_calls") or []) if c["function_name"] == "solve")
+        agg["solve_calls_gt1"] += nsolve > 1
     agg["over24576"] += any(p > 24576 for p in pt)
     n = 0
     for s in st:

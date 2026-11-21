@@ -128,3 +128,20 @@ queued now on the user's instruction to queue everything before analysis (2026-1
   - smoke: `status_SUCCESS<2`, `root_calls_max>3`, `compacted>0`;
   - d1: `resolved<=3`, `empty>=23`, `timecap>=7`, `compacted>2`.
   - The `solve`-steps check in reading 1 is read by hand from the smoke traces.
+
+## Deviation, compaction test (2026-11-21, recorded before d1 has any row)
+
+- R-016 d1 showed that reading 1's test counts a second `solve` call as compaction: the new child session's first
+  prompt is short (R-016 Results, draw 1). The test is meant to detect the scorer's summary inside a session.
+- Change: from here, the smoke gate's and d1 gate's compaction test compares calls within one `solve` session only
+  (`tools/round_counts.py` field `compacted_in_session`). Bars are unchanged (smoke: more than 0; d1: more than 2).
+- Added mechanism count (reported, not a gate): tasks with more than one `solve` call (`solve_calls_gt1`).
+- The smoke (job 60015, 4 min 37 s) had already passed under the old field. It has `compacted_in_session` 0 and
+  `solve_calls_gt1` 0, so the change does not alter its result.
+
+### Smoke (`S-017-e4b-nocompact-smoke`, job 60015, pleiades-0-23): **reading 1 passes**
+
+- 2 of 2 SUCCESS, no engine error. By author, the steps are 14 `solve` and 3 `swe_agent`, then 12 `solve` and 1
+  `swe_agent`. Every repository tool call is made by `solve`.
+- Root model calls 3 and 1 (the bar is at most 3). One `solve` call per task. No compaction.
+- 1 resolved, 0 empty patches.
