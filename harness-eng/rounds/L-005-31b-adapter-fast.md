@@ -144,3 +144,21 @@ projected = 10.04 h × (W_a / W_b) × (f / r_L4 + 1 − f) / (f / 0.916 + 1 − 
 - **Reading 1 passes.** 2 of 2 rows SUCCESS; no engine error or traceback in the job log; every model-named step in
   both traces names `l5` (11 of 11 and 32 of 32), none names `full_zero`. Resolves and wall not read.
 - `L-005-31b-l5-d1` submitted on fold B.
+
+### Draw 1 (`L-005-31b-l5-d1`, job 59972, pleiades-0-17, 1 h 10 min): **killed at the draw-1 gate**
+
+- Health: 40 of 40 rows SUCCESS; draw used.
+- **Gate 2 fires: projected 13.9 h, bar 12.0 h.** Mean task wall W_a 385.7 s against W_b 334.0 s (the six base draws'
+  fold-B rows, R-015 d6 included as written), ratio 1.155. By the formula above at r_L4 = 0.75:
+  10.04 × 1.155 × 1.199 = 13.9 h. The arm is killed; d2-d8 are not submitted.
+  - Gate 1 does not fire: resolved 15 (bar ≤ 12; base 14, 16, 16, 14, 16, 15).
+  - Gate 3 does not fire: empty patches 5 (bar ≥ 12; base 5-8).
+- Reported, not read (reading 4, one draw against the base fold-B rows):
+  - Named-to-edit median 7 (resolved 5, unresolved 8; n = 35), against the base's pooled 9. First edit at call 10,
+    188 s median. No-edit-attempt draws 4.
+  - Time caps 14 (base 3-11 per draw); call caps 7 (base 4-8).
+  - The base walls per draw are 305-357 s, so W_a is above every base draw. The Ada LoRA decode cost alone predicts
+    about 1.08× (0.89/0.916 + 0.11); the remaining ~1.07× is behaviour, mostly the extra time caps.
+- Not a reading: even at the Ada ratio (r_L4 = 0.916) the projection would be 10.04 × 1.155 = 11.6 h, above the
+  11.0 h ship gate. The adapter shortened the decide-to-edit stretch on the tasks it edits, but not the tasks that
+  run to the time cap, and the LoRA decode cost is paid on every call.
