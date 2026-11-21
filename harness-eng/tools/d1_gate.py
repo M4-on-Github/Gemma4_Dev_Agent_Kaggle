@@ -3,12 +3,13 @@
   python3 -I tools/d1_gate.py runs/<RUN> <expected rows> GATE [GATE ...]
 
 GATE is `<field><op><value>` with op one of >=, <=, >, <, on a field of tools/round_counts.py's JSON, plus
-`callcap` (rows with 28 or more reported tool calls). Prints the counts, then `PASS` or `KILL <gates that fired>`,
+`callcap`, plus the numeric fields of tools/retry_counts.py (R-018: retry_miss, solve_calls_gt3, ...) (rows with 28 or more reported tool calls). Prints the counts, then `PASS` or `KILL <gates that fired>`,
 and exits 0 on PASS, 1 on KILL, 2 when the run is incomplete (fewer rows than expected): an incomplete draw is
 reported, never read as a pass. Examples (2026-11-21):
   R-016 d1: resolved<=24 mean_wall>368.5 empty>=23 timecap>=27 compacted>2
   R-017 d1: resolved<=3 empty>=23 timecap>=7 compacted>2
   L-006 a2 d1: callcap>=20
+  R-018 d1: resolved<=3 empty>=23 timecap>=7 retry_miss>=3 solve_calls_gt3>=1
 """
 import json
 import operator
@@ -27,6 +28,10 @@ def main():
                                   universal_newlines=True)  # system python3 is 3.6 here
     c = json.loads(out)
     rows = [json.loads(x) for x in open(Path(run) / "task_results.jsonl")]
+    # R-018 2026-11-21: the retry mechanism counts of tools/retry_counts.py are merged in under their own names.
+    rc = json.loads(subprocess.check_output([sys.executable, "-I", str(here / "retry_counts.py"), run],
+                                            universal_newlines=True))
+    c.update({k: v for k, v in rc.items() if k not in c and not isinstance(v, (dict, str))})
     c["callcap"] = sum((r.get("tool_calls") or 0) >= 28 for r in rows)
     print(json.dumps(c))
     if c["rows"] < expected:

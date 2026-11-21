@@ -1,0 +1,19 @@
+name: swe_agent
+# harness-eng R-018 2026-11-21 (T-e4b-018): R-017's tree with a retry on an empty attempt. The root calls `solve`,
+# then submit_patch; when submit_patch reports files_changed 0 it calls `solve` again (at most 3 solve calls).
+# Each solve call is a fresh child session; the workspace persists. eval_config max_tool_calls 28 -> 56 so a
+# second attempt has calls left (the counter is shared across the task). Offline sizing: rounds/R-018.
+# harness-eng R-017 2026-11-21 (T-e4b-017): R-016's layout (T-31b-014) on the E4B. Single LlmAgent -> a root that
+# calls one agent_tool `solve`. agent_tool runs `solve` in its own Runner with no App, so the scorer's
+# EventsCompactionConfig (summarize at 14,336 prompt tokens) does not apply inside it (google_adk 1.36.1
+# tools/agent_tool.py Runner(...) without app; runners.py:1429 passes None; flows/llm_flows/compaction.py:39-41
+# returns). The solver is trees/e4b-base's agent with the same tools and sampling; its instruction is the base prompt
+# (byte-identical to the 31B base prompt) plus the task section from trees/31b-r016-nocompact, unchanged.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include prompts/root.md
+tools:
+  - submit_patch
+  - agent_tool:
+      config_path: sub_agents/solver.yaml
+      skip_summarization: true
+generate_content_config: !include configs/sampling_root.yaml
