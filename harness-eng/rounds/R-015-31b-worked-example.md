@@ -126,3 +126,32 @@ Results are appended below as new sections and apply these readings as written.
   - No tool call or patch names `ledgerkit` or `format_amount` (`r015_gates.py` example-leak tasks 0).
   - Not read, as written: resolves, wall, calls.
 - Example d1 and base d6 submitted next, side by side.
+
+## Results: draw 1 (2026-11-21)
+
+- `R-015-31b-example-d1` (job 59932, pleiades-0-23, 2 h 13 min) and `R-015-31b-base-te-d6` (job 59933, 1 h 56 min).
+- **Health passes for both.** 79 of 79 rows, all SUCCESS, no engine error. Job 59932 ends with the known cgroup
+  oom-kill flag (MaxRSS 58.4 GB; R-007, R-008 and R-011 record the same flag with every row written). No test exit
+  code or test tail shows a killed test (exit codes: 0 x25, 1 x32, -1 x17, 2 x4, 124 x1). The draw is used.
+
+| Draw-1 gate (example d1) | Bar | Value | Fires |
+|---|---|---|---|
+| Projected Kaggle time | > 11.0 h (wall > 395 s) | 10.71 h (385.0 s) | no |
+| Resolved | ≤ 25 | **25** | **yes** |
+| Empty patches | ≥ 24 of 79 | 21 | no |
+| Example leak | > 4 tasks | 0 | no |
+
+- **Reading 3: the arm is killed at draw 1** (resolved 25, at the bar). Example d2-d8 and base d7-d8 are not
+  submitted. Reading 4 is not reached.
+- **Mechanism (reported; d1 only, against base d6 from the same hours):**
+  - calls from first naming of the edited file to the edit: median 10 (resolved 7, unresolved 11.5; n 63) against
+    base d6 9.5 (7 / 11; n 70) and the base pooled 9. **Not met** (bar 7).
+  - first-edit call median 13 against 12; first-edit clock 209.7 s against 208.5 s.
+  - no edit attempt 15 against 8; time-cap task-draws 29 against 15; call-cap 13 against 14; empty patches 21
+    against 16.
+  - So the worked example did not shorten the step from file to edit. It made more draws run out the clock without
+    an edit (wall 385.0 s against 335.1 s).
+- **Base d6** (27 of 79, wall 335.1 s, projected 9.32 h) joins the 31B base record. The base cdev2-79 draws are now
+  R-011 d1-d4 plus R-014 d5 and R-015 d6. Its fold-B rows join the L-005 control set, as L-005 says.
+- **Blind guess check:** killed at draw 1 was 15%.
+- Cost: smoke 0.17 + two draws 4.15 = about 4.3 Ada GPU-h, as budgeted for a draw-1 kill.
