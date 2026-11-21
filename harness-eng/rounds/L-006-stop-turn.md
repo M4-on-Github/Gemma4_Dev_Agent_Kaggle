@@ -139,3 +139,20 @@ set changes.
   - a2 d1-d8 are queued on Turing with L-003 Part 2's flags, `afterok` on the smoke, so they start as the a1 draws
     end.
   - If the smoke fails or d1 hits the call cap in 20 or more of 40 tasks, d2-d8 are cancelled or stopped and not read.
+
+### a2 smoke (`S-007-e4b-a2-smoke`, job 59993, one Ada, 6 min 25 s)
+
+- Reading 1 (L-003 Part 2 reading 1 with `a2`) **passes**:
+  - 2 of 2 SUCCESS;
+  - no Traceback, EngineDead or CUDA error in the job log;
+  - every model-named step names `a2` (32 of 32, 80 of 80).
+- Reported, stop: the fix does not show for the E4B in the smoke.
+  - Both tasks hit the 28-call cap.
+  - Task 1: 2 submit_patch calls, 1,110-character patch.
+  - Task 2: 49 submit_patch calls, ends at the 80-turn budget with an empty patch.
+  - Not a gate. The pre-registered kill gate is the d1 call-cap count.
+- **Deviation (recorded before d1 runs):** a2 d2-d8 (jobs 60008-60014) are put on hold. Otherwise they would start
+  together with d1 when the a1 draws free Turing.
+  - They are released only if d1 passes its call-cap gate. If d1 hits the cap in 20 or more of 40 tasks, they are
+    cancelled.
+  - This restores the pre-registered order (d1 first) for this arm; no bar changes.
