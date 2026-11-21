@@ -92,3 +92,14 @@ Written 2026-11-21, before any job of this round is submitted. Counts only; no t
 
 **Blind guess (not a reading).** Passes the smoke and d1 gates: 70%. Helps: 15%. Kept on mechanism: 30%. The
 no-submit solver changes the base: 35% that control resolved differs from R-008 Ada by more than 1.5 per draw.
+
+## Queued (2026-11-21)
+
+- Smokes: retry 60112, control 60113. Draws, all `afterok:60112:60113`, as (control, retry): d1 60114/60115,
+  d2 60116/60117, d3 60118/60119, d4 60120/60121, d5 60122/60123, d6 60124/60125, d7 60126/60127, d8 60128/60129,
+  d9 60130/60131, d10 60132/60133, d11 60134/60135, d12 60136/60137.
+- Gate actors (`tools/gate_actor.sh`), each cancelling every other R-020 job on a kill:
+  - retry smoke: `status_SUCCESS<4`, `solve_calls_gt3>=1`, `root_calls_max>9`, `retried<1`;
+  - control smoke: `status_SUCCESS<2`, `solve_calls_gt3>=1`, `submit_calls<2`;
+  - retry d1: the five reading-2 gates;
+  - control d1: `resolved<=3`, `empty>=23`.
