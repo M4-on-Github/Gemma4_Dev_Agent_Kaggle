@@ -181,3 +181,17 @@ Reading 1 (Part 2 reading 1 with `a1e1`): **pass.** The resolve count was not re
 - vLLM came up in 266.3 s. Decode probe: 50.3 tok/s on one stream, 95.7 tok/s on two.
 
 a1e1 d1-d8 submitted to pleiades-1-10 after this entry.
+
+### Part 1 training (`L-003-a1`, job 59872, pleiades-1-10, 16 h 20 min)
+
+- **Training reading 1, health: passes.** 401 steps, no non-finite loss or grad norm; the job completed; `epoch1/`
+  (step 201) and `final/` written. Training 58,409 s at 5.73 ms per token (budget 13-17 Turing GPU-h; 16.3 used).
+- **Training reading 2, fit: passes.** Validation loss (13 held-out rows) 0.4968 at step 0, 0.3617 at the end; the
+  minimum is 0.3616 (steps 350 and 400), so the end is 0.03% above it (bar 10%). Values every 50 steps: 0.4968,
+  0.4088, 0.3856, 0.3735, 0.3688, 0.3649, 0.3628, 0.3616, 0.3616. `final` is the adapter evaluated.
+- So Part 3 reading 3 applies: Part 2 is read on the a1 (`final`) draws as written; a1e1 is reported only, and its
+  resolve counts may now be opened.
+- `adapters/trees/e4b-a1` (gitignored) is `e4b-full0` with `adapter: a1` and `final/` copied as `adapters/a1`
+  (516 tensors, names and shapes equal to `full_zero`; the file differs from `epoch1`). The validator gives the same
+  two cluster-only errors and two warnings as `e4b-full0`.
+- Smoke `S-003-e4b-a1-smoke` submitted to pleiades-1-10 (`squeue -w pleiades-1-10`: only our a1e1 d8).
