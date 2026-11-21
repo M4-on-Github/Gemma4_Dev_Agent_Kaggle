@@ -113,3 +113,14 @@ recorded.
 - **Deviation, recorded before the next job.** P1c is P1 with D1 data (`synth-s1.jsonl:64`, which has 2k-4k rows)
   in place of D2, still with `--packed --load-check`. It gives the chunk check, plus a second packed load. P3b runs
   only if P1c's abs diff is at most 1e-3. The readings and decisions are unchanged.
+
+### P1c (`L-004-p1c`, job 59898, pleiades-0-23, 2026-11-21T04:38-04:42Z)
+
+- **Chunk check passes:** a 2,905-token D1 row gives loss 0.3568 chunked against 0.35715 stock, abs diff 0.000344
+  (bar 1e-3). Reading 1 is now met in full.
+- Second packed load: 13/13 probe modules exact (max abs diff 0.0); 410 wrapped of 410 served targets, 0 missing;
+  18.43 GiB after load.
+- Longest D1 row (3,315 tokens): loss 0.2469, grad norm 40.23 (finite), 17.2 s for the step, 24.45 GiB peak.
+- Data: 64 D1 rows, all encoded; 160,522 tokens, 8,849 trained; median length 2,458.
+- Job wall 221 s, CPU load included.
+- P3b is submitted next, as written.
