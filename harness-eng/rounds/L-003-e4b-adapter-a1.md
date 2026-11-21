@@ -201,3 +201,19 @@ a1e1 d1-d8 submitted to pleiades-1-10 after this entry.
 Reading 1: **pass.** 2 of 2 rows SUCCESS; no Traceback, EngineDead or CUDA error; every model-named step in both
 traces names `a1` (58 of 58 and 32 of 32); vLLM up in 269.3 s. Resolves not read. a1 d1-d8 submitted after this
 entry (`squeue -w pleiades-1-10`: only our a1e1 d8), so d8 queues until a GPU frees.
+
+### Part 3 draws (`L-003-e4b-a1e1-tu127-d1..d8`, jobs 59921-59928, 3 h 43 min to 5 h 51 min each)
+
+- Health (reading 1): 320 of 320 task-draws SUCCESS.
+- Recorded, not read (Part 2): full0 mean fold-B task wall 720.4 s against R-011 base 644.4 s on the same 40 tasks,
+  a measured Turing ratio of 1.118 at time scale 12.7 against 5.0.
+- Reported (Part 3 reading 3; training reading 2 selected `final`, so a1e1 is not read):
+  - Resolved per draw: a1e1 4, 4, 4, 2, 3, 5, 3, 5; full0 5, 5, 2, 4, 3, 4, 4, 7.
+  - a1e1 − full0 = −0.50 solves per draw, 90% CI −1.62 to +0.75 (bootstrap over the 40 tasks, seed 0). The
+    statistic against a1 waits for the a1 draws.
+  - Mean task wall 1478 s (full0 720 s); tool calls per task 27.3 (full0 8.6); time caps 0.8 per draw (full0 0);
+    empty patches 23.1 per draw (full0 5.8).
+  - The 28-call cap is hit in 294 of 320 task-draws (full0 2). 147 runs end at the 80-turn budget.
+  - In d1 traces, a1e1 calls submit_patch 833 times over 37 submitting tasks (full0 44 over 39), with a median of
+    33 identical repeated calls per task (full0 0). The adapter does not stop after submitting. Diagnosis and fix:
+    `rounds/L-006-stop-turn.md` (L-007, E4B a2).
