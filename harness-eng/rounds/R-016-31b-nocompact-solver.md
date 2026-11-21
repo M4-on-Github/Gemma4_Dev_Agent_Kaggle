@@ -155,3 +155,30 @@ The user approved queueing every gated job at once for the weekend (2026-11-21).
 - If the smoke gate (reading 1) fails, all six are cancelled. If d1 fails a draw-1 kill gate (reading 2), d2-d6 are
   cancelled or stopped, their rows are not read, and the arm is dropped.
 - No bar, reading or comparison set changes. The cost of a kill rises by whatever d2-d6 ran in parallel with d1.
+
+## Results
+
+### Smoke (`S-016-31b-nocompact-smoke`, job 59992, pleiades-0-17, 10 min 20 s)
+
+**Reading 1 passes.**
+- 2 of 2 SUCCESS, no engine error.
+- Agent steps by author: 13 `solve` and 1 `swe_agent`, then 23 `solve` and 1 `swe_agent`.
+- Every repository tool call comes from `solve`. The root makes 1 model call per task; its only tool call is
+  `solve`, and its session ends after the child's `submit_patch`.
+- No compaction: no solver prompt-token drop. The largest solver prompts are 6,396 and 22,378 tokens, both under
+  24,576.
+- 1 resolved, 0 empty patches, 0 time caps. Task walls 97 s and 424 s. One submit_patch per task.
+
+Recorded:
+- **The `solve` call does not count as a tool call.** Reported tool calls are 11 and 21, against 12 and 22 calls made
+  by `solve` in the traces. Base traces show the same gap of one or more (65 of 79 rows in R-015 base d6), so the
+  solver gets the full 28.
+- **The issue reaches the solver.** `{problem_description}` is not optional, so a missing state key would raise a
+  KeyError and end the run. Both runs completed. The first solver prompt is 1,929 and 1,974 tokens, against 2,929 and
+  2,922 for base first calls on the same tasks. The roughly 1,000 tokens missing are the harness task prompt's tree
+  and rule lines; the issues are 739 and 815 characters.
+- **Not in the design: the root writes more than the fixed request.** Its `solve` argument is 194 and 508
+  characters, against about 50 for the request alone. This is root decode time; reported under reading 4 as root
+  model time.
+
+d1 (job 59994) started at once on `afterok`. d2 (job 60002) is running; d3-d6 are queued.
