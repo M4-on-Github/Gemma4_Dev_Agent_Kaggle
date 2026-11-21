@@ -103,3 +103,40 @@ no-submit solver changes the base: 35% that control resolved differs from R-008 
   - control smoke: `status_SUCCESS<2`, `solve_calls_gt3>=1`, `submit_calls<2`;
   - retry d1: the five reading-2 gates;
   - control d1: `resolved<=3`, `empty>=23`.
+
+## Smoke gates (reading 1), 2026-11-21/22
+
+- **Control smoke (60113): PASS.** 2 rows SUCCESS; resolved 1; empty 0; one root `submit_patch` per task;
+  `solve` calls at most 1; root model calls at most 3.
+- **Retry smoke (60112): FAIL** on `root_calls_max>9` (value 10). `tools/gate_actor.sh` cancelled every R-020 draw
+  before any started. No draw is read.
+  - 4 rows SUCCESS; resolved 0; empty 2. `retry_counts.py`: first attempt empty 2, retried 2, rescued 0,
+    `retry_miss` 0, `solve` calls {0: 1, 2: 1, 3: 2}.
+  - **Cause, from event order, tool names and counts only:**
+    - The root used `run_command` for work other than the count command. In 1 task it never called `solve` and
+      ran its own shell commands, which was the 10-call task. In 1 other task it ran 4 non-count commands
+      before the count.
+    - In 2 tasks the root called `solve` twice in a row without the count between them.
+    - The count itself printed an integer in 3 of the 4 tasks, and the branch went the right way each time:
+      0 led to another `solve`, and 1 led to `submit_patch`.
+- **Fix 1 (the one fix the reading allows).** The root loses `run_command`. The count moves into a skill,
+  `skills/change-count/scripts/count.py`, called with `run_skill_script`, the call shape EXP-057 showed works
+  with the E4B.
+  - The script uses pure file reads. It parses the git index and the baseline commit object, starts no program
+    and writes nothing.
+  - A tracked file counts when its content hash differs from the index blob, or when it is gone. A new file counts
+    when its mtime is after the baseline commit time.
+  - Test paths, dot paths, caches and compiled files are skipped, and so are intent-to-add index entries.
+  - On any error it prints 1, so an unreadable state never starts another attempt.
+  - Checked by hand on a synthetic repo in the harness python: no change, a touched file, test-only changes and
+    junk files all print 0. One modified file plus one new file prints 2, both before and after `git add -N`.
+    A further deletion prints 3. No `.git` prints 1.
+  - The root now has no tool with which to work on the issue itself.
+  - `prompts/root.md` step 2 now names the skill call. Steps 1, 3 and 4 are unchanged.
+- The control tree is unchanged, and its smoke stands. The arms now differ in the root prompt and the root's
+  `change-count` skill. The pre-registered gates and readings are unchanged.
+- `tools/retry_counts.py` also reads `run_skill_script` stdout as the count.
+- Validator: `validate_directory` OK. It shows the three known errors and two warnings, the new one being
+  VERIFY(Q1), skill scripts rely on `run_skill_script`.
+- Re-run: retry smoke `S-020b-e4b-retry-smoke` on `smoke-empty4`, then the 24 draws `afterok` on it alone.
+  Gates as before. Also checked by hand: at least 1 skill count printed an integer.

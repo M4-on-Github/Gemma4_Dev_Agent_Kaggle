@@ -24,8 +24,8 @@ def attempts(steps):
             if started:
                 segs.append(cur)
             cur, started = [], True
-        if s["extra"].get("author") == "swe_agent" and "run_command" in names and s.get("observation"):
-            try:   # R-020: the root's fixed count command prints the number of changed source files
+        if s["extra"].get("author") == "swe_agent" and ("run_command" in names or "run_skill_script" in names) and s.get("observation"):
+            try:   # R-020: the root's count command or change-count skill prints the number of changed source files
                 out = str(json.loads(s["observation"].get("content") or "{}").get("stdout", "")).strip()
             except (ValueError, AttributeError):
                 out = ""
