@@ -39,6 +39,7 @@ from pathlib import Path
 TARGETS = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
 TC_OPEN, TC_CLOSE, TR_OPEN, TR_CLOSE = "<|tool_call>", "<tool_call|>", "<|tool_response>", "<tool_response|>"
 MODEL_OPEN = "<|turn>model\n"
+TURN_CLOSE = "<turn|>"
 OUT_ROOTS = ("/data/mmyatmau/gemma4-lora/",)
 
 
@@ -101,7 +102,23 @@ def spans(text, msgs, default_train):
     for m in asst:
         k = len(m.get("tool_calls") or [])
         if k == 0:
-            return None
+            # closing turn (add_stop_turn.py, L-006): what the template renders after the turn's last tool
+            # response, in the same model turn, through the <turn|> that ends it (eos 106). The template's rendering
+            # is trained, not the stored text: it rewrites some contents. Trained under "all" and "call" alike.
+            if prev_end is None or not (m.get("content") or "").strip():
+                return None
+            te = text.find(TURN_CLOSE, prev_end)
+            b = text.rfind(TR_CLOSE, prev_end, te) if te >= 0 else -1
+            if b < 0 or text.find(MODEL_OPEN, prev_end, te) >= 0:
+                return None
+            b += len(TR_CLOSE)
+            if not text[b:te].strip():
+                return None
+            e1 = te + len(TURN_CLOSE)
+            if m.get("train", default_train) != "none":
+                out.append((b, e1))
+            prev_end = e1
+            continue
         s0, e1 = starts[ci], ends[ci + k - 1]
         ci += k
         if text.startswith(TR_OPEN, e1):
