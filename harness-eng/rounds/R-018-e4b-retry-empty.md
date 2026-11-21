@@ -129,3 +129,24 @@ Tweak id **T-e4b-018**. The `tweaks.md` row is added with the results. Part of t
 - Traces: both tasks show `solve` steps that make the repository tool calls (checked by step counts by author).
 - **PASS.** The draws were released. Stated limit: neither smoke task had an empty first attempt, so the retry
   branch itself was not exercised by the smoke; the d1 `retry_miss` and `solve_calls_gt3` gates cover it.
+
+## Draw-1 kill gate (reading 2), 2026-11-21: KILLED
+
+- Retry d1 (60089) COMPLETED: 79 rows, all SUCCESS; resolved 6; empty 10; time caps 0; mean task wall 107 s.
+- `retry_counts.py`: first attempt empty 7, retried 0, so **`retry_miss` = 7 ≥ 3, and the round is killed.**
+  `solve_calls_gt3` was 0.
+- `tools/gate_actor.sh` cancelled every other R-018 job as pre-registered. That includes control d1 (60088), which was
+  running and is not read.
+- **Cause, from the harness source and the event order.** Tool names and counts only:
+  - In all 7 empty first attempts the solver itself called `submit_patch` (files_changed 0) and then replied, and
+    the task ended there. The root never regained control.
+  - `swegemma/tools/execution.py` sets `patch_submitted` on any `submit_patch`, even an empty one.
+  - `harness/agent_runner.py` (about line 859) ends the task on the next final text event from any agent once
+    `patch_submitted` is set.
+  - So a retry is possible only if no agent submits before the last attempt. The R-017/R-018 solver had
+    `submit_patch`. This is a design error in this round, not a property of retries.
+- Also seen: 10 tasks had a second `solve` call. In all of them the first solver returned without submitting, in
+  some after editing, and the root called `solve` again instead of `submit_patch`. That is over-retry on a
+  non-empty workspace, against the prompt.
+- Rounds that fix the mechanism: R-020 (solver without `submit_patch`; the root counts changed source files with a
+  fixed command and submits).

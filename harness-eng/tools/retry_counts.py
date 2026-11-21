@@ -5,7 +5,7 @@ trace text, code or paths.
 
 Per task the steps are cut into attempts at each root `solve` call. An attempt is empty when every submit_patch
 result inside it reports files_changed 0, non-empty when one reports more than 0, and unknown when it holds no
-submit_patch result. Prints, per run: the histogram of solve calls per task; first-attempt empty / non-empty /
+submit_patch result. From R-020 on, the root's count command (a bare integer on stdout) is read the same way. Prints, per run: the histogram of solve calls per task; first-attempt empty / non-empty /
 unknown; retried (first attempt empty and a second solve call followed); over-retry (a second solve call after a
 non-empty first attempt); retry_miss (first attempt empty, not retried); rescued (resolved, first attempt empty); and tasks with more than 3 solve calls.
 """
@@ -24,6 +24,13 @@ def attempts(steps):
             if started:
                 segs.append(cur)
             cur, started = [], True
+        if s["extra"].get("author") == "swe_agent" and "run_command" in names and s.get("observation"):
+            try:   # R-020: the root's fixed count command prints the number of changed source files
+                out = str(json.loads(s["observation"].get("content") or "{}").get("stdout", "")).strip()
+            except (ValueError, AttributeError):
+                out = ""
+            if out.isdigit():
+                cur.append(int(out))
         if "submit_patch" in names and s.get("observation"):
             m = FC.findall(str(s["observation"].get("content")))
             if m:
