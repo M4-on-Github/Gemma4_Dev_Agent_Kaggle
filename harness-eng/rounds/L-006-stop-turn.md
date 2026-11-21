@@ -126,3 +126,16 @@ The served adapters, from their d1 traces (tool-call counts only):
 - Reading 1 passes: 2 of 2 SUCCESS, no engine error, 21/21 and 23/23 model-named steps name `l6`.
 - Reported: 1 submit_patch call over the 2 tasks (the l5 smoke repeated submits); 42 tool calls in all.
 - `L-006-31b-l6-d1` submitted on fold B.
+
+### Deviation, queueing (2026-11-21, recorded before l6 d1, the a2 smoke or any a2 draw has a result)
+
+The user approved queueing every gated job at once for the weekend (2026-11-21). No bar, reading or comparison
+set changes.
+- **L-006:** l6 d2-d8 are submitted now while d1 runs. If d1 fails any draw-1 kill gate, the pending draws are cancelled
+  and the ones already running are stopped. Their rows are not read, and the arm is dropped as written.
+- **L-007:**
+  - The a2 smoke runs on one Ada instead of Turing (Turing holds a1 d1-d8). It is a health and stop check, not a
+    resolve reading.
+  - a2 d1-d8 are queued on Turing with L-003 Part 2's flags, `afterok` on the smoke, so they start as the a1 draws
+    end.
+  - If the smoke fails or d1 hits the call cap in 20 or more of 40 tasks, d2-d8 are cancelled or stopped and not read.

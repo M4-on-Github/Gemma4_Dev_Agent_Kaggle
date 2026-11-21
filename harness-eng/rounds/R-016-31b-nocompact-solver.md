@@ -147,3 +147,11 @@ of the logbook (2026-11-21, focus item 2). The source facts below were re-read b
 - Passes its draw-1 gates: 55%.
 - Kept for time or helps after 6 draws: 30%.
 - Helps: 10%.
+
+## Deviation, queueing (2026-11-21, recorded before the smoke has a result)
+
+The user approved queueing every gated job at once for the weekend (2026-11-21).
+- d1-d6 are submitted now with `afterok` on the smoke (job 59992), instead of d2-d6 after the draw-1 gate.
+- If the smoke gate (reading 1) fails, all six are cancelled. If d1 fails a draw-1 kill gate (reading 2), d2-d6 are
+  cancelled or stopped, their rows are not read, and the arm is dropped.
+- No bar, reading or comparison set changes. The cost of a kill rises by whatever d2-d6 ran in parallel with d1.
