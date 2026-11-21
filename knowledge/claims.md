@@ -1,6 +1,6 @@
 ---
 id: claims
-updated: 2026-10-29
+updated: 2026-11-21
 ---
 
 # Claims ledger
@@ -165,6 +165,7 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - history: 2026-10-29 migrated as hypothesis; parked
 - history: 2026-11-05 evidence added, status unchanged (no critic verdict): lit-2026-11-05-architecture-families found no source for the 12/18 -> 6/18 figure; lit-2512.08296 has every multi-agent topology at or below the single agent at equal budget (n = 20, direction only); lit-2602.03786 is mixed by model. D-005 ranks the orchestrator last and screens it only on the user's request.
 - history: 2026-11-05 evidence added, status unchanged (no critic verdict): EXP-032 arm P1 (ParallelAgent of three read-only localizers, then an editor, smoke-8 on the cap-bound ids): 21 of 24 localizer branches overspent a 5-call prompt limit, the shared 43-call budget was gone before the editor started in 7 of 8 tasks, non-empty patch 1 of 8, mean wall +72.9 s on Arm R; row e fired, parallel stage parked; not evidence on delegation capability, since the editor had 0 guaranteed calls in 7 of 8 (critic light accepted)
+- history: 2026-11-21 evidence added, status unchanged (no critic verdict; the screens change no status, so no `light` review is owed): EXP-085 and EXP-086 (3cc518b), per-file `file_reader` agents called through `agent_tool` by the single-loop root, smoke-8 each, row 7 on both, killed at L2. 31B: gold file hit 5 of 8 against a baseline mean of 5.00 (0 above, 0 below, 8 equal; the 3 baseline misses still miss with reader calls), resolves 1 against 0 and 1, projected 9.35 h, mean 1.00 reader calls in 5 of 8 tasks. E4B: gold file hit 2 of 8 against 0.75 (2 above, 2 below, 4 equal), resolves 1 against 0 in each draw, mean 2.75 reader calls in 6 of 8, a prompt ceiling of 3 files broken on 3 tasks. Harness fact (counter_check.py, 9 of 11 reader-using tasks): the `agent_tool` call is not counted against `max_tool_calls`, the reader's inner reads are, so a reader stage saves no calls. Unlike EXP-032 the editor was not starved (0 starved on both), so this is the first screen here where delegation ran with room and still found the same files [I].
 
 ## C-015: Best-of-N attempts are affordable in wall-clock (88.6% idle KV capacity) but there is no selection signal without hidden tests, so N parallel editing branches cannot pay; N read-only localizers feeding one editor is the only fitting shape
 - status: hypothesis
@@ -288,3 +289,16 @@ or `full` on the cited EXP) is what moves it. Numbers are copied from the cited 
 - history: 2026-11-06 evidence, status unchanged (no critic verdict): EXP-044 X0 (1f8a156), the unchanged E4B tree re-run on failed-edit-8, applied an edit on 7 of 8; so the no-edit population this adapter targets is mostly one bad draw, and the ceiling of about 1 of 48 overstates it [I].
 - history: 2026-11-08 evidence, status unchanged (no critic verdict): EXP-054 v2 (1170009; R4 positive, costly; offline, per call, zero tasks): rank-8 q/o LoRA on the BF16 parent, 67 steps. Exact copy on 120 held-out stdlib windows 0.483 to 0.708 (30 against 3 discordant, McNemar p 1.4e-6). The drift gate failed G1 (first-tool agreement 0.625 against 0.70 or more; `run_command` first 18 to 2 of 48) and G4 (prose logprob mean |delta| 0.72 against 0.15 or less). Decode drop 0.168. Q4 settled for the E4B: the harness's server loads and routes the adapter. No resolve rate measured; section 4 licenses no stage 4 on this adapter.
 - history: 2026-11-08 evidence, status unchanged (no critic verdict): EXP-058 (dce3e7a; row 3, Clean; a bug test, no effect reading by design): the EXP-054 v2 adapter on the EXP-033 tree ran end to end on smoke-8 through the eval notebook (weights mounted by `kernel_sources`, not committed); server sized `--max-loras 1 --max-lora-rank 8` from the adapter; every model step served by `copy_lora`; 0 errors, malformed calls, tool-free endings or caps. Recorded, not read: 10 applied edits against 10 on EXP-033, 10 failed edits against 7. Where to use the adapter is to be re-derived (user, 2026-11-08).
+
+## C-025: A post-edit sweep rule (grep the identifier or literal just changed, mark each other hit "same change needed" or "not needed", apply the needed ones) raises gold regions touched on partial-fix tasks without breaking the clock
+- status: hypothesis
+- confidence: low
+- topics: [prompt]
+- expected gain: none measured; EXP-082 bounds the reachable share of missed gold regions at 8 of 24 (31B) and 7 of 38 (E4B) at zero GPU.
+- sources: user decision 2026-11-17 (idea 1 of the web scout; `knowledge/user-decisions.md`, 357e64b); EXP-082 (zero GPU); EXP-083; EXP-084
+- tests: EXP-083, EXP-084 (smoke-8; no critic review, no status change)
+- history: 2026-11-21 added as hypothesis with its record so far (status unchanged, no critic verdict).
+- history: 2026-11-18 EXP-082 (zero GPU, 6934945, 22ede83): a grep of the changed identifiers reaches V0 8 of 24 missed gold regions for the 31B (row 4, between) and 7 of 38 for the E4B (V1 6, V2 5; row 2, DROP, GO needs 16).
+- history: 2026-11-20 EXP-083 (31B v24-at-8 tree, eabdb69; 1.048 GPU-h): row 3 governs, killed for this tree as written: projected 11.68 h against the 11.0 h gate (mean wall +49.1 s per task), cap hits 6 against a baseline mean of 3.50. Uptake 6 of 8. Primary recorded beside the kill: regions touched 3 above, 2 below, 3 equal (mean 0.750 against 0.688). Resolves 1 of 8 against 0 and 0.
+- history: 2026-11-20 EXP-084 (E4B single-loop tree, c0dfda5; 0.307 GPU-h): row 2 governs (lead ruling on the row's wording recorded in section 7 before baseline uptakes were counted): uptake 1 of 8 and no baseline draw at 6 of 8 or more (draws 1, 0, 1, 1), so the wording is killed for the E4B and the primary is not read. Resolves 1 against 0, 0, 1, 0; 0 caps, 0 malformed.
+- history: 2026-11-21 lead's reading [I]: the 31B follows the rule but cannot afford it at 8 minutes; the E4B does not follow it. Reopened only by a cheaper form (no extra turn on the 31B) or an enforced one on the E4B; not queued.

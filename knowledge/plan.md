@@ -1,6 +1,6 @@
 ---
 id: plan
-updated: 2026-11-08
+updated: 2026-11-21
 direction: D-002, D-003; D-004 proposed
 ---
 
@@ -251,6 +251,16 @@ S-012 (tree R, second draw) scored 0.18 = 11/58 (ref 57970005); EXP-029 row 3: p
 Next (2026-11-08): round 0 of the E4B loop is EXP-045's analysis (screener), then round 1 is chosen from the base-set traces, pre-registered and pushed by the screener inside the day's ceiling; EXP-048 clears its three feasibility points at 0 GPU and pre-registers its training kernel (experimenter); S-014 bookkeeping (submitter's result file; experimenter's row 14 and EXP-050 section 9). Today's upload slot is open until 23:59 UTC and nothing new is screened for it: the user's call (a second draw of the S-014 bytes pools under EXP-050 row 2, or the slot lapses). EXP-037 (31B vendoring) stays parked: it does not fit the 31B's 13.8 s of room per task, and whether the hidden private-repo tasks have the gap is unknown (C-021); reopened only by a cheaper placement of the stand-ins. the paper-writer when the experiments are read (Writeup due 2026-11-12). Approval open: the 2026-11-08 loop and EXP-048 kernels inside 4.0 GPU-h for the day. Waiting on the user: the history of the removed passages, a dev-48 arm or an upload of anything the loop keeps. Also raised by the experimenter, the user's call: the tracked EXP-004 files `notebooks/regrade_shim_dev48/kaggle_regrade_shim.{py,ipynb}` embed zips of agent patches (plan.md:52). After EXP-036 runs: its analysis job, EXP-035 on the re-graded outputs, check 0d, then the user's decision on the revised screens.
 - Done: `submissions.md` row 12 = 0.18 (11/58), EXP-029 §9, small-model names in the rules (commits 2538bc6, 1cd52f8); EXP-031 pre-registered and S-013 proposed (third baseline draw, not uploaded). (Later the same day: uploaded, ref 58037856, pending; see the S-013 entry above.)
 - User: ~~today's upload slot (S-013 or empty; closes 2026-11-05 23:59 UTC)~~ (decided: S-013, uploaded), what "resets at 7pm" refers to and the GPU-hours left this week, plan.md §5.8 rewording.
+
+- **2026-11-17 to 2026-11-21, the sweep rule and the per-file readers (EXP-082 to EXP-086), all read; none promoted, no dev-48 bought.**
+  - **EXP-082** (zero GPU): a grep of the changed identifiers reaches 8 of 24 missed gold regions for the 31B (between) and 7 of 38 for the E4B (drop). Both smoke-8s ran on the user's word anyway (357e64b).
+  - **EXP-083, sweep on the 31B:** killed for the v24-at-8 tree on time, projected 11.68 h against 11.0 h (+49.1 s per task); uptake 6 of 8; regions touched 3 above, 2 below, 3 equal; resolves 1 of 8 against 0 and 0. C-025.
+  - **EXP-084, sweep on the E4B:** wording killed, uptake 1 of 8. The lead ruled before the baseline uptakes were counted that row 2's "within 2 tasks of 8" means a draw at 6 of 8 or more (section 7 of EXP-083 and EXP-084). C-025.
+  - **EXP-085 and EXP-086, per-file readers through `agent_tool`** (user request 2026-11-20, acad91d): row 7 on both, killed at L2. 31B gold file hit 5 of 8 against 5.00, every task equal; E4B 2 of 8 against 0.75, 2 above and 2 below. The reader call is not counted against `max_tool_calls`; the reader's reads are (harness-stack updated). C-014.
+  - **Data loss and restore, 2026-11-20:** `data/`, `runs_download/`, `untrusted/` and all but two run directories were gone from this checkout (not in the Recycle Bin; cause not confirmed). On the user's word ("Re-download from Kaggle"): `data/raw/tasks.jsonl` re-downloaded alone (sha256 e4b3fd60..., equal to `harness-eng/inputs.sha256` line 400), and six baseline kernel outputs (EXP-028 R and RH, EXP-038, 075, 077, 078), each matched to its committed summary, 48 of 48 ids, 0 mismatches. Every other past run is still absent here; the cluster holds copies.
+  - **GPU, 2026-11-20:** EXP-083 1.048, EXP-084 0.307, EXP-085 0.838, EXP-086 0.453 = 2.646 L4x4-h. The reset day is still unverified.
+  - **Open handoffs from the cluster** (`harness-eng/handoff/`, 2026-11-21, not taken): H-001, a zero-task 31B LoRA decode probe on L4x4 (about 0.45 GPU-h, suggested EXP-087), which sets whether a 31B adapter (L-005) can fit 11.0 h; H-002, a validator false error on `agent_tool` roots, needed only if R-016 or R-017 is kept. Both wait on the user.
+  - **Next:** idea 2 of the user's top three (bounded tool observations) as a smoke-8 on both models, or H-001; the user's call.
 
 ## Not pursued
 
