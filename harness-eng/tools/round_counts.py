@@ -6,7 +6,8 @@ Prints rows, mean task wall, resolved, empty patches, time caps (session timeout
 prompt-token drop of over 40% from above 8,000 between consecutive calls of the working agent), prompts above 24,576,
 model calls after the 28th tool call, submit_patch calls and calls per submitting task, and the root's model calls
 when the tree has a `solve` agent_tool. R-026: lever_skill_calls / _tasks / _errors (run_skill_script other than
-change-count) and adapter_steps (working-agent model calls not served by the base model). -v prints one line per task.
+change-count) and adapter_steps (working-agent model calls not served by the base model). R-027: locate_listed_tasks
+(a locate call printed a file list) and locate_passed_tasks (a solve request carries that list). -v prints one line per task.
 """
 import collections, json, os, statistics, sys
 
@@ -69,6 +70,18 @@ for r in rows:
         o = o if isinstance(o, dict) else {}
         if str(o.get("stdout", "")).startswith("ERROR") or o.get("error_type") or o.get("stderr") or not o.get("stdout"):
             agg["lever_skill_errors"] += 1
+    # R-027 2026-11-22 (locate): did a locate call print a ranked file list, and did any solve request carry it.
+    listed = False
+    for s, c in lev:
+        if (c.get("arguments") or {}).get("skill_name") == "locate":
+            try:
+                o = json.loads((s.get("observation") or {}).get("content") or "{}")
+            except (ValueError, TypeError, AttributeError):
+                o = {}
+            listed |= isinstance(o, dict) and "best first:" in str(o.get("stdout", ""))
+    agg["locate_listed_tasks"] += listed
+    agg["locate_passed_tasks"] += any("best first:" in str((c.get("arguments") or {}).get("request", ""))
+                                      for s in st for c in (s.get("tool_calls") or []) if c["function_name"] == "solve")
     agg["adapter_steps"] += sum(1 for s in st if s["extra"].get("author") == worker and s.get("metrics")
                                 and not str(s.get("model_name") or "").rstrip("/").endswith("-it-qat-w4a16-ct"))
     subs = sum(1 for s in st for c in (s.get("tool_calls") or []) if c["function_name"] == "submit_patch")
