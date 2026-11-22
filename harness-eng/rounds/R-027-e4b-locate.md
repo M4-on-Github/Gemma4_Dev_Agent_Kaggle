@@ -112,3 +112,44 @@ promoted: 25%.
   `locate` printed a list in both tasks, and every `solve` request (4) was that line.
 - By hand: no `rank.py` call raised; the plain request was printed on neither task. **Both PASS**; the d1 draws run.
   Stated: the loc5 request that dropped the list is the compliance risk the d1 gate `locate_passed_tasks<=23` reads.
+
+## Results (2026-11-22), read as written
+
+- Draw-1 gates: loc5 d1 (60610) PASS (resolved 7, empty 3, time caps 0, mean wall 126.9 s, `retry_miss` 0,
+  `solve_calls_gt3` 1, callcap 4, `locate_passed_tasks` 28). loc10 d1 (60615) PASS (resolved 7, empty 4, time caps
+  0, mean wall 91.2 s, callcap 2, `locate_passed_tasks` 25). All 10 draws COMPLETED, 32 rows each.
+
+| Arm | Per draw | Against the 12 comparator draws | 90% CI | Against the 4 fresh controls (9, 7, 5, 7) | 90% CI | Wall ratio (comparator / fresh) | Outcome |
+|---|---|---|---|---|---|---|---|
+| e4b-loc5 | 7, 7, 9, 5 | 0.00 | −1.33..+1.42 | 0.00 | −1.50..+1.50 | 0.91 / 0.84 | **drop** |
+| e4b-loc10 | 7, 6, 9, 6 | 0.00 | −2.17..+2.33 | 0.00 | −2.25..+2.25 | 0.88 / 0.82 | **drop** |
+
+- Fresh controls this round: 5 and 7. With R-026's 9 and 7, the 4 fresh draws average 7.0, the comparator's mean.
+
+**Mechanism (reading 4), per draw** (`tools/locate_mech.py`, `tools/round_counts.py`, `tools/retry_counts.py`):
+
+| | resolved | wrong files only | touched a gold file | no source edit | list printed | gold in list | edited a listed file | edited a gold file from the list |
+|---|---|---|---|---|---|---|---|---|
+| comparator (12) | 7.0 | 7.58 | 15.5 | 1.92 | - | - | - | - |
+| fresh controls (4) | 7.0 | 7.75 | 15.5 | 1.75 | - | - | - | - |
+| loc5 (4) | 7.0 | 10.75 | 12.25 | 2.0 | 31.0 | 18.0 | 22.5 | 13.75 |
+| loc10 (4) | 7.0 | 7.25 | 15.0 | 2.75 | 30.75 | 25.0 | 26.25 | 19.5 |
+
+- `locate_passed_tasks` per draw: loc5 28, 21, 26, 23; loc10 25, 24, 25, 27. The root sometimes shortened or
+  rewrote the line. It also called skills or scripts that do not exist in 1-4 tasks per draw
+  (`lever_skill_errors` 0-13).
+- Rescued per draw: loc5 0, 0, 1, 0; loc10 2, 2, 2, 2.
+
+## What this round shows
+
+- **The E4B uses a handed list.** It edits a listed file in 22-26 of 32 tasks. A computed list changes the E4B's
+  file choice, where R-005 and R-007's model-driven searches did not.
+- **Finding the file is not what limits the E4B.**
+  - With the top 5, wrong-file misses rose by about 3, in tasks whose gold file was not listed. Touched-gold misses
+    fell by about 3. Solves did not move.
+  - With the top 10, the gold file was listed in 25 of 31 tasks and the miss classes barely moved.
+  - So the E4B misses in the edit, not in the search. This agrees with R-028's desk: the E4B's old strings fail to
+    match about 100 times per draw, mostly misremembered text from a file it had read.
+- **A side effect worth keeping in mind:** both arms were about 10% faster than the comparator (wall 0.91 and 0.88).
+- Not promoted. The locate skill and `tools/locate_mech.py` stay for a later layout that pairs a list with an edit
+  aid.
