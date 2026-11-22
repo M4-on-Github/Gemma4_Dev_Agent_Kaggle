@@ -163,5 +163,84 @@ E4B replace failure share below 0.25: 60%.
   - 60815 (31B ctl d4): 24 of 24 rows SUCCESS.
 
   They are kept under R-021's rule, as R-033 did.
+
+  **Corrected 2026-11-22, after the server check below.** This applies to 60800, and only 60800. Its rows were
+  written, but the model server stopped answering during its first batch of 4 tasks. So the out-of-memory event was
+  not "after done". 60803 and 60815 are as stated: every task got model answers.
 - **60804 (E4B arm d2)** also ended out of memory. Like 60808 and 60812, it is a draw the d1 gate meant to cancel. It
   is not read.
+
+## Results (2026-11-22): both arms dropped
+
+**Server check.** This was run before the readings, on all 16 draws, with counts only.
+- A task counts as served if any agent step has prompt tokens. Draws E4B arm d2-d4 were cancelled by the d1 gate.
+  They were used only for this check and are not read for effect.
+- In 5 draws, the model server stopped answering during the first batch:
+  - all 4 E4B arm draws, served 4/32, 4/32, 4/20 and 5/21;
+  - 31B arm d4, served 4/24.
+- In those draws, the 4 first-batch tasks ran to the 8 min cap, and no later task got a model answer.
+- E4B arm d1 and d2 logs: 72 `InternalServerError` and 8 `ConnectionRefusedError` each (class names only). Both
+  jobs ended OUT_OF_MEMORY. 31B arm d4 ended COMPLETED with no server error class in its log.
+- **Control draws: 0 of 8 had a stall. Arm draws: 5 of 8.** So the stall goes with the line-only trees. The cause is
+  not found. One hypothesis, untested: without `edit_file`, more `run_command` work raises job memory, and the
+  out-of-memory killer takes the model server.
+
+**Reading 1 (smokes): PASS** (above).
+
+**Reading 2 (d1 gates).**
+- **E4B arm d1 (60800): KILL** on `resolved<=2` (0), `empty>=9` (30), `timecap>=6` (24) and `mean_wall>250` (396.2).
+  The gate actor cancelled d2-d4. The server had stopped, so this kill measures the stall, not the edit tool.
+- 31B arm d1: PASS. 31B ctl d1: PASS.
+- E4B ctl d1, read by hand: resolved 9, empty 0, timecap 0, mean wall 116.8. It passes the E4B bars.
+
+**Reading 3 (promotion).**
+- **E4B arm: dropped.** It was stopped by a gate. Its edit tool was never tested on served tasks, and the tree as built
+  is not runnable: 4 of 4 draws lost the server.
+- **31B arm against the 4 concurrent controls: −6.00 solves per draw (90% CI −7.75..−4.25), dropped.**
+  - Per draw: arm 9, 9, 8, 1; controls 15, 11, 12, 13.
+  - Wall ratio: 433.0 / 377.2 = 1.15.
+  - Reported:
+    - against the 8 pooled controls: −6.12 (CI −7.62..−4.75);
+    - on the 3 served draws only (d1-d3, not a reading): −4.08 (CI −5.67..−2.42), wall ratio 415.8 / 377.2 = 1.10.
+- **Drift.**
+  - 31B ctl against R-026 31B ctl: −0.25 (CI −2.25..+1.75).
+  - E4B ctl against R-021 retry ×12 on `sw-e4b-32`: +0.50 (CI −0.83..+1.92). Ctl 9, 9, 7, 5 against a mean of 7.0.
+
+**Reading 4 (mechanism), per draw.** Arm figures are from the 3 served 31B draws.
+
+| | 31B ctl (4) | 31B arm (d1-d3) | E4B ctl (4) |
+|---|---|---|---|
+| `edit_file` ok / failed | 29.25 / 38.50 (fail share 0.568) | — | 51.75 / 71.50 (0.580) |
+| `replace.py` OK / ERROR | — | 50.33 / 1.00 (fail share 0.019) | — |
+| `show.py` calls | — | 32.0 | — |
+| skill calls with a harness error code (script did not run) | 0 | 19.33 (in 25 of 72 tasks) | 0.25 |
+| argument loss (only `error`) | 33.5 on `edit_file` | 0 on `run_skill_script` | 18.25 on `edit_file` |
+| `write_file` calls | 11.25 | 10.0 | 0.75 |
+| empty / time cap | 7.25 / 8.75 | 8.33 / 10.33 | 1.5 / 0.0 |
+| calls per task / mean wall (s) | 18.0 / 377.2 | 21.4 / 415.8 | 15.1 / 116.8 |
+
+- **The 31B arm's harness errors, 58 over 3 draws:**
+  - `INVALID_ARGUMENTS` 38;
+  - `SKILL_NOT_FOUND` 17 (wrong `skill_name`);
+  - `SCRIPT_NOT_FOUND` 6.
+- **E4B arm:** the stall leaves too little to read. Smoke and served tasks only, 13 solver skill calls in the smoke:
+  6 harness errors, 0 raised.
+
+## What it means
+
+- **31B.** The line tool does what it was built for:
+  - edits land, with a fail share of 0.019 against 0.568;
+  - argument loss is gone, 0 against 33.5 per draw.
+
+  But solves fall by 4 to 6 per draw and wall rises 10-15%. This is none of the outcomes written before the run:
+  edits land and arguments survive, yet solves drop.
+  - Visible costs: 19 harness-rejected skill calls per draw, a `show.py` step before each edit, and 2 more time caps
+    per draw.
+  - The likely loss: `edit_file`'s string anchor carries meaning (the model names the code it changes), and line
+    numbers do not.
+
+  The 31B edit-tool line is closed. `edit_file` with its argument loss stays.
+- **E4B.** Untested. The tree stalls the model server, so the lever cannot be read without first finding the stall.
+  Given the 31B result on the same tool, a fix-and-rerun is not queued. The E4B edit-tool line is closed with R-014,
+  T-e4b-016 and this round.
+- **The shipping layouts stay:** `trees/e4b-r020-retry` and `trees/31b-base`.
