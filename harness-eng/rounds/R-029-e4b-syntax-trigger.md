@@ -191,3 +191,47 @@ helps: 10%. Adopted on mechanism: 30%. syn-solver mechanism works: 25%.
   `solve_calls_gt3` 1. d2-d4 continue.
 - Both jobs carry the OUT_OF_MEMORY flag after writing all rows. This is the known grading kill of one task's
   infinite-loop test (R-008), not a lost row.
+
+## Results (readings applied as written), 2026-11-22
+
+All R-029 jobs have ended. syn-retry d2-d4 (60652, 60654, 60656) had started next to d1, because all three waited
+only on the smoke. They hold partial rows from before the kill cancelled them. The reading script printed their
+counts by accident. **They are not read and not used.**
+
+### syn-retry (T-e4b-029a): dropped at the d1 gate (reading 2)
+
+- Reading 4 has no data, since stage B was cancelled. The d1 mechanism counts are in the section above.
+- The follow-up that fixes the kill cause is R-030 (the check script keeps the attempt count), queued on 2026-11-22.
+
+### syn-solver (T-e4b-029b), stage A (reading 3) and reading 5
+
+| | syn-solver d1-d4 | comparator (R-021 retry ×12 on syn-36) | fresh controls d1-d2 |
+|---|---|---|---|
+| resolved per draw | 3, 3, 3, 3 | 2.83 (range 1-5) | 3, 6 |
+| unparseable final patches per draw (`patch_syntax_desk.py`) | **6.5** | 6.25 | 5.5 |
+| empty per draw | 2.0 | | 2.0 |
+| mean task wall | 148.4 s (ratio 0.88) | 169.5 s | 153.8 s |
+
+- Paired against the comparator: +0.17 (CI −1.00..+1.25). Against the fresh controls: −1.50 (CI −3.75..+0.50).
+- **Mechanism fails:** 6.5 per draw against the bar of at most 3.0.
+  - The solver follows the bullet: it ran `py_compile` in 29, 26, 30 and 30 of 36 tasks.
+  - In the 26 unparseable rows:
+    - 9 never ran `py_compile`;
+    - in 15, the last `py_compile` reported an error, and the solver ended anyway;
+    - 76 `edit_file`/`write_file` calls came after the first `py_compile`.
+  - So the error is seen, and the fix edits fail. This matches R-028, where the E4B's limit is the edit, at about
+    100 failed old strings per draw.
+- Reading 5: the unparseable count is above 3.0, so no later combination round. **Dropped.**
+
+### Other observations (reported)
+
+- Fresh controls, against their comparators:
+  - syn-36 (3, 6): +1.67, CI +0.08..+3.42 against the 12 R-021 draws;
+  - cdev2-79 (60672, 60673): unparseable 8.0 per draw, resolved 8.0 mean against 7.58.
+  - Two draws only, so drift is not established. It is stated because the syn-36 controls sit above all but one
+    comparator draw.
+- Across this round's E4B draws, unparseable final patches resolved 0 of 57 more task-draws (syns 26, synr d1 4,
+  controls 27). The sure-miss premise holds.
+- Large single-file deletions (more than 10 lines removed in one file) that still parse: 1.5 per draw in R-021
+  retry, 0 resolved. That is a second sure-miss class, small at about 0.08 solves per draw. Held back for R-030's
+  outcome.
