@@ -93,3 +93,47 @@ unchanged. This is R-020's design, re-registered with a smoke gate that does not
   - The bars of readings 3 and 4 are unchanged.
 - Cause not established. Most likely candidate: memory charged to the cgroup on 0-17 that is not used on 0-23. The
   clean 0-23 jobs peak at 46-56 GB RSS.
+
+## Decision (reading 3), 2026-11-22: **Helps**
+
+- All 24 valid draws are complete: retry d1-d12, and control d1-d3, d4b (job 60258, pleiades-0-23, 42 min,
+  no OOM), d5-d12. Each has 79 SUCCESS rows and 0 model-server errors. The d12 pair (60218/60219) also ended
+  `OUT_OF_MEMORY` after the run, in the same way as the 12 kept jobs, so the pair is kept under the deviation above.
+- `tools/paired_boot.py`, retry d1-d12 against control (d1-d3, d4b, d5-d12), 79 tasks, 10,000 resamples, seed 0:
+  - resolved per draw: retry 7, 12, 6, 9, 9, 7, 8, 6, 8, 5, 7, 7 (mean 7.58); control 9, 4, 6, 5, 6, 6, 9, 8, 5, 7,
+    4, 9 (mean 6.50);
+  - **difference +1.08 solves per draw, 90% CI [+0.08, +2.08]. The lower bound is above 0, so the arm helps.**
+  - wall ratio 139.7 / 113.3 s = **1.23**.
+  - **By the reading, the E4B frozen config uses the retry layout.**
+- Sensitivity (reported, not a reading): using only the jobs with no OOM event (retry d1, d2, d3, d5, d8, d10;
+  control d1, d4b, d9, d11), the difference is +1.75, CI [+0.25, +3.33]. The sign does not depend on the kept OOM
+  jobs.
+- Mechanism (reading 4), summed over 12 draws per arm:
+
+  | | Control | Retry |
+  |---|---|---|
+  | First attempt empty | 192 | 169 |
+  | Retried | 1 | 163 |
+  | `retry_miss` | 191 | **6** |
+  | **Rescued** (resolved after an empty first attempt) | 0 | **13 (1.08 per draw)** |
+  | Over-retry (second `solve` after a non-empty first) | 0 | 5 |
+  | `solve_after_submit` | 2 | 12 |
+  | Tasks with more than 3 `solve` calls | 8 | 18 |
+  | Empty patches (per draw) | 208 (17.3) | 63 (5.3) |
+  | Time caps | 5 | 9 |
+  | Tasks solved in at least one draw | 16 | 24 |
+
+  - The rescue count, 13, matches the paired gain, +1.08 per draw. The added solves come from retried empty attempts
+    and not from a change to first attempts.
+  - So the R-018 limit (a retry starts in the leftover workspace) does not stop a retry from working. The smoke's
+    `solve_after_submit` defect (2 of 3) did not recur at that rate: 12 of 169 empty first attempts.
+  - Tasks with more than 3 `solve` calls also occur in the control (8), where the root prompt allows one. This is a
+    root habit of both arms. It is not a gate past d1, and no such task ran past the caps.
+- **Kaggle time.** This round ran with an 8.0-minute task cap. The E4B Kaggle candidate (EXP-050) uses 4.5 minutes.
+  - Counting a resolved row as lost when its task wall is over 270 s gives retry 7.42 against control 6.42 per
+    draw, so the gain survives the shorter cap on this estimate.
+  - 11.5% of retry rows run past 270 s (control 7.4%). Task wall p50/p90/p99: retry 104/295/485 s, control
+    88/228/454 s.
+  - The Kaggle check goes to handoff H-002.
+- Drift check: control mean 6.50 against R-017 Turing 6.88, R-011 base 7.00, R-008 Ada base 6.67. Control
+  empties 17.3 per draw, close to R-017's 16.8: it is the R-017 solver without `submit_patch`.

@@ -12,3 +12,10 @@
 
 - 2026-11-18 R-006: sweep + calls40 composed scores 8, 4, 8 (6.7) against base 6.0. The two +2.0
   three-draw results were noise. On cdev-56 a three-draw mean must beat the base by 3 to be kept.
+
+- 2026-11-22 R-017..R-021: the E4B's first significant gain is **retry on an empty attempt**, +1.08 solves per
+  draw (CI +0.08..+2.08, 12 paired draws), at 1.23x wall. It needs three things together:
+  - the solver cannot call `submit_patch`, since any submit ends the task;
+  - the root has no shell, only `solve`, a pure-Python count skill and `submit_patch`, or it does the work itself;
+  - the count is a number printed by `run_skill_script` (three fields, no `load_skill`).
+  Prompt-level control of the root (R-018) and a file-set selector (R-019) did not get there.
