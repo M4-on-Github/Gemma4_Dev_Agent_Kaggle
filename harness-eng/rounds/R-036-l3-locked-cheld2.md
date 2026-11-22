@@ -94,7 +94,7 @@ Written 2026-11-22 while the jobs run. On the six cdev2-79 base draws:
 
 - Reading 1 on the 12 E4B draws: 11 have 22 rows and 22 served tasks. `R-036-e4b-ctl-held-d3` (job 60823) has 22
   rows but 21 served, so it fails and is not read.
-- It is re-run once as `R-036-e4b-ctl-held-d3r`, the same tree, cohort and flags. Reading 2 uses ctl d1, d2, d3r and
+- It is re-run once as `R-036-e4b-ctl-held-d3r` (job 60848), the same tree, cohort and flags. Reading 2 uses ctl d1, d2, d3r and
   d4-d6.
 - The served-check script also printed each draw's resolved count, so those were seen before this entry. The bars
   are as pre-registered and are not changed.
