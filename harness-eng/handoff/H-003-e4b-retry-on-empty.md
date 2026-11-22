@@ -1,4 +1,9 @@
-# H-003: E4B retry-on-empty candidate for Kaggle L4x4 (handoff, not a pre-registration)
+# H-003: E4B retry-on-empty candidate for Kaggle L4x4 (handoff, not a pre-registration) — WITHDRAWN 2026-11-22
+
+> **Withdrawn.** On the cluster at the Kaggle cap, 4.5 min (`recursive-harness` round R-024, 12 paired draws, Ada),
+> the retry layout gave **+0.33 solves per draw, 90% CI −1.08..+1.83**, at 1.13x wall (rescued 0.83 per draw). The
+> pre-registered reading is dropped. The E4B Kaggle candidate stays the EXP-050 single loop. Do not run EXP-088
+> from this file. The text below is the record as written.
 
 Written 2026-11-22 on pleiades. Counts only.
 
