@@ -163,3 +163,12 @@ helps: 10%. Adopted on mechanism: 30%. syn-solver mechanism works: 25%.
 - Gate actors (`logs/gate_R-029_<job>.log`): smoke 60648 (cancels synr stage A and stage B), smoke 60649 (cancels
   syns stage A), synr d1 60650 (cancels synr d2-d4 and stage B), syns d1 60651 (cancels syns d2-d4), with the bars
   of readings 1 and 2. The by-hand smoke checks are read when the smokes finish.
+
+## Smoke gates (reading 1), 2026-11-22: both PASS
+
+- syn-retry 60648 COMPLETED in 7 min 58 s. 2 rows SUCCESS; resolved 0; root model calls at most 8; `solve_calls_gt3` 0.
+  `check.py` printed an integer once and a `syntax error` line 3 times, with empty stderr and no exception. One task
+  was flagged, re-solved once, and still did not parse at submit (`syntax_last` 1). Both tasks reached the call cap.
+- syn-solver 60649 COMPLETED in 7 min 59 s. 2 rows SUCCESS; root calls at most 5; `solve_calls_gt3` 0; one task hit
+  the call cap.
+- The gate actors released nothing (the draws are `afterok` on the smokes). Stage A and stage B run as queued.
