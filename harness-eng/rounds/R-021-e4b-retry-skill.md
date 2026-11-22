@@ -65,3 +65,31 @@ unchanged. This is R-020's design, re-registered with a smoke gate that does not
   - If the round is dropped for this reason, the next variant puts the decision in the script: it prints SOLVE
     AGAIN or SUBMIT NOW instead of a number. Not queued: Ada is near full (asingal2 holds 15 of the 16 GPUs) and
     R-021 already holds the queue.
+
+## Draw-1 gates (reading 2), 2026-11-22: both pass
+
+- Control d1 (60196): 79 rows SUCCESS; resolved 9; empty 15; time caps 0; mean task wall 104.7 s; one
+  `submit_patch` per task. PASS.
+- Retry d1 (60197): 79 rows SUCCESS; resolved 7; empty 4; time caps 1; mean task wall 132.5 s; root calls at most 9;
+  `solve` calls {1: 59, 2: 16, 3: 4}, none more than 3; first attempt empty 12, retried 12, **`retry_miss` 0**,
+  rescued 0; `solve_after_submit` 0. PASS. The draws ran on.
+
+## Deviation, out-of-memory jobs (2026-11-22 01:30Z, recorded before reading 3 is computed)
+
+- 13 of the 24 draw jobs ended `OUT_OF_MEMORY` (64G cgroup), all on pleiades-0-17: control d2-d8, d10 and retry
+  d4, d6, d7, d9, d11. None of the 7 draws on pleiades-0-23 did.
+- 12 of the 13 are complete: 79 SUCCESS rows, no model-server error in any row or log, and error counts
+  (session timeout 0-2, tool budget 0-2) within the range of the clean jobs. Their OOM event is logged after the run's
+  `done` line. **They are kept.**
+- **Control d4 (60202) is not valid.** The vLLM server stopped serving at task 21. Tasks 1-20 are normal,
+  tasks 21-41 end at the session timeout, and tasks 42-79 end in a model-server error (`litellm.InternalServerError`,
+  347 log lines). It reads resolved 2, which is a server failure, not an agent outcome.
+- **Change.**
+  - Control d4 is re-run as `R-021-e4b-ctl-ada-d4b` with the same tree, cohort and flags (4 CPUs, 64G, 1 Ada GPU).
+    It is pinned to pleiades-0-23 (`-w`), since no job there ran out of memory.
+  - Reading 3 then uses control d1-d3, d4b, d5-d12 against retry d1-d12. If d4b also fails the same way, reading 3
+    uses control d1-d3 and d5-d12 (11 draws). The paired statistic is per-task resolve rates, so the arms need not
+    have equal draw counts. 60202's rows are not read for any reading.
+  - The bars of readings 3 and 4 are unchanged.
+- Cause not established. Most likely candidate: memory charged to the cgroup on 0-17 that is not used on 0-23. The
+  clean 0-23 jobs peak at 46-56 GB RSS.
