@@ -190,3 +190,4 @@ Seen before this entry: the training losses (part 1), the d1r gate's PASS line, 
   extended and l8e1 is not, or the reverse, only that arm gets d9-d16 (with ctl d9-d16).
 - **Mechanism.** As reading 5.
 - **Blind guess (not a reading).** l8e1 above l8 in point estimate: 55%.
+- **L-008b queued 2026-11-22:** l8e1 d1 61019; held l8e1 d2-d8 61020,61021,61022,61023,61024,61025,61026; d1 gate actor (kill cancels the held l8e1 draws).
