@@ -106,9 +106,13 @@ tuning and `cohorts/cheld-16.txt`, locked, for L3.
 | L0 | desk check and trace mining, no GPU | the trigger occurs often enough to read |
 | L1 | screen: `cohorts/screen-<model>-20.txt`, 2 draws, against 2 to 3 fresh base draws on the same 20 | promoted if the candidate's mean beats the base mean by 1.5 or more, or by 0.5 or more with its process endpoint met; dropped otherwise |
 | L2 | only for promoted candidates: `cdev2-79` (`HENG_SHIMS=1`), 2 draws (31B) or 3 (E4B), against the pooled base | resolves per draw beat the base mean by 3 or more |
-| L3 | cheld-16, 2 draws of base and candidate | no loss on the locked ids |
+| L3 | cheld-16, 2 draws of base and candidate (from the C-003 controls on: `cheld2-22`) | no loss on the locked ids |
 | L4 | Kaggle L4x4 dev-48, on the other computer | time profile and 12 h projection pass |
 | L5 | upload | the user approves it |
+
+L3 has run once (2026-11-22, `rounds/R-036-l3-locked-cheld2.md`). The E4B retry layout, against its one-attempt
+control on `cheld2-22`, 6 draws each: +0.67 solves per draw (90% CI 0.00..+1.33). It passed, and the cohort is now
+spent. 31B base held out: 0.409 per task, against 0.363 on cdev2-79.
 
 Changed 2026-11-18T17:00Z on the user's direction (screen a small subset, run the full cohort only for
 what looks promising, so more ideas get tried). Before that, rounds R-001 to R-004 ran every
