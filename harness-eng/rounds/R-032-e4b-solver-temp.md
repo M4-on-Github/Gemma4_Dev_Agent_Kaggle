@@ -74,3 +74,8 @@ rate and the models' abilities, with small sweeps before bigger runs.
    readings, pre-registered as its own round.
 
 **Blind guess (not a reading).** Both pass d1: 85%. Mechanism works: t03 60%, t06 40%. Promoted: t06 10%, t03 8%.
+
+## Queued (2026-11-22)
+
+- t06 d1-d4: 60732-60735. t03 d1-d4: 60736-60739. Fresh control d1-d2: 60740-60741.
+- Gate actors on 60732 (cancels 60733-60735) and 60736 (cancels 60737-60739), with the bars of reading 1.
