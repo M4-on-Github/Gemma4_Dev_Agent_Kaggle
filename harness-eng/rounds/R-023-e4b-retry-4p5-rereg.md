@@ -45,3 +45,15 @@ margin. At 4.5 min the time-cap counts are expected to rise, so that bar keeps R
   d11 60335/60336, d12 60337/60338.
 - Gate actors (`tools/gate_actor.sh`): retry d1 on 60316 and control d1 on 60315, with the bars above. Each cancels
   every other R-023 job on a kill.
+
+## Draw-1 gates (reading 1), 2026-11-22: control PASS, retry KILLED
+
+- Control d1 (60315): PASS. 79 rows, resolved 8, empty 12, time caps 3 (all report 4.5 min).
+- Retry d1 (60316): **KILL on `solve_calls_gt3>=1` (value 1)**. 79 rows. Its other gate values sit inside their bars:
+  resolved 8, empty 5, time caps 4 (all report 4.5 min), `retry_miss` 1. `gate_actor.sh` cancelled every other R-023
+  job, and none is read.
+- **The kill is again a bar error, mine.** The table above gives R-021's `solve_calls_gt3` range as "0". That was
+  never checked; it is only R-021 retry d1's value. Over R-021's 12 retry draws the per-draw values are 0, 3, 1, 1, 2,
+  1, 3, 1, 4, 1, 0, 1, so the bar would have fired on 10 of them. The "helps" result already includes those tasks.
+- **Fix for the next round, applied before it is written:** every bar is run through `tools/d1_gate.py` on all 24
+  R-021 draws, and must PASS on every one.

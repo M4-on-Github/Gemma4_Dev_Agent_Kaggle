@@ -24,3 +24,6 @@
   earlier round (control `empty>=23`, from R-020) sat inside the control's observed range at 8 min (10-24 per draw).
   It killed a 17 GPU-h round at draw 1 for no fault in the trees. Bars now sit outside each arm's range in the
   nearest round with the same trees.
+  The same day R-023 repeated the error on a different field (`solve_calls_gt3>=1`, R-021 range 0-4), because the
+  range was taken from one draw. The check is now mechanical: run `tools/d1_gate.py` with the new bars on every draw
+  of the reference round, and queue only if all PASS.
