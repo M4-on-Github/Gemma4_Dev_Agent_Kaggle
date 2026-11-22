@@ -98,3 +98,5 @@ Written 2026-11-22 while the jobs run. On the six cdev2-79 base draws:
   d4-d6.
 - The served-check script also printed each draw's resolved count, so those were seen before this entry. The bars
   are as pre-registered and are not changed.
+- Job 60848 stopped after 14 s on its start-up check (visible GPU count not 1), before any task ran. Nothing was
+  served, so it is not a draw. The same `d3r` re-run was submitted again as job 60849.
