@@ -27,3 +27,7 @@
   The same day R-023 repeated the error on a different field (`solve_calls_gt3>=1`, R-021 range 0-4), because the
   range was taken from one draw. The check is now mechanical: run `tools/d1_gate.py` with the new bars on every draw
   of the reference round, and queue only if all PASS.
+
+- **2026-11-22 (R-024). Measure a time-spending layout at the cap it ships with.** The retry layout's +1.08 at 8 min
+  became +0.33 (CI −1.08..+1.83) at the Kaggle 4.5 min. Retry time caps went from about 0.7 to 7.0 per draw. A cut of
+  the 8-min rows at 270 s had predicted +1.00, so that estimate was too kind. Run every E4B round at 4.5 min from now on.

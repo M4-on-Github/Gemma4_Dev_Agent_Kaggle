@@ -53,3 +53,51 @@ only; no trace content. Tweak id **T-e4b-022**, unchanged.
 - Retry d1 (60365): resolved 5, empty 9, time caps 5 (all report 4.5 min), `retry_miss` 1, `solve_calls_gt3` 1, no
   server error. PASS.
 - The other draws keep running. The decision waits for all 24.
+
+## Decision (reading 3), 2026-11-22: **Dropped**
+
+- All 24 draws COMPLETED on pleiades-0-23: 79 rows each, 0 model-server errors, 0 out-of-memory kills. No re-runs.
+- Resolved per draw (`tools/paired_boot.py`, 79 tasks, 10,000 resamples, seed 0):
+  - retry: 5, 7, 8, 6, 7, 8, 7, 6, 9, 6, 10, 7 (mean 7.17);
+  - control: 5, 4, 8, 5, 10, 8, 5, 6, 7, 10, 5, 9 (mean 6.83).
+- **Paired difference +0.33 solves per draw, 90% CI −1.08..+1.83.** Wall ratio 133.0 / 117.9 s = **1.13**.
+- Applying R-022 reading 3 as written:
+  - Helps: the CI lower bound is not above 0. No.
+  - Kept on mechanism: rescued is 10 / 12 = 0.83 per draw (≥ 0.5, yes) and the wall ratio is 1.13 (≤ 1.4, yes), but
+    the point estimate +0.33 is below +0.5. No.
+  - **Dropped.**
+
+## Mechanism (reading 4)
+
+| Count, 12 draws | Control | Retry |
+|---|---|---|
+| first attempt empty / non-empty / unknown | 167 / 646 / 131 | 168 / 674 / 105 |
+| retried | 0 | 162 |
+| `retry_miss` | 167 | 6 |
+| rescued | 0 | 10 |
+| over-retry | 0 | 5 |
+| `solve_after_submit` | - | 7 |
+| tasks with more than 3 `solve` calls | 6 | 14 |
+| empty patches | 195 (16.3 per draw) | 78 (6.5 per draw) |
+| time caps (4.5 min) | 47 (3.9 per draw) | 84 (7.0 per draw) |
+| tasks solved at least once | 19 | 21 |
+| task wall mean / p50 / p90 / p99 | 117.9 / 94 / 250 / 380 s | 133.0 / 108 / 275 / 373 s |
+| rows over 270 s | 7.5% | 11.7% |
+| Kaggle projection `120 × (mean wall + 60 s)` | 5.93 h | 6.43 h |
+
+- Both arms project well inside the 11.0 h gate.
+- **Against R-021 (8 min), a check on the estimate, not a reading.** The 270-s cut of R-021 predicted 7.42 against 6.42.
+  At 4.5 min the retry arm gave 7.17 (R-021: 7.58), and the control 6.83 (R-021: 6.50). Rescued fell from 13 to 10
+  over 12 draws. Retry time caps rose from about 0.7 to 7.0 per draw. The control's rise is inside its draw-to-draw
+  spread.
+- **Stated, not a reading.** Rescued counts tasks whose first attempt was empty and that ended resolved. The control's
+  layout cannot produce those. That argues for a real gain near the rescued rate (0.83 per draw). The pre-registered
+  rule asked for the paired point estimate as well, and that is +0.33. The rule stands. The two rounds' CIs
+  (R-021 +0.08..+2.08, R-024 −1.08..+1.83) overlap, and no pooled reading was registered, so none is made.
+
+## What this means (as pre-registered)
+
+- At the Kaggle cap the retry layout does not show a gain that pays for its time. **The E4B Kaggle candidate stays
+  the EXP-050 single loop.** H-003 is withdrawn on the consolidated branch.
+- The retry trees and tools are kept. Any further retry round needs a new pre-registration and a change of design,
+  not more draws of this one.
