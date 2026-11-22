@@ -5,7 +5,8 @@
 Prints rows, mean task wall, resolved, empty patches, time caps (session timeout), error kinds, compactions (a
 prompt-token drop of over 40% from above 8,000 between consecutive calls of the working agent), prompts above 24,576,
 model calls after the 28th tool call, submit_patch calls and calls per submitting task, and the root's model calls
-when the tree has a `solve` agent_tool. -v prints one line per task.
+when the tree has a `solve` agent_tool. R-026: lever_skill_calls / _tasks / _errors (run_skill_script other than
+change-count) and adapter_steps (working-agent model calls not served by the base model). -v prints one line per task.
 """
 import collections, json, os, statistics, sys
 
@@ -54,6 +55,22 @@ for r in rows:
         if s["extra"].get("author") == worker and s.get("metrics") and n >= 28:
             agg["calls_after_cap"] += 1
         n += len(s.get("tool_calls") or [])
+    # R-026 2026-11-22 (sweep): lever skills (any run_skill_script call that is not change-count), their ERROR results,
+    # and working-agent model calls served by an adapter (model_name not the base model path).
+    lev = [(s, c) for s in st for c in (s.get("tool_calls") or []) if c["function_name"] == "run_skill_script"
+           and (c.get("arguments") or {}).get("skill_name") != "change-count"]
+    agg["lever_skill_calls"] += len(lev)
+    agg["lever_skill_tasks"] += bool(lev)
+    for s, c in lev:
+        try:
+            o = json.loads((s.get("observation") or {}).get("content") or "{}")
+        except (ValueError, TypeError, AttributeError):
+            o = {}
+        o = o if isinstance(o, dict) else {}
+        if str(o.get("stdout", "")).startswith("ERROR") or o.get("error_type") or o.get("stderr") or not o.get("stdout"):
+            agg["lever_skill_errors"] += 1
+    agg["adapter_steps"] += sum(1 for s in st if s["extra"].get("author") == worker and s.get("metrics")
+                                and not str(s.get("model_name") or "").rstrip("/").endswith("-it-qat-w4a16-ct"))
     subs = sum(1 for s in st for c in (s.get("tool_calls") or []) if c["function_name"] == "submit_patch")
     agg["submit_calls"] += subs
     submitting += subs > 0

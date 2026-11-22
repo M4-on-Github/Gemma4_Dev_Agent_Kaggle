@@ -1,0 +1,6 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 80   # harness-eng R-026 2026-11-22: 56 -> 80, up to 5 solve attempts share the counter
+  # was: max_tool_calls: 56   # harness-eng R-020 2026-11-21: 56 in both arms (R-018 retry arm value); the counter is shared by up to 3 solve attempts
+  max_time_minutes: 10   # harness-eng R-026 2026-11-22: 8 -> 10, the E4B has spare Kaggle time (R-021 projection 6.66 h at 8)
+  max_turns: 80

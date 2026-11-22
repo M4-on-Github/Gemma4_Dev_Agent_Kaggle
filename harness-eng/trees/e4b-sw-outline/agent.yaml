@@ -1,0 +1,23 @@
+name: swe_agent
+# harness-eng R-026 2026-11-22 (sweep, lever skill): the solver gets skills/outline (class and function line ranges of one file) and one prompt line in section 2.
+# harness-eng R-020 2026-11-21 (T-e4b-020, retry): the no-submit solver; the root calls `solve`, counts changed source
+# files with one fixed run_command, calls `solve` again while the count is 0 (at most 3 solve calls), then submit_patch.
+# Differs from trees/e4b-r020-ctl only in the root prompt and the root's run_command tool. Sizing: rounds/R-020.
+# harness-eng R-020 fix 1 2026-11-22: the root's run_command is replaced by skills/change-count (run_skill_script,
+# pure file reads); in the smoke the root used run_command to work on the issue itself (one task never called solve).
+# harness-eng R-017 2026-11-21 (T-e4b-017): R-016's layout (T-31b-014) on the E4B. Single LlmAgent -> a root that
+# calls one agent_tool `solve`. agent_tool runs `solve` in its own Runner with no App, so the scorer's
+# EventsCompactionConfig (summarize at 14,336 prompt tokens) does not apply inside it (google_adk 1.36.1
+# tools/agent_tool.py Runner(...) without app; runners.py:1429 passes None; flows/llm_flows/compaction.py:39-41
+# returns). The solver is trees/e4b-base's agent with the same tools and sampling; its instruction is the base prompt
+# (byte-identical to the 31B base prompt) plus the task section from trees/31b-r016-nocompact, unchanged.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include prompts/root.md
+tools:
+  - submit_patch
+  - agent_tool:
+      config_path: sub_agents/solver.yaml
+      skip_summarization: true
+skills:
+  - skills/change-count
+generate_content_config: !include configs/sampling_root.yaml
