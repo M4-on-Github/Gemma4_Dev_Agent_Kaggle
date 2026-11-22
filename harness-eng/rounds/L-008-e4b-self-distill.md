@@ -126,3 +126,12 @@ mean task wall 145.1 s. R-021 ctl (one solve): 4.62.
 
 **Blind guess (not a reading).** Smoke and d1 pass: 75%. Promote 10%, extend 20%, not kept 55%, harm 15%. Wall
 ratio 1.1-1.4.
+
+## Queued
+
+Submitted 2026-11-22, all at once, after the commit that adds this file:
+- training 60874 (`heng_lora`, 10 h limit); pick 60875 (`afterok` 60874); smoke 60876 (`afterok` 60875).
+- l8 d1 60877 and ctl d1-d8 60878-60885, `afterok` 60876.
+- held: l8 d2-d8 60886-60892, l8a d1-d2 60893-60894.
+- Gate actors: smoke (kill cancels 60877-60894); d1 on 60877 (kill cancels 60886-60894 and the ctl draws; pass
+  releases 60886-60894).
