@@ -92,3 +92,11 @@ can win.
   attempt would be the next variant; it is not queued.
 
 **Blind guess (not a reading).** Passes the d1 gates: 85%. Helps: 35%. Kept on mechanism: 30%. Dropped: 35%.
+
+## Queued (2026-11-22)
+
+- Draws, all `-w pleiades-0-23`, no dependency, as (control, retry): d1 60280/60281, d2 60282/60283, d3 60284/60285,
+  d4 60286/60287, d5 60288/60289, d6 60290/60291, d7 60292/60293, d8 60294/60295, d9 60296/60297, d10 60298/60299,
+  d11 60300/60301, d12 60302/60303. Five ran at once at submission; the rest wait for a GPU on 0-23.
+- Gate actors (`tools/gate_actor.sh`): retry d1 on 60281 and control d1 on 60280, with the reading-1 bars. Each
+  cancels every other R-022 job on a kill.
