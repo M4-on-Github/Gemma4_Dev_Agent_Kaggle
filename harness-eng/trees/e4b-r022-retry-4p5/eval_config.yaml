@@ -1,0 +1,5 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 56   # harness-eng R-020 2026-11-21: 56 in both arms (R-018 retry arm value); the counter is shared by up to 3 solve attempts
+  max_time_minutes: 4.5   # harness-eng R-022 2026-11-22: 8 -> 4.5, the Kaggle candidate value (EXP-050; 120 x 5.5 min = 11.0 h gate); only change from trees/e4b-r020-retry
+  max_turns: 80
