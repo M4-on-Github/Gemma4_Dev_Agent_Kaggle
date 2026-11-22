@@ -37,3 +37,11 @@ margin. At 4.5 min the time-cap counts are expected to rise, so that bar keeps R
 | retry | `cohorts/cdev2-79.txt` | 12 | `R-023-e4b-retry-4p5-d1..d12` |
 
 **Blind guess (not a reading), as R-022.** Passes the d1 gates: 90%. Helps: 35%. Kept on mechanism: 30%. Dropped: 35%.
+
+## Queued (2026-11-22)
+
+- Draws, all `-w pleiades-0-23`, no dependency, as (control, retry): d1 60315/60316, d2 60317/60318, d3 60319/60320,
+  d4 60321/60322, d5 60323/60324, d6 60325/60326, d7 60327/60328, d8 60329/60330, d9 60331/60332, d10 60333/60334,
+  d11 60335/60336, d12 60337/60338.
+- Gate actors (`tools/gate_actor.sh`): retry d1 on 60316 and control d1 on 60315, with the bars above. Each cancels
+  every other R-023 job on a kill.
