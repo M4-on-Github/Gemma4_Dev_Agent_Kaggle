@@ -13,7 +13,10 @@
 # 4:30 over 2:07). Memory stays 64G: MaxRSS reached 46-57 GB, memory is not billed, and rich_3480's grading run
 # already hits 64G (README Setup results 8).
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=64G
+# Memory 2026-11-22 (L-008): 64G -> 96G. L-008 l8 d1 (60877) reached 64.0 GB and the out-of-memory killer took the
+# model server, 29 of 40 tasks unserved; the same as R-034's arm stalls. Control draws of the same period peaked
+# at 56.7-59.6 GB, and one (60878) also logged an oom-kill. Memory is not billed; nodes have about 1 TB.
+#SBATCH --mem=96G
 #SBATCH --time=12:00:00
 #SBATCH --output=/home/mmyatmau/Gemma4_Dev_Agent_Kaggle/harness-eng/logs/%x_%j.out
 #SBATCH --error=/home/mmyatmau/Gemma4_Dev_Agent_Kaggle/harness-eng/logs/%x_%j.out

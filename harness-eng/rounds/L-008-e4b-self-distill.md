@@ -147,3 +147,23 @@ Submitted 2026-11-22, all at once, after the commit that adds this file:
 - **Smoke gate: pass** (job 60876): 2 rows, 2 SUCCESS, root calls max 4, no task with more than 3 solve calls,
   adapter steps 12. Not read for solves.
 - The l8 d1 draw and the control draws are running; the d1 gate actor waits on 60877.
+
+## Deviation (logged 2026-11-22, before any draw is read for effect)
+
+- **What happened.** The d1 gate actor killed the round on l8 d1 (60877): `resolved<=2` (0), `empty>=11` (33),
+  `timecap>=6` (22), `mean_wall>250` (345.7). It cancelled l8 d2-d8, l8a d1-d2 and ctl d1-d8 (ctl d1-d5 were
+  running; they are not read).
+- **Reading 2 (served check) fails on d1, so the gate read a broken draw.** Only 11 of 40 tasks are served. The job
+  ended OUT_OF_MEMORY at 64.0 GB MaxRSS with an oom-kill event; the log has 259 `InternalServerError` and 11
+  `ConnectionRefusedError` (class names only). Tasks 1-7 in completion order got model answers; from about the
+  eighth the server stopped answering and every later task ran to the time cap or failed fast. This is R-034's
+  stall, now with a cause: the out-of-memory killer takes the model server.
+- **The control tree is near the same limit.** MaxRSS of the cancelled ctl draws: 59.6 GB (60878, which also logged
+  an oom-kill), 56.7 and 56.7 GB (60879, 60881); two others 6.1-6.3 GB (they had not started their tasks' grading).
+  So 64G is marginal for both trees, and the arm may simply use somewhat more.
+- **Fix, applied to both arms.** `slurm/eval.sbatch` memory 64G -> 96G (memory is not billed; CPUs stay 4). Per
+  reading 2, l8 d1 is re-run once as `L-008-e4b-l8-ada-d1r`. The control draws are re-run as `ctl-ada-d1r..d8r`
+  (their first runs were cancelled and are not read). l8 d2-d8 and l8a d1-d2 never started and keep their names.
+- **Gates and bars are unchanged.** The d1 kill gate is applied to d1r, after the served check. The d1 counts above
+  were printed by the gate before this entry; they come from a broken draw and say nothing about the adapter.
+- **Added to the mechanism report:** MaxRSS per job, both arms, so that "the adapter raises memory" is visible.
