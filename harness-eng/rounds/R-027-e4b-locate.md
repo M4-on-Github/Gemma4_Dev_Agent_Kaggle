@@ -102,3 +102,13 @@ promoted: 25%.
 - Gate actors (`tools/gate_actor.sh`, logs `logs/gate_R-027_<job>.log`): each smoke (cancels that arm's d1-d4 on a
   kill) and each arm's d1 (cancels its d2-d4), with the bars of readings 1 and 2. The by-hand smoke checks of
   reading 1 are read when the smokes finish; a by-hand kill cancels that arm's draws then.
+
+## Smoke gate (reading 1), 2026-11-22
+
+- loc5 (60609, 7 min 42 s): 2 rows SUCCESS, resolved 1, empty 0, root model calls at most 5, `solve_calls_gt3` 0.
+  `locate` printed a file list in both tasks. In one task the `solve` request was that line; in the other the
+  root passed a 22-character request naming one file instead (`locate_passed_tasks` 1 of 2).
+- loc10 (60614, 8 min 37 s): 2 rows SUCCESS, resolved 1, empty 0, root model calls at most 10, `solve_calls_gt3` 0.
+  `locate` printed a list in both tasks, and every `solve` request (4) was that line.
+- By hand: no `rank.py` call raised; the plain request was printed on neither task. **Both PASS**; the d1 draws run.
+  Stated: the loc5 request that dropped the list is the compliance risk the d1 gate `locate_passed_tasks<=23` reads.
