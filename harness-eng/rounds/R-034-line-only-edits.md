@@ -120,3 +120,17 @@ representative sweeps before bigger runs.
 | 31B | 70% | 10% |
 
 E4B replace failure share below 0.25: 60%.
+
+## Queued (2026-11-22)
+
+- Smokes: e4b 60798, 31b 60799.
+- E4B arm d1-d4: 60800, 60804, 60808, 60812 (`afterok:60798`). E4B ctl d1-d4: 60801, 60805, 60809, 60813.
+- 31B arm d1-d4: 60802, 60806, 60810, 60814 (`afterok:60799`). 31B ctl d1-d4: 60803, 60807, 60811, 60815.
+- Gate actors (readings 1 and 2, bars as written):
+  - 60798, which cancels the E4B arm;
+  - 60799, which cancels the 31B arm;
+  - 60800, which cancels E4B arm d2-d4;
+  - 60802, which cancels 31B arm d2-d4;
+  - 60803 (31B ctl d1), which cancels every other 31B job.
+- E4B ctl d1 (60801) is read by hand with the E4B bars, reported only. The hand-read smoke check (script raised) is
+  done when the smokes end.
