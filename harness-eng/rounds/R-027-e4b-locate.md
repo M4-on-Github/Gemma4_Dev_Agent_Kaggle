@@ -92,3 +92,13 @@ user set on 2026-11-22: raise the solve rate and the models' abilities, starting
 
 **Blind guess (not a reading).** Each arm passes its smoke and d1: 75%. Promoted: loc5 20%, loc10 15%. At least one
 promoted: 25%.
+
+## Queued (2026-11-22)
+
+- Smokes: loc5 60609, loc10 60614.
+- loc5 d1-d4, all `afterok` on 60609: 60610, 60611, 60612, 60613.
+- loc10 d1-d4, all `afterok` on 60614: 60615, 60616, 60617, 60618.
+- Fresh controls, no dependency: 60619, 60620.
+- Gate actors (`tools/gate_actor.sh`, logs `logs/gate_R-027_<job>.log`): each smoke (cancels that arm's d1-d4 on a
+  kill) and each arm's d1 (cancels its d2-d4), with the bars of readings 1 and 2. The by-hand smoke checks of
+  reading 1 are read when the smokes finish; a by-hand kill cancels that arm's draws then.
