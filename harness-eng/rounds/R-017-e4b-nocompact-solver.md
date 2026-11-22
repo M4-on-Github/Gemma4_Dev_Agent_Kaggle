@@ -162,3 +162,24 @@ queued now on the user's instruction to queue everything before analysis (2026-1
   have fired its bar. All 8 come from tasks with a second `solve` call: 10 tasks have more than one, and the root
   makes up to 7 model calls.
 - d2-d8 continue. The decision (reading 3) waits for all eight draws.
+
+## Decision (reading 3), 2026-11-22: **Dropped**
+
+- d1-d8 all COMPLETED on pleiades-1-10 (jobs 60016-60023), 79 rows each.
+- `tools/paired_boot.py`, R-017 d1-d8 against R-011-e4b-base-tu5 d1-d8, 79 tasks:
+  - resolved per draw: arm 8, 6, 6, 9, 5, 6, 5, 10 (mean 6.88); base 8, 5, 7, 8, 6, 7, 6, 9 (mean 7.00);
+  - **difference −0.12 solves per draw, 90% CI [−1.38, +1.12]**. The lower bound is not above 0, so the arm is
+    **dropped**;
+  - wall ratio 633.8 / 607.2 = 1.04.
+- Mechanism (reading 4, reported):
+  - **Compaction within a `solve` session: 0 in all 8 draws, against 31-37 per base draw.** The no-compaction
+    solver did what it was built to do.
+  - Context-length errors 0; time caps 3 in all (base 2); turn-budget ends 0.
+  - Empty patches 134 over 8 draws (16.8 per draw), against base 91 (11.4 per draw).
+  - Model calls after the 28th tool call: 213, against base 20.
+- **What it means (R-017 "not helped, no context errors").**
+  - Removing compaction did not cost solves, and it caused no context-length failures.
+  - The extra empties and calls after the cap show that the solver often spends its budget without editing. That
+    is the failure R-020/R-021 address with a retry.
+  - The R-017 solver layout is not the E4B frozen config on its own. The E4B decision is R-021, whose arms carry
+    this solver with `submit_patch` removed.
