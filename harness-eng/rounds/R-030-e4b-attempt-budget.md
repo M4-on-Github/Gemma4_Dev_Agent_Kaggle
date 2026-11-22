@@ -108,3 +108,25 @@ are read. Counts only; no trace content, no ids. Tweak id **T-e4b-030**. Same go
   (`first_nonempty` 2), so `submit` on call 1 was correct.
 - Stated limit: neither the retry nor the repair branch, nor the call-3 limit, ran in the smoke. The d1 gates
   (`solve_calls_gt3`, `retry_miss`, `syntax_retry_miss`) cover them.
+
+## Results (2026-11-22): killed at stage-A d1
+
+- **Stage-A d1 (60703), 36 rows:** resolved 3, empty 0, mean wall 153.9 s, callcap 10. Solve calls per task: 1 call
+  21, 2 calls 7, 3 calls 5, 4 calls 3. Flagged 5, `syntax_last` 1, `syntax_rescued` 0.
+- **Gate (reading 2): KILL, `solve_calls_gt3>=3` (value 3).** The gate actor cancelled 60704-60718 (A d2-d4 and all
+  of stage B). Their partial rows are not read.
+- **Cause (mechanism, read by hand from the root call orders, counts only).** In all 3 tasks the root called `solve`
+  twice in a row with no check between them. The script can budget only the attempts its own calls see, so a solve
+  call that skips the check is outside the budget. Two of the three tasks never called `submit_patch` (graded tree).
+  Root orders across the 36 tasks: solve-check-submit 19, one retry then submit 4, two retries then submit 2, others
+  (each at most 2) 11.
+- So the R-029 fix moved the failure but did not remove it: the E4B root does not reliably alternate solve and check
+  once a first attempt has been made.
+- **Across R-029 and R-030, syntax repair rescued 0 of 12 flagged tasks.** From the 12 comparator draws, a task with
+  an unparseable final patch is resolved in about 5% of its other draws, so even a working trigger is worth at most
+  about 0.3-0.4 solves per draw. That is under this cohort's noise (R-026: 90th percentile of the null split +1.5).
+- **Considered and not run:** a `LoopAgent` (max 3) over solver and checker, which would take the count away from the
+  root. Not run on the same ceiling, on the risk of no-op iterations after a good attempt, and because the harness
+  registry has no exit or escalate tool to stop the loop early.
+- **Outcome: dropped.** The syntax-trigger line (R-029, R-030) is closed. The E4B shipping layout stays
+  `trees/e4b-r020-retry`.
