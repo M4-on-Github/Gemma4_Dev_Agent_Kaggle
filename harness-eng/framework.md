@@ -51,6 +51,17 @@ eval: max_tool_calls 56 (shared by every attempt), max_turns 80
 - Reviewer stage (R-011): dropped.
 - LoRA adapters (L-003, L-007 a2): killed. With a2 the call cap was hit in 38 of 40 tasks, 11.3 submits per
   submitting task.
+- The same adapters as the solver of the retry layout (R-026 a1, a2): killed at d1. The solver made about 50 calls
+  per task (run_command 1181 and 1047 against 166 for the base over 32 tasks), so the bloat is the exploration style
+  of the training data, not a submit loop.
+- Skills offered by a prompt bullet (R-026 outline; 31B line-edit): not called. A ranked file list (R-027): gold was
+  listed in 25 of 31 tasks and solves did not move. The E4B limit is the edit, not the search (R-028).
+- Retry request naming the failure (R-026, +0.25), up to 5 solves at 10 min (R-026, −1.25): dropped.
+- Syntax trigger (R-029 repair request with the root's count; R-030 the count kept by the script): killed at d1 on
+  `solve_calls_gt3`, because the root loses or skips the check between solves. Repair rescued 0 of 12 flagged tasks,
+  and a perfect trigger is worth about 0.3-0.4 per draw (R-031). A solver py_compile bullet (R-029): dropped.
+- Best-of-3 with a selector (R-031 desk, uncapped 8.77 against 6.25): does not fit the caps.
+- Self-distillation from E4B traces: about 10 distinct fold-A tasks are ever resolved, too few to train on.
 
 **Open before it can ship** (handoff H-002 on `all-work-consolidated-2026-11-20`):
 
