@@ -30,6 +30,8 @@ d = [sum(x[t] for x in A) / len(A) - sum(x[t] for x in B) / len(B) for t in task
 n = len(tasks)
 rng = random.Random(0)
 boots = sorted(sum(d[rng.randrange(n)] for _ in range(n)) for _ in range(a.n))
-print(json.dumps({"tasks": n, "dropped": dropped, "arm_per_draw": [sum(x.values()) for x in A],
-                  "base_per_draw": [sum(x.values()) for x in B], "diff_solves_per_draw": round(sum(d), 2),
+# R-032 2026-11-22: per-draw counts are over the paired tasks only; before this they summed each run's own rows, so a
+# base run on a larger cohort printed its full-cohort counts (the statistic and CI were always on the paired tasks).
+print(json.dumps({"tasks": n, "dropped": dropped, "arm_per_draw": [sum(x[t] for t in tasks) for x in A],
+                  "base_per_draw": [sum(x[t] for t in tasks) for x in B], "diff_solves_per_draw": round(sum(d), 2),
                   "ci90": [round(boots[int(0.05 * a.n)], 2), round(boots[int(0.95 * a.n) - 1], 2)]}))

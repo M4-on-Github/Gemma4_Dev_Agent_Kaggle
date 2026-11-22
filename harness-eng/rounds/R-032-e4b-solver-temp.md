@@ -82,3 +82,40 @@ rate and the models' abilities, with small sweeps before bigger runs.
 - Comparator value for reading 3, computed after queueing and before any R-032 row exists
   (`tools/edit_status_counts.py --subset runs/_cohorts/sw-e4b-32.txt`, R-021 retry d1-d12): failed share 0.478
   (617 ok, 565 failed). So **mechanism works** means a failed share of 0.428 or less.
+
+## Results (2026-11-22, all 10 jobs COMPLETED, 20-32 min each)
+
+**Gates (reading 1):** t06 d1 PASS, t03 d1 PASS. Nothing was cancelled.
+
+**Promotion (reading 2),** `tools/paired_boot.py` on the 32 tasks against R-021 retry d1-d12 (7.0 per draw):
+
+| Arm | Per draw | Point | 90% CI | Wall ratio | Bar | Reading |
+|---|---|---|---|---|---|---|
+| t06 | 9, 10, 7, 7 | +1.25 | −0.33..+3.00 | 1.04 (135.0 / 129.7 s) | ≥ +1.25, ≤ 1.25 | **promote** (the bar is met exactly) |
+| t03 | 8, 8, 6, 6 | 0.00 | −1.75..+1.92 | 1.16 | ≥ +1.25, ≤ 1.25 | **drop** |
+| fresh control | 9, 8 | +1.50 | −0.67..+3.75 | 0.87 | (drift check) | mean 8.5, inside 5-9 |
+
+- **Drift, reported.** The fresh-control mean is inside the 5-9 window, so reading 2's drift clause does not fire.
+  But the control gains as much as t06 does over the comparator. Against the 4 fresh control draws (R-026's 9, 7 and
+  these 9, 8; mean 8.25), t06 is **0.00 (CI −2.50..+2.75)** and t03 is **−1.25 (CI −3.50..+1.00)**. So the t06
+  promotion is most likely comparator drift, not the temperature. The reading is applied as written. The
+  cdev2-79 round that it buys (reading 4) gets concurrent controls (R-033).
+- **Mechanism (reading 3)**, `tools/edit_status_counts.py` on the cohort (bar: failed share ≤ 0.428):
+
+  | Arm | ok | failed | failed share | Mechanism | Empty final patches per draw | Calls per task |
+  |---|---|---|---|---|---|---|
+  | comparator (R-021 ×12) | 617 | 565 | 0.478 | | 1.75 | 14.8 |
+  | fresh control ×2 | 80 | 89 | 0.527 | | 1.5 | 14.5 |
+  | t06 | 248 | 193 | 0.438 | not met | 1.0 | 15.2 |
+  | t03 | 227 | 164 | 0.419 | **works** | 0.75 | 15.4 |
+
+  - Retry counts over 4 draws: t06 first-empty 16, retried 15, rescued 6; t03 first-empty 15, retried 15, rescued 2,
+    `solve_calls_gt3` 2. Fresh control (2 draws): 11, 11, 2.
+  - As in R-003, temperature 0.3 makes edits land more often but does not add solves. The lower rescue rate at 0.3
+    (2 of 15 against 6 of 16) fits the risk stated in Why: a retry at low temperature is a less independent draw.
+- Tool fix, recorded: `paired_boot.py` printed each base run's per-draw count over all of its rows, so a cdev2-79
+  base showed full-cohort counts. The statistic and CI were always on the paired tasks. Per-draw counts are now on
+  the paired tasks too. Every earlier reading used the statistic, so none changes.
+
+**Outcome.** T-e4b-032a (t06) is promoted to R-033 by the written bar, with the drift caveat above. T-e4b-032b (t03)
+is dropped.
