@@ -38,3 +38,11 @@ only; no trace content. Tweak id **T-e4b-022**, unchanged.
 | retry | `cohorts/cdev2-79.txt` | 12 | `R-024-e4b-retry-4p5-d1..d12` |
 
 **Blind guess (not a reading), as R-022.** Passes the d1 gates: 95%. Helps: 35%. Kept on mechanism: 30%. Dropped: 35%.
+
+## Queued (2026-11-22)
+
+- Draws, all `-w pleiades-0-23`, no dependency, as (control, retry): d1 60364/60365, d2 60366/60367, d3 60368/60369,
+  d4 60370/60371, d5 60372/60373, d6 60374/60375, d7 60376/60377, d8 60378/60379, d9 60380/60381, d10 60382/60383,
+  d11 60384/60385, d12 60386/60387.
+- Gate actors (`tools/gate_actor.sh`): retry d1 on 60365 and control d1 on 60364, with the bars above. Each cancels
+  every other R-024 job on a kill.
