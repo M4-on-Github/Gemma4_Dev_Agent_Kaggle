@@ -46,3 +46,10 @@ only; no trace content. Tweak id **T-e4b-022**, unchanged.
   d11 60384/60385, d12 60386/60387.
 - Gate actors (`tools/gate_actor.sh`): retry d1 on 60365 and control d1 on 60364, with the bars above. Each cancels
   every other R-024 job on a kill.
+
+## Draw-1 gates (reading 1), 2026-11-22: both PASS
+
+- Control d1 (60364, 49 min): resolved 5, empty 11, time caps 3 (all report 4.5 min), no server error. PASS.
+- Retry d1 (60365): resolved 5, empty 9, time caps 5 (all report 4.5 min), `retry_miss` 1, `solve_calls_gt3` 1, no
+  server error. PASS.
+- The other draws keep running. The decision waits for all 24.
