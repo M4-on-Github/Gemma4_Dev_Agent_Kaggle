@@ -154,3 +154,14 @@ E4B replace failure share below 0.25: 60%.
 - **Tool change, made before any draw was read.** `tools/lineedit_counts.py` now counts results with a harness
   `error_code` as `skill_harness_error`, not as `replace_error`. A `replace_error` is now only an `ERROR` line printed
   by the script.
+
+## Deviation (2026-11-22, recorded before any draw is read)
+
+- **Out-of-memory after all rows were written.** Slurm ended three jobs as OUT_OF_MEMORY:
+  - 60800 (E4B arm d1): 32 of 32 rows SUCCESS, 32 unique tasks;
+  - 60803 (31B ctl d1): 24 of 24 rows SUCCESS;
+  - 60815 (31B ctl d4): 24 of 24 rows SUCCESS.
+
+  They are kept under R-021's rule, as R-033 did.
+- **60804 (E4B arm d2)** also ended out of memory. Like 60808 and 60812, it is a draw the d1 gate meant to cancel. It
+  is not read.
