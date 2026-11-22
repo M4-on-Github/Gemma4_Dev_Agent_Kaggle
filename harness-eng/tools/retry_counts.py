@@ -13,6 +13,7 @@ R-029 (change-check skill): a check that prints a line starting "syntax error" c
 per task: syntax_flagged (any such line), syntax_retried (a solve call followed one), syntax_retry_miss (flagged, fewer
 than 3 solve calls, no solve call after it), syntax_last (the last check before submit printed it), syntax_rescued
 (flagged and resolved).
+R-030 (attempt-check skill): `retry: ...` reads as 0, `repair: syntax error ...` as a syntax line, `submit` as nothing.
 """
 import collections, json, os, re, sys
 
@@ -36,8 +37,10 @@ def attempts(steps):
                 out = ""
             if out.isdigit():
                 cur.append(int(out))
-            elif out.startswith("syntax error"):   # R-029: a changed source file does not parse; non-empty
+            elif out.startswith("syntax error") or out.startswith("repair"):   # R-029/R-030: does not parse; non-empty
                 cur.append(1)
+            elif out.startswith("retry"):   # R-030 attempt-check: no source file changed
+                cur.append(0)
         if "submit_patch" in names and s.get("observation"):
             m = FC.findall(str(s["observation"].get("content")))
             if m:
@@ -87,7 +90,7 @@ for run in sys.argv[1:]:
                     out = str(json.loads(s["observation"].get("content") or "{}").get("stdout", "")).strip()
                 except (ValueError, AttributeError):
                     out = ""
-                seq.append("syn" if out.startswith("syntax error") else "chk")
+                seq.append("syn" if out.startswith(("syntax error", "repair")) else "chk")
         if "syn" in seq:
             agg["syntax_flagged"] += 1
             agg["syntax_rescued"] += bool(r["resolved"])
