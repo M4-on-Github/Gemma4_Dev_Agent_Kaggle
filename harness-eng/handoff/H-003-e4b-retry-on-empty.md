@@ -37,6 +37,15 @@ Written 2026-11-22 on pleiades. Counts only.
 - **No Kaggle number exists yet.** On Kaggle the E4B comparison points are EXP-038 (the EXP-033 tree on dev-48, 5 of 48)
   and the EXP-050 upload (`submissions.md` row 14).
 
+- **Held-out check (L3, 2026-11-22, `recursive-harness` round R-036, commit 9014538).** On the locked cohort
+  `cheld2-22`: 22 tasks no agent had run, no overlap with cdev2-79, gold 22 of 22. 6 paired draws per arm, Ada, 8 min.
+  - Retry 2.17 against control 1.50 solves per draw: **+0.67, 90% CI 0.00..+1.33**. That passes the pre-registered
+    "no loss" bar.
+  - Wall ratio 1.20. Empty patches 1.67 against 3.33 per draw. 20 of 20 empty first attempts were retried, and 2 were
+    rescued.
+  - The per-task rate is the same as on the tuning cohort: 0.098 held out against 0.096. No gain is claimed from this
+    rung alone.
+
 ## Layout (what the tree does)
 
 - **Root** (E4B): `submit_patch`, an `agent_tool` `solve` (`sub_agents/solver.yaml`) and `skills: [skills/change-count]`.

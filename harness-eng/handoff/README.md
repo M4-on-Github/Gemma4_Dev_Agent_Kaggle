@@ -28,4 +28,7 @@ The cluster's full record (rounds R-001..R-015, LoRA rounds L-001..L-005, lesson
   empty attempt (H-003), at 8 min. 31B: the single-agent `submission/`. The 4.5-min re-test (R-024, +0.33) used a cap
   nothing ships with.
 - **E4B adapters.** L-003 a1 and L-007 a2 killed (a2: call cap in 38 of 40 tasks). No E4B adapter before the freeze.
+- **Held-out check (R-036, 2026-11-22).** On the locked `cheld2-22`, H-003's retry layout gave +0.67 solves per draw
+  against its control (CI 0.00..+1.33; passes "no loss"). The 31B base held out gave 0.409 per task against 0.363 on
+  cdev2-79, so the tuning cohort does not flatter either config.
 - **E4B parallel drafts.** Closed by EXP-074 (no selectable draft touches gold on solvable tasks).
