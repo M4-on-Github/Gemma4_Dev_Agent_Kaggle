@@ -70,4 +70,8 @@ is the larger, held-out check of what they kept.
 
 ## Queued
 
-(filled in when the jobs are submitted)
+Submitted 2026-11-22, all 16 at once, interleaved:
+- E4B retry d1-d6: 60816, 60819, 60822, 60825, 60828, 60830.
+- E4B ctl d1-d6: 60817, 60820, 60823, 60826, 60829, 60831.
+- 31B base d1-d4: 60818, 60821, 60824, 60827.
+- No gate actor: this round has no kill gate. Reading 1 is applied by hand once every job has ended.
