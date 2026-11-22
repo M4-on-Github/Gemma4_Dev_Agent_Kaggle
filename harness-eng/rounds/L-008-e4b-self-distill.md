@@ -167,3 +167,5 @@ Submitted 2026-11-22, all at once, after the commit that adds this file:
 - **Gates and bars are unchanged.** The d1 kill gate is applied to d1r, after the served check. The d1 counts above
   were printed by the gate before this entry; they come from a broken draw and say nothing about the adapter.
 - **Added to the mechanism report:** MaxRSS per job, both arms, so that "the adapter raises memory" is visible.
+- **Re-queued 2026-11-22 at 96G:** l8 d1r 61001; ctl d1r-d8r 61002-61009 (no dependency); held l8 d2-d8
+  61010-61016, l8a d1-d2 61017-61018. d1r gate actor as before (kill cancels the held draws and the ctl draws).
