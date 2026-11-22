@@ -100,3 +100,48 @@ Written 2026-11-22 while the jobs run. On the six cdev2-79 base draws:
   are as pre-registered and are not changed.
 - Job 60848 stopped after 14 s on its start-up check (visible GPU count not 1), before any task ran. Nothing was
   served, so it is not a draw. The same `d3r` re-run was submitted again as job 60849.
+
+## Results (2026-11-22; readings applied as written)
+
+**Reading 1.** All 16 draws plus `ctl-d3r` (job 60849) have 22 rows. Every task is served in each except
+`ctl-d3` (21 of 22), which is replaced by `d3r` as the deviation says. All jobs COMPLETED.
+
+**Reading 2: E4B L3 passes.** On `paired_boot.py`, retry ×6 against ctl (d1, d2, d3r, d4-d6), 22 tasks, 0 dropped:
+
+| | Per draw | Mean |
+|---|---|---|
+| retry | 4, 1, 1, 4, 1, 2 | 2.17 |
+| ctl | 3, 1, 1, 1, 1, 2 | 1.50 |
+| **paired difference** | | **+0.67 (90% CI 0.00..+1.33)** |
+
+The point estimate is at least 0.00, so it passes. As pre-registered, no gain is claimed from this rung. The direction
+and size agree with R-021: +1.08 per 79 tasks is +0.30 per 22, against +0.67 here.
+
+**Reading 3: mechanism, retry draws (sums over 6).**
+- First attempt empty in 20; retried 20; retry_miss 0; rescued 2.
+- First attempt unknown 19; `solve_calls_gt3` 1; solve_after_submit 1.
+- Per draw, retry against ctl:
+  - empty patches 1.67 vs 3.33;
+  - time caps 0.67 vs 0.50;
+  - mean task wall 155.2 vs 129.7 s, a ratio of 1.20 (R-021: 1.23).
+
+**Reading 4: held-out rates against the tuning cohort.**
+
+| Arm | cheld2-22: per draw | Per task | cdev2-79: per task | Ever resolved | Repository A (14 tasks) | Repository B (8 tasks) |
+|---|---|---|---|---|---|---|
+| E4B retry | 2.17 | 0.098 | 0.096 | 5 | 1.83, ever 4 | 0.33, ever 1 |
+| E4B ctl | 1.50 | 0.068 | 0.082 | 3 | 1.50, ever 3 | 0.00, ever 0 |
+| 31B base | 9.00 (9, 10, 8, 9) | 0.409 | 0.363 | 12 | 6.50, ever 9 | 2.50, ever 3 |
+
+- 31B base also: empty patches 3.5 per draw, time caps 7.25 per draw, mean task wall 331.2 s.
+- Neither layout's held-out rate falls below its tuning rate, so the tuning cohort does not flatter them. The E4B
+  retry rate is the same on both cohorts (0.098 against 0.096). The 31B is 0.05 higher held out, inside the noise
+  of 4 draws on 22 tasks.
+
+**What it means (per the pre-registered outcomes).**
+- E4B pass: the retry layout does not reverse on tasks no round tuned on. H-003 stands, and its README gets the L3
+  line.
+- 31B: no candidate. Its held-out rate supports the cdev2-79 numbers used in the paper.
+- `cheld2-22` is now spent as a locked cohort.
+
+Blind guess against outcome: E4B pass (guessed 65%); 31B rate 0.409, inside the guessed 0.30-0.45.
