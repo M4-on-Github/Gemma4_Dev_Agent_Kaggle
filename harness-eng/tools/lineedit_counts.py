@@ -6,6 +6,8 @@ trees alike. Counts only; never prints trace text, code, paths or argument conte
 Per group: draws, task rows, and per draw
   edit_ok / edit_failed       edit_file results with status ok / anything else (argument loss included)
   replace_ok / replace_error  run_skill_script results of line-edit replace.py whose stdout starts OK / ERROR
+  skill_harness_error         run_skill_script results carrying a harness error_code (wrong skill_name, bad
+                              arguments); the script did not run, so these are not counted as replace results
   replace_raised              replace.py stdout starting "ERROR replace failed" (the script raised)
   show_calls                  run_skill_script calls of line-edit show.py
   write_file_calls            write_file calls
@@ -64,6 +66,8 @@ def scan(runs):
                         k = script_of(c)
                         if k == "show":
                             C["show_calls"] += 1
+                        elif d and "error_code" in d:
+                            C["skill_harness_error"] += 1
                         elif k == "replace":
                             out = str((d or {}).get("stdout", "")).strip()
                             if out.startswith("OK"):
@@ -81,7 +85,7 @@ for spec in sys.argv[1:]:
     n = len(runs)
     out = {"group": label, "draws": n, "task_rows": rows}
     for k in ("edit_ok", "edit_failed", "replace_ok", "replace_error", "replace_raised", "show_calls",
-              "write_file_calls", "argloss_edit", "argloss_skill", "empty", "timecap", "no_trace"):
+              "write_file_calls", "argloss_edit", "argloss_skill", "skill_harness_error", "empty", "timecap", "no_trace"):
         out[k] = round(C[k] / n, 2)
     ok, bad = C["edit_ok"] + C["replace_ok"], C["edit_failed"] + C["replace_error"]
     out["fail_share"] = round(bad / (ok + bad), 3) if ok + bad else None

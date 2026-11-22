@@ -134,3 +134,23 @@ E4B replace failure share below 0.25: 60%.
   - 60803 (31B ctl d1), which cancels every other 31B job.
 - E4B ctl d1 (60801) is read by hand with the E4B bars, reported only. The hand-read smoke check (script raised) is
   done when the smokes end.
+
+## Smoke gates (reading 1), 2026-11-22: both PASS
+
+- **E4B, 60798:** COMPLETED in 12 min 11 s.
+  - Gate fields: 2 rows SUCCESS; `solve_calls_gt3` 0; root calls at most 4.
+  - Solver skill calls, 13 in total:
+    - 7 returned ok: `replace.py` printed `OK` 5 times, and `show.py` ran.
+    - 6 got a harness error code, so the script never ran: 5 `SKILL_NOT_FOUND` (a wrong `skill_name`) and 1
+      `INVALID_ARGUMENTS`.
+  - `replace failed` (the script raised): 0.
+- **31B, 60799:** COMPLETED in 11 min 51 s.
+  - 2 rows SUCCESS.
+  - `replace.py` printed `OK` 6 times and `ERROR` 0 times. 0 harness errors, 0 argument loss, 0 `show.py` calls,
+    0 `write_file` calls.
+- **Hand check (script raised): 0 in both.** Smoke use is not read for effect.
+- **Reported, not a gate:** the E4B sometimes puts something other than `line-edit` in `skill_name`. This is a
+  mechanism count under reading 4.
+- **Tool change, made before any draw was read.** `tools/lineedit_counts.py` now counts results with a harness
+  `error_code` as `skill_harness_error`, not as `replace_error`. A `replace_error` is now only an `ERROR` line printed
+  by the script.
