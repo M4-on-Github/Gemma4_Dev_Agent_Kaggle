@@ -169,3 +169,24 @@ Submitted 2026-11-22, all at once, after the commit that adds this file:
 - **Added to the mechanism report:** MaxRSS per job, both arms, so that "the adapter raises memory" is visible.
 - **Re-queued 2026-11-22 at 96G:** l8 d1r 61001; ctl d1r-d8r 61002-61009 (no dependency); held l8 d2-d8
   61010-61016, l8a d1-d2 61017-61018. d1r gate actor as before (kill cancels the held draws and the ctl draws).
+
+## Addendum L-008b: epoch-1 checkpoint arm (pre-registered 2026-11-22, before any L-008 draw is read for effect)
+
+Seen before this entry: the training losses (part 1), the d1r gate's PASS line, and the served count of d1r
+(40 of 40). No resolved count of any l8 or ctl draw from d1r onward has been looked at.
+
+- **Why.** Training reading 2 chose `final` by the pre-registered rule. But validation loss was lowest at step 22
+  (0.4296), just before the epoch1 save (step 30), and rose over epochs 2-3 to 0.4432. On a 20-task set that is the
+  usual sign of overfitting. The epoch-1 save is the natural other checkpoint, and an arm in the same queue period
+  can reuse ctl d1r-d8r.
+- **Arm.** `trees/e4b-sw-l8e1` = `trees/e4b-sw-l8` with the `epoch1` save as adapter `l8e1` (`diff -r`: the adapter
+  line and the `agent.yaml` comment). Draws `L-008-e4b-l8e1-ada-d1..d8` on `cohorts/lfold-b.txt`, flags as the other
+  arms (96G). No smoke: the tree only changes the weights of a layout whose smoke passed.
+- **Gate.** The same served check (reading 2) and the same d1 kill gate (reading 3) on l8e1 d1. A kill cancels l8e1
+  d2-d8 only.
+- **Decision.** Reading 4 applied to l8e1 ×8 against ctl d1r-d8r, separately from l8. Two arms share one control, so
+  a promote needs a CI lower bound above 0 for that arm on its own. If both arms promote, the one with the higher
+  point estimate goes forward, and the other is reported. Extension, harm and not-kept as reading 4; if l8 is
+  extended and l8e1 is not, or the reverse, only that arm gets d9-d16 (with ctl d9-d16).
+- **Mechanism.** As reading 5.
+- **Blind guess (not a reading).** l8e1 above l8 in point estimate: 55%.
