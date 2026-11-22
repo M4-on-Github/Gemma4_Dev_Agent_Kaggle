@@ -100,3 +100,17 @@ can win.
   d11 60300/60301, d12 60302/60303. Five ran at once at submission; the rest wait for a GPU on 0-23.
 - Gate actors (`tools/gate_actor.sh`): retry d1 on 60281 and control d1 on 60280, with the reading-1 bars. Each
   cancels every other R-022 job on a kill.
+
+## Draw-1 gate (reading 1), 2026-11-22: KILLED by the control gate
+
+- Control d1 (60280) COMPLETED in 44 min: 79 rows, resolved 4, **empty 23**, time caps 1 (the error text reports
+  4.5 min, so the cap was read from the tree), no server error.
+- **`empty>=23` fired at exactly 23.** As pre-registered, `tools/gate_actor.sh` cancelled every other R-022 job. That
+  includes retry d1 (60281), cancelled at 69 of 79 rows, and draws d2-d5, which were running. None of them is read.
+- **The kill is a bar error, not a broken tree.** The bar was copied from R-020, where it was meant to catch the
+  no-submit solver breaking. It was not checked against R-021's control, which ran the same solver at 8 min:
+  - R-021 control empties per draw: 15, 16, 13, 19, 15, **24**, **23**, 20, 15, 19, 19, 10. The bar would have
+    fired on 2 of its 12 draws.
+  - Control d1's other counts sit inside R-021's control range: resolved 4 (range 4-9), time caps 1 (range 0-2).
+- The decision is not read. The same comparison is re-registered as R-023, with every kill bar set outside the arm's
+  own per-draw range in R-021. This section was written before R-023 was submitted.

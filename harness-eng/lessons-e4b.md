@@ -19,3 +19,8 @@
   - the root has no shell, only `solve`, a pure-Python count skill and `submit_patch`, or it does the work itself;
   - the count is a number printed by `run_skill_script` (three fields, no `load_skill`).
   Prompt-level control of the root (R-018) and a file-set selector (R-019) did not get there.
+
+- **2026-11-22 (R-022). Check every kill bar against the arm's own past draws before queueing.** A bar copied from an
+  earlier round (control `empty>=23`, from R-020) sat inside the control's observed range at 8 min (10-24 per draw).
+  It killed a 17 GPU-h round at draw 1 for no fault in the trees. Bars now sit outside each arm's range in the
+  nearest round with the same trees.
