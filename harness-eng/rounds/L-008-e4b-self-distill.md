@@ -135,3 +135,15 @@ Submitted 2026-11-22, all at once, after the commit that adds this file:
 - held: l8 d2-d8 60886-60892, l8a d1-d2 60893-60894.
 - Gate actors: smoke (kill cancels 60877-60894); d1 on 60877 (kill cancels 60886-60894 and the ctl draws; pass
   releases 60886-60894).
+
+## Results, part 1 (2026-11-22; training readings and smoke applied as written)
+
+- **Training reading 1 (health): pass.** Job 60874 COMPLETED in 1:33 (5,532 s of training), 90 steps; loss and grad
+  norm finite throughout; `epoch1`, `epoch2` and `final` written. 119 train rows, 16 val rows, as the dry run.
+- **Training reading 2 (choice): `final`.** Validation loss 0.4573 at step 0, lowest 0.4296 (step 22), final 0.4432
+  (10 values). The final is below step 0 and within 10% of the lowest. The loss fell over the first epoch and rose
+  slowly over epochs 2-3, so the last two epochs overfit the 20 training tasks somewhat. The pick job (60875) copied
+  `final` to `trees/e4b-sw-l8/adapters/l8/`.
+- **Smoke gate: pass** (job 60876): 2 rows, 2 SUCCESS, root calls max 4, no task with more than 3 solve calls,
+  adapter steps 12. Not read for solves.
+- The l8 d1 draw and the control draws are running; the d1 gate actor waits on 60877.
