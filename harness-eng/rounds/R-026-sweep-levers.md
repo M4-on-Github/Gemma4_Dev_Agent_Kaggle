@@ -132,3 +132,18 @@ sweeps before larger tests. This round is the small sweep. Its winners go to ful
 
 **Blind guess (not a reading).** Each arm passes its smoke and d1: 70%. Promoted: e4b-a1 15%, e4b-a2 15%,
 e4b-outline 10%, e4b-hint 15%, e4b-budget 20%, 31b-outline 10%, 31b-lineedit 15%. At least one promoted: 55%.
+
+## Queued (2026-11-22)
+
+- Smokes: e4b-a1 60511, e4b-a2 60512, e4b-outline 60513, e4b-hint 60514, e4b-budget 60515, 31b-outline 60516, 31b-lineedit 60517.
+- e4b-a1 d1-d4, all `afterok` on 60511: 60524, 60531, 60538, 60545.
+- e4b-a2 d1-d4, all `afterok` on 60512: 60525, 60532, 60539, 60546.
+- e4b-outline d1-d4, all `afterok` on 60513: 60526, 60533, 60540, 60547.
+- e4b-hint d1-d4, all `afterok` on 60514: 60527, 60534, 60541, 60548.
+- e4b-budget d1-d4, all `afterok` on 60515: 60528, 60535, 60542, 60549.
+- 31b-outline d1-d4, all `afterok` on 60516: 60529, 60536, 60543, 60550.
+- 31b-lineedit d1-d4, all `afterok` on 60517: 60530, 60537, 60544, 60551.
+- Controls, no dependency: 31b-ctl d1-d4 60518, 60519, 60520, 60521; e4b-ctl d1-d2 60522, 60523.
+- Gate actors (`tools/gate_actor.sh`, logs `logs/gate_R-026_<job>.log`): each smoke (cancels that arm's d1-d4 on a kill),
+  each arm's d1 (cancels its d2-d4), and 31b-ctl d1 (cancels every other 31B job of the round), with the bars of
+  readings 1 and 2. E4B control d1 is read by hand.
