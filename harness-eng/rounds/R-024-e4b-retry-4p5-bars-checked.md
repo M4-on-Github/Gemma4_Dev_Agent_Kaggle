@@ -101,3 +101,20 @@ only; no trace content. Tweak id **T-e4b-022**, unchanged.
   the EXP-050 single loop.** H-003 is withdrawn on the consolidated branch.
 - The retry trees and tools are kept. Any further retry round needs a new pre-registration and a change of design,
   not more draws of this one.
+
+## Correction, 2026-11-22 (after the decision; the readings above are not changed)
+
+- **The premise of R-022 to R-024 was wrong.** R-022 said the Kaggle candidate must run at 4.5 min because of the pack
+  gate `120 × (cap + 1.0) ≤ 11.0 h`. The shipped configs do not:
+  - the E4B EXP-050 upload (`submissions.md` row 14) is "variant A", 8 min / 28 calls. Variant B at 4.5 min was not
+    uploaded;
+  - the 31B v24 uploads (rows 11-13 and 17) run at 8 min under a recorded gate override (`--skip-budget-gate`,
+    formula 18.00 h, measured projection 10.04 h).
+- So the 4.5-min round measured a cap that nothing ships with. Its result stands as a fact about 4.5 min. **The
+  ship decision is governed by R-021 at 8 min, the shipping cap**, whose pre-registered reading was "helps" (+1.08,
+  CI +0.08..+2.08).
+- Kaggle time at 8 min, from the R-021 retry rows: mean task wall 139.7 s, p50/p90/p99 104/295/485 s, so
+  `120 × (mean + 60 s)` = 6.66 h at Ada speed. EXP-048 projected the E4B single loop at 3.56-3.96 h on L4x4; at 1.23x
+  that is about 4.4-4.9 h. Either is far inside 11.0 h. Shipping at 8 min needs the same recorded override as
+  rows 11-17.
+- H-003 is reinstated on the consolidated branch, with its cap item corrected to 8 min. The mistake was mine.

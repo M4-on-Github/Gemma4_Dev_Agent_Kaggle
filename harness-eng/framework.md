@@ -1,15 +1,17 @@
 # Orchestration framework for the 31B and the E4B (recommendation, 2026-11-22; revised after R-024)
 
-> **Revised 2026-11-22 after R-024.** At the Kaggle cap (4.5 min) the E4B retry layout gave **+0.33 solves per draw,
-> CI −1.08..+1.83** (wall 1.13x, rescued 0.83 per draw), and the pre-registered reading is **dropped**. Both models
-> therefore ship the single agent: the 31B `submission/`, and the E4B EXP-050 loop. The E4B section below is the
-> 8-min result, kept as the record. Handoff H-003 is withdrawn.
+> **Corrected 2026-11-22, after R-024.** R-022 to R-024 re-ran the E4B retry layout at 4.5 min. They took that to be
+> the Kaggle cap, but it is not: the shipped E4B (EXP-050, row 14) and 31B (rows 11-13, 17) configs run at **8 min**
+> under a recorded pack-gate override. At 4.5 min the layout gave +0.33 (CI −1.08..+1.83). At 8 min, the shipping cap,
+> R-021 gave **+1.08 (CI +0.08..+2.08)**. So the recommendation below stands: E4B retry-on-empty at 8 min, 31B single
+> agent. Kaggle projection of the retry layout at 8 min: 6.66 h at Ada speed, about 4.4-4.9 h from EXP-048's L4
+> figures. H-003 is reinstated.
 
 This answers the goal the user set on 2026-11-21: find an orchestration framework for both models that can win.
 It summarizes the cluster record (rounds R-001 to R-021, L-001 to L-007, `tweaks.md`). Counts only. Every number here
 comes from a round file, which is the source.
 
-## E4B (small-model prize): retry on an empty attempt (8-min result; dropped at 4.5 min, R-024)
+## E4B (small-model prize): retry on an empty attempt (at 8 min, the shipping cap)
 
 **Layout** (`trees/e4b-r020-retry`, round R-021, tweak T-e4b-021):
 
@@ -52,8 +54,8 @@ eval: max_tool_calls 56 (shared by every attempt), max_turns 80
 
 **Open before it can ship** (handoff H-002 on `all-work-consolidated-2026-11-20`):
 
-1. Kaggle uses a 4.5-minute cap, and this round used 8.0. Cutting resolved rows at 270 s gives 7.42 against 6.42
-   per draw on the same rows, so the gain should survive.
+1. Ship at 8 min, the cap R-021 measured, with the recorded gate override that rows 11-17 used. (At 4.5 min the
+   gain does not hold: R-024, +0.33.)
 2. The repo validator's false error "root agent has no way to modify files" needs fixing first. Its reachable
    tool set leaves out `agent_tool` children.
 3. A Kaggle L4x4 run on dev-48 must confirm the wall within the 11.0 h gate (`plan.md §5.8`).
@@ -91,5 +93,5 @@ eval: max_tool_calls 56 (shared by every attempt), max_turns 80
 
 | Model | Framework | Change vs current | Status |
 |---|---|---|---|
-| E4B | single loop (EXP-050) | none | the retry layout (+1.08 at 8 min, R-021) gave +0.33, CI −1.08..+1.83 at the Kaggle 4.5 min (R-024): dropped |
+| E4B | root -> `solve` (no submit) -> count skill -> re-solve on 0, at most 3 -> submit, at 8 min | +1.08 solves per draw (CI +0.08..+2.08), 1.23x wall | cluster-proven at the shipping cap; Kaggle check in H-003 (at 4.5 min it gives only +0.33, R-024) |
 | 31B | single agent (`submission/`) | none | every alternative was killed on wall or was noise |

@@ -31,3 +31,6 @@
 - **2026-11-22 (R-024). Measure a time-spending layout at the cap it ships with.** The retry layout's +1.08 at 8 min
   became +0.33 (CI −1.08..+1.83) at the Kaggle 4.5 min. Retry time caps went from about 0.7 to 7.0 per draw. A cut of
   the 8-min rows at 270 s had predicted +1.00, so that estimate was too kind. Run every E4B round at 4.5 min from now on.
+  **Corrected the same day:** the shipping cap is 8 min, not 4.5 (EXP-050 row 14 and the 31B rows 11-17 run at 8 min
+  under a recorded gate override). The lesson is right, but its premise was not. Check which cap the shipped zip
+  carries (`submissions.md`) before calling a cap "Kaggle's". Rounds keep the 8-min cap.
