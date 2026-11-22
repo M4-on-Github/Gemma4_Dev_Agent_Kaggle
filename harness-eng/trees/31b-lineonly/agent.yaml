@@ -1,0 +1,13 @@
+# harness-eng R-034 2026-11-22 (line-only edits): edit_file removed; skills/line-edit (numbered show, line-range replace) added and the prompt's edit bullets point to it. Otherwise trees/31b-base.
+name: swe_agent
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/system.md
+tools:
+  - run_command
+  - read_file
+  - write_file
+  - get_status
+  - submit_patch
+skills:
+  - skills/line-edit
+generate_content_config: !include configs/sampling.yaml
