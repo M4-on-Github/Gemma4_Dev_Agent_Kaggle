@@ -74,3 +74,34 @@ bigger run that R-032's reading 4 buys.
   has a model-server error. In every log the OOM event comes after the run's `done` line. Error counts per run (time
   caps 0-3, tool budget 0-4, other 0-1) are in the range of the clean jobs. **All 24 are kept**, and the readings
   are unchanged.
+
+## Results (2026-11-22): **dropped**
+
+**Decision (reading 2)**, `tools/paired_boot.py`, 79 tasks:
+
+| Comparison | Arm per draw | Base per draw | Point | 90% CI |
+|---|---|---|---|---|
+| (a) t06 ×12 vs R-021 retry ×12 | 6, 8, 11, 9, 7, 8, 9, 8, 11, 9, 7, 5 (8.17) | 7, 12, 6, 9, 9, 7, 8, 6, 8, 5, 7, 7 (7.58) | +0.58 | −0.58..+1.83 |
+| (b) t06 ×12 vs concurrent ctl ×12 | (as above) | 10, 6, 8, 7, 8, 8, 8, 10, 8, 8, 10, 6 (8.08) | **+0.08** | −1.08..+1.25 |
+| pool: t06 vs R-021 + ctl (24) | | | +0.33 | −0.58..+1.33 |
+| drift: ctl vs R-021 | | | +0.50 | −0.83..+1.92 |
+
+- Wall ratio: 147.5 / 139.6 s = 1.06.
+- (a)'s CI lower bound is not above 0, and (b) is below +0.5, so the reading is **dropped**. The shipping E4B layout
+  stays `trees/e4b-r020-retry` at temperature 1.0.
+- R-032's +1.25 on `sw-e4b-32` did not hold. Against concurrent controls it was 0.00 there and +0.08 here.
+
+**Mechanism (reading 3), 12 draws each:**
+
+| Arm | Failed-edit share | Empty final patches per draw | First-attempt empty | Retried | Rescued | Time caps | Calls per task |
+|---|---|---|---|---|---|---|---|
+| t06 | 0.558 (1610 ok, 2035 failed) | 4.08 | 103 | 101 | 10 | 18 | 16.6 |
+| ctl | 0.540 (1568, 1841) | 4.50 | 161 | 157 | 14 | 15 | 16.1 |
+| R-021 retry | 0.552 (1557, 1921) | 5.25 | | | | | 16.2 |
+
+- On cdev2-79, temperature 0.6 does not lower the failed-edit share. The sw-e4b-32 drop (R-032) was cohort-specific.
+- It does cut empty first attempts by a third (161 → 103). The retry was already catching those, so final empties
+  move only 4.50 → 4.08, and rescues fall (14 → 10).
+- **E4B sampling is closed as a lever** (R-003, R-007, R-032, R-033).
+- Process lesson, kept: a 4-draw screen against an old comparator can pass on drift alone. R-032's fresh controls
+  showed it, and the concurrent controls here settled it. Promotion rounds from now on carry concurrent controls.
