@@ -172,3 +172,22 @@ helps: 10%. Adopted on mechanism: 30%. syn-solver mechanism works: 25%.
 - syn-solver 60649 COMPLETED in 7 min 59 s. 2 rows SUCCESS; root calls at most 5; `solve_calls_gt3` 0; one task hit
   the call cap.
 - The gate actors released nothing (the draws are `afterok` on the smokes). Stage A and stage B run as queued.
+
+## Stage-A d1 gates (reading 2), 2026-11-22
+
+- **syn-retry d1 (60650): KILLED** by `solve_calls_gt3>=3` (value 3; comparator maximum 2). 36 rows SUCCESS;
+  resolved 5; empty 3; time caps 0; mean wall 190 s; callcap 12; `retry_miss` 0; `syntax_retry_miss` 0.
+  - The gate actor cancelled synr d2-d4 (60652 was running and is not read) and all 12 stage-B synr draws, as
+    pre-registered. Stage B does not run, so reading 4 has no data and syn-retry is **dropped** in this round.
+  - Mechanism, reported only: 7 tasks flagged, 7 re-solved, 4 still unparseable at the last check, 0 rescued.
+  - Cause, from root call orders (counts only; S = solve, x = a syntax line, 0 = an empty count, n = a count, P =
+    submit_patch). The 7 tasks with more than 2 solve calls: `SxSxSnP` 2, `SxSxSxP`, `SxSxSP`, `SxSxSxSxS`,
+    `S0SSxSxS`, `S0S0SSnP` 1 each.
+    - The root loses count of its solve calls once the repair branch loops: repeated syntax prints lead to a 4th
+      or 5th solve call.
+    - It sometimes calls solve twice with no check in between.
+    - A repair often fails to make the file parse (4 of 7).
+- **syn-solver d1 (60651): PASS.** 36 rows SUCCESS; resolved 3; empty 4; mean wall 138 s; callcap 7; `retry_miss` 2;
+  `solve_calls_gt3` 1. d2-d4 continue.
+- Both jobs carry the OUT_OF_MEMORY flag after writing all rows. This is the known grading kill of one task's
+  infinite-loop test (R-008), not a lost row.
