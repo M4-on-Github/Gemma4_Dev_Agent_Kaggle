@@ -1,10 +1,15 @@
-# Orchestration framework for the 31B and the E4B (recommendation, 2026-11-22)
+# Orchestration framework for the 31B and the E4B (recommendation, 2026-11-22; revised after R-024)
+
+> **Revised 2026-11-22 after R-024.** At the Kaggle cap (4.5 min) the E4B retry layout gave **+0.33 solves per draw,
+> CI −1.08..+1.83** (wall 1.13x, rescued 0.83 per draw), and the pre-registered reading is **dropped**. Both models
+> therefore ship the single agent: the 31B `submission/`, and the E4B EXP-050 loop. The E4B section below is the
+> 8-min result, kept as the record. Handoff H-003 is withdrawn.
 
 This answers the goal the user set on 2026-11-21: find an orchestration framework for both models that can win.
 It summarizes the cluster record (rounds R-001 to R-021, L-001 to L-007, `tweaks.md`). Counts only. Every number here
 comes from a round file, which is the source.
 
-## E4B (small-model prize): retry on an empty attempt
+## E4B (small-model prize): retry on an empty attempt (8-min result; dropped at 4.5 min, R-024)
 
 **Layout** (`trees/e4b-r020-retry`, round R-021, tweak T-e4b-021):
 
@@ -86,5 +91,5 @@ eval: max_tool_calls 56 (shared by every attempt), max_turns 80
 
 | Model | Framework | Change vs current | Status |
 |---|---|---|---|
-| E4B | root -> `solve` (no submit) -> count skill -> re-solve on 0, at most 3 -> submit | +1.08 solves per draw (CI +0.08..+2.08), 1.23x wall | cluster-proven; Kaggle check in H-002 |
+| E4B | single loop (EXP-050) | none | the retry layout (+1.08 at 8 min, R-021) gave +0.33, CI −1.08..+1.83 at the Kaggle 4.5 min (R-024): dropped |
 | 31B | single agent (`submission/`) | none | every alternative was killed on wall or was noise |
