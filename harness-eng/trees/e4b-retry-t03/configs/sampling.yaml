@@ -1,0 +1,9 @@
+# harness-eng R-032 2026-11-22 (T-e4b-032b): solver temperature 1.0 -> 0.3. R-003 single agent at 0.3: edit
+# failure share 0.571 -> 0.465 and empty 31 -> 18 over 3 draws, resolves 5.7 vs 6.0; now tried in the retry layout.
+temperature: 0.3
+top_p: 0.95
+top_k: 64
+max_output_tokens: 8192
+thinking_config:
+  thinking_budget: 4096
+  include_thoughts: true
