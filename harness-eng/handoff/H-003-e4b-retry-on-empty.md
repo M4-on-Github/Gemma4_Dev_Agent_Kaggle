@@ -1,9 +1,15 @@
-# H-003: E4B retry-on-empty candidate for Kaggle L4x4 (handoff, not a pre-registration) — WITHDRAWN 2026-11-22
+# H-003: E4B retry-on-empty candidate for Kaggle L4x4 (handoff, not a pre-registration) — REINSTATED 2026-11-22, at 8 min
 
-> **Withdrawn.** On the cluster at the Kaggle cap, 4.5 min (`recursive-harness` round R-024, 12 paired draws, Ada),
-> the retry layout gave **+0.33 solves per draw, 90% CI −1.08..+1.83**, at 1.13x wall (rescued 0.83 per draw). The
+> **Status, 2026-11-22 (second note).** This was withdrawn earlier the same day because R-024 measured +0.33
+> (CI −1.08..+1.83) at 4.5 min. That cap was a mistake: the shipped E4B (EXP-050, `submissions.md` row 14, variant A)
+> and the 31B v24 uploads (rows 11-13, 17) run at **8 min** under a recorded pack-gate override. At 8 min R-021 gave
+> +1.08 (CI +0.08..+2.08). **Item 2 below is corrected: keep `max_time_minutes` 8**, exactly as the tree was run, and
+> record the gate override as rows 11-17 did. The withdrawal note is kept here as the record:
+>
+> ~~Withdrawn. On the cluster at the Kaggle cap, 4.5 min (`recursive-harness` round R-024, 12 paired draws, Ada),
+> the retry layout gave +0.33 solves per draw, 90% CI −1.08..+1.83, at 1.13x wall (rescued 0.83 per draw). The
 > pre-registered reading is dropped. The E4B Kaggle candidate stays the EXP-050 single loop. Do not run EXP-088
-> from this file. The text below is the record as written.
+> from this file.~~
 
 Written 2026-11-22 on pleiades. Counts only.
 
@@ -52,20 +58,20 @@ Written 2026-11-22 on pleiades. Counts only.
 1. **H-002 first.** On this tree the repo validator gives the false error `root agent has no way to modify files`.
    The tree also ships 9 files, not 4: the 7 in H-002's list plus `skills/change-count/SKILL.md` and
    `skills/change-count/scripts/count.py`. The shipped-closure test needs that set.
-2. **Candidate eval_config.** Set `max_time_minutes` 8 → 4.5, so that `120 x (4.5 + 1.0) = 11.0 h` passes the pack
-   gate, as EXP-050 did. Keep `max_tool_calls` 56, `max_turns` 80 and `timeout_seconds` 240.
-   - `prompts/solver.md` still says "28 tool calls and 8 minutes", which is the text as tested. Leave it, one
-     variable, as EXP-050 did.
-   - **Cap estimate from the cluster rows (not a measurement).** Counting a resolved row as lost when its task
-     wall is over 270 s gives 7.42 against 6.42 per draw, so the gain should survive 4.5 min.
-   - 11.5% of retry rows run past 270 s (control 7.4%). Task wall p50/p90/p99: 104/295/485 s, control 88/228/454 s.
+2. **Candidate eval_config: unchanged, 8 min** (corrected 2026-11-22). Keep `max_time_minutes` 8, `max_tool_calls` 56,
+   `max_turns` 80 and `timeout_seconds` 240, byte for byte as R-021 ran. The pack-gate formula gives 18.0 h, so packing
+   needs the recorded override (`--skip-budget-gate`) that rows 11-17 used, with the measured projection beside it.
+   - Measured projection from the R-021 retry rows: mean task wall 139.7 s, p50/p90/p99 104/295/485 s,
+     `120 × (mean + 60 s)` = 6.66 h at Ada speed. From EXP-048's L4 figures (3.56-3.96 h) at 1.23x: about 4.4-4.9 h.
+   - ~~Set `max_time_minutes` 8 → 4.5 … as EXP-050 did.~~ Wrong: EXP-050 shipped at 8 min. At 4.5 min the layout gives
+     only +0.33 (R-024).
 3. **Expected validator profile** (cluster `--official` in `env/harness.sif`):
    - `adk_submission.validate_directory` OK;
    - warning VERIFY(Q1), skill scripts rely on `run_skill_script` (EXP-057 found the E4B calls it on Kaggle with
      exactly this call shape);
    - warning `timeout_seconds` 240 < 300, as EXP-050;
    - the H-002 false error;
-   - the pack-gate error at 8 min, which item 2 removes;
+   - the pack-gate error at 8 min, which the recorded override covers (item 2);
    - the cluster-only `compile_submission` TypeError.
    Packing therefore needs `--allow-warnings` for the two warnings.
 4. **Kaggle run.** dev-48 on L4x4 (`plan.md §5.8`):
