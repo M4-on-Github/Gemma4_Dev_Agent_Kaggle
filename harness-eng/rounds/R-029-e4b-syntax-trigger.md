@@ -153,3 +153,13 @@ sweeps before bigger runs.
 
 **Blind guess (not a reading).** Both smokes and d1 gates pass: 75%. Mechanism works (syn-retry): 60%. Stage B
 helps: 10%. Adopted on mechanism: 30%. syn-solver mechanism works: 25%.
+
+## Queued (2026-11-22)
+
+- Smokes: syn-retry 60648, syn-solver 60649.
+- Stage A: synr d1-d4 60650, 60652, 60654, 60656 (`afterok` 60648); syns d1-d4 60651, 60653, 60655, 60657
+  (`afterok` 60649); fresh controls 60658, 60659.
+- Stage B: synr cdev2-79 d1-d12 60660-60671 (`afterok` 60648); fresh controls 60672, 60673.
+- Gate actors (`logs/gate_R-029_<job>.log`): smoke 60648 (cancels synr stage A and stage B), smoke 60649 (cancels
+  syns stage A), synr d1 60650 (cancels synr d2-d4 and stage B), syns d1 60651 (cancels syns d2-d4), with the bars
+  of readings 1 and 2. The by-hand smoke checks are read when the smokes finish.
