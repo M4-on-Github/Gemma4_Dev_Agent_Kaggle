@@ -147,3 +147,72 @@ e4b-outline 10%, e4b-hint 15%, e4b-budget 20%, 31b-outline 10%, 31b-lineedit 15%
 - Gate actors (`tools/gate_actor.sh`, logs `logs/gate_R-026_<job>.log`): each smoke (cancels that arm's d1-d4 on a kill),
   each arm's d1 (cancels its d2-d4), and 31b-ctl d1 (cancels every other 31B job of the round), with the bars of
   readings 1 and 2. E4B control d1 is read by hand.
+
+## Results (2026-11-22), read as written
+
+All 41 jobs left the queue: 29 COMPLETED, 12 cancelled by the gates. Counts only.
+
+**Smokes (reading 1): all 7 PASS.** 2 of 2 rows SUCCESS in each; `adapter_steps` 86 (a1) and 137 (a2), so the solver
+was served by the adapter; no task with more than 3 `solve` calls; no skill script raised. No smoke task called a
+lever skill (not gated, as written).
+
+**Draw-1 gates (reading 2).**
+
+| Arm | d1 resolved | Gate | Fired on |
+|---|---|---|---|
+| e4b-a1 | 10 | **KILL** | empty 12 ≥ 9; mean wall 303 s > 250; callcap 30 ≥ 14 |
+| e4b-a2 | 5 | **KILL** | timecap 8 ≥ 6; mean wall 319 s > 250; callcap 30 ≥ 14 |
+| e4b-outline | 10 | **KILL** | `lever_skill_tasks` 0 (the solver never called the outline skill in 32 tasks) |
+| e4b-hint | 7 | PASS | - |
+| e4b-budget | 7 | PASS | - |
+| 31b-outline | 14 | PASS | - (skill used in 6 tasks) |
+| 31b-lineedit | 14 | **KILL** | `lever_skill_tasks` 0 |
+| 31b-ctl | 10 | PASS | - |
+
+`gate_actor.sh` cancelled d2-d4 of each killed arm. The partial rows of those draws are not read.
+
+**Promotion (reading 3).** `tools/paired_boot.py`, solves per draw on the cohort, 90% CI:
+
+| Arm | Per draw | Comparator | Paired diff | 90% CI | Wall ratio | Bar | Outcome |
+|---|---|---|---|---|---|---|---|
+| e4b-hint | 7, 6, 8, 8 | R-021 retry ×12 (mean 7.0) | +0.25 | −1.33..+1.83 | 1.02 | ≥ +1.25, ≤ 1.25 | **drop** |
+| e4b-budget | 7, 7, 4, 5 | R-021 retry ×12 | −1.25 | −2.92..+0.50 | 1.26 | ≥ +1.25, ≤ 1.4 | **drop** |
+| 31b-outline | 14, 12, 9, 16 | fresh 31b-ctl ×4: 10, 17, 12, 13 | −0.25 | −2.25..+1.50 | 0.97 | ≥ +1.5, ≤ 1.05 | **drop** |
+| e4b-a1, e4b-a2, e4b-outline, 31b-lineedit | stopped at d1 | | | | | | **drop** |
+
+- No arm is promoted. One gap is recorded: `paired_boot.py` has no `--subset` option, although its docstring names
+  one. The fold-B reading of the adapter arms was therefore never runnable. It did not matter here, because both
+  adapter arms were stopped at d1.
+- **Drift (reported).** E4B fresh control 9, 7 (mean 8.0, inside 5-11); paired against the 12 comparator draws
+  +1.0 (CI −1.33..+3.5), wall 1.10. 31B fresh control mean 13.0 (inside 11-16); the six old draws gave 12.67.
+
+**Mechanism (reading 4, reported).**
+
+- **Adapters in the retry layout.** The submit loop is gone, as designed: no solver can submit. But the call bloat
+  stays. Tool calls per task were 50.4 (a1 d1) and 49.8 (a2 d1), against 13.5 and 15.7 for the fresh controls.
+  Two-attempt tasks rose to 19 and 18 of 32, against 4 for the control. Rescued 0 in both d1s.
+  - a1 d1 on the 17 fold-B tasks: 7 resolved. The comparator's fold-B range is 4-7 (mean 5.0), and the control d1
+    has 6. Reported, not read.
+- **Skill adoption.** The E4B solver never called the outline skill (0 of 32). The 31B called outline in 3-6 tasks
+  per draw (25 calls over 4 draws, 0 errors) and line-edit in 0 of 24 tasks at d1.
+  - The `lever_skill_errors` seen in the hint, budget and control draws (1-2 per draw) are `run_skill_script`
+    calls by the E4B root whose `skill_name` is not `change-count`. They are malformed count calls, not lever use.
+- **More attempts (e4b-budget).** It retried 2-9 first-attempt empties per draw and rescued 3 in 4 draws. It also
+  added wall (175-199 s mean task wall in d1-d2) and ended lower on resolves.
+- **Retry hint.** Retried 29 of 30 empty first attempts and rescued 1 in 4 draws. The comparator rescued about 1 per
+  draw on 79 tasks.
+
+**Against the blind guess.** "Each arm passes its smoke and d1: 70%": 3 of 7 did. "At least one promoted: 55%": none.
+
+## What this round shows
+
+1. **The weak skills are not called.** Offered a new skill with a one-line prompt bullet, the E4B never called it.
+   The 31B called it rarely: in 3-6 of 24 tasks for outline and in 0 for line-edit. A skill only changes behaviour
+   when the model is told when to use it at a point where it must decide. The change-count skill works because the
+   root prompt makes it a fixed step.
+2. **The adapters' cost is calls, not the submit tool.** Removing `submit_patch` from the solver did not stop the
+   adapters from using about 3.5 times the control's calls. They were trained on the single-agent prompt, so the
+   solver prompt they run under here is out of distribution.
+3. **The retry layout is near its ceiling on this cohort.** Hint and more attempts rescue at most about 1 task per
+   draw. The empties left after retry are a small pool (1-4 per draw), and the misses are now mostly non-empty
+   wrong patches.
