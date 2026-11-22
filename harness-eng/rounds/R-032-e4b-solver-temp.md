@@ -79,3 +79,6 @@ rate and the models' abilities, with small sweeps before bigger runs.
 
 - t06 d1-d4: 60732-60735. t03 d1-d4: 60736-60739. Fresh control d1-d2: 60740-60741.
 - Gate actors on 60732 (cancels 60733-60735) and 60736 (cancels 60737-60739), with the bars of reading 1.
+- Comparator value for reading 3, computed after queueing and before any R-032 row exists
+  (`tools/edit_status_counts.py --subset runs/_cohorts/sw-e4b-32.txt`, R-021 retry d1-d12): failed share 0.478
+  (617 ok, 565 failed). So **mechanism works** means a failed share of 0.428 or less.
