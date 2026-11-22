@@ -58,3 +58,9 @@ bigger run that R-032's reading 4 buys.
 - **Dropped with (b) near 0:** R-032's +1.25 was comparator drift. E4B sampling is closed as a lever.
 
 **Blind guess (not a reading).** Both d1 gates pass: 90%. Helps: 7%. (b) point estimate ≥ +0.5: 25%.
+
+## Queued (2026-11-22)
+
+- t06 d1-d12: 60771, 60773, ..., 60793 (odd ids). ctl d1-d12: 60772, 60774, ..., 60794 (even ids).
+- Gate actors on 60771 (t06 d1) and 60772 (ctl d1), each cancelling every other R-033 job on a kill, with the bars
+  of reading 1.
