@@ -143,7 +143,8 @@ def spans(text, msgs, default_train):
 def encode(tok, row, system, tools_by_name, tool_names, default_train, max_len):
     msgs = [{k: v for k, v in m.items() if k != "train"} for m in row["messages"]]
     trains = [m.get("train") for m in row["messages"]]
-    msgs[0] = {"role": "system", "content": system}
+    if system is not None:
+        msgs[0] = {"role": "system", "content": system}
     names = tool_names or row["tool_names"]
     text = tok.apply_chat_template(msgs, tools=[tools_by_name[n] for n in names], tokenize=False,
                                    enable_thinking=True)
@@ -168,6 +169,8 @@ def encode(tok, row, system, tools_by_name, tool_names, default_train, max_len):
 
 
 def system_text(a):
+    if a.system_from_row:
+        return None
     if a.system_prompt:
         return open(a.system_prompt).read()
     t = json.load(open(a.system_from_trace))
@@ -182,6 +185,8 @@ def main():
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--system-prompt")
     g.add_argument("--system-from-trace")
+    g.add_argument("--system-from-row", action="store_true",
+                   help="L-008: keep each row's own system message (solver_to_sft.py fills it per task)")
     p.add_argument("--data", action="append", required=True, help="path[:N rows]")
     p.add_argument("--cap-per-task", type=int, default=8)
     p.add_argument("--default-train", default="all", choices=("all", "call", "none"))
