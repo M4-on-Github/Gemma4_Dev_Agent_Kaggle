@@ -75,3 +75,17 @@ Submitted 2026-11-22, all 16 at once, interleaved:
 - E4B ctl d1-d6: 60817, 60820, 60823, 60826, 60829, 60831.
 - 31B base d1-d4: 60818, 60821, 60824, 60827.
 - No gate actor: this round has no kill gate. Reading 1 is applied by hand once every job has ended.
+
+## Side note: 31B output-cap desk (T-31b-036; zero GPU, not part of this round's readings)
+
+Written 2026-11-22 while the jobs run. On the six cdev2-79 base draws:
+- A pooled fit of step time gives about 36 s per 1k completion tokens. Decode is 0.84 of step time. Tool intercepts
+  run 4-12 s, the highest after pytest. This agrees with R-004 and R-010.
+- Capped tasks average 9,524 completion tokens against 6,571 for the rest, and 1.01 turns of 2,000+ tokens against
+  0.31.
+- `max_output_tokens` 4096 would cut 8.8 recorded turns per draw (219 s above 4096 tokens per draw). It would also
+  shorten the final turns that run 152 s or more in 3.5 capped tasks per draw, none of which resolved. The ceiling is
+  about 7 s per task, 2% of wall, before counting the turns a cut breaks. **Not run.**
+- `thinking_budget` does reach vLLM. `adk_submission/resolvers/generation.py` maps it to
+  `extra_body.thinking_token_budget`, and `adk_submission/server.py` adds `--reasoning-config` for the gemma4 parser.
+  So T-31b-003 tested a real budget (R-010: the model keeps deliberating in visible text after the forced end).
