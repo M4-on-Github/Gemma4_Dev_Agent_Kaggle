@@ -94,3 +94,9 @@ are read. Counts only; no trace content, no ids. Tweak id **T-e4b-030**. Same go
 
 **Blind guess (not a reading).** Smoke and d1 pass: 75%. Mechanism works: 45%. Helps: 10%. Adopted on mechanism:
 25%.
+
+## Queued (2026-11-22)
+
+- Smoke 60702. Stage A d1-d4: 60703-60706. Stage B d1-d12: 60707-60718. All draws are `afterok:60702`.
+- Gate actors: smoke 60702 (cancels every R-030 draw), stage-A d1 60703 (cancels 60704-60706 and stage B), with
+  the bars of readings 1 and 2.
