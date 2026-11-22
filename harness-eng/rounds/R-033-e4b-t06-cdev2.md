@@ -64,3 +64,13 @@ bigger run that R-032's reading 4 buys.
 - t06 d1-d12: 60771, 60773, ..., 60793 (odd ids). ctl d1-d12: 60772, 60774, ..., 60794 (even ids).
 - Gate actors on 60771 (t06 d1) and 60772 (ctl d1), each cancelling every other R-033 job on a kill, with the bars
   of reading 1.
+
+## Deviation, out-of-memory jobs (recorded 2026-11-22 before reading 2 is computed)
+
+- Both d1 gates PASS (`logs/gate_R-033_60771.log`, `_60772.log`). Nothing was cancelled.
+- 7 of the 24 jobs ended `OUT_OF_MEMORY` (64G cgroup), all on pleiades-0-17: t06 d1, d2, d3, d10 and ctl d1, d3, d8.
+  This is the R-021 pattern.
+- Checked blind to the resolved field, with R-021's rule: every one of the 24 runs has 79 SUCCESS rows. No row or log
+  has a model-server error. In every log the OOM event comes after the run's `done` line. Error counts per run (time
+  caps 0-3, tool budget 0-4, other 0-1) are in the range of the clean jobs. **All 24 are kept**, and the readings
+  are unchanged.
