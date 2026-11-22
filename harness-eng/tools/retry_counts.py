@@ -9,6 +9,10 @@ submit_patch result. From R-020 on, the root's count command (a bare integer on 
 unknown; retried (first attempt empty and a second solve call followed); over-retry (a second solve call after a
 non-empty first attempt); retry_miss (first attempt empty, not retried); rescued (resolved, first attempt empty); tasks with more than 3 solve calls; and solve_after_submit
 (R-021, tasks with a root solve call after any submit_patch, which cannot change the outcome).
+R-029 (change-check skill): a check that prints a line starting "syntax error" counts as a non-empty attempt, and
+per task: syntax_flagged (any such line), syntax_retried (a solve call followed one), syntax_retry_miss (flagged, fewer
+than 3 solve calls, no solve call after it), syntax_last (the last check before submit printed it), syntax_rescued
+(flagged and resolved).
 """
 import collections, json, os, re, sys
 
@@ -32,6 +36,8 @@ def attempts(steps):
                 out = ""
             if out.isdigit():
                 cur.append(int(out))
+            elif out.startswith("syntax error"):   # R-029: a changed source file does not parse; non-empty
+                cur.append(1)
         if "submit_patch" in names and s.get("observation"):
             m = FC.findall(str(s["observation"].get("content")))
             if m:
@@ -69,6 +75,28 @@ for run in sys.argv[1:]:
                 break
             if "submit_patch" in names:
                 sub_seen = True
+        seq = []   # R-029: root check outputs and solve calls, in order
+        for s in steps:
+            if s.get("source") != "agent" or s["extra"].get("author") != "swe_agent":
+                continue
+            names = [c["function_name"] for c in (s.get("tool_calls") or [])]
+            if "solve" in names:
+                seq.append("solve")
+            if "run_skill_script" in names and s.get("observation"):
+                try:
+                    out = str(json.loads(s["observation"].get("content") or "{}").get("stdout", "")).strip()
+                except (ValueError, AttributeError):
+                    out = ""
+                seq.append("syn" if out.startswith("syntax error") else "chk")
+        if "syn" in seq:
+            agg["syntax_flagged"] += 1
+            agg["syntax_rescued"] += bool(r["resolved"])
+            i = seq.index("syn")
+            later = "solve" in seq[i + 1:]
+            agg["syntax_retried"] += later
+            agg["syntax_retry_miss"] += (not later) and seq.count("solve") < 3
+            checks = [x for x in seq if x in ("syn", "chk")]
+            agg["syntax_last"] += checks[-1] == "syn"
         hist[len(segs)] += 1
         agg["solve_calls_gt3"] += len(segs) > 3
         if not segs:

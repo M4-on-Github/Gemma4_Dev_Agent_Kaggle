@@ -1,0 +1,155 @@
+# R-029: E4B syntax trigger, repair on a patch that does not parse (pre-registration)
+
+Written 2026-11-22, before any job of this round is submitted. Counts only; no trace content, no ids (cohort ids
+are in gitignored `runs/_cohorts/`). Tweak ids **T-e4b-029a** (syn-retry) and **T-e4b-029b** (syn-solver). Part of the
+goal set by the user on 2026-11-22: raise the solve rate and the models' abilities, with small representative
+sweeps before bigger runs.
+
+## Why (desk, zero GPU, read before this file was written)
+
+- R-027 showed that finding the file does not limit the E4B. R-028 showed that its edits do: about 100 failed old
+  strings per draw. The question here is what the edits leave behind.
+- **`tools/patch_syntax_desk.py`.** It applies each recorded final patch to the changed files of the task's
+  snapshot, then runs the builtin `compile()` on every changed `.py` file. A file that already failed before the
+  patch is skipped.
+
+  | Runs | Empty | Parses (resolved) | Changed source file does not parse (resolved) |
+  |---|---|---|---|
+  | R-021 E4B retry, cdev2-79 × 12 | 5.25 | 65.17 (7.58) | **8.58 (0.00)** |
+  | R-021 E4B control (one solve), × 12 | 21.0 | 52.42 (6.25) | **5.58 (0.00)** |
+  | 31B base, × 6 | 15.5 | 62.0 (28.67) | 1.5 (0.00) |
+
+  - A final patch that does not parse resolved in **0 of 170** E4B task-draws. Every error was in a source file,
+    none only in a test file. It is a sure miss, so it can trigger another attempt for free, the way an empty
+    attempt does in R-021.
+  - The retry layout's empty-retry produced more of these: 5.58 to 8.58 per draw. Some empty first attempts were
+    replaced by broken ones.
+- **Room left** in the 103 retry-layout task-draws that ended unparseable:
+  - median wall 171 s of 480, median tool calls 18 of 56, 11 at 50 calls or more, 1 time cap;
+  - solve calls used: 1 in 57, 2 in 26, 3 in 17, 4 in 3.
+- **Independent-draw rate.** The same tasks resolve in 5.1% of the other R-021 retry draws. A plain re-draw would
+  therefore add about 8.58 × 0.05 ≈ 0.4 solves per draw on cdev2-79.
+  - This round asks for a repair instead. The new solve call names the file and line that do not parse, and starts
+    from the workspace the earlier attempt left. Whether a repair beats a re-draw is the open question.
+- **Precedent.** R-004 T-e4b-007 (2026-11-18, single agent, cdev-56 × 3) replaced the solver's pytest check with a
+  `python -m ast` check: +0.3, not kept, against a +3.0 bar. Its parse endpoint was not reported.
+  - Arm b is close to that change, now inside the retry layout. It is the cheap comparison arm.
+  - Arm a does not depend on the solver following a bullet. The root runs the check, as it runs the change count in
+    R-021.
+
+## Arms
+
+| ID | Arm | Tree | Change against `trees/e4b-r020-retry` (the shipping E4B layout, R-021) |
+|---|---|---|---|
+| T-e4b-029a | syn-retry | `trees/e4b-syn-retry` | `skills/change-count` → `skills/change-check` (`scripts/check.py`); root prompt step 4 (below) |
+| T-e4b-029b | syn-solver | `trees/e4b-syn-solver` | one solver bullet in section 4: right after the last edit, run `python -m py_compile` on each changed source file and fix a reported error with one `edit_file` |
+
+- **`check.py`** is `count.py` (R-020) with the same changed-file rules, pure file reads, no other program and
+  nothing written.
+  - It also runs `compile()` on each changed or new `.py` source file.
+  - It prints `0`, or the number of changed source files, or `syntax error in PATH line N` for the first changed
+    file that does not parse.
+  - A file whose baseline (a loose object) does not parse either is not flagged.
+  - On any error it prints 1.
+  - Checked on a synthetic repo, and on real snapshots after applying recorded final patches
+    (`tools/check_script_desk.py`, 12 per class): empty → `0` 12 of 12, parses → a number 12 of 12, does not parse
+    → `syntax error` 12 of 12. Median 0.36 s.
+- **syn-retry root prompt**, replacing R-021's steps 2-4:
+  - step 2 calls `change-check`;
+  - step 3: on `0`, re-solve with the same request, as before;
+  - step 4: on a `syntax error` line, and with fewer than 3 solve calls, call `solve` with "Resolve the issue in
+    /workspace. The change so far left a syntax error; fix it first." plus the printed line word for word, then
+    return to step 2;
+  - step 5: otherwise `submit_patch`.
+  - The solver, the sampling, the call cap of 56, the 8 min cap and the turn cap are unchanged.
+- **Validator** (`--official`, `env/harness.sif`): both trees give the parent's known profile.
+  - `adk_submission.validate_directory` OK.
+  - The cluster-only gate and compile errors, and the H-002 false error.
+  - The VERIFY warning for the skill script.
+
+## Cohorts and comparators
+
+- **Stage A: `syn-36`** (36 tasks, `runs/_cohorts/syn-36.txt`).
+  - The tasks that ended unparseable in at least one of the **R-021 control** draws.
+  - They were chosen with the control draws, so the comparator, **R-021 retry d1-d12** restricted to the cohort,
+    is not biased by the selection.
+  - Comparator per draw: 4, 5, 3, 2, 4, 2, 4, 1, 3, 1, 3, 2 (mean 2.83). Unparseable final patches: 6.25 per draw.
+  - Two fresh controls (`trees/e4b-r020-retry`) run on the cohort as a drift check.
+- **Stage B: `cohorts/cdev2-79.txt`.**
+  - Comparator: R-021 retry d1-d12, per draw 7, 12, 6, 9, 9, 7, 8, 6, 8, 5, 7, 7 (mean 7.58), mean task wall
+    139.7 s, unparseable 8.58 per draw.
+  - Two fresh controls run on cdev2-79.
+- The smoke uses `runs/_cohorts/smoke-syn2.txt`: the 2 tasks that ended unparseable most often in the R-021 retry
+  draws (9 and 8 of 12).
+
+## Runs
+
+| Stage | Job | Tree | Cohort | Draws | Dependency |
+|---|---|---|---|---|---|
+| smoke (not read for effect) | `S-029-synr-smoke`, `S-029-syns-smoke` | each arm | smoke-syn2, concurrency 2 | 1 each | none |
+| A | `R-029-e4b-synr-ada-d1..d4` | `trees/e4b-syn-retry` | syn-36 | 4 | `afterok` its smoke |
+| A | `R-029-e4b-syns-ada-d1..d4` | `trees/e4b-syn-solver` | syn-36 | 4 | `afterok` its smoke |
+| A | `R-029-e4b-ctl-ada-d1..d2` | `trees/e4b-r020-retry` | syn-36 | 2 | none |
+| B | `R-029-e4b-synr-c79-d1..d12` | `trees/e4b-syn-retry` | cdev2-79 | 12 | `afterok` the syn-retry smoke |
+| B | `R-029-e4b-ctl-c79-d1..d2` | `trees/e4b-r020-retry` | cdev2-79 | 2 | none |
+
+- Flags as R-027: `sbatch --parsable -J heng_e4b slurm/eval.sbatch <run> <tree> <cohort> --concurrency 4 --py313
+  env/py313-scorer/bin/python3.13 --task-envs env/taskenvs`, 1 Ada GPU, 4 CPUs, 64G. Smokes use `--concurrency 2`.
+- **Stage B is queued with stage A** (the weekend rule: queue gated draws up front and cancel them unread if a gate
+  fails). It is gated on the syn-retry smoke and on syn-retry's stage-A d1 gate.
+  - The trigger fires only on a sure miss, so stage A cannot show the solve effect at 4 draws on 36 tasks. Its job
+    is to show that the mechanism works.
+- Cost: about 2 × 0.15 + 10 × 0.45 + 14 × 0.75 ≈ 15 Ada GPU-h.
+
+## Readings (written before any job runs)
+
+1. **Smoke gate, per arm.** A kill cancels that arm's draws unread, and for syn-retry also every stage-B synr job.
+   A failed smoke is fixed once, the fix is logged here, and the smoke is re-run.
+   - Gate fields: `status_SUCCESS<2 solve_calls_gt3>=1 root_calls_max>11`.
+   - Read by hand, also a kill: `check.py` raised or printed anything other than an integer or a `syntax error`
+     line.
+2. **Stage-A d1 kill gates, per arm** (`tools/gate_actor.sh`; it cancels that arm's d2-d4, and for syn-retry all
+   stage-B synr jobs as well).
+   - Bars: `empty>=9 timecap>=6 mean_wall>250 retry_miss>=4 solve_calls_gt3>=3 callcap>=14`. Checked with
+     `tools/d1_gate.py` on all 12 comparator draws restricted to syn-36: 12 of 12 PASS (maxima empty 6, time caps
+     2, wall 210 s, `retry_miss` 1, `solve_calls_gt3` 2, callcap 11).
+   - syn-retry only: `syntax_retry_miss>=3`, meaning a `syntax error` print with solves left and no further solve
+     call in 3 or more tasks.
+3. **Stage A (reported; it decides nothing except through gates 1 and 2)**, per arm on syn-36, 4 draws:
+   - unparseable final patches per draw (`tools/patch_syntax_desk.py`), against 6.25. The **mechanism works** when
+     this is at most 3.0;
+   - solves per draw against the 12 comparator draws and against the 2 fresh controls (`tools/paired_boot.py`);
+   - wall ratio;
+   - syn-retry: `syntax_flagged`, `syntax_retried`, `syntax_retry_miss`, `syntax_last`, `syntax_rescued`
+     (`tools/retry_counts.py`);
+   - syn-solver: tasks whose solver ran `py_compile` (from `tools/round_counts.py` command counts, if available,
+     otherwise a counts-only scan).
+4. **Stage B decision, syn-retry on cdev2-79**: 12 draws against R-021 retry d1-d12, paired per task with
+   `tools/paired_boot.py` (90% CI over tasks, 10,000 resamples, seed 0). The wall ratio is reported.
+   - **Helps:** the CI lower bound is above 0. The E4B shipping layout becomes `trees/e4b-syn-retry`.
+   - **Adopted on mechanism:** the CI lower bound is at or below 0, but every one of these holds:
+     - the point estimate is at least +0.25;
+     - unparseable final patches are at most 4.3 per draw, half of 8.58;
+     - `syntax_rescued` is at least 0.5 per draw;
+     - the wall ratio is at most 1.15.
+
+     The shipping layout then also becomes `trees/e4b-syn-retry`, and the reason is stated as mechanism plus point
+     estimate. The rationale: the trigger fires only on attempts that are sure misses, so it can cost a solve only
+     through wall, calls or a changed root.
+   - **Dropped:** anything else.
+   - Secondary (reported): against the 2 fresh cdev2-79 controls. If the point estimate against them is below 0,
+     that is stated.
+5. **Arm b (syn-solver)** has no stage B in this round. If its stage-A unparseable count is at most 3.0 and its
+   point estimate against the comparator is at least the syn-retry arm's, a later round may combine the two.
+
+## What each outcome means
+
+- **syn-retry adopted.** The E4B framework becomes: retry on empty, repair on a patch that does not parse, at
+  most 3 solves, then submit. A Kaggle handoff (H-NNN) is written to re-run the dev-48 wall check with the new tree.
+- **Mechanism works but no solves** (unparseable count halved, rescued near 0). The repaired patches parse but are
+  still wrong. This matches the 5% re-draw rate: those tasks are hard either way. Dropped.
+- **Mechanism fails** (the count stays near 6 on syn-36). The repair attempt breaks the file again or fails to fix
+  it. Read `syntax_last`.
+
+**Blind guess (not a reading).** Both smokes and d1 gates pass: 75%. Mechanism works (syn-retry): 60%. Stage B
+helps: 10%. Adopted on mechanism: 30%. syn-solver mechanism works: 25%.
