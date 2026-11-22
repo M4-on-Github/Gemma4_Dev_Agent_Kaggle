@@ -100,3 +100,11 @@ are read. Counts only; no trace content, no ids. Tweak id **T-e4b-030**. Same go
 - Smoke 60702. Stage A d1-d4: 60703-60706. Stage B d1-d12: 60707-60718. All draws are `afterok:60702`.
 - Gate actors: smoke 60702 (cancels every R-030 draw), stage-A d1 60703 (cancels 60704-60706 and stage B), with
   the bars of readings 1 and 2.
+
+## Smoke gate (reading 1), 2026-11-22: PASS
+
+- 60702 COMPLETED in 4 min 47 s. 2 rows SUCCESS; root calls at most 4; `solve_calls_gt3` 0; empty stderr.
+- Root order in both tasks: solve, `submit` printed, submit_patch. The first attempt changed source files and parsed
+  (`first_nonempty` 2), so `submit` on call 1 was correct.
+- Stated limit: neither the retry nor the repair branch, nor the call-3 limit, ran in the smoke. The d1 gates
+  (`solve_calls_gt3`, `retry_miss`, `syntax_retry_miss`) cover them.
