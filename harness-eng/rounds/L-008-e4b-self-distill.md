@@ -191,3 +191,42 @@ Seen before this entry: the training losses (part 1), the d1r gate's PASS line, 
 - **Mechanism.** As reading 5.
 - **Blind guess (not a reading).** l8e1 above l8 in point estimate: 55%.
 - **L-008b queued 2026-11-22:** l8e1 d1 61019; held l8e1 d2-d8 61020,61021,61022,61023,61024,61025,61026; d1 gate actor (kill cancels the held l8e1 draws).
+
+## Results, part 2: l8 (2026-11-25; readings applied as written)
+
+**Reading 2 (served).** l8 d1r, d2-d8, ctl d1r-d8r: 40 rows and 40 of 40 served in each. l8a d1-d2: 39 and 39 of 39.
+l8e1 d1: 40 and 40 of 40. Every job COMPLETED at 96G; MaxRSS 53.9-74.5 GB on the 40-task draws (the out-of-memory
+fix holds).
+
+**Reading 4: l8 is not kept.** `paired_boot.py`, l8 ×8 (d1r, d2-d8) against ctl ×8 (d1r-d8r), 40 tasks, 0 dropped:
+
+| | Per draw | Mean |
+|---|---|---|
+| l8 | 6, 4, 7, 4, 5, 2, 4, 7 | 4.88 |
+| ctl | 6, 7, 5, 5, 4, 6, 4, 6 | 5.38 |
+| **paired difference** | | **−0.50 (90% CI −2.00..+0.75)** |
+
+Wall ratio 140.5 / 149.4 s = 0.94. The point estimate is below +0.5 and above −1.0, so neither extend nor harm:
+not kept.
+
+**Reading 5: mechanism (means per draw, l8 against ctl).**
+- Empty patches 1.50 vs 3.00; time caps 0.38 vs 0.38 (task wall ≥ 470 s: 1.12 vs 0.62 by `argloss_counts.py`'s
+  count); mean task wall 140.5 vs 149.4 s; callcap 5.50 vs 6.12.
+- `retry_counts.py`: more than one `solve` call 8.12 vs 11.38 tasks; `solve_calls_gt3` 0.38 vs 1.50; retry_miss 0.12
+  vs 0; rescued 0 in both.
+- `argloss_counts.py`: `edit_file` calls 136.4 vs 176.8; OK 66.6 vs 67.4; failed 60.9 vs 87.0; arguments lost 8.9 vs
+  22.4 (share 0.065 vs 0.127), in 3.4 vs 9.4 tasks.
+- adapter_steps 622 per draw (ctl 0): the adapter was served.
+- So the adapter changed behaviour in the trained direction: half the empty patches, fewer retries, and fewer than
+  half the lost edit arguments. None of it turned into solves on fold B.
+
+**Reading 6: fold A (reported, not read).** l8a 3, 3 on the 39 training-fold tasks (3.00 per draw), against R-021
+retry restricted to fold A, 2.42 per draw (12 draws). Slightly higher on the training tasks and flat-to-lower on the
+held-out fold: the reading-6 pattern of learning the training tasks without transfer, at a size inside the noise of
+2 draws.
+
+Blind guess against outcome: not kept (guessed 55%); wall ratio 0.94, below the guessed 1.1-1.4.
+
+**L-008b.** The l8e1 d1 gate actor ended with the earlier session before it read the draw. The gate was applied by
+hand on 2026-11-25 with the pre-registered bars: PASS (resolved 3, empty 0, timecap 2, mean wall 163.8). l8e1 d2-d8
+were then released by `tools/throttle_release.sh 2` (at most 2 running). l8e1 is read when d2-d8 end.
