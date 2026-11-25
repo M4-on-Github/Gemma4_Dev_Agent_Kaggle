@@ -1,0 +1,8 @@
+# harness-eng R-038 2026-11-25: temperature 1.0 -> 0.2 (the public notebooks claiming 0.20-0.22 share 0.2). Nothing else changed.
+temperature: 0.2
+top_p: 0.95
+top_k: 64
+max_output_tokens: 8192
+thinking_config:
+  thinking_budget: 4096
+  include_thoughts: true
