@@ -230,3 +230,33 @@ Blind guess against outcome: not kept (guessed 55%); wall ratio 0.94, below the 
 **L-008b.** The l8e1 d1 gate actor ended with the earlier session before it read the draw. The gate was applied by
 hand on 2026-11-25 with the pre-registered bars: PASS (resolved 3, empty 0, timecap 2, mean wall 163.8). l8e1 d2-d8
 were then released by `tools/throttle_release.sh 2` (at most 2 running). l8e1 is read when d2-d8 end.
+
+## Results, part 3: L-008b l8e1 (2026-11-25; readings applied as written)
+
+**Served (reading 2).** l8e1 d1-d8: 40 rows and 40 of 40 served in each. Every job COMPLETED.
+
+**Decision (reading 4, applied to l8e1 on its own): not kept.** `paired_boot.py`, l8e1 ×8 against ctl d1r-d8r,
+40 tasks, 0 dropped:
+
+| | Per draw | Mean |
+|---|---|---|
+| l8e1 | 3, 5, 6, 5, 4, 5, 5, 4 | 4.62 |
+| ctl | 6, 7, 5, 5, 4, 6, 4, 6 | 5.38 |
+| **paired difference** | | **−0.75 (90% CI −1.75..+0.25)** |
+
+Wall ratio 153.1 / 149.4 s = 1.02. Below +0.5 and above −1.0: neither extend nor harm. Neither arm promotes, so
+no adapter goes forward.
+
+**Mechanism (reading 5; means per draw, l8e1 against ctl).**
+- `round_counts.py`: empty 1.25 vs 3.00; session-timeout 0.75 vs 0.38; tool-call-budget errors 0.75 vs 1.38;
+  more than one `solve` call 8.12 vs 11.38; adapter_steps 626 vs 0, so the adapter was served.
+- `retry_counts.py`: rescued 3 over 8 draws, retry_miss 0.
+- `argloss_counts.py`: `edit_file` calls 119.4 vs 176.8; OK 69.5 vs 67.4; failed 48.4 vs 87.0; arguments lost
+  1.5 vs 22.4 (share 0.013 vs 0.127); task wall ≥ 470 s 1.00 vs 0.62; tool calls per task 15.7 vs 17.1.
+- l8e1 moves the same way as l8, further: lost edit arguments almost gone (−93%), failed edits −44%, empty patches
+  −58%. Solves still do not rise. Edit-format failures are not what stops the E4B on fold B.
+
+Blind guess against outcome: l8e1 above l8 in point estimate (guessed 55%): no, 4.62 against 4.88.
+
+**The self-distillation line closes.** Neither checkpoint transfers to held-out tasks. The E4B ships
+`trees/e4b-r020-retry`.
