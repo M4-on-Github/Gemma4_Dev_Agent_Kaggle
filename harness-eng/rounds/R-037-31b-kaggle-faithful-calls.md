@@ -69,3 +69,4 @@ Written 2026-11-25, before any job of this round is submitted. Counts only; no t
 **Blind guess (not a reading).** Faithful 60%. Promote 15%, not kept 75%, harm 10%. Wall ratio 0.95-1.05.
 
 ## Queued
+- **R-037 queued 2026-11-25** (held, interleaved ctl/c34 d1..d8): 66317-66332. d1 pair 66317 (kfctl) and 66318 (kfc34) released at once; d2-d8 held until the reading-5 gate is applied by hand, then released by `tools/throttle_release.sh 2`.
