@@ -50,3 +50,4 @@ Counts only. User goal (2026-11-25): the highest hidden-test score in the days l
 draws: 65%.
 
 ## Queued
+- **R-038 queued 2026-11-25** (held): d1..d8 = 67698,67699,67700,67701,67702,67703,67704,67705. d1 is released by `tools/throttle_release.sh 2` once R-037's release script has ended; d2-d8 stay held until the reading-5 gate.
