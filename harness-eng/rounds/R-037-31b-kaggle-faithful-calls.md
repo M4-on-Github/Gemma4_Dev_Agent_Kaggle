@@ -70,3 +70,15 @@ Written 2026-11-25, before any job of this round is submitted. Counts only; no t
 
 ## Queued
 - **R-037 queued 2026-11-25** (held, interleaved ctl/c34 d1..d8): 66317-66332. d1 pair 66317 (kfctl) and 66318 (kfc34) released at once; d2-d8 held until the reading-5 gate is applied by hand, then released by `tools/throttle_release.sh 2`.
+
+## Deviation (logged 2026-11-25, before any resolved count of this round is looked at)
+
+- The run argument was given as `runs/<run>`, and `slurm/eval.sbatch` adds `runs/` itself, so d1 wrote to
+  `runs/runs/<run>`. The two d1 directories were moved to `runs/<run>` unchanged. The 14 held d2-d8 jobs
+  (66319-66332) had never started; they were cancelled and resubmitted with the bare run id, still interleaved and
+  held: 66363, 66364, 66365, 66366, 66367, 66368, 66369, 66370, 66371, 66372, 66373, 66374, 66375, 66376.
+
+## Reading 5 (d1 gate, applied by hand 2026-11-25): PASS
+
+kfc34 d1: 79 rows, 79 served; 14 empty (bar 25); mean task wall 381.7 s against kfctl d1 393.0 s (bar 1.15 ×, 452 s).
+kfctl d1: 79 rows, 79 served. d2-d8 released by `tools/throttle_release.sh 2`.
