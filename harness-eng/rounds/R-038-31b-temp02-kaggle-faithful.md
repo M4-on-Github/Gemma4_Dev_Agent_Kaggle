@@ -51,3 +51,4 @@ draws: 65%.
 
 ## Queued
 - **R-038 queued 2026-11-25** (held): d1..d8 = 67698,67699,67700,67701,67702,67703,67704,67705. d1 is released by `tools/throttle_release.sh 2` once R-037's release script has ended; d2-d8 stay held until the reading-5 gate.
+- **Deviation, 2026-11-25 about 22:45 UTC (before any resolved count is looked at):** the user lifted the 2-running cap for the final-week rounds. The release script was stopped and the remaining held draws were released at once; draws now start as GPUs free up. R-038 d1 was held again for a few minutes so the R-039 smokes queue ahead of it.

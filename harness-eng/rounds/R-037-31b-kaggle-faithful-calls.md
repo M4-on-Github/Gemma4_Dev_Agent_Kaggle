@@ -82,3 +82,4 @@ Written 2026-11-25, before any job of this round is submitted. Counts only; no t
 
 kfc34 d1: 79 rows, 79 served; 14 empty (bar 25); mean task wall 381.7 s against kfctl d1 393.0 s (bar 1.15 ×, 452 s).
 kfctl d1: 79 rows, 79 served. d2-d8 released by `tools/throttle_release.sh 2`.
+- **Deviation, 2026-11-25 about 22:45 UTC (before any resolved count is looked at):** the user lifted the 2-running cap for the final-week rounds. The release script was stopped and the remaining held draws were released at once; draws now start as GPUs free up.

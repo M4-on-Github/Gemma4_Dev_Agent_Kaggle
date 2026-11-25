@@ -72,3 +72,4 @@ both (T-31b-002, T-31b-007) were not kept. This round changes what each step is 
 map 35%, maplite 20%. Empty patches fall in map: 75%.
 
 ## Queued
+- **R-039 smokes submitted 2026-11-25:** kfmap 67707, kfmaplite 67708. The 16 draws are submitted after reading 1 is applied.
