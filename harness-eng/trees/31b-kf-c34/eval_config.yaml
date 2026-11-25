@@ -1,0 +1,5 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 34  # harness-eng R-037 2026-11-25: 28 -> 34 (as trees/31b-c34t7)
+  max_time_minutes: 8.66  # harness-eng R-037 2026-11-25: cluster stand-in for Kaggle 7 min (x1.2375, Kaggle 28.7 vs cluster 23.2 tok/s per stream)
+  max_turns: 80

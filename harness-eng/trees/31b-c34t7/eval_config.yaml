@@ -1,0 +1,5 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 34  # harness-eng R-037 2026-11-25: 28 -> 34, Kaggle is call-bound (37% of tasks at the 28-call cap)
+  max_time_minutes: 7  # harness-eng R-037 2026-11-25: 8 -> 7, pays for the extra calls in the 12 h budget
+  max_turns: 80
