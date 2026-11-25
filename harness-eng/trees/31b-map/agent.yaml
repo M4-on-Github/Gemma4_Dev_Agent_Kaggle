@@ -1,0 +1,16 @@
+name: swe_agent
+# harness-eng R-039 2026-11-25 (code-map pipeline): single LlmAgent (trees/31b-base) -> SequentialAgent of four steps
+# on the same model. Targets, from rounds/trace-vs-reference.md: 37% of failing 31B draws read the right code and
+# never edit; 24% fix one site of a multi-site fix while their own check passes.
+#   locate: starts skills/codemap/scripts/locate.py once (code graph + ranking; no model search calls).
+#   draft:  read_file and the edit tools only, no run_command: it cannot explore, so it edits from the map.
+#   audit:  starts skills/codemap/scripts/audit.py once (changed functions against their graph relatives).
+#   finish: the base agent with all six tools; reviews the draft, handles the listed related sites, checks, submits.
+# Later steps see the earlier steps' history (include_contents default, as trees/31b-r014-scout). All steps share
+# the call and time caps; only finish holds submit_patch, so no earlier step can end the task.
+agent_class: SequentialAgent
+sub_agents:
+  - config_path: step_locate.yaml
+  - config_path: step_draft.yaml
+  - config_path: step_audit.yaml
+  - config_path: step_finish.yaml

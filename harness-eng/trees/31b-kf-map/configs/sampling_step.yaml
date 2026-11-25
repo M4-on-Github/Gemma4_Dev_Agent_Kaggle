@@ -1,0 +1,9 @@
+# harness-eng R-039 2026-11-25: the locate and audit steps only start one script, so they get a small thinking budget
+# and output cap (as the R-016 root). The draft and finish steps keep configs/sampling.yaml.
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+max_output_tokens: 1024
+thinking_config:
+  thinking_budget: 256
+  include_thoughts: true

@@ -1,0 +1,7 @@
+name: audit
+description: Starts the audit script once and stops.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/audit.md
+skills:
+  - skills/codemap
+generate_content_config: !include configs/sampling_step.yaml

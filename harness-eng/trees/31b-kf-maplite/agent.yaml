@@ -1,0 +1,9 @@
+name: swe_agent
+# harness-eng R-039 2026-11-25 (code map only): trees/31b-base behind one locate step. The locate step starts
+# skills/codemap/scripts/locate.py once; the solve step is the base agent with all six tools and the base prompt, with
+# section 2 pointing at the map. No draft restriction and no audit: this arm isolates the map from the pipeline of
+# trees/31b-map. skills/ is the same directory content as trees/31b-map/skills.
+agent_class: SequentialAgent
+sub_agents:
+  - config_path: step_locate.yaml
+  - config_path: step_solve.yaml

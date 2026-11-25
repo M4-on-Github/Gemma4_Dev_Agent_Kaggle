@@ -1,0 +1,7 @@
+name: locate
+description: Starts the code-map script once and stops.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/locate.md
+skills:
+  - skills/codemap
+generate_content_config: !include configs/sampling_step.yaml

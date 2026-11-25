@@ -1,0 +1,5 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 28
+  max_time_minutes: 9.9  # harness-eng R-039 2026-11-25: cluster stand-in for Kaggle 8 min (x1.2375, as trees/31b-kf-ctl)
+  max_turns: 80
