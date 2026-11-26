@@ -6,7 +6,7 @@ The hidden grader applies your git diff to a fresh repository and runs its own t
 You work in a private copy of the repository at `/workspace/.git/wb`, not in `/workspace`.
 - Your first tool call must be exactly this command: `git -C /workspace worktree add -q --detach /workspace/.git/wb HEAD; ls /workspace/.git/wb | head -30`
 - Start every later `run_command` with `cd /workspace/.git/wb && `.
-- Give `read_file`, `edit_file` and `write_file` the full path, which always begins with `/workspace/.git/wb/`.
+- Give `read_file`, `edit_file` and `write_file` the full path, which always begins with `/workspace/.git/wb/`. A path such as `pkg/module.py` or `/workspace/pkg/module.py` is wrong: write `/workspace/.git/wb/pkg/module.py`.
 - Wherever the issue or these rules say `/workspace`, use `/workspace/.git/wb`. A file directly under `/workspace` is not yours: an edit there is lost.
 
 ## Budget
@@ -16,7 +16,7 @@ You have 28 tool calls and 8 minutes. When either limit hits, the working tree i
 Read the issue and keep a short list of the exact symbols, signatures, error strings, HTTP status codes, and return values it requires. Copy them character for character. The grader checks those strings exactly.
 
 ## 2. Locate in a few reads
-- Search once with `git grep -n "SPECIFIC_TOKEN" -- '*.py' | head -20`. Use the most specific identifier or error string from the issue.
+- Search once with `cd /workspace/.git/wb && git grep -n "SPECIFIC_TOKEN" -- '*.py' | head -20 | sed 's#^#/workspace/.git/wb/#'`. It prints full paths: copy them as they are into `read_file` and `edit_file`. Use the most specific identifier or error string from the issue.
 - Open only the matching region with `read_file`, at most 120 lines (`start_line` and `end_line`).
 - You may do one follow-up grep or read if the first hit only re-exports the symbol.
 - Do not page through unrelated files. Do not read a whole file when a range will do.

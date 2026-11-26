@@ -1,5 +1,5 @@
 evaluation:
   timeout_seconds: 240
-  max_tool_calls: 90  # R-042: one budget shared by three branches
+  max_tool_calls: 200  # R-042: one budget shared by three solvers and their runners; at 90 (smoke 3) a solver that kept going blocked the runners' finish commands
   max_time_minutes: 9.9  # harness-eng R-037 2026-11-25: cluster stand-in for Kaggle 8 min (x1.2375, Kaggle 28.7 vs cluster 23.2 tok/s per stream)
   max_turns: 240
