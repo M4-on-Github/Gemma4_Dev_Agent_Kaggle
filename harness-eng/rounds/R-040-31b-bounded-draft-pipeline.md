@@ -63,3 +63,12 @@ Cohort and flags as R-039 (`cohorts/cdev2-79.txt`, concurrency 4, 1 Ada GPU per 
 to the end, it solved exactly what the control solves.
 
 ## Queued
+- **R-040 smoke submitted 2026-11-25:** 67756.
+
+## Reading 1 (smoke gate, applied 2026-11-25 from the traces): PASS
+
+Both tasks served. `locate.py` printed a map in both (one repeat start got the one-line answer). `show.py` printed
+code in both (1 and 4 lookups). A source edit landed before the finishing step in 1 of 2; in the other, the draft's
+two `edit_file` calls failed and `audit.py` correctly reported no draft edit, and the finishing step made the edit.
+`audit.py` ran in both. Seconds per step (task 1, task 2): map 19, 8; draft 85, 209; audit 5, 13; finish 88, 364.
+- **R-040 draws submitted 2026-11-25** (d1..d8): 67758 67759 67760 67761 67762 67763 67764 67765. Not held; d2-d8 are cancelled unread if d1 fails reading 5.
