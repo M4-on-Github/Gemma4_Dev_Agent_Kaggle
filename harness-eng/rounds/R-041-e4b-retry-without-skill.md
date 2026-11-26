@@ -65,3 +65,32 @@ Both tasks served. In both, the root called `solve`, then `count_changes`; `coun
 and replied with a single digit; the root then submitted. Task wall 52 s and 54 s. Neither task had an empty first
 attempt, so the retry branch itself is first exercised in d1 (reading 5 guards it).
 - **R-041 draws submitted 2026-11-26** (rcheck d1, rskill d1, rcheck d2, rskill d2, ... rcheck d8): 67801 67802 67803 67804 67805 67806 67807 67808 67809 67810 67811 67812.
+
+## Results (2026-11-26, readings applied as written)
+
+All 12 draws started together because GPUs were free, so reading 5 could not cancel anything; it is applied first
+below and passes.
+
+- **Reading 2, served: pass.** All 12 draws have 79 rows and 79 served tasks.
+- **Reading 5, d1 gate: pass.** rcheck d1: mechanism (a) 6 of 6; mean task wall 138.1 s (bar 1.3 × 139.7 s).
+- **Reading 3, mechanism, rcheck ×8:**
+
+  | Bar | Result | Met |
+  |---|---|---|
+  | (a) empty first attempts retried, 0.85 or more | 98 of 101 = 0.97 | yes |
+  | (b) count calls with more than one shell command, 0.10 or less | at most 33 of 741 = 0.045 | yes |
+  | (c) re-solve although the first count was 1 or more, 2.0 per draw or fewer | **9.0 per draw** | **no** |
+  | (d) wall ratio against the 16 skill-retry draws, 1.10 or less | 149.2 / 141.2 = 1.06 | yes |
+
+- **Reading 4, solves.** rcheck 9, 9, 10, 7, 8, 7, 8, 7 (8.12) against the 16 skill-retry draws (7.81): **+0.31 per
+  draw, 90% CI −0.94..+1.62**. Empty patches 3.88 per draw against 5.25 (R-021 retry) and 6.50 (rskill).
+- **Decision as written: not kept**, because bar (c) is missed.
+- **Reported beside it.** Drift: rskill ×4 (9, 8, 8, 9) against R-021 retry ×12: +0.92 (CI −1.00..+3.00).
+
+## Note on bar (c) (written after the results; it does not change the decision above)
+
+Bar (c) was set without measuring the skill retry on it. The same count on the skill retry is 7.75 per draw (rskill
+×4) and 7.08 (R-021 ×12): the root also calls `solve` again after a count of 1 or more there. So 9.0 is the layout's
+ordinary behaviour, not something the shell-only counter added. On every bar where the two can be compared, rcheck
+matches the skill retry. The rule is still applied as written; whether to upload `e4b-r041-retry-check` regardless
+is put to the user with this note.
