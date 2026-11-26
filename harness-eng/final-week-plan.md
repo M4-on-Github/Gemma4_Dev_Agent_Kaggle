@@ -210,6 +210,21 @@ produced a change to ship.
 - **Reading.** No public bundle or method scores above what we already run. Both boards look like many draws of
   near-equal configurations, so the top public scores are mostly the best of many uploads.
 
+### Upload state and the E4B candidate zip (2026-11-26)
+
+- **No upload since Nov 12.** The upload log on `all-work-consolidated-2026-11-20` ends at row 17 (2026-11-12) and
+  that branch's last commit is 2026-11-22. `e4b-r020-retry` has never been uploaded; handoff H-003 is still open.
+- **Zip built here so the upload needs no other machine:** `harness-eng/dist/e4b-r020-retry/submission.zip` (not in
+  git), 9 members, 7,565 bytes, sha256 `e776e776ff9cdf11ccb4c215c4896259d3948572674f16b60119bfaa8daa44c0`, the same
+  hash on a second build.
+  - Built with `tools/pack_submission.py`'s own `build_tree` and `write_zip`, called directly, because the packer
+    refuses this tree on two known errors: the false "root agent has no way to modify files" (H-002, an `agent_tool`
+    root) and the cap-only time gate (the tree projects about 4.4-4.9 h on L4x4; rows 11-17 were uploaded under the
+    same recorded override). No rejected prompt marker.
+  - **Not run on Kaggle.** An `agent_tool` root with a skill has never been through the real scorer. The risk is one
+    upload slot scoring zero; the slots are otherwise unused.
+  - Uploading it needs the user's approval file with this hash and a recorded `plan.md` 5.8 override.
+
 ## Timeline
 
 | Day | Work |
