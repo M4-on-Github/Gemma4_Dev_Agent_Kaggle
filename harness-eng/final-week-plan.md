@@ -184,6 +184,18 @@ harness-addressable groups are never-edit (37%) and partial fix (24%).
 Two promoted changes are not stacked untested; the combination would be its own round. A promoted tree must finish
 one real upload by about Nov 28 to be a final.
 
+### Outcome of the four rounds (2026-11-26)
+
+| Round | Result | Outcome |
+|---|---|---|
+| R-037 calls 34, time 7 | −0.50 per draw (CI −2.62..+1.62), wall 0.976 | not kept |
+| R-038 temperature 0.2 | −1.75 per draw (CI −3.88..+0.25) | harm |
+| R-039 map pipeline, map only | both killed at the d1 time gate; where the pipeline ran in full it matched the control | not kept |
+| R-040 bounded-draft pipeline | killed at d1 (28 empty, 499 s); d1 solved 13 where the control expects 30.4 | not kept |
+
+The 31B candidate stays `31b-base`. The E4B candidate stays `e4b-r020-retry`. No cluster round since R-021 has
+produced a change to ship.
+
 ## Timeline
 
 | Day | Work |
