@@ -83,3 +83,31 @@ Written 2026-11-25, before any job of this round is submitted. Counts only; no t
 kfc34 d1: 79 rows, 79 served; 14 empty (bar 25); mean task wall 381.7 s against kfctl d1 393.0 s (bar 1.15 ×, 452 s).
 kfctl d1: 79 rows, 79 served. d2-d8 released by `tools/throttle_release.sh 2`.
 - **Deviation, 2026-11-25 about 22:45 UTC (before any resolved count is looked at):** the user lifted the 2-running cap for the final-week rounds. The release script was stopped and the remaining held draws were released at once; draws now start as GPUs free up.
+
+## Results (2026-11-25, readings applied as written)
+
+Job 66373 (kfctl d7) ended with SLURM state OUT_OF_MEMORY (98 GB against a 96 GB request). Its run has 79 rows, all
+served and all graded, so it is read; the kill came after the results were written.
+
+1. **Served check: pass.** All 16 draws have 79 rows and 79 served tasks.
+2. **Fidelity: not faithful.** kfctl ×8: call-cap share 0.237 (bar 0.28 or more; Kaggle 0.375), time-cap share 0.196
+   (bar 0.25 or less; Kaggle 0.194). The longer time limit moved the time cap to Kaggle's level but only part of the
+   freed tasks ran into the call cap.
+3. **Decision: not kept.** kfc34 30, 28, 27, 31, 33, 31, 31, 28 (29.88) against kfctl 35, 32, 27, 30, 29, 30, 33, 27
+   (30.38): **−0.50 per draw, 90% CI −2.62..+1.62**. Wall ratio 376.3 / 385.6 = 0.976 (projection 9.80 h).
+4. **Mechanism, means per draw:**
+
+   | | kfctl | kfc34 |
+   |---|---|---|
+   | call-cap tasks | 18.75 | 13.38 |
+   | time-cap tasks | 15.50 | 21.88 |
+   | empty patches | 11.75 | 12.38 |
+   | mean task wall (s) | 385.6 | 376.3 |
+   | tool calls per task | 19.72 | 21.09 |
+   | resolved on tasks where the control hit the call cap (18.75 per draw) | 2.25 | 1.88 |
+
+   Six more calls took 5.4 tasks per draw off the call cap and put 6.4 onto the (shorter) time cap. The tasks the
+   control lost at the call cap did not resolve more often with 34 calls.
+
+**Lesson.** A task that has not converged by call 28 does not converge by call 34. The call cap is where
+non-converging tasks stop, not what stops them. Calls 34 / time 7 is safe on time (0.976) but buys nothing.
