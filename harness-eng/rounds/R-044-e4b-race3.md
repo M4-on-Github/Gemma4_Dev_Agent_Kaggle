@@ -54,3 +54,14 @@ after R-043's early mechanism check passed on the 31B (0 landed outside edits, 1
   called `submit_patch` without APPLIED. Reads by a path outside the worktree failed many times in 4 of 6 solvers.
 - **Deviation (logged before any draw):** only d1 is submitted first, not d1-d4, since the smoke suggests the early
   check may fail. d2-d8 follow only if the early check passes.
+
+## Early mechanism check on d1 at 20 rows (job 68053, 2026-11-27): FAIL as declared; round dropped
+
+No resolved count was looked at; the draw was cancelled.
+- A runner called `submit_patch` without APPLIED in 6 of 20 tasks (bar: more than 3 fails). On an emptied root that
+  hands in a tree with its files deleted and ends the race.
+- The other bars held: landed outside edits 3 of 58 solvers (0.05); worktrees made by 50; a runner applied and
+  submitted in 10 of 20; mean task wall 78.1 s. Also: the finish command printed no result word in 12 tasks and
+  TAKEN in 4; 7 rows carry an error.
+- **Decision as written: R-044 is dropped.** R-045 removes `submit_patch` from the tree instead of asking the
+  runner to decide.
