@@ -39,3 +39,8 @@ As R-042 after its deviations: `R-043-31b-kfrace3d-d1..d8`, `--concurrency 1`, `
    solver before its first edit; empty patches; time-cap tasks; mean wall; SD of solves over draws against 2.64.
 
 **Blind guess.** Smoke pass 75%. Early check pass 60%. Promote 25%, not kept 55%, harm 20%.
+
+## Smoke (job 68021, 2026-11-27): PASS
+
+Both tasks served, no crash, a runner submitted in both, both resolved; 0 of 6 solvers edited outside their worktree;
+task walls 105 s and 349 s. Draws d1-d4 submitted next; early check at 20 rows of d1 as written.
