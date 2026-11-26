@@ -1,0 +1,9 @@
+name: runner_a
+description: Starts solver a once and hands in its working copy.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include prompts/runner_a.md
+tools:
+  - run_command
+  - agent_tool:
+      config_path: sub_agents/solver_a.yaml
+generate_content_config: !include configs/sampling_root.yaml
