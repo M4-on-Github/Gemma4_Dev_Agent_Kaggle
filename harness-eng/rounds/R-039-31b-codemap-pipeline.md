@@ -73,3 +73,32 @@ map 35%, maplite 20%. Empty patches fall in map: 75%.
 
 ## Queued
 - **R-039 smokes submitted 2026-11-25:** kfmap 67707, kfmaplite 67708. The 16 draws are submitted after reading 1 is applied.
+
+## Reading 1 (smoke gate, applied 2026-11-25 from the traces): PASS, both arms
+
+| | kfmap smoke | kfmaplite smoke |
+|---|---|---|
+| Tasks served | 2 of 2 | 2 of 2 |
+| `locate.py` returned a map (not the fallback) | 2 of 2 | 2 of 2 |
+| `audit.py` ran and listed sites | 2 of 2 | not in this arm |
+| Source edit before the last step | 2 of 2 | not in this arm |
+| Source edit at all | 2 of 2 | 2 of 2 |
+| `locate.py` calls per task | 5 and 2 | 5 and 2 |
+| Tool calls, task wall | 23 and 16; 390 s and 531 s | 7 and 18; 134 s and 311 s |
+
+The smoke's resolved column was seen while reading the rows (4 of 4 task-runs); it is not a reading and two tasks say
+nothing.
+
+## Deviation (logged 2026-11-25, before any of the 16 draws is submitted)
+
+- **What the smoke showed.** The map step started `locate.py` 2 to 5 times per task instead of once. Each repeat costs
+  one of the 28 tool calls and puts a second copy of the map (about 5,000 characters) into the 32k context.
+- **Change, all four trees.** `locate.py` now writes a marker inside the checkout's own metadata directory after it
+  prints a map. A second start within 900 s prints one line (map already printed; reply `mapped`) instead of the map.
+  The marker is not a source file, so it is not part of the patch. Checked on a scratch repository: first start prints
+  the map, second prints the one line, and the working tree stays clean. Prompts are unchanged. The four trees validate
+  as before.
+- **No second smoke.** The gate passed, and a second smoke would wait about an hour for a GPU. Instead the first
+  finished tasks of each arm's d1 are checked for this: a map on the first start, the one line on repeats. If the map
+  is ever missing on a first start, that arm's draws are cancelled unread and the round file says so.
+- **R-039 draws submitted 2026-11-25** (interleaved kfmap, kfmaplite d1..d8): 67714-67729, not held; they start as GPUs free up.
