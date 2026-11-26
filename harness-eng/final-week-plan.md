@@ -154,6 +154,36 @@ and 36 rounds of prompt and config changes have not moved that. The best use of 
 3. **E4B finals:** `e4b-r020-retry`, the one kept improvement (+1.08, held-out +0.67).
 4. **Finals:** pick by pooled evidence, not by the single best public draw.
 
+## Update, 2026-11-25 evening: direction review and three rounds in flight
+
+The user lifted the 2-running GPU cap for the final-week rounds and asked for mechanical fixes (settings,
+orchestration, skills) reasoned from the failure modes, since prompt changes have not moved scores.
+
+**Where the 31B's failing draws go** (`rounds/trace-vs-reference.md`, 286 failing draws): no edit 105 (86 of them had
+read the reference file), partial fix 69, wrong file 34, wrong region 32, wrong change 32, edit tool 14. The two
+harness-addressable groups are never-edit (37%) and partial fix (24%).
+
+**Desk checks that closed a line (zero GPU):**
+
+| Idea | Result | Verdict |
+|---|---|---|
+| Regression check, then retry | ceiling about 0.4 tasks per 79 per draw | closed |
+| Harness built-in graph tools | top-5 file recall 29-38% on cdev2-79, level with grep | not worth a round |
+| Locator v2 (`tools/locator_v2/`) | file in top 5: 53 of 76 tuning, 20 of 21 check (old BM25 48, 16) | built into R-039 |
+| Related sites from real partial-fix patches | some missed symbol listed in 39 of 49 draws, all in 11; precision 0.11 | built into R-039 |
+
+**Rounds, all against one control (kfctl ×8, Kaggle-faithful time scaling ×1.2375):**
+
+| Round | Change | Aimed at | Promote bar |
+|---|---|---|---|
+| R-037 | calls 34, time 7 | Kaggle's binding call cap | +1.5, CI lower > −0.5, wall ≤ 1.06 |
+| R-038 | temperature 0.2 | draw-to-draw variance on tasks the 31B can solve | +2.0, CI lower > 0, wall ≤ 1.06 |
+| R-039 kfmap | map script, search-free draft, audit script, finish | never-edit and partial fix | +2.0, CI lower > 0, wall ≤ 1.06 |
+| R-039 kfmaplite | map script, then the normal agent | wrong file, never-edit | +2.0, CI lower > 0, wall ≤ 1.06 |
+
+Two promoted changes are not stacked untested; the combination would be its own round. A promoted tree must finish
+one real upload by about Nov 28 to be a final.
+
 ## Timeline
 
 | Day | Work |
