@@ -130,3 +130,20 @@ nothing.
 ## Outcome: both arms killed at the d1 gate, not kept
 
 The d1 runs of both arms are read below for mechanism only (exploratory; no decision rests on them).
+
+## d1 mechanism (exploratory, 2026-11-25; one draw per arm, read after both kills)
+
+"Control expects" is the mean kfctl ×8 solve count on the same tasks.
+
+| Group | Tasks | Resolved | Control expects | Empty |
+|---|---|---|---|---|
+| kfmaplite d1, all | 79 | 31 | 30.38 | 16 |
+| kfmap d1, rows written when read | 69 | 21 | 25.62 | 18 |
+| kfmap: finishing step reached, draft took 180 s or less | 10 | 8 | 8.12 | 0 |
+| kfmap: finishing step reached, draft took longer | 34 | 13 | 13.50 | 4 |
+| kfmap: finishing step not reached | 25 | 0 | 4.00 | 14 |
+
+- Where the whole pipeline ran (44 tasks), it solved what the control solves on those tasks (21 against 21.6). The
+  map, the draft and the audit list neither helped nor hurt there.
+- The arm's whole loss is the 25 tasks whose draft step used up the time.
+- The map alone is neutral on solves in one draw and costs about 70 s per task.

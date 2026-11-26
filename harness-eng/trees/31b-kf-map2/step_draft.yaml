@@ -1,0 +1,11 @@
+# harness-eng R-040 2026-11-25: R-039 draft had read_file and used it 11 times per task (368 s). Here the only way
+# to look at code is the codemap skill's show.py, which answers four lookups per task and then refuses.
+name: draft
+description: Makes the first source edit from the code map, with at most four bounded lookups.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/draft.md
+tools:
+  - edit_file
+skills:
+  - skills/codemap
+generate_content_config: !include configs/sampling_draft.yaml

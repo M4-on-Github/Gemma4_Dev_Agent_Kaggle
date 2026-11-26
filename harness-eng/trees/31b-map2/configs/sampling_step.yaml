@@ -1,0 +1,8 @@
+# harness-eng R-040 2026-11-25: script-launch steps do not think (R-039: the map step took 38 s in 4.5 turns).
+temperature: 0.2
+top_p: 0.95
+top_k: 64
+max_output_tokens: 768
+thinking_config:
+  thinking_budget: 0
+  include_thoughts: false
