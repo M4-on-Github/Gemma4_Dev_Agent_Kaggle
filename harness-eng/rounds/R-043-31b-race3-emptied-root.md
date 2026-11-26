@@ -44,3 +44,16 @@ As R-042 after its deviations: `R-043-31b-kfrace3d-d1..d8`, `--concurrency 1`, `
 
 Both tasks served, no crash, a runner submitted in both, both resolved; 0 of 6 solvers edited outside their worktree;
 task walls 105 s and 349 s. Draws d1-d4 submitted next; early check at 20 rows of d1 as written.
+
+## Early mechanism check on d1 at 20 rows (2026-11-27): PASS
+
+Draw ids: d1-d4 = 68022-68025. No resolved count was looked at.
+- **Edits landed outside a solver's worktree: 0 of 60 solvers** (bar 0.15). 12 solvers made a `write_file` call with a
+  path outside their worktree; all 12 calls failed with a file error and none landed. (A first count of 12 of 60
+  counted these attempts; the reading is about landed edits.) After the failed call, 6 solvers made their next edit
+  inside the worktree and 6 made no further edit call.
+- **A runner applied and submitted: 19 of 20** (bar 14). One submit of 0 files; no failed apply.
+- **Mean task wall 276.0 s** (bar 443 s; kfctl 385.6 s at 4 streams per GPU against 3 here).
+- Also: three solvers active and all worktrees made in 20 of 20; 1 empty patch; 1 time cap.
+
+d5-d8 submitted.
