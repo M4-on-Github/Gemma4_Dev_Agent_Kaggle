@@ -58,3 +58,10 @@ S-015 (an LlmAgent root over sub-agents) completed there at 0.05, which says suc
 
 ## Queued
 - **R-041 smoke submitted 2026-11-26:** 67800.
+
+## Reading 1 (smoke gate, applied 2026-11-26 from the traces): PASS
+
+Both tasks served. In both, the root called `solve`, then `count_changes`; `count_changes` ran the fixed command once
+and replied with a single digit; the root then submitted. Task wall 52 s and 54 s. Neither task had an empty first
+attempt, so the retry branch itself is first exercised in d1 (reading 5 guards it).
+- **R-041 draws submitted 2026-11-26** (rcheck d1, rskill d1, rcheck d2, rskill d2, ... rcheck d8): 67801 67802 67803 67804 67805 67806 67807 67808 67809 67810 67811 67812.
