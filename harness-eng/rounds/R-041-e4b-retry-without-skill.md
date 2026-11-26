@@ -57,3 +57,4 @@ S-015 (an LlmAgent root over sub-agents) completed there at 0.05, which says suc
 **Blind guess (not a reading).** Smoke passes first time 65%. Mechanism bars all met 55%. Kept 50%.
 
 ## Queued
+- **R-041 smoke submitted 2026-11-26:** 67800.

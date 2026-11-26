@@ -225,6 +225,23 @@ produced a change to ship.
     upload slot scoring zero; the slots are otherwise unused.
   - Uploading it needs the user's approval file with this hash and a recorded `plan.md` 5.8 override.
 
+### Forum findings that change the upload plan (2026-11-26, topics read through the API)
+
+- **Queue.** Participants report 30-40 h from upload to score and rising; the host's Nov 19 post gave 20-24 h. A team
+  may hold one pending submission, so the daily cap no longer sets the pace. About three more scored uploads fit
+  before Dec 2 23:59 UTC. No host answer on whether a submission still pending at the deadline is scored.
+- **Skill scripts on the official scorer.** Two teams report that skill scripts do not see the task repository there
+  (a skill-only bundle scored 0.00 twice; a search script indexed its own folder). No host answer. If true:
+  - `e4b-r020-retry` would never retry on the scorer (`count.py` prints 1 on a read error), so its cluster gain
+    would not carry over. **The recommendation to upload the zip built above is withdrawn** until R-041 reads.
+  - R-039 and R-040 could not have shipped even if they had won.
+- **Skill names** must be lowercase kebab-case or the agent does not start and the board shows 0.00 (`change-count`
+  and `codemap` pass).
+- **Faulty scorer GPU.** The host found one, back to Oct 12; about 125 submissions scored 0.00 at 3,230 bytes and
+  will be rerun. None of our 17 submissions has that size.
+- **Our submissions (API list):** 17, all complete, none pending; the last is 2026-11-12.
+- **R-041** tests the retry with the count made inside the sandbox by a shell-only `agent_tool` instead of a skill.
+
 ## Timeline
 
 | Day | Work |
