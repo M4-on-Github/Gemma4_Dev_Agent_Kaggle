@@ -57,3 +57,16 @@ draws: 65%.
 
 kft02 d1: 79 rows, 79 served; 18 empty (bar 25); mean task wall 392.7 s (bar 452 s). d2-d8 (67699-67705) released at
 once (the 2-running cap is lifted for the final-week rounds).
+
+## Results (2026-11-26, readings applied as written)
+
+Job 67704 (d7) ended with SLURM state OUT_OF_MEMORY after its results were written; the run has 79 rows, all served
+and graded, and is read (as R-037 job 66373).
+
+- **Served check: pass.** All 8 draws have 79 rows and 79 served tasks.
+- **Decision: harm.** kft02 29, 32, 27, 31, 26, 26, 30, 28 (28.62) against kfctl 35, 32, 27, 30, 29, 30, 33, 27
+  (30.38): **−1.75 per draw, 90% CI −3.88..+0.25**. The point estimate is at or below the −1.5 harm bar.
+- **Mechanism, means per draw (kft02 against kfctl):** empty 14.0 against 11.75; time-cap tasks 18.4 against 15.5;
+  call-cap tasks 18.4 against 18.75; mean task wall 394.8 s against 385.6 s (ratio 1.024); calls 19.3 against 19.7.
+- **Lesson.** Lower temperature does not steady the 31B; it leaves more tasks without a patch. Temperature stays 1.0.
+  With T-e4b-004, 032b and 033 this closes temperature for both models.

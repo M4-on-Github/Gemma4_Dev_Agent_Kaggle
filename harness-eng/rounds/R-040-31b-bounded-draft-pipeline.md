@@ -72,3 +72,24 @@ code in both (1 and 4 lookups). A source edit landed before the finishing step i
 two `edit_file` calls failed and `audit.py` correctly reported no draft edit, and the finishing step made the edit.
 `audit.py` ran in both. Seconds per step (task 1, task 2): map 19, 8; draft 85, 209; audit 5, 13; finish 88, 364.
 - **R-040 draws submitted 2026-11-25** (d1..d8): 67758 67759 67760 67761 67762 67763 67764 67765. Not held; d2-d8 are cancelled unread if d1 fails reading 5.
+
+## Reading 5 (d1 gate, applied 2026-11-26 at the end of d1): KILL. Outcome: not kept.
+
+- kfmap2 d1: 79 rows, 79 served; **28 empty (bar 25)**; mean task wall **498.8 s (bar 452 s)**. Both bars crossed.
+  d2-d8 (67759-67765) cancelled unread.
+- **d1 mechanism (exploratory, one draw).** Resolved 13; the control expects 30.38 on these tasks.
+
+  | | Tasks | Resolved | Control expects | Empty |
+  |---|---|---|---|---|
+  | Finishing step reached | 63 | 13 | 26.25 | 18 |
+  | Finishing step not reached | 16 | 0 | 4.12 | 10 |
+
+  Seconds per step: map 39.1, draft 309.3, audit 6.3, finish 112.9. The draft step took 20.9 model turns per task
+  (most 78). `show.py`: 5.27 starts per task; 44 tasks hit the refusal. No task had a draft `edit_file` call counted
+  as landed by the trace script (65 tasks had draft edit calls, 14 had none).
+- **What it says.** The lookup budget held, but the step did not end at the refusal: the model kept turning without
+  a working edit. Unlike R-039, tasks that reached the finishing step also solved half of what the control solves,
+  so a draft step that cannot read freely hurts the work that follows it.
+- **Lesson.** Bounding what the 31B may look at does not make it commit; it makes it loop. A step can be bounded
+  only by ending it, and the harness has no per-step limit. The staged "locate, draft, audit, finish" line closes:
+  R-039 at best equals the control and costs time, R-040 is far below it.
