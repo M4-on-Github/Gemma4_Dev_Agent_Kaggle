@@ -1,0 +1,5 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 200   # R-044: one counter for three solvers and their runners
+  max_time_minutes: 8
+  max_turns: 240

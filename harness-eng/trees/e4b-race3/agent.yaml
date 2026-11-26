@@ -1,0 +1,10 @@
+name: swe_agent
+# harness-eng R-044 2026-11-27: the E4B form of trees/31b-kf-race3d. Three copies of the e4b-r020-retry solver race
+# on one task, each in its own git worktree under /workspace/.git, each behind a runner that applies the first
+# non-empty diff under a lock and submits. A solver that changes nothing ends its branch; the others go on. This is
+# the retry-on-empty of R-021 run side by side instead of in sequence.
+agent_class: ParallelAgent
+sub_agents:
+  - config_path: runner_a.yaml
+  - config_path: runner_b.yaml
+  - config_path: runner_c.yaml
