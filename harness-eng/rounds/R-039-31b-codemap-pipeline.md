@@ -115,3 +115,18 @@ nothing.
   Removing the search tool did not make the first edit early: the model browsed with `read_file` instead.
 - **Repeat guard (the pre-run deviation above).** In the first 8 finished tasks of the two d1 runs, every first start
   printed a map and the script was started once per task (twice in one task).
+
+## Reading 6, kfmaplite (applied 2026-11-25 at the end of d1): KILL
+
+- kfmaplite d1: 79 rows, 79 served, 16 empty (bar 25), mean task wall **456.1 s (bar 452 s)**. The wall bar is
+  crossed, so the arm is killed. d3-d8 (67719, 67721, 67723, 67725, 67727, 67729) are cancelled unread. d2 (67717)
+  had already finished; its solve count is not read (its wall, 441.9 s, and 17 empty were seen with the gate numbers).
+- The arm could not have promoted in any case: its wall ratio against kfctl (385.6 s) is about 1.18, over the 1.06
+  bar. R-038 d1 ran beside these jobs at 392.7 s, so the extra time is the arm's own and not node load.
+- **Where the time went.** The map step took 38 s per task (4.5 model turns of about 9 s), and the agent that
+  followed used as much time as the control uses for the whole task (384 s). The map did not replace the agent's own
+  search: 18.4 tool calls per task against 19.7. Tasks at the time limit: 32 of 79 (control 15.5).
+
+## Outcome: both arms killed at the d1 gate, not kept
+
+The d1 runs of both arms are read below for mechanism only (exploratory; no decision rests on them).
