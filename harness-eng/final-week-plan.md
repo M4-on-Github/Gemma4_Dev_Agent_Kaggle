@@ -196,6 +196,20 @@ one real upload by about Nov 28 to be a final.
 The 31B candidate stays `31b-base`. The E4B candidate stays `e4b-r020-retry`. No cluster round since R-021 has
 produced a change to ship.
 
+### Field check (2026-11-26, Kaggle API read-only; notebooks read as data, nothing executed)
+
+- **Main board.** The top is still 0.24 (14 of 58), and at least the first 15 teams sit on exactly that score, most
+  dated Nov 23-24. No team shows above it.
+- **Small-model board (host notebook, now live with 1,516 teams).** Top 0.12 (2 teams), 0.10 (34), 0.08 (196), 0.06
+  (412), 0.05 (439). We are at 0.05, rank 827.
+- **Public write-ups agree with our record.**
+  - One team scored a single 31B bundle eleven times unchanged: 7 to 12 of 58, mean 9.45 (ours: 36 of 232, mean 9.0).
+    Its eight paired single-change tests (291 task pairs) found no gain; the one change that moved the count was a loss.
+  - One E4B write-up: six E4B uploads between 3 and 5 of 58 whatever the prompt; three 31B-to-E4B distillation
+    adapters all worse on held-out tasks; a public E4B adapter no better and 48% slower; thinking 1024 no gain.
+- **Reading.** No public bundle or method scores above what we already run. Both boards look like many draws of
+  near-equal configurations, so the top public scores are mostly the best of many uploads.
+
 ## Timeline
 
 | Day | Work |
