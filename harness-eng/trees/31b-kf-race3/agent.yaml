@@ -1,10 +1,11 @@
 name: swe_agent
-# harness-eng R-042 2026-11-26: three copies of the trees/31b-base agent race on one task. Branch a works in
-# /workspace; branches b and c each work in their own git worktree under /workspace/.git and, when done, copy their
-# diff into /workspace before submit_patch. The first submit_patch ends the task. The model calls of the branches
-# overlap on the idle GPUs (each solver runs as an agent_tool so the scorer's history compaction, which cuts
-# across parallel branches and crashed the first smoke, does not apply), so the task ends at the fastest finisher
-# instead of the only one.
+# harness-eng R-042 2026-11-26: three copies of the trees/31b-base solver race on one task.
+# - Each runner (thinking 256) calls its solver once as an agent_tool. An agent_tool has its own session, so the
+#   scorer's history compaction, which cuts across parallel branches and crashed smoke 1, does not apply.
+# - Each solver works in its own git worktree under /workspace/.git and has no submit_patch.
+# - When its solver returns, the runner runs one fixed command: the first runner to get the lock copies its solver's
+#   diff into /workspace, then calls submit_patch and replies. That text reply after a submit ends the task
+#   (smoke 2: a submit inside an agent_tool alone does not end it).
 agent_class: ParallelAgent
 sub_agents:
   - config_path: runner_a.yaml

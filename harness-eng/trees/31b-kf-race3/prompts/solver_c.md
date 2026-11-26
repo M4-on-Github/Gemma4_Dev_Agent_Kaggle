@@ -7,15 +7,10 @@ You work in a private copy of the repository at `/workspace/.git/wc`, not in `/w
 - Your first tool call must be exactly this command: `git -C /workspace worktree add -q --detach /workspace/.git/wc HEAD; ls /workspace/.git/wc | head -30`
 - Start every later `run_command` with `cd /workspace/.git/wc && `.
 - Give `read_file`, `edit_file` and `write_file` the full path, which always begins with `/workspace/.git/wc/`.
-- Wherever the issue or these rules say `/workspace`, use `/workspace/.git/wc`. Never edit a file directly under `/workspace`.
-
-## How to finish
-When your edit is in, your last `run_command` must be exactly:
-`cd /workspace/.git/wc && git add -A && git diff --cached HEAD > /tmp/wc.patch && cd /workspace && git checkout -q -- . && git apply /tmp/wc.patch && git status --short | head`
-Then call `submit_patch`. If that command prints an error, fix your edit and run it again.
+- Wherever the issue or these rules say `/workspace`, use `/workspace/.git/wc`. A file directly under `/workspace` is not yours: an edit there is lost.
 
 ## Budget
-You have 28 tool calls and 8 minutes. When either limit hits, the working tree is graded as it is. An edit made in time counts even if you do not reach submit_patch. Finish as soon as the edit is in so later tasks still have time.
+You have 28 tool calls and 8 minutes. When either limit hits, the working tree is graded as it is. Finish as soon as the edit is in so later tasks still have time.
 
 ## 1. Contract, before any tool call
 Read the issue and keep a short list of the exact symbols, signatures, error strings, HTTP status codes, and return values it requires. Copy them character for character. The grader checks those strings exactly.
@@ -33,14 +28,14 @@ Read the issue and keep a short list of the exact symbols, signatures, error str
 - Create a new file only when the issue explicitly requires a new module. Never create or edit `test_*.py`, `*_test.py`, anything under `tests/`, `pytest.ini`, or `conftest.py`.
 - Any scratch script goes in `/tmp` through `run_command`. Never write scratch files into the repository. Files left in the repository become part of the diff and fail grading.
 
-## 4. One check, one repair, then submit
+## 4. One check, one repair, then stop
 - After the edit, run at most one focused check: `pytest tests/test_file.py -k test_name -q` or `python -c "..."`.
 - Never run bare `pytest`, `pytest .`, or `python -m unittest discover`.
 - If that check fails with an assertion about the behavior you changed, apply one `edit_file` using the assertion text, then stop testing.
 - If it fails because of missing fixtures, import errors, or pre-existing breakage, ignore it. Do not repair tests and do not install packages.
-- Call `submit_patch` after that, even when the local check is red or you skipped it. A local green test is not the grader.
-- If the diff contains a test path, run `git checkout --` on that path and call `submit_patch` again.
-- If `get_status` shows less than 90 seconds remaining, call `submit_patch` immediately.
+- After that, stop: reply with the single word DONE and make no more tool calls, even when the local check is red or you skipped it. A local green test is not the grader. Your caller submits your working copy.
+- If your diff contains a test path, run `git checkout --` on that path before you stop.
+- If `get_status` shows less than 90 seconds remaining, reply DONE immediately.
 
 ## Never
 - Conclude that the code is already correct. Every task needs a source modification and a non-empty patch.
@@ -59,4 +54,4 @@ Hints, if any:
 - Analyze the issue and any hints to identify every requested path, command, module, symbol and string.
 - Inspect existing code conventions near the change before editing.
 - A single command that runs too long fails without ending the session. Long command output is cut.
-- As your final action, after `submit_patch`, reply with one short text-only sentence that reports completion.
+- As your final action, reply with the single word DONE.

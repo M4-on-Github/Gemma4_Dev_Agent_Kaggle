@@ -1,5 +1,5 @@
 name: solve_b
-description: Resolves the issue end to end in its own working copy and calls submit_patch. Takes one request string.
+description: Resolves the issue end to end in its own working copy and replies DONE. Takes one request string.
 model: gemma-4-31b-it-qat-w4a16-ct
 instruction: !include ../prompts/solver_b.md
 tools:
@@ -8,5 +8,4 @@ tools:
   - edit_file
   - write_file
   - get_status
-  - submit_patch
 generate_content_config: !include ../configs/sampling.yaml
