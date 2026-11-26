@@ -102,3 +102,16 @@ nothing.
   finished tasks of each arm's d1 are checked for this: a map on the first start, the one line on repeats. If the map
   is ever missing on a first start, that arm's draws are cancelled unread and the round file says so.
 - **R-039 draws submitted 2026-11-25** (interleaved kfmap, kfmaplite d1..d8): 67714-67729, not held; they start as GPUs free up.
+
+## Reading 6, kfmap (applied 2026-11-25, early; deviation logged before the cancel): KILL
+
+- **Deviation.** The gate is written for the end of d1. It was applied at 66 of 79 rows: mean task wall 530.1 s (bar
+  452 s), 17 empty, 66 served. The 13 unfinished tasks would need a mean of 55 s to bring d1 under the bar, and no
+  task of this arm has finished that fast. Waiting would only hold 6 GPUs from R-038.
+- **Kill.** kfmap d2-d8 (67716, 67718, 67720, 67722, 67724, 67726, 67728) are cancelled and not read. d1 runs to its
+  end and is read for mechanism only.
+- **Mechanism so far (60 traces, no solve counts looked at).** The draft step averaged 368 s and 11 `read_file` calls
+  per task (the prompt allows three); 37 of 59 tasks ended at the time limit and 21 never reached the audit script.
+  Removing the search tool did not make the first edit early: the model browsed with `read_file` instead.
+- **Repeat guard (the pre-run deviation above).** In the first 8 finished tasks of the two d1 runs, every first start
+  printed a map and the script was started once per task (twice in one task).
