@@ -39,3 +39,16 @@ d1 first; d2-d8 after the early check.
 Both tasks served, no crash, three solvers active in both; neither graded patch deletes files; task walls 94 s and
 80 s. After the branches end the scorer prompts for continuation and the runners reply with text (about 10-30 s per
 task). d1 submitted.
+
+## Early mechanism check on d1 at 20 rows (job 68055, 2026-11-27): PASS as written
+
+No resolved count was looked at.
+- Landed outside edits: 4 of 57 solvers (0.07; bar 0.15).
+- APPLIED printed in 15 of 20 tasks (bar 10).
+- Graded patch deletes files in 6 of 20 (bar 8): 4 tasks where no runner applied, and 2 where a runner applied and a
+  solver started again by the scorer's continuation prompt then re-ran its first command, which emptied the root.
+- Mean task wall 105.3 s (bar 300 s).
+
+**Deviation (logged before any resolved count is read):** the solver's first command now skips the delete once the
+lock exists (`[ -d /workspace/.git/race.lock ] || ...`), which removes the 2-in-20 case. d1 (68055) was cancelled
+unread and is re-run with d2-d8 on the fixed tree; run names are unchanged except d1, which becomes `d1r`.

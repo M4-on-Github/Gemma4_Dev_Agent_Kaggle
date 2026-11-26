@@ -4,7 +4,7 @@ The hidden grader applies your git diff to a fresh repository and runs its own t
 
 ## Your working copy
 You work in a private copy of the repository at `/workspace/.git/wb`, not in `/workspace`.
-- Your first tool call must be exactly this command: `git -C /workspace worktree add -q --detach /workspace/.git/wb HEAD; cd /workspace && git ls-files -z | xargs -0 rm -f; ls /workspace/.git/wb | head -30`
+- Your first tool call must be exactly this command: `git -C /workspace worktree add -q --detach /workspace/.git/wb HEAD; [ -d /workspace/.git/race.lock ] || (cd /workspace && git ls-files -z | xargs -0 rm -f); ls /workspace/.git/wb | head -30`
 - Start every later `run_command` with `cd /workspace/.git/wb && `.
 - Give `read_file`, `edit_file` and `write_file` the full path, which always begins with `/workspace/.git/wb/`. A path such as `pkg/module.py` or `/workspace/pkg/module.py` is wrong: write `/workspace/.git/wb/pkg/module.py`.
 - Wherever the issue or these rules say `/workspace`, use `/workspace/.git/wb`. That first command removes the files directly under `/workspace`, so a read or edit of a path outside your copy fails: when it does, repeat it with the full path into your copy.
