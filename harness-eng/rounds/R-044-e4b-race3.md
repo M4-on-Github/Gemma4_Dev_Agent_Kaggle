@@ -45,3 +45,12 @@ after R-043's early mechanism check passed on the 31B (0 landed outside edits, 1
    time-cap tasks; mean wall; SD of solves over draws.
 
 **Blind guess.** Smoke pass 60%. Early check pass 45% (the E4B follows fixed commands less reliably). Promote 20%.
+
+## Smoke (job 68052, 2026-11-27): gate PASS as written
+
+- Both tasks served, no crash, three solvers active and worktrees made in both. Task walls 30 s and 85 s.
+- Task 1: a runner applied and submitted at 24 s.
+- Task 2: two runners ended EMPTY; one solver ran a command in `/workspace` and then landed an edit there; a runner
+  called `submit_patch` without APPLIED. Reads by a path outside the worktree failed many times in 4 of 6 solvers.
+- **Deviation (logged before any draw):** only d1 is submitted first, not d1-d4, since the smoke suggests the early
+  check may fail. d2-d8 follow only if the early check passes.
