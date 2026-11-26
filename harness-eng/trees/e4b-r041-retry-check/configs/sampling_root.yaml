@@ -1,0 +1,10 @@
+# harness-eng R-017 2026-11-21 (T-e4b-017): copied unchanged from trees/31b-r016-nocompact.
+# harness-eng R-016 2026-11-21 (T-31b-014): the root only calls the solve tool and then submit_patch, so it gets a
+# small thinking budget and output cap; the solver keeps configs/sampling.yaml unchanged.
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+max_output_tokens: 1024
+thinking_config:
+  thinking_budget: 256
+  include_thoughts: true

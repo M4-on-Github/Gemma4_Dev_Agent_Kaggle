@@ -13,6 +13,7 @@ The cluster's full record (rounds R-001..R-015, LoRA rounds L-001..L-005, lesson
 | H-001 | 2026-11-21 | 31B LoRA-on vs LoRA-off decode on L4x4, zero-adapter probe, no tasks | the 31B L4 LoRA cost is unmeasured; the 31B adapter (L-005) must fit 11.0 h on L4 | open; suggested EXP-087 |
 | H-002 | 2026-11-21 | validator false error `root agent has no way to modify files` on agent_tool roots; pack-closure test | the fix is on this branch's `tools/`, and a kept R-016/R-017 solver tree must pack and pass the Kaggle validator | open; **needed now** (H-003 reinstated) |
 | H-003 | 2026-11-22 | E4B retry-on-empty layout (R-021: +1.08 solves per draw, CI +0.08..+2.08, wall 1.23x); tree copied to `harness-eng/trees/e4b-r020-retry/` | the candidate needs the H-002 fix, packing at 8 min with the recorded gate override, and a dev-48 L4x4 run before upload | **reinstated 2026-11-22, at 8 min** (withdrawn earlier that day on a wrong 4.5-min premise; R-024 at 4.5 min gave +0.33) |
+| H-004 | 2026-11-26 | upload plan for the last week (queue 30-40 h, one pending); E4B retry without a skill script, tree copied to `harness-eng/trees/e4b-r041-retry-check/`, zip sha `fc9321c8…` | skill scripts reportedly do not see the repository on the official scorer, so H-003's tree would not retry there; uploads need this machine and the user's approval | open |
 
 ## Cluster facts this branch does not have yet (counts only)
 
