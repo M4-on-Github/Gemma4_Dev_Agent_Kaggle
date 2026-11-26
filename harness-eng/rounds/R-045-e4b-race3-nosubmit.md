@@ -33,3 +33,9 @@ d1 first; d2-d8 after the early check.
    time-cap tasks; mean wall; SD of solves over draws.
 
 **Blind guess.** Early check pass 50%. Promote 15%.
+
+## Smoke (job 68054, 2026-11-27): PASS
+
+Both tasks served, no crash, three solvers active in both; neither graded patch deletes files; task walls 94 s and
+80 s. After the branches end the scorer prompts for continuation and the runners reply with text (about 10-30 s per
+task). d1 submitted.
