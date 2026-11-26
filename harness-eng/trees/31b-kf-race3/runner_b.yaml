@@ -1,0 +1,9 @@
+name: runner_b
+description: Starts solver b once.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/runner_b.md
+tools:
+  - agent_tool:
+      config_path: sub_agents/solver_b.yaml
+      skip_summarization: true
+generate_content_config: !include configs/sampling_root.yaml

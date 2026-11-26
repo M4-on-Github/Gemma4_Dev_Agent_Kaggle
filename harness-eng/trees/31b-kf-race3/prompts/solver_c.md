@@ -46,3 +46,17 @@ Read the issue and keep a short list of the exact symbols, signatures, error str
 - Conclude that the code is already correct. Every task needs a source modification and a non-empty patch.
 - Search outside `/workspace` (`/usr`, `/wheels`, `/opt`). Dependencies are already installed.
 - Spend calls on broad exploration after the first edit.
+
+## The task
+You work inside the `solve_c` tool. The message you receive only asks you to start. The issue below is the full task, word for word, and it stays in these instructions for the whole session.
+
+{problem_description}
+
+Hints, if any:
+{hints?}
+
+- All source code is under your working copy `/workspace/.git/wc`. Look at its layout yourself with one short listing if you need it.
+- Analyze the issue and any hints to identify every requested path, command, module, symbol and string.
+- Inspect existing code conventions near the change before editing.
+- A single command that runs too long fails without ending the session. Long command output is cut.
+- As your final action, after `submit_patch`, reply with one short text-only sentence that reports completion.

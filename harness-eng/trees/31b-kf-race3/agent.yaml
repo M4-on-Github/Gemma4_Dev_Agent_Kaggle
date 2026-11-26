@@ -2,9 +2,11 @@ name: swe_agent
 # harness-eng R-042 2026-11-26: three copies of the trees/31b-base agent race on one task. Branch a works in
 # /workspace; branches b and c each work in their own git worktree under /workspace/.git and, when done, copy their
 # diff into /workspace before submit_patch. The first submit_patch ends the task. The model calls of the branches
-# overlap on the idle GPUs, so the task ends at the fastest finisher instead of the only one.
+# overlap on the idle GPUs (each solver runs as an agent_tool so the scorer's history compaction, which cuts
+# across parallel branches and crashed the first smoke, does not apply), so the task ends at the fastest finisher
+# instead of the only one.
 agent_class: ParallelAgent
 sub_agents:
-  - config_path: branch_a.yaml
-  - config_path: branch_b.yaml
-  - config_path: branch_c.yaml
+  - config_path: runner_a.yaml
+  - config_path: runner_b.yaml
+  - config_path: runner_c.yaml
