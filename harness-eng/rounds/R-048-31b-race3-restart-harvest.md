@@ -48,3 +48,8 @@ per draw; 4 draws first (30 GPU-h), 4 more by the extension rule.
    many resolve; time-cap tasks; mean wall; submits without APPLIED.
 
 **Blind guess.** Smoke pass 80%. Early check pass 75%. Mechanism bar met 55%. Promote 20%, not kept 65%, harm 15%.
+
+## Smoke (job 68190, 2026-11-27): PASS
+
+Both tasks served, no crash, no empty or deleted-tree patch, a submit in both; mean task wall 307.6 s. Draws d1-d4
+submitted: 68214 68215 68216 68217. Early check at 20 rows of d1 as written.
