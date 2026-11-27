@@ -134,6 +134,8 @@ def main():
     p.add_argument("--solver", default="solve")
     p.add_argument("--max-gap", type=int, default=64)
     p.add_argument("--min-calls", type=int, default=3)
+    p.add_argument("--unresolved", action="store_true",
+                   help="L-010: keep the last attempt of UNRESOLVED tasks instead (for contrast sets, not training)")
     p.add_argument("--tool-names", default="run_command,read_file,edit_file,write_file,get_status")
     p.add_argument("runs", nargs="+")
     a = p.parse_args()
@@ -175,8 +177,8 @@ def main():
                 if iid not in keep:
                     why["not_in_fold"] += 1
                     continue
-                if not r.get("resolved"):
-                    why["unresolved"] += 1
+                if bool(r.get("resolved")) == a.unresolved:
+                    why["resolved" if a.unresolved else "unresolved"] += 1
                     continue
                 tp = os.path.join(run, "traces", f"trace_{iid}.json")
                 if not os.path.exists(tp):
