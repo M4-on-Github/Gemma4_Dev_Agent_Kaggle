@@ -47,3 +47,16 @@ Validator: the two known errors only. Flags as R-043 (`--concurrency 1`, `cohort
 Both tasks served, no crash, a runner applied and submitted in both; the timer command was called by the runners in
 both tasks; mean task wall 191.9 s. Neither task reached the time cap, so the timer's effect is not seen yet. Draws
 d1-d4 submitted: 68272 68273 68274 68275. Early check at 20 rows of d1 as written.
+
+## Early mechanism check on d1 (2026-11-27): FAIL, round dropped
+
+Draw ids: d1-d4 = 68272-68275. No resolved count was looked at.
+- Applied at 16 rows of d1, before the 20th: 2 tasks had reached the time cap and both were graded on a deleted-tree
+  patch. The cancel condition ("any time-capped task is graded on a deleted-tree patch") was already met, so waiting
+  for 20 rows could not change the outcome.
+- The runners did call the timer command (smoke and d1), so the background shell either does not survive the
+  command call in the task sandbox or does not fire before the cap. Not diagnosed further.
+- All four draws were cancelled unread. Other counts at 16 rows: a runner applied in 13, mean task wall 352.4 s.
+
+**Lesson.** A process started from a tool call cannot be relied on to outlive it in this sandbox. Nothing in the
+declarative harness can act at the time cap, so the race's no-apply loss stays. The race line is closed for the 31B.
