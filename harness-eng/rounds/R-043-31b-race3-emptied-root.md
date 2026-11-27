@@ -57,3 +57,49 @@ Draw ids: d1-d4 = 68022-68025. No resolved count was looked at.
 - Also: three solvers active and all worktrees made in 20 of 20; 1 empty patch; 1 time cap.
 
 d5-d8 submitted.
+
+## Results (2026-11-27, readings applied as written)
+
+Draw ids: d5-d8 = 68048-68051.
+
+2. **Served check: pass.** All 8 draws have 79 rows and 79 served tasks.
+3. **Draw-1 kill gate: pass.** d1 has 13 empty-or-deleted-tree patches (bar 25) and a mean task wall of 320.1 s (bar
+   443 s).
+4. **Decision: not kept.** Race 32, 26, 29, 32, 32, 30, 26, 34 (30.12) against kfctl 35, 32, 27, 30, 29, 30, 33, 27
+   (30.38): **−0.25 per draw, 90% CI −2.62..+2.00**. Wall ratio 330.3 / 385.6 = 0.857 (3 streams on one GPU against
+   the control's 4, so the ratio does not carry to Kaggle).
+5. **Mechanism, means per draw:**
+
+   | | race |
+   |---|---|
+   | a runner applied a patch | 62.75 |
+   | tasks with a submit | 69.1 |
+   | empty patches | 0.75 |
+   | deleted-tree patches (no runner applied; the fallback graded the emptied tree) | 10.4 |
+   | time-cap tasks | 10.4 (kfctl 15.5) |
+   | solvers with an edit call outside their worktree (attempts, not landed edits) | 0.27 of solvers |
+   | SD of solves over draws | 2.95 (kfctl 2.64) |
+
+   Which solver won was not counted.
+
+**Where the race gains and loses (not a reading; computed after the decision).**
+
+| Tasks | per draw | race solves | kfctl expects on the same tasks |
+|---|---|---|---|
+| a runner applied a patch | 67.9 | 30.12 | 27.78 |
+| no runner applied (81% at the time cap) | 11.1 | 0 | 2.59 |
+
+- By control class: the 17 tasks kfctl solves 8 of 8: race 16.00; the 26 swing tasks: 13.50 against 13.38; the 36
+  tasks kfctl never solves: 0.62. Three tasks are solved only by the race and three only by kfctl.
+- A submitted race patch resolves at 0.444, a kfctl patch at 0.452.
+- In the no-apply tasks one runner's solver had usually come back with no edit (its finish command printed EMPTY in
+  about three quarters of them) and that runner then stayed idle; in about half of them another solver had a landed
+  edit in its worktree when the task ended.
+
+**Agreement picker, simulated on kfctl (no GPU, not a reading).** Over all triples of the 8 kfctl draws: a random
+non-empty patch of three 33.14, the patch with the highest line overlap with the other two 34.12, an oracle 37.39. All
+three need every attempt to run to its end, which does not fit the time budget.
+
+**Lesson.** The first finisher is as good as a single attempt and no better per patch; the race's gain on finished
+tasks is cancelled by the tasks where no runner applies and the emptied tree is graded. The fix to test is an idle
+runner that restarts its solver and, if still empty, applies another solver's edits (R-048).

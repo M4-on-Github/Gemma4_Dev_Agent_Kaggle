@@ -1,0 +1,17 @@
+name: swe_agent
+# harness-eng R-042 2026-11-26: three copies of the trees/31b-base solver race on one task.
+# - Each runner (thinking 256) calls its solver once as an agent_tool. An agent_tool has its own session, so the
+#   scorer's history compaction, which cuts across parallel branches and crashed smoke 1, does not apply.
+# - Each solver works in its own git worktree under /workspace/.git and has no submit_patch.
+# - When its solver returns, the runner runs one fixed command: the first runner to get the lock copies its solver's
+#   diff into /workspace, then calls submit_patch and replies. That text reply after a submit ends the task
+#   (smoke 2: a submit inside an agent_tool alone does not end it).
+# R-043 2026-11-27: each solver's first command also removes the working files directly under /workspace, so a
+# relative path (which the file tools resolve under /workspace) fails instead of landing an edit outside the
+# solver's copy (R-042 early check: 22 of 60 solvers misplaced edits, all by relative paths). The finish command
+# restores /workspace before applying.
+agent_class: ParallelAgent
+sub_agents:
+  - config_path: runner_a.yaml
+  - config_path: runner_b.yaml
+  - config_path: runner_c.yaml
