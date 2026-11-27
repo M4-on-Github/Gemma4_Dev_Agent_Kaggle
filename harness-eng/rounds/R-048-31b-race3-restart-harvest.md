@@ -65,3 +65,20 @@ No resolved count was looked at.
   are not counted exactly.
 
 d1-d4 continue.
+
+## Results (2026-11-27, readings applied as written)
+
+Draw ids: d1-d4 = 68214-68217.
+
+2. **Served check: pass.** All 4 draws have 79 rows and 79 served tasks.
+3. **Mechanism bar: not met.** Tasks per draw where no runner applied: 13.0 (bar 7.5 or fewer; R-043 11.1).
+4. **Decision: not kept; no extension.** 31, 31, 29, 31 (30.50) against kfctl x8 (30.38): **+0.12 per draw, 90% CI
+   −2.50..+2.88** (extension needs +1.0 and the mechanism bar). Against R-043 x8: +0.38 (CI −2.12..+3.00).
+5. **Reported:** time-cap tasks 14.0 per draw (R-043 10.4); mean task wall 356.6 s (R-043 330.3 s). Where a runner
+   applied (66.0 tasks per draw) the race solves 30.50 and kfctl expects 27.94; where none applied (13.0) kfctl
+   expects 2.44. Restarts, late hand-ins of another copy and submits without APPLIED were not counted: the trace does
+   not record every solver call, and the round ended at the mechanism bar.
+
+**Lesson.** Restarting an empty solver and handing in another copy late does not shrink the no-apply tasks; it moves
+more tasks to the time cap. The race has now read 30.12, 29.50 and 30.50 against a control of 30.38 in three forms.
+The race line closes for the 31B.
