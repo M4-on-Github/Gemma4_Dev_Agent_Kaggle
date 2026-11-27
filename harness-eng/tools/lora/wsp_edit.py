@@ -50,6 +50,7 @@ def main():
     p.add_argument("--ks", default="1,2,4")
     p.add_argument("--layers", default="", help="comma list; default: the 2 best layers by held-out AUC in 6..34")
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--device-map", default="single", choices=("single", "auto"))
     a = p.parse_args()
 
     import torch
@@ -99,7 +100,7 @@ def main():
         return ids, offs, ends
 
     model = AutoModelForImageTextToText.from_pretrained(
-        a.model, dtype=torch.bfloat16, attn_implementation="sdpa", device_map={"": 0},
+        a.model, dtype=torch.bfloat16, attn_implementation="sdpa", device_map=({"": 0} if a.device_map == "single" else "auto"),
         quantization_config=CompressedTensorsConfig(run_compressed=False))
     model.eval()
     layers = model.model.language_model.layers
@@ -114,7 +115,7 @@ def main():
         def hook(mod, inp):
             if grab["on"]:
                 x = inp[0][0].float()
-                s = x.sum(0)
+                s = x.sum(0).cpu()
                 mlp_in_sum[i] = s if mlp_in_sum[i] is None else mlp_in_sum[i] + s
                 if i == 0:
                     mlp_in_n[0] += x.shape[0]
@@ -183,7 +184,7 @@ def main():
     print(json.dumps({"layers_picked": pick}))
 
     def dw(L, k):
-        mu = (mlp_in_sum[L] / mlp_in_n[0]).cpu()
+        mu = mlp_in_sum[L] / mlp_in_n[0]
         avec = mu / (mu @ mu)
         return (k * delta[L]), avec  # B column [d], A row [mlp]
 
@@ -230,9 +231,8 @@ def main():
         for L, k in edits:
             Bv, Av = dw(L, k)
             # a forward hook, not an in-place weight change: a rank-1 term this small is lost in bf16 rounding of W
-            Bd, Ad = Bv.to(dev), Av.to(dev)
-
-            def hook(mod, inp, out, Bd=Bd, Ad=Ad):
+            def hook(mod, inp, out, Bv=Bv, Av=Av):
+                Bd, Ad = Bv.to(out.device), Av.to(out.device)
                 return out + ((inp[0].float() @ Ad)[..., None] * Bd).to(out.dtype)
             saved.append(layers[L].mlp.down_proj.register_forward_hook(hook))
             key = f"base_model.model.model.language_model.layers.{L}.mlp.down_proj"

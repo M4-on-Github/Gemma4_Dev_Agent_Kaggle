@@ -30,3 +30,25 @@ edit), so this run mainly proves the pipeline; the no-edit class is the 31B's (3
 3. Task draws, if any, are pre-registered in this file before they are submitted.
 
 **Blind guess.** Reading 1 met 70%. A candidate meets reading 2: 35%. A task-level gain: 10%.
+
+## E4B run (job 68283, 2026-11-27, 49 min): pipeline works; sample too small to act on
+
+- Points: 131 POS and 21 NEG decision points over 33 tasks (few E4B rows never edit and fit the length limit).
+- **Reading 1 (map): met.** Held-out separation is 0.93-0.95 from layer 6 on (0.48-0.84 in layers 0-5), on 2 held-out
+  NEG points only. The difference is 6-12% of the residual norm up to layer 12 and 23-33% from layer 16.
+- **Reading 2 (proxy): not met, on 6 stalled and 30 early points.** Base: 0 of 6 stalled points edit next. Layer 10
+  at k=2: 3 of 6 edit, early edits 1 of 30, but no parsable call in 4 of 30 early points against 1 (bar: within 5
+  points). Layer 7 at k=1, 2, 4: 0 of 6. Layers 7 and 10 at k=2: 2 of 6, with 7 of 30 early points without a call.
+- No E4B task draws: the sample is 6 points and stalling is not the E4B's failure.
+
+**What it shows.** A rank-1 change computed from residual means does move the next action from reading to editing,
+and stronger doses start to break the call format. The same job runs next on the 31B, whose failing attempts stall
+far more often.
+
+## 31B run (pre-registered 2026-11-27, before the job is submitted)
+
+- POS: `d2/31b-all-lfold-a.jsonl` (254 resolved rows). NEG: `d6/31b-unres-lfold-a.jsonl`, built by
+  `trace_to_sft.py --unresolved` from kfctl x8 on fold A: 187 rows, 95 never edit in their faithful prefix.
+- Two Ada GPUs (`--device-map auto`), max length 14000, 24 stalled and 16 early evaluation points, 256 new tokens.
+- Readings 1 and 2 as above. A candidate that meets reading 2 gets a served smoke and task draws, pre-registered
+  here first; the adapter's decode cost on the 31B is measured in the smoke.
