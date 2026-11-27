@@ -52,3 +52,19 @@ No resolved count was looked at.
 **Deviation (logged before any resolved count is read):** the solver's first command now skips the delete once the
 lock exists (`[ -d /workspace/.git/race.lock ] || ...`), which removes the 2-in-20 case. d1 (68055) was cancelled
 unread and is re-run with d2-d8 on the fixed tree; run names are unchanged except d1, which becomes `d1r`.
+
+## Results (2026-11-27, readings applied as written)
+
+2. **Served check: pass.** All 8 draws (d1r, d2-d8) have 79 rows and 79 served tasks.
+3. **Decision: harm.** Race 7, 5, 7, 3, 7, 5, 6, 6 (5.75) against rcheck 9, 9, 10, 7, 8, 7, 8, 7 (8.12): **−2.38 per
+   draw, 90% CI −4.50..−0.50**. Mean task wall 151.7 s (rcheck 149.2 s; bar 300 s).
+4. **Mechanism, means per draw:** no runner applied (empty or emptied-tree patch) 19.75; time-cap tasks 3.9; SD of
+   solves 1.39. Solvers ending EMPTY and which solver won were not counted.
+
+**Where it loses (not a reading).** On the 59.25 tasks per draw where a runner applied, the race solves 5.75 and
+rcheck expects 6.00. On the 19.75 where none applied it solves 0 and rcheck expects 2.12. A race patch resolves at
+0.097, an rcheck patch at 0.108.
+
+**Lesson.** For the E4B the first finisher is no better than one attempt, so the race has no gain to set against the
+tasks where no runner applies. R-047 (restart on EMPTY) is cancelled unread by its own rule (job 68074). The race
+line closes for the E4B.

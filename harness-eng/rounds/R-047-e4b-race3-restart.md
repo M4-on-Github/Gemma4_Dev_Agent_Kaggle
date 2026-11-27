@@ -37,3 +37,8 @@ more, saying the earlier attempt changed no file, then runs the finish command a
    mean wall.
 
 **Blind guess.** Early check pass 50%. Promote 20%.
+
+## Cancelled unread (2026-11-27)
+
+R-045 read harm (−2.38), so by the rule above d1 (job 68074) was cancelled at 11 or more rows without any count being
+looked at. No draw of this round is read.
