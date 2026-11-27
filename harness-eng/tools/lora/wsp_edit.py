@@ -50,6 +50,7 @@ def main():
     p.add_argument("--ks", default="1,2,4")
     p.add_argument("--layers", default="", help="comma list; default: the 2 best layers by held-out AUC in 6..34")
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--serve-hours", type=float, default=0.0, help="then serve candidate specs from <out>/queue")
     p.add_argument("--device-map", default="single", choices=("single", "auto"))
     a = p.parse_args()
 
@@ -239,41 +240,95 @@ def main():
 
     os.makedirs(a.out, exist_ok=True)
     results = []
-    for name, edits in cands:
-        saved, tensors = [], {}
-        for L, k in edits:
-            Bv, Av = dw(L, k)
-            # a forward hook, not an in-place weight change: a rank-1 term this small is lost in bf16 rounding of W
-            def hook(mod, inp, out, Bv=Bv, Av=Av):
-                Bd, Ad = Bv.to(out.device), Av.to(out.device)
-                return out + ((inp[0].float() @ Ad)[..., None] * Bd).to(out.dtype)
+
+    def factors(e):
+        """One rank-1 factor pair (B [d], A [mlp]) for an edit spec.
+        mode add:    dW = k * v a^T, a = mu/(mu.mu)          (adds k*v on the average token)
+        mode ablate: dW = -k * u u^T W, u = unit(v)          (removes the layer's writes along v)
+        v = delta at `src` layer (default: the edited layer), sign flipped by `sign`; `topdims` keeps only the
+        largest |v| coordinates."""
+        L, k = int(e["layer"]), float(e.get("k", 1.0))
+        v = delta[int(e.get("src", L))].clone() * float(e.get("sign", 1.0))
+        if e.get("topdims"):
+            keep = v.abs().topk(int(e["topdims"])).indices
+            m = torch.zeros_like(v)
+            m[keep] = 1.0
+            v = v * m
+        if e.get("mode", "add") == "add":
+            mu = mlp_in_sum[L] / mlp_in_n[0]
+            return L, k * v, mu / (mu @ mu)
+        u = v / v.norm()
+        W = layers[L].mlp.down_proj.weight
+        return L, -k * u, (u.to(W.device).to(W.dtype) @ W).float().cpu()
+
+    def run_cand(name, edits):
+        saved, tensors, by_layer = [], {}, collections.defaultdict(list)
+        for e in edits:
+            L, Bv, Av = factors(e)
+            by_layer[L].append((Bv, Av))
+        for L, fs in by_layer.items():
+            Bm = torch.stack([b for b, _ in fs], 1)  # [d, r]
+            Am = torch.stack([x for _, x in fs], 0)  # [r, mlp]
+
+            def hook(mod, inp, out, Bm=Bm, Am=Am):
+                return out + ((inp[0].float() @ Am.to(out.device).T) @ Bm.to(out.device).T).to(out.dtype)
             saved.append(layers[L].mlp.down_proj.register_forward_hook(hook))
             key = f"base_model.model.model.language_model.layers.{L}.mlp.down_proj"
-            tensors[key + ".lora_A.weight"] = Av[None, :].to(torch.bfloat16).contiguous()
-            tensors[key + ".lora_B.weight"] = Bv[:, None].to(torch.bfloat16).contiguous()
-        cs, ce = collections.Counter(), collections.Counter()
-        for ids in stalled:
-            cs[next_call(ids)] += 1
-        for ids in early:
-            ce[next_call(ids)] += 1
+            tensors[key + ".lora_A.weight"] = Am.to(torch.bfloat16).contiguous()
+            tensors[key + ".lora_B.weight"] = Bm.to(torch.bfloat16).contiguous()
+        rank = max([len(v) for v in by_layer.values()] or [1])
+        for key in list(tensors):  # one rank for the whole adapter: pad the smaller layers with zeros
+            t = tensors[key]
+            if key.endswith("lora_A.weight") and t.shape[0] < rank:
+                tensors[key] = torch.cat([t, torch.zeros(rank - t.shape[0], t.shape[1], dtype=t.dtype)], 0)
+            if key.endswith("lora_B.weight") and t.shape[1] < rank:
+                tensors[key] = torch.cat([t, torch.zeros(t.shape[0], rank - t.shape[1], dtype=t.dtype)], 1)
+        cs = [next_call(ids) for ids in stalled]
+        ce = [next_call(ids) for ids in early]
         for h in saved:
             h.remove()
-        res = {"cand": name, "stalled_n": len(stalled), "stalled_edit": sum(cs[e] for e in EDITS),
-               "stalled_nocall": cs[None], "early_n": len(early), "early_edit": sum(ce[e] for e in EDITS),
-               "early_nocall": ce[None], "stalled_calls": {str(k): v for k, v in cs.items()}}
+        res = {"cand": name, "edits": edits, "stalled_n": len(cs), "stalled_edit": sum(c in EDITS for c in cs),
+               "stalled_nocall": sum(c is None for c in cs), "early_n": len(ce),
+               "early_edit": sum(c in EDITS for c in ce), "early_nocall": sum(c is None for c in ce),
+               "stalled_calls": [str(c) for c in cs], "early_calls": [str(c) for c in ce]}
         print(json.dumps(res), flush=True)
-        results.append(res)
         if tensors:
             d = Path(a.out) / name
             d.mkdir(parents=True, exist_ok=True)
             save_file(tensors, str(d / "adapter_model.safetensors"))
             cfg = {"base_model_name_or_path": Path(a.model).name, "bias": "none", "fan_in_fan_out": False,
                    "inference_mode": True, "init_lora_weights": True, "layers_to_transform": None,
-                   "lora_alpha": 1.0, "lora_dropout": 0.0, "modules_to_save": None, "peft_type": "LORA",
-                   "r": 1, "target_modules": ["down_proj"], "task_type": "CAUSAL_LM", "use_dora": False,
+                   "lora_alpha": float(rank), "lora_dropout": 0.0, "modules_to_save": None, "peft_type": "LORA",
+                   "r": rank, "target_modules": ["down_proj"], "task_type": "CAUSAL_LM", "use_dora": False,
                    "use_rslora": False}
             (d / "adapter_config.json").write_text(json.dumps(cfg, indent=2) + "\n")
+        return res
+
+    for name, edits in cands:
+        results.append(run_cand(name, [{"layer": L, "k": k} for L, k in edits]))
     json.dump({"map": amap, "picked": pick, "results": results}, open(os.path.join(a.out, "wsp.json"), "w"), indent=1)
+
+    if a.serve_hours > 0:
+        # look-edit-test loop: an outside editor drops <out>/queue/<name>.json = {"edits": [{layer, k, mode, src,
+        # sign, topdims}, ...]} and reads <out>/done/<name>.json; <out>/queue/STOP ends the job.
+        import time
+        q, done = Path(a.out) / "queue", Path(a.out) / "done"
+        q.mkdir(exist_ok=True)
+        done.mkdir(exist_ok=True)
+        t_end = time.time() + a.serve_hours * 3600
+        print(json.dumps({"serving": str(q)}), flush=True)
+        while time.time() < t_end and not (q / "STOP").exists():
+            specs = sorted(f for f in q.glob("*.json") if not (done / f.name).exists())
+            if not specs:
+                time.sleep(10)
+                continue
+            f = specs[0]
+            try:
+                res = run_cand(f.stem, json.load(open(f))["edits"])
+            except Exception as ex:  # a bad spec must not end the loop
+                res = {"cand": f.stem, "error": type(ex).__name__ + ": " + str(ex)[:200]}
+                print(json.dumps(res), flush=True)
+            json.dump(res, open(done / f.name, "w"), indent=1)
 
 
 if __name__ == "__main__":

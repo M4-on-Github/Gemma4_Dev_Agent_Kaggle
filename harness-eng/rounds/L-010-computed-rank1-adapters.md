@@ -52,3 +52,17 @@ far more often.
 - Two Ada GPUs (`--device-map auto`), max length 14000, 24 stalled and 16 early evaluation points, 256 new tokens.
 - Readings 1 and 2 as above. A candidate that meets reading 2 gets a served smoke and task draws, pre-registered
   here first; the adapter's decode cost on the 31B is measured in the smoke.
+
+## 31B run: deviations and the edit loop (logged 2026-11-27, before any 31B score exists)
+
+- Job 68285 ran out of GPU memory on 2 GPUs (all layers' states were kept on the GPU); the script now records only
+  the decision positions and caps memory per GPU. Job 68286 found 7 stalled points: whole rows over the length limit
+  were skipped, and stalled turns sit late in long rows; the script now uses the fitting prefix of a long row.
+- Settings changed with that fix: a stalled turn counts from call index 6 (was 8); max length 13000 (was 14000);
+  3 GPUs.
+- **Edit loop (user instruction, 2026-11-27: run it the way the post does).** Job 68287 (one pass) was cancelled 37
+  minutes in, before any output, and restarted with `--serve-hours`: after the preset candidates the job keeps the
+  model loaded and scores candidate specs dropped into its queue (layer, strength, add or remove, source layer,
+  sign, number of coordinates kept). After each score the next candidates are chosen from which stalled and early
+  points changed. Reading 2 is unchanged and applies to the best candidate found; the number of candidates tried is
+  reported with it, since picking the best of many on 24 + 16 points flatters it. Task draws decide.
