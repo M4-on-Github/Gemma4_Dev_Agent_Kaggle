@@ -53,3 +53,15 @@ per draw; 4 draws first (30 GPU-h), 4 more by the extension rule.
 
 Both tasks served, no crash, no empty or deleted-tree patch, a submit in both; mean task wall 307.6 s. Draws d1-d4
 submitted: 68214 68215 68216 68217. Early check at 20 rows of d1 as written.
+
+## Early mechanism check on d1 at 20 rows (2026-11-27): PASS
+
+No resolved count was looked at.
+- **A runner applied: 17 of 20** (bar 14). Failed applies: 0 (bar fewer than 3).
+- **Edits landed outside a solver's copy: 0 of 60 solvers** (bar 0.15); 17 solvers made a failed attempt.
+- **Mean task wall 380.5 s** (bar 443 s). The first 20 rows of R-043 d1 took 276.0 s, so restarts lengthen tasks.
+- Also: 3 of 20 tasks with no applied patch (1 empty, 2 deleted-tree); a runner's command printed EMPTY 9 times and a
+  second solver call followed it in the runner sequences seen. The trace does not record every solver call, so restarts
+  are not counted exactly.
+
+d1-d4 continue.
