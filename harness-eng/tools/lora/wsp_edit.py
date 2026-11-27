@@ -94,8 +94,6 @@ def main():
     def encode(row):
         enc = tok(row["text"], add_special_tokens=False, return_offsets_mapping=True)
         ids, offs = enc["input_ids"], enc["offset_mapping"]
-        if len(ids) > a.max_len:
-            return None
         ends = {e: i for i, (s, e) in enumerate(offs)}
         return ids, offs, ends
 
@@ -151,9 +149,10 @@ def main():
                 continue
             ids, offs, ends = e
             idx = [ends.get(b) for b, _, _ in pts]
-            idx = [i for i in idx if i is not None]
+            idx = [i for i in idx if i is not None and i < a.max_len]  # long rows: use the prefix that fits
             if not idx:
                 continue
+            ids = ids[: max(idx) + 1]
             grab["on"] = mu
             res_idx[0], res_out[:] = idx, [None] * nl
             with torch.no_grad():
@@ -193,6 +192,8 @@ def main():
     else:
         cand = [m for m in amap if 6 <= m["layer"] <= min(34, nl - 2) and m["auc_heldout"] == m["auc_heldout"]]
         pick = [m["layer"] for m in sorted(cand, key=lambda m: -m["auc_heldout"])[:2]]
+        if not pick:
+            sys.exit("no layer has a held-out AUC (a set has no held-out points)")
     print(json.dumps({"layers_picked": pick}))
 
     def dw(L, k):
