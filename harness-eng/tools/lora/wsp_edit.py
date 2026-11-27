@@ -101,6 +101,7 @@ def main():
 
     model = AutoModelForImageTextToText.from_pretrained(
         a.model, dtype=torch.bfloat16, attn_implementation="sdpa", device_map=({"": 0} if a.device_map == "single" else "auto"),
+        max_memory=(None if a.device_map == "single" else {i: "30GiB" for i in range(torch.cuda.device_count())}),
         quantization_config=CompressedTensorsConfig(run_compressed=False))
     model.eval()
     layers = model.model.language_model.layers
@@ -122,6 +123,17 @@ def main():
         return hook
 
     hooks = [layers[i].mlp.down_proj.register_forward_pre_hook(mk(i)) for i in range(nl)]
+    # residual after each layer, only at the decision positions (all positions of all layers do not fit for the 31B)
+    res_idx, res_out = [None], [None] * nl
+
+    def mkres(i):
+        def hook(mod, inp, out):
+            if res_idx[0] is not None:
+                h = out[0] if isinstance(out, (tuple, list)) else out
+                res_out[i] = h[0, res_idx[0]].float().cpu()
+        return hook
+
+    hooks += [layers[i].register_forward_hook(mkres(i)) for i in range(nl)]
 
     def collect(rows, sel, cap, mu=False):
         """residuals [n, nl, d] at the decision points sel(pt) of up to `cap` rows; -> (tensor, [task])."""
@@ -143,14 +155,14 @@ def main():
             if not idx:
                 continue
             grab["on"] = mu
+            res_idx[0], res_out[:] = idx, [None] * nl
             with torch.no_grad():
-                o = model(input_ids=torch.tensor([ids], device=dev), output_hidden_states=True)
+                model(input_ids=torch.tensor([ids], device=dev))
             grab["on"] = False
-            hs = torch.stack([h[0, idx].float() for h in o.hidden_states[1:]], 1)  # [pts, nl, d]
-            feats.append(hs.cpu())
+            res_idx[0] = None
+            feats.append(torch.stack(res_out, 1))  # [pts, nl, d]
             owner += [r["task"]] * len(idx)
             used += 1
-            del o
         return (torch.cat(feats) if feats else torch.zeros(0, nl, 1)), owner
 
     P, Pt = collect(pos_rows, lambda pt: pt[2], a.rows_per_set, mu=True)
