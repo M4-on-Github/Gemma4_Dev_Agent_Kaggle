@@ -45,3 +45,28 @@ projection for the 31B's time.
 
 **Blind guess.** Either adapter beats its control by 1.5 or more: 15% each. The 31B adapter fits the time budget
 without a lower time cap: 25%.
+
+## Training results
+
+- **Deviation (31B).** The first 31B job (68279) ran out of GPU memory after 18 minutes: a cancelled evaluation job
+  had not yet released the same GPU. Resubmitted unchanged as 68281.
+- **`L-009-se4` (E4B, job 68280, 1 h 40 min).** 676 train rows, 22 validation rows, 169 steps. Training reading 1:
+  `final/` written, no error. Reading 2: validation loss 0.3185 at step 0, 0.1457 at the end. Both pass.
+
+## E4B evaluation (pre-registered 2026-11-27, before any evaluation job)
+
+- **Arm.** `trees/e4b-sw-s9` = `trees/e4b-r041-retry-check` (the R-041 tree, the current E4B candidate layout) with
+  `adapter: s9` on the solver; the root and the check agent stay on the base weights. The adapter files are copied
+  to `trees/e4b-sw-s9/adapters/s9/` (gitignored).
+- **Control.** `R-041-e4b-rcheck-d1..d8` (8.12 per draw, mean task wall 149.2 s), reused. They ran two days earlier
+  without LoRA serving, so wall is compared with that in mind.
+- **Runs.** Smoke on `runs/_cohorts/smoke-te.txt`; then `L-009-e4b-s9-d1..d4` on `cohorts/cdev2-79.txt`,
+  concurrency 4, flags as R-041. No cdev2 task or repository is in the training data.
+- **Readings.**
+  1. Smoke: both tasks served, no engine error, the solver's steps name the adapter.
+  2. Served check per draw: 79 rows, all served; one re-run with an `r` suffix.
+  3. Draw-1 kill gate: 25 or more empty patches, or mean task wall above 300 s. A kill cancels the rest unread.
+  4. Extension: d5-d8 only if d1-d4 read +0.5 or more against rcheck x8.
+  5. Decision at 8 draws (`tools/paired_boot.py` against rcheck x8): **promote** at +1.5 or more with CI lower bound
+     above -0.5 and mean task wall 300 s or less; **harm** at -1.5 or less; **not kept** otherwise.
+  6. Reported: empty patches, time-cap tasks, mean wall, tool calls per task, patch resolve rate.
