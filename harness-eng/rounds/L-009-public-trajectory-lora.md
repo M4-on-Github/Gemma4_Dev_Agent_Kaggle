@@ -70,3 +70,8 @@ without a lower time cap: 25%.
   5. Decision at 8 draws (`tools/paired_boot.py` against rcheck x8): **promote** at +1.5 or more with CI lower bound
      above -0.5 and mean task wall 300 s or less; **harm** at -1.5 or less; **not kept** otherwise.
   6. Reported: empty patches, time-cap tasks, mean wall, tool calls per task, patch resolve rate.
+
+### E4B smoke (job 68288, 6 min 18 s): PASS
+
+2 of 2 rows SUCCESS and served; no engine error; every solver step names `s9`, the root's steps name the base model.
+Draws d1-d4 (68289-68292) started by their `afterok` chain.
