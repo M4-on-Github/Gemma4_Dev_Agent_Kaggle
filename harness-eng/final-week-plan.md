@@ -251,3 +251,24 @@ produced a change to ship.
 | Nov 28-29 | Kaggle L4x4 dev-48 of the winner (time profile, 12 h projection); user approves |
 | Nov 26-Dec 2 | One upload per day: until a candidate is ready, re-upload the best-known config (the board keeps the best) |
 | Dec 1-2 | Pick 2 finals by pooled evidence, not by the single best public draw |
+
+## Race rounds R-042 to R-048 (added 2026-11-27)
+
+| Round | Model | Change | Result per draw (79 tasks) | Decision |
+|---|---|---|---|---|
+| R-042 | 31B | race of three solvers in git worktrees | dropped at the early check (edits landed in the shared root) | not kept |
+| R-043 | 31B | R-042 with the root's files removed | 30.12 vs kfctl 30.38 (−0.25, CI −2.62..+2.00) | not kept |
+| R-044 | E4B | the R-043 race | dropped at the early check (submits without an applied patch) | not kept |
+| R-045 | E4B | race with no submit tool | 5.75 vs rcheck 8.12 (−2.38, CI −4.50..−0.50) | harm |
+| R-046 | 31B | race, varied starting points | 29.50 vs R-043 30.12 (−0.62) | not kept |
+| R-047 | E4B | race, restart on empty | cancelled unread after R-045 | closed |
+| R-048 | 31B | race, restart on empty and late hand-in of another copy | 30.50 vs kfctl 30.38 (+0.12, CI −2.50..+2.88) | not kept |
+
+- **The race line is closed for both models.** Where a runner applies a patch the 31B race is 2.3 to 2.6 solves ahead
+  of the control's expectation; the 11 to 13 tasks per draw where none applies cost 2.4 to 2.6. Two fixes did not
+  shrink that group.
+- **Agreement picker, simulated on kfctl (no GPU):** 34.12 if all three attempts run to their end (mean task wall
+  480 s against 386 s), 33.66 if the first two finishers are taken when their patches overlap (417 s). Both exceed
+  the 31B's time budget before any slowdown from three streams, and neither is built.
+- **State on 2026-11-27:** no round since `31b-base` (0.18) and the E4B bundle (0.05) has beaten its control. No
+  upload is proposed.
