@@ -39,3 +39,20 @@ Flags as R-043 (`--concurrency 1`, cohort `cohorts/cdev2-79.txt`).
    a's; tasks where the winners' changed files differ from R-043's most common file set; empty patches; mean wall.
 
 **Blind guess.** Promote 15%, not kept 70%, harm 15%.
+
+## Results (2026-11-27, readings applied as written)
+
+Draw ids: d1-d4 = 68070-68073.
+
+0. **Dependency: met.** R-043 passed its draw-1 gate and read not kept (−0.25), not harm.
+1. **Served check: pass.** All 4 draws have 79 rows and 79 served tasks.
+2. **Draw-1 kill gate: pass.** 13 empty-or-deleted-tree patches (bar 25), mean task wall 329.8 s (bar 443 s).
+3. **Extension rule: not met; the round ends as not kept.** Varied starts 32, 29, 28, 29 (29.50) against R-043 x8
+   (30.12): **−0.62 per draw, 90% CI −2.38..+1.00**. Wall ratio 335.7 / 330.3 = 1.016. Against kfctl x8: −0.88
+   (CI −3.62..+1.75). d5-d8 are not submitted.
+5. **Mechanism:** empty patches 0.5 per draw, deleted-tree patches 12.75 per draw (R-043 10.4), mean wall 335.7 s.
+   The winner shares, solver c's calls before its first edit and the changed-file comparison were not computed: the
+   round ended at the extension rule.
+
+**Lesson.** Sending the three solvers to different starting points (issue text, a second identifier, the nearest test)
+does not raise what the race solves. Together with R-043: the 31B's misses are not a matter of where it starts.
