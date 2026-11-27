@@ -41,3 +41,9 @@ Validator: the two known errors only. Flags as R-043 (`--concurrency 1`, `cohort
 5. **Reported:** time-cap tasks; tasks graded on a timer-applied patch and how many resolve; empty patches; mean wall.
 
 **Blind guess.** Timer survives in the sandbox 65%. Mechanism bar met 55%. Extension 20%. Promote 10%.
+
+## Smoke (job 68271, 2026-11-27): PASS
+
+Both tasks served, no crash, a runner applied and submitted in both; the timer command was called by the runners in
+both tasks; mean task wall 191.9 s. Neither task reached the time cap, so the timer's effect is not seen yet. Draws
+d1-d4 submitted: 68272 68273 68274 68275. Early check at 20 rows of d1 as written.
