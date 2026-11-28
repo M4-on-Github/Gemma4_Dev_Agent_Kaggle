@@ -68,3 +68,10 @@ or below 6. **Blind guess.** Empty patches back to 6 or fewer per draw: 55%. Ext
   `R-055b-e4b-gate2-d1r`, and the four-draw reading is taken on d1r, d2, d3, d4 when d1r is complete.
 - Draws 2-4 alone (not a reading): 8, 10, 8, empties 7-8 against 5-15 for R-055, so the earlier restore removed
   most of the extra empty patches.
+
+## R-055b four-draw reading (2026-11-28 13:35 UTC; d1r, d2, d3, d4)
+
+Rerun draw `d1r`: 8 solves, 7 empty patches, 169 s. Four draws: 8, 8, 10, 8 = 8.50 against 8.12 for the control.
+Paired difference +0.38, 90% interval -1.25 to +2.00. Empty patches 7-8 per draw (control 2-6); wall 169-188 s
+(control 149 s). The extension bar (+0.75) is not met: **not kept**. Moving the restore to the second check
+removed the harm of R-055 (-0.62) but the gate still adds no solves and a few empty patches.
