@@ -36,3 +36,8 @@ prints 1; good attempt 1; no matching test 1; tests failing before the attempt 1
 
 **Blind guess.** The E4B copies the command exactly in 90% of calls or more: 50%. Flagged first attempts per draw
 10 or more: 60%. Extension: 20%. Promote: 8%.
+
+## Smoke (job 68469, 2026-11-28 08:05 UTC)
+
+Both tasks served; one resolved (62 s), one not (347 s, three solver calls). The one check command visible in the
+root traces is copied exactly. Reading 1 passes; draws released.

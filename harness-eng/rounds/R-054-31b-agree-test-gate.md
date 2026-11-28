@@ -45,3 +45,8 @@ second flagged attempt AGAIN, agreeing good attempt FINAL; working copy clean af
   no attempt finished, which the race rounds show at about 11 per draw and which this layout cannot remove. The
   clause is read as: 3 or more tasks **with a submit** graded on an emptied tree. Tasks with no finished attempt
   are counted and reported under reading 4/5. Changed before any draw result exists.
+
+## Smoke (job 68474, 2026-11-28 08:05 UTC)
+
+Both tasks served and resolved (208 s, 504 s). Five finish commands, all copied exactly; outputs FIRST, FINAL on
+task 1 and FIRST, AGAIN, FINAL on task 2; two `submit_patch` calls per task. Reading 1 passes; draws released.
