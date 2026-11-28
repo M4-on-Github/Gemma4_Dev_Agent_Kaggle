@@ -53,3 +53,9 @@ the cluster (30.38).
 
 **Blind guess.** Exact first-call copy in 90% of tasks: 65%. Kept: 60%. Regraded control near 21.5 per draw; arm
 near 28.
+
+## Deviation logged before any result: smoke job 68699 did not start the model server (2026-11-28)
+
+Job 68699 ended after 52 s with no task run: the model server refused to start because 11 GiB of the assigned
+card were held by another process (36.1 of 47.4 GiB free against the 42.7 GiB it reserves). No result file was
+written. The smoke run is resubmitted unchanged under the same run id; readings as written.
