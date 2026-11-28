@@ -190,3 +190,11 @@ at the end. Tree `trees/e4b-sw-s9c`. Smoke, then `L-009c-e4b-s9c-d1..d4`, d1 gat
 79 rows; resolved 12 against kfctl 30.38 (range 27-35); empty patches 1 (kfctl 6-15); mean wall 302.7 s (kfctl
 385.6 s). Below the 33 needed for a further draw: **harm, no further draw.** The adapter makes the 31B hand in a
 patch nearly every time and sooner, and most of them are wrong, as with the E4B round-1 adapter.
+
+### L-009c-s31 training (job 68317, 5 h 32 min)
+
+433 train rows (398 grounded public rows, 61 own fast solves before the validation split), 26 validation rows;
+`final/` written; validation loss 0.452 at step 0, 0.0598 at the end. Tree `trees/31b-kf-s31c`. Smoke, then
+`L-009c-31b-s31c-d1` with the L-009c gates (25 or more empty patches, mean wall above 452 s, or more than 30% of
+patches without a modified existing file); further draws only if d1 solves 28 or more (kfctl draws 27-35), since
+the round-1 adapter's check draw solved 12.
