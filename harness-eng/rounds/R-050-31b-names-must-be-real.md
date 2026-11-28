@@ -41,3 +41,10 @@ Validator: the two known errors only.
   failing patches) against 21.0%. Commands using introspection: 0.38 per task, in 14% of tasks (kfctl 0.27, 10%).
   Tool calls per task 24.6 against 24.6. So if the gain is real it does not come from the lookup command; the
   second bullet (create what the issue names under exactly that name) is the other candidate.
+
+## Eight-draw reading (2026-11-28 12:20 UTC)
+
+Draws 5-8: 32, 28, 29, 30. All eight: 32, 30, 32, 33, 32, 28, 29, 30 = 30.75 against 30.38 for the control.
+Paired difference +0.38 solves per draw, 90% interval -1.50 to +2.25. Mean task wall 364-400 s (control 385.6 s).
+The promotion bar (+1.5 with the lower bound above -0.5) is not met: **not kept**. The +1.38 at four draws shrank
+to +0.38 at eight, which is what draw noise of this size does; the section costs nothing in time and is neutral.

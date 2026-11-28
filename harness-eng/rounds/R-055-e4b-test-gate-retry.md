@@ -56,3 +56,15 @@ root traces is copied exactly. Reading 1 passes; draws released.
 command change). A flagged first attempt gets one fresh attempt; if that changes nothing, the flagged attempt comes
 back. Draws `R-055b-e4b-gate2-d1..d4`; same gates and bars as R-055. Additional reading: empty patches per draw at
 or below 6. **Blind guess.** Empty patches back to 6 or fewer per draw: 55%. Extension: 12%.
+
+## R-055b draws (read 2026-11-28 12:20 UTC, all four complete)
+
+- Solves 2, 8, 10, 8; empty patches 48, 7, 8, 7; mean task wall 307, 182, 188, 178 s.
+- **Draw 1 is void (deviation, logged with its evidence).** In completion order its last 43 tasks are 36
+  consecutive session timeouts followed by 7 `litellm.InternalServerError` results: the model server stopped
+  answering part-way and never recovered. The decode probe at start was normal (154.7 tokens/s, same as draws 2-4).
+  This is a server fault, not the tree. As read with d1 included the result would be -1.12 (CI -2.88..+0.50) and
+  the draw-1 kill gate (25 empty, 300 s) would fire; both are set aside. Draw 1 is rerun as
+  `R-055b-e4b-gate2-d1r`, and the four-draw reading is taken on d1r, d2, d3, d4 when d1r is complete.
+- Draws 2-4 alone (not a reading): 8, 10, 8, empties 7-8 against 5-15 for R-055, so the earlier restore removed
+  most of the extra empty patches.
