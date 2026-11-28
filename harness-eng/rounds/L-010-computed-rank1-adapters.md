@@ -66,3 +66,49 @@ far more often.
   sign, number of coordinates kept). After each score the next candidates are chosen from which stalled and early
   points changed. Reading 2 is unchanged and applies to the best candidate found; the number of candidates tried is
   reported with it, since picking the best of many on 24 + 16 points flatters it. Task draws decide.
+
+## Edit loops, state on 2026-11-28 05:00 UTC
+
+**Architecture finding (config files, 2026-11-28).** Full-attention layers: 31B 5, 11, 17, 23, 29, 35, 41, 47, 53, 59
+(the other 50 see 1,024 tokens); E4B 5, 11, 17, 23, 29, 35, 41 (the other 35 see 512 tokens).
+
+**E4B loop (job 68299; POS 181, NEG 151 points; 17 stalled and 20 early replay points; 22 candidates).**
+Base: 0 of 17 stalled and 0 of 20 early points edit next; no call in 6 and 2.
+
+| Candidate (layer 17 unless noted) | stalled edit | stalled no call | early edit | early no call |
+|---|---|---|---|---|
+| k 0.5 to 4, all coordinates | 13-14 | 0-1 | 13-18 | 2-6 |
+| k 0.25 | 13 | 3 | 8 | 6 |
+| k 0.18 | 7 | 10 | 4 | 6 |
+| k 0.12 | 0 | 13 | 0 | 5 |
+| 256 coordinates, k 0.5 | 15 | 1 | 9 | 2 |
+| 256 coordinates, k 0.35 | 8 | 5 | 4 | 2 |
+| 256 coordinates, k 0.25 | 5 | 8 | 2 | 2 |
+| **128 coordinates, k 0.5** | **4** | **7** | **1** | **1** |
+| 128 coordinates, k 0.35 | 2 | 8 | 0 | 3 |
+| 64 coordinates, k 0.5; 32 coordinates, k 1 | 2; 5 | 11; 5 | 0; 0 | 2; 6 |
+| layers 11, 14, 19, 23; 17+19; remove mode | 0 | 5-16 | 0-5 | 2-16 |
+
+- Only layer 17, a full-attention layer, carries the switch. Layers 11 and 23 (also full attention) and 14 and 19
+  (local) do not.
+- **Reading 2 is met by one candidate, `c04` (128 coordinates, k 0.5):** stalled-edit share +23.5 points (bar +15),
+  early-edit share +5 points (bar within 10), no-call share 8 of 37 against 8 of 37 (bar within 5 points). It is the
+  best of 22 candidates on 37 points, so the replay numbers are optimistic.
+
+**31B loop (job 68293; POS 115, NEG 274 points; 24 stalled and 16 early points; 9 candidates so far).** Base 0 of 24
+and 0 of 16. Layers 21, 22 (k up to 8), 40 and 41: no stalled edit. Layer 23 at k 2: 1 of 24. **Layer 29 at k 2: 5
+of 24, with 12 of 16 early points left without a call.** Lower doses and narrower forms of layer 29 are queued.
+
+## E4B task draws for `c04` (pre-registered 2026-11-28, before any job)
+
+- **Arm.** `trees/e4b-wsp-c04` = `trees/e4b-r041-retry-check` with the computed adapter on the solver (rank 1, one
+  module, 26 kB). Control: rcheck x8 (8.12).
+- **Smoke first.** It is also the first time the server loads a rank-1, one-module adapter file. Pass: both tasks
+  served, no engine error, the solver's steps name the adapter.
+- **Draws.** `L-010-e4b-c04-d1..d4` on cdev2-79, chained behind the smoke. Draw-1 kill gate: 25 or more empty
+  patches or mean task wall above 300 s.
+- **Decision** against rcheck x8: extend to 8 draws at +0.75 or more; promote at 8 with +1.5 and CI lower bound
+  above -0.5; harm at -1.5.
+- **Mechanism:** empty patches per draw (rcheck 3.9); first-edit call index; solver calls per attempt; retries.
+
+**Blind guess.** The server loads the file: 75%. Empty patches fall: 40%. Extension: 12%.
