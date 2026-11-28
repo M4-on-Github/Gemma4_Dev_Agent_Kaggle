@@ -1,0 +1,13 @@
+# harness-eng R-056 2026-11-28: trees/31b-kf-ctl + prompt section 0 (first tool call adds stand-ins for two
+#   test-helper modules when they are absent, so the tests that import them can run where they are graded).
+name: swe_agent
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/system.md
+tools:
+  - run_command
+  - read_file
+  - edit_file
+  - write_file
+  - get_status
+  - submit_patch
+generate_content_config: !include configs/sampling.yaml
