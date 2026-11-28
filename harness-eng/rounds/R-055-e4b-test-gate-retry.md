@@ -41,3 +41,18 @@ prints 1; good attempt 1; no matching test 1; tests failing before the attempt 1
 
 Both tasks served; one resolved (62 s), one not (347 s, three solver calls). The one check command visible in the
 root traces is copied exactly. Reading 1 passes; draws released.
+
+## Result, four draws (read 2026-11-28 10:00 UTC)
+
+- Solved 6, 6, 9, 9: mean 7.50 against rcheck 8.12. **Paired -0.62, 90% CI -2.12..+0.75. Not extended, not kept.**
+- Empty patches 10, 8, 5, 15 (rcheck 2-6). Mean wall 168, 210, 173, 214 s (rcheck 149 s).
+- Per task: `solve` 1.78 calls against 1.47, `count_changes` 1.47 against 1.14. The root calls the check less often
+  than the solver, so a set-aside attempt is not always restored: the gate turns some non-empty patches into empty
+  ones. Flag counts per draw were not extracted (the check command's output is inside the check agent's session).
+
+## R-055b (pre-registered 2026-11-28, before any job)
+
+`trees/e4b-gate2`: the same command with the restore moved from the third check to the second (two numbers in the
+command change). A flagged first attempt gets one fresh attempt; if that changes nothing, the flagged attempt comes
+back. Draws `R-055b-e4b-gate2-d1..d4`; same gates and bars as R-055. Additional reading: empty patches per draw at
+or below 6. **Blind guess.** Empty patches back to 6 or fewer per draw: 55%. Extension: 12%.
