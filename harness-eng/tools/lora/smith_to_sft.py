@@ -120,6 +120,12 @@ def map_step(name, a, obs, totals):
         o = ws(obs)
         if o.startswith("Your command ran successfully and did not produce any output"):
             o = ""
+        tail = o.rstrip()[-400:]
+        if re.search(r"(Traceback \(most recent call last\)|Error: |command not found|No such file or directory)", tail) \
+                and re.match(r"\s*(cd [^;&|]+&& *)?python3? ", ws(cmd)):
+            # L-009b: a failed python run is shown as the harness shows it (CommandError), not as exit code 0
+            return "run_command", {"command": ws(cmd)}, err("CommandError", o[:5000],
+                                                            {"stdout": "", "stderr": o[:5000], "exit_code": 1})
         return "run_command", {"command": ws(cmd)}, ok(stdout=o[:5000], stderr="", exit_code=0)
     if name == "str_replace_editor":
         c, p = a.get("command"), rel(a.get("path"))
@@ -214,6 +220,9 @@ def main():
     p.add_argument("--tool-calls", type=int, default=28)
     p.add_argument("--turns", type=int, default=80)
     p.add_argument("--seed", type=int, default=1)
+    p.add_argument("--no-create", action="store_true",
+                   help="L-009b: strip created files and the commands that name them (the teacher's reproduce-script habit)")
+    p.add_argument("--need-source-edit", action="store_true", help="L-009b: require a successful edit_file")
     a = p.parse_args()
 
     excl = set()
@@ -278,6 +287,24 @@ def main():
                     continue
                 if not edits:
                     why["drop_no_edit"] += 1
+                    continue
+                if a.no_create:
+                    # strip the teacher's reproduce-script routine: every file it creates, each command that names
+                    # one of those files, and so the cleanup `rm` too. What is left is explore -> edit -> submit.
+                    made = {os.path.basename(args["filepath"]) for _, t, args, _ in out if t == "write_file"}
+                    kept = []
+                    for st4 in out:
+                        _, t, args, _ = st4
+                        if t == "write_file":
+                            continue
+                        if t == "run_command" and any(b and b in args["command"] for b in made):
+                            continue
+                        kept.append(st4)
+                    why["stripped_steps"] += len(out) - len(kept)
+                    out = kept
+                if a.need_source_edit and not any(t == "edit_file" and '"status": "ok"' in resp
+                                                  for _, t, _, resp in out):
+                    why["drop_no_source_edit"] += 1
                     continue
                 if not a.min_calls <= len(out) <= a.max_calls:
                     why["drop_calls_out_of_range"] += 1

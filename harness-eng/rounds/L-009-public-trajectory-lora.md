@@ -75,3 +75,55 @@ without a lower time cap: 25%.
 
 2 of 2 rows SUCCESS and served; no engine error; every solver step names `s9`, the root's steps name the base model.
 Draws d1-d4 (68289-68292) started by their `afterok` chain.
+
+### Deviation (logged 2026-11-28 00:06 UTC, before any resolved count of this round is looked at)
+
+The user asked for the E4B result while d4 was at 37 of 79 tasks. d1-d3 (complete, 79 served rows each) are read now
+as an interim; the extension rule and the decision are still applied to d1-d4 as written, and the rule is mechanical,
+so the early look cannot change it. Draw-1 gate, applied first: d1 has 1 empty patch (bar 25) and a mean task wall of
+208.4 s (bar 300 s): pass.
+
+### E4B interim, d1-d3 (2026-11-28; d4 still running)
+
+- Served: 79 rows, all served, in each of d1-d3.
+- **s9 solves 2, 0, 1 (1.00 per draw) against rcheck 8.12: −7.12 per draw, 90% CI −10.88..−3.67.**
+- Mechanism, per draw or per task (s9 against rcheck):
+  - patches 75.3 against 75.1 per draw, but **77% of s9 patches contain only new files** (rcheck 0%); 23% modify an
+    existing file (rcheck 99%). New files per patch 2.68; in d1 all 163 are at the repository root and most are
+    named as reproduction scripts.
+  - a patch resolves at 0.013 against 0.108; time-cap tasks 12.3 against 1.8; mean task wall 203.0 s against 149.2 s.
+  - solver calls per task in d1: `write_file` 5.1 (rcheck 0.08); `read_file` 13.9 (4.7), of which 4.1 fail on a path
+    that does not exist (0.19); `edit_file` 1.0 succeed and about 4.6 fail (rcheck: about 2.1 fail of 4.1);
+    `run_command` errors 7.5 (1.5).
+
+**Reading.** The adapter copied the teacher's routine (explore, write a reproduction script, run it, then edit) and
+the E4B cannot finish it: it writes the scripts, guesses file paths, fails most edits and hands in the scripts. The
+decision is applied when d4 ends; no extension is possible from here (d1-d3 already put d1-d4 below +0.5).
+
+**Next (L-009b, pre-registered below before training).** Same source, different selection: only trajectories that
+create no file and make a successful `edit_file`, at most 14 calls; failed script runs shown as command errors; mixed
+with the model's own resolved rows so that its working edit and path habits are kept.
+
+## L-009b: direct-fix selection, mixed with own solves (pre-registered 2026-11-28, before training)
+
+- **Data change.** No teacher trajectory is free of a created file (3,751 of 3,751 candidates create one), so the
+  routine is stripped instead: every created file, and every command that names one, is removed from the trajectory
+  (31,835 steps). Kept: trajectories with a successful `edit_file` and 3 to 14 remaining calls. A failed script run
+  is now shown as the harness shows a failed command. Result: 2,436 rows (31B layout, median 8 calls) and 2,417
+  rows (E4B solver layout, median 7 calls) over 109 repositories.
+- **Mix.** Each adapter also gets the model's own resolved fold-A rows, so that its working path and edit habits
+  stay in the training signal: E4B `d5/e4b-solver-lfold-a.jsonl` (299 rows, at most 8 per task); 31B
+  `d2/31b-fast-stop-lfold-a.jsonl` (76 rows).
+- **Adapters.** `L-009b-se4`: 500 direct rows + d5. `L-009b-s31`: 400 direct rows + d2-fast. Other settings as
+  L-009 (`--default-train call`, rank 16, lr 1e-4, 1 epoch, accumulation 4).
+- **Evaluation consequence.** Fold-A tasks are now in training, so the clean reading is on the 40 `lfold-b` tasks
+  (against the same control's fold-B rows); the full cdev2-79 count is reported beside it.
+- The first 31B adapter (`L-009-s31`, still training on the unstripped data) is kept and gets one draw, as a check
+  of whether the 31B copies the routine as the E4B did.
+- **Readings.** Training readings as L-009. Per adapter: smoke; d1 with a kill gate (25 or more empty patches, mean
+  wall above 300 s for the E4B or 452 s for the 31B, or more than 30% of patches without a modified existing
+  file); then d1-d4 on cdev2-79. Decision on fold B over 4 draws against the control's 8: extend to 8 draws at +0.5
+  or more; promote at 8 draws with +1.0 or more on fold B and CI lower bound above -0.5.
+
+**Blind guess.** The E4B b-adapter is no longer harmful (within 1.5 of control): 55%; beats control by 1 on fold B:
+12%. The 31B b-adapter beats control: 15%.
