@@ -77,6 +77,14 @@ for i in $(seq 1 $(( ${HENG_GPU_WAIT_MIN:-20} * 2 ))); do
   echo "[gpu-wait $i] card holds ${USED} MiB before this job starts; holders: ${WHO:-not visible}"
   sleep 30
 done
+# If the card is still part-held, fit the server into what is left (never above 0.90) and say so in the log; below
+# HENG_GPU_MIN (default 0.65, the 31B's need) stop at once instead of failing a minute into the start.
+if [ "${USED:-0}" -ge 3000 ] && [ -z "${HENG_GPU_MEM:-}" ]; then
+  TOT=$(nvidia-smi -i "${CUDA_VISIBLE_DEVICES:-0}" --query-gpu=memory.total --format=csv,noheader,nounits | head -1)
+  HENG_GPU_MEM=$(awk -v u="$USED" -v t="$TOT" 'BEGIN{s=(t-u-2000)/t; if(s>0.90)s=0.90; printf "%.2f", s}')
+  echo "[gpu-shared] card holds ${USED} of ${TOT} MiB from another process; server memory share set to ${HENG_GPU_MEM}"
+  if awk -v s="$HENG_GPU_MEM" -v m="${HENG_GPU_MIN:-0.65}" 'BEGIN{exit !(s<m)}'; then echo "[gpu-shared] below the minimum share, stopping"; exit 3; fi
+fi
 apptainer exec --nv --cleanenv --containall \
   --bind "$REPO:$REPO" --bind "$SCRATCH/tmp:/tmp" --home "$SCRATCH/home" --pwd "$ROOT" $SHIMS $FW \
   --env "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}" \

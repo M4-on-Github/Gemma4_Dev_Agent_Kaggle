@@ -114,3 +114,6 @@ a slower shared card does not affect it. The four draws are pinned to pleiades-0
 - Added check, fixed now: seconds per solver call in each draw against the control's (`pace.py`). A draw more
   than 15% slower is marked slowed; the decision is then read both with and without slowed draws, and reading 2's
   wall clause is not applied to a slowed draw 1.
+
+Draw job 68751 (d2) failed at start: its card had 25.0 GiB free, under the fixed 0.70 share. The guard now sizes
+the share from what the card has left (`HENG_GPU_MIN=0.30` for this model); d2 is resubmitted under the same id.

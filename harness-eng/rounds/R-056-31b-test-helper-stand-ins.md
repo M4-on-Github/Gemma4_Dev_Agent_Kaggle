@@ -73,3 +73,19 @@ Smoke job 68747 failed on pleiades-0-23 the same way, and 68748 (with a new wait
 the scheduler has free are exactly those. The smoke run is resubmitted with `HENG_GPU_MEM=0.70`; its reading has
 no time component. The four draws stay held for a clean card, because the wall clauses of the d1 gate and the
 wall-ratio flag need the control's conditions.
+
+## Reading 1 (smoke, job 68749, memory share 0.70 on a shared card): pass
+
+| Check | Task 1 | Task 2 |
+|---|---|---|
+| First tool call is `run_command` with the exact command | yes | yes |
+| Stand-in files in the graded patch | 2 | 2 |
+| Solved (graded without the two modules installed) | yes | yes |
+
+## Deviation logged before any draw result: draws may run on a shared card (2026-11-28)
+
+Clean cards are not expected for many hours. The four draws are resubmitted under the same run ids with the guard:
+on a clean card they run at 0.90 as the control did; on a part-held card the server takes what is left, and below
+0.65 the job stops before starting. Added check, fixed now: seconds per model call in each draw against the
+control's. A draw more than 15% slower is marked slowed; the wall clause of the d1 gate and the wall-ratio flag
+are not applied to slowed draws, and the decision is read both with and without them.
