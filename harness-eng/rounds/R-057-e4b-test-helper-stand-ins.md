@@ -87,3 +87,17 @@ The resubmitted smoke job 68744 failed like 68734 (25.3 of 47.4 GiB free), as di
 and `slurm/eval.sbatch` now read an optional `HENG_GPU_MEM` (default 0.90, unchanged for every other run). The
 smoke run is resubmitted as job 68746 with `HENG_GPU_MEM=0.45` on that card. Reading 1 has no time component, so
 a slower shared card does not affect it. The four draws are pinned to pleiades-0-23 and run at the default 0.90.
+
+## Reading 1 (smoke, job 68746): pass
+
+| Check | Task 1 | Task 2 |
+|---|---|---|
+| First tool call of the run is `prepare` | yes | yes |
+| `prepare` ran the exact command | yes | yes |
+| Both stand-in folders in the graded patch | yes | yes |
+| `count_changes` answer with the stand-ins present | 1 (one source file changed) | 0, then 1 after a second solve |
+
+- The 0 in task 2 shows the count ignores the stand-in folders and the retry still fires.
+- In task 2 the root made one call to a tool it does not hold, between `prepare` and `solve`; it had no effect.
+- Neither task was solved; the smoke reading does not use that.
+- The four draws are released.
