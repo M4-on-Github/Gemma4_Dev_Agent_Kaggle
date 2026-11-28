@@ -50,3 +50,11 @@ second flagged attempt AGAIN, agreeing good attempt FINAL; working copy clean af
 
 Both tasks served and resolved (208 s, 504 s). Five finish commands, all copied exactly; outputs FIRST, FINAL on
 task 1 and FIRST, AGAIN, FINAL on task 2; two `submit_patch` calls per task. Reading 1 passes; draws released.
+
+## Draws d1-d4 void: submitted at the wrong task concurrency (logged 2026-11-28 10:55 UTC)
+
+Same setup error as R-052 (see that file): `--concurrency 4` put twelve solver streams on one GPU. The four draws
+were cancelled at 52-57 of 79 tasks; partial counts (0-4 solves, 52-54 tasks at the cap with nothing applied, same
+slow pace) were seen in the diagnosis and are void. Rerun: same tree and cohort, `--concurrency 1`, run ids
+`R-054-31b-gate-r1..r4`, job time limit 15 h. Readings apply to r1..r4 as written, with R-052 r1..r4 as the
+comparison arm.

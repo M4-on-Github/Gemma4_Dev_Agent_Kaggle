@@ -54,3 +54,18 @@ draws: 35%. Extension: 25%. Mean wall above 452 s: 65%.
   no attempt finished, which the race rounds show at about 11 per draw and which this layout cannot remove. The
   clause is read as: 3 or more tasks **with a submit** graded on an emptied tree. Tasks with no finished attempt
   are counted and reported under reading 4/5. Changed before any draw result exists.
+
+## Draws d1-d4 void: submitted at the wrong task concurrency (logged 2026-11-28 10:55 UTC)
+
+- **What happened.** Draws `R-052-31b-agree-d1..d4` were submitted with `--concurrency 4`, the setting of the
+  single-stream rounds. The race rounds this layout comes from (R-042..R-049) ran at `--concurrency 1`, because one
+  task already holds three solver streams. Four tasks at once put twelve streams on one GPU.
+- **Evidence it is the setup, not the layout.** Draw 1 (the only complete one): 14.9 s of task wall per solver call
+  against 4.4 s in `R-048-31b-kfrace3h-d1/d2`; 40.8 solver calls per task against 81-84; a finish command ran in
+  12 of 79 tasks; 74 of 79 tasks ended at the cap with nothing applied; job wall 12,485 s for 79 tasks of 608 s
+  mean, so 3.8 tasks ran at once. The two-task smoke, which ran at concurrency 1, had 5.6 s per solver call.
+- **Deviation.** d1 is void and is not a reading of the design; its solve count (4) is recorded here and not
+  compared with the bar. d2-d4 were cancelled at 60-64 of 79 tasks; their partial counts (2-4 solves, same pace)
+  were seen in the diagnosis and are void too. The kill gate is read again on the first rerun draw.
+- **Rerun.** Same tree, same cohort, `--concurrency 1`, run ids `R-052-31b-agree-r1..r4`, job time limit 15 h
+  (79 tasks at up to 610 s is 13.4 h). Readings 2-5 apply to r1..r4 as written. Nothing else changes.
