@@ -56,3 +56,20 @@ the solver's own test runs working.
 - Which environment the official scorer resembles is not known. The stand-ins help only where the modules are
   absent at grading; where they are present the command adds nothing and the arm should equal the control.
 - Hidden repositories may miss other packages; the command covers these two only.
+
+## Desk check D-013: result (2026-11-28, CPU jobs 68726-68733)
+
+Solves of 79, control draws `R-041-e4b-rcheck-d1..d4`.
+
+| Draw | Cluster standard (both modules installed) | Without the modules, patch as is | Without the modules, stand-ins appended |
+|---|---|---|---|
+| d1 | 9 | 6 | 9 |
+| d2 | 9 | 8 | 9 |
+| d3 | 10 | 8 | 10 |
+| d4 | 7 | 6 | 7 |
+| mean | 8.75 | 7.00 | 8.75 |
+
+- The stand-ins gain 3, 1, 2, 1 solves and lose none: +1.75 per draw, the whole loss from the missing modules.
+- This is the grading effect alone. It is below the +2.0 bar of reading 4, which was fixed before this result and
+  stays as written; the arm reaches it only if the solver's own working test runs add solves.
+- Regraded control mean for reading 2 on these four draws: 7.00.
