@@ -1,0 +1,14 @@
+# harness-eng R-020 2026-11-21: submit_patch removed from the solver (any submit_patch, even empty, sets patch_submitted
+# and the next final text from any agent ends the task, which blocked the R-018 retry). The root submits.
+name: solve
+description: Resolves the issue in /workspace end to end and leaves the change in the working tree. Takes one request string.
+model: gemma-4-e4b-it-qat-w4a16-ct
+adapter: s9c  # harness-eng L-009c 2026-11-28: solver adapter trained on grounded public rows mixed with own solves (rounds/L-009)
+instruction: !include ../prompts/solver.md
+tools:
+  - run_command
+  - read_file
+  - edit_file
+  - write_file
+  - get_status
+generate_content_config: !include ../configs/sampling.yaml

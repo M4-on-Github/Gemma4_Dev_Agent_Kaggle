@@ -178,3 +178,9 @@ the model to write edit text and paths from nothing.
 L-009b it gets a smoke and one draw (`L-009-31b-s31-d1`, cdev2-79, concurrency 4) as a check of whether the 31B
 copies the teacher's routine and of the adapter's decode cost; it was trained on the unstripped, ungrounded rows, so
 no gain is expected and no further draw follows unless d1 solves 33 or more.
+
+### L-009c-se4 training (job 68316, 1 h 13 min)
+
+691 train rows (600 grounded public rows and 125 own rows before the validation split; 86 own rows over the cap of 40
+per task and 88 too long), 34 validation rows; `final/` written, no error; validation loss 0.2925 at step 0, 0.1433
+at the end. Tree `trees/e4b-sw-s9c`. Smoke, then `L-009c-e4b-s9c-d1..d4`, d1 gate by hand as for L-009b.
