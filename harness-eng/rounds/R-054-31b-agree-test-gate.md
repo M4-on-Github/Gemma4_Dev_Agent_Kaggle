@@ -33,3 +33,15 @@ second flagged attempt AGAIN, agreeing good attempt FINAL; working copy clean af
 
 **Blind guess.** The 31B copies the command exactly in 90% of calls or more: 65%. Flagged attempts per draw between
 10 and 40: 55%. Gate worth +0.5 over R-052: 25%.
+
+## Smoke and a deviation, logged 2026-11-28 07:50 UTC before any draw is read
+
+- **R-052 smoke (job 68464, after two server-start failures on GPUs occupied by another user's processes):** both
+  tasks served. Task 1: two finish commands, both copied exactly, two `submit_patch` calls, resolved in 194 s.
+  Task 2: no solver finished before the cap (605 s), no finish command ran, and the task was graded on the
+  emptied tree, as in the race rounds' no-apply tasks. Reading 1 passes.
+- **Deviation.** Kill-gate clause "3 or more tasks graded on a tree with deleted files" was written for tasks that
+  had a submitted patch and were still graded on an emptied tree. As written it would also count every task where
+  no attempt finished, which the race rounds show at about 11 per draw and which this layout cannot remove. The
+  clause is read as: 3 or more tasks **with a submit** graded on an emptied tree. Tasks with no finished attempt
+  are counted and reported under reading 4/5. Changed before any draw result exists.
