@@ -138,3 +138,16 @@ effective k 0.125). One draw each on cdev2-79 (`L-010-e4b-c04a50-d1`, `L-010-e4b
 
 **Blind guess.** Alpha 0.5 still above 25 empty: 60%. Alpha 0.25 indistinguishable from the control: 60%. Either
 dose goes on: 12%.
+
+## Dose step results (read 2026-11-28 10:45 UTC)
+
+| Tree | Strength | Solved | Empty | Mean wall |
+|---|---|---|---|---|
+| `e4b-wsp-c04` | 1.0 | killed at draw 1 | 79 | - |
+| `e4b-wsp-c04a50` | 0.5 | 1 | 55 | 112 s |
+| `e4b-wsp-c04a25` | 0.25 | 3 | 15 | 173 s |
+| control (`e4b-r041-retry-check`, 8 draws) | 0 | 8.12 | 2-6 | 149 s |
+
+Neither dose meets the continue line (4 or fewer empty and 9 or more solves). Empties fall with the dose but solves
+stay below the control at every strength, so there is no dose where this direction helps. The computed layer-17
+edit is closed.

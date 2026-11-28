@@ -208,3 +208,11 @@ agreement and test-gate rounds. Recorded as harm on one draw, not as a four-draw
 
 Across the three data versions the E4B adapter ends attempts early (wall 71 s) and solves less; grounding removed
 the stray new files (1 of 59) and the failed-edit storm but not the loss.
+
+## 31B round-3 adapter, draw 1 (`L-009c-31b-s31c-d1`, job 68535, read 2026-11-28 10:45 UTC)
+
+Solved 12 of 79, 20 empty patches, mean task wall 89 s (control: 30.38 solves, 385.6 s). Below the 28-solve line
+for further draws, so none are run. Same picture as round 1 (12 solves): the adapter makes the model stop early.
+The validation loss fell further in round 3 (0.452 to 0.060) with no change in the task result, so lower loss on
+these rows does not carry to the tasks. Trained adapters from public trajectories are closed for both models at
+these three data versions.
