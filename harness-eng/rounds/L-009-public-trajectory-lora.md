@@ -198,3 +198,13 @@ patch nearly every time and sooner, and most of them are wrong, as with the E4B 
 `L-009c-31b-s31c-d1` with the L-009c gates (25 or more empty patches, mean wall above 452 s, or more than 30% of
 patches without a modified existing file); further draws only if d1 solves 28 or more (kfctl draws 27-35), since
 the round-1 adapter's check draw solved 12.
+
+### L-009c E4B adapter s9c, draw 1 (`L-009c-e4b-s9c-d1`, read 2026-11-28 09:50 UTC)
+
+Solved 3 (rcheck draws 7-10, mean 8.12); empty patches 20 (gate 25); mean wall 71 s (rcheck 149 s); patches
+without a modified existing file 1 of 59 (gate 30%). The kill gate is not met as written. **Deviation: draws 2-4
+are not run.** Three solves is below every control draw by 4 or more, and the remaining GPUs are held for the
+agreement and test-gate rounds. Recorded as harm on one draw, not as a four-draw reading.
+
+Across the three data versions the E4B adapter ends attempts early (wall 71 s) and solves less; grounding removed
+the stray new files (1 of 59) and the failed-edit storm but not the loss.
