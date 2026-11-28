@@ -1,0 +1,5 @@
+evaluation:
+  timeout_seconds: 240
+  max_tool_calls: 56   # harness-eng R-020 2026-11-21: 56 in both arms (R-018 retry arm value); the counter is shared by up to 3 solve attempts
+  max_time_minutes: 8
+  max_turns: 80

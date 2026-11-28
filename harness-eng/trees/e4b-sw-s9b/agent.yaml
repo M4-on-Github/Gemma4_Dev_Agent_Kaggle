@@ -1,0 +1,15 @@
+# harness-eng R-041 2026-11-26: the R-020 retry layout without a skill. Public reports (Kaggle topics 758547, 758854)
+# say skill scripts run outside the task sandbox on the official scorer, where count.py would print 1 (its error
+# fallback) and no retry would ever fire. The count is now made by a second agent_tool whose only tool is the shell.
+name: swe_agent
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include prompts/root.md
+tools:
+  - submit_patch
+  - agent_tool:
+      config_path: sub_agents/solver.yaml
+      skip_summarization: true
+  - agent_tool:
+      config_path: sub_agents/check.yaml
+      skip_summarization: true
+generate_content_config: !include configs/sampling_root.yaml

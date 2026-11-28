@@ -132,3 +132,13 @@ with the model's own resolved rows so that its working edit and path habits are 
 
 All four draws have 79 served rows. s9 solves 2, 0, 1, 0 (0.75 per draw) against rcheck 8.12: **−7.38 per draw, 90%
 CI −11.12..−3.88**. No extension. The mechanism is the interim's: the adapter hands in reproduction scripts.
+
+### L-009b-se4 training (job 68297, 1 h 03 min)
+
+536 train rows and 23 validation rows, 134 steps; `final/` written, no error; validation loss 0.3503 at step 0,
+0.1560 at the end. Both training readings pass.
+- **Deviation from the stated mix.** The trainer's default cap of 8 rows per task and the length limit kept 59 of the
+  299 own rows (217 over the cap, 31 too long), so the mix is 500 public to 59 own, not 500 to 299. Evaluated as
+  trained; the fold-B reading stands as written.
+- Tree `trees/e4b-sw-s9b` (as `e4b-sw-s9` with adapter `s9b`). Smoke, then `L-009b-e4b-s9b-d1..d4` on cdev2-79,
+  all queued behind the smoke; the d1 kill gate is applied by hand and cancels d2-d4 unread if it fails.
