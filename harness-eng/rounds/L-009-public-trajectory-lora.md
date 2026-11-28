@@ -127,3 +127,8 @@ with the model's own resolved rows so that its working edit and path habits are 
 
 **Blind guess.** The E4B b-adapter is no longer harmful (within 1.5 of control): 55%; beats control by 1 on fold B:
 12%. The 31B b-adapter beats control: 15%.
+
+### E4B decision, d1-d4 (2026-11-28, readings applied as written): harm
+
+All four draws have 79 served rows. s9 solves 2, 0, 1, 0 (0.75 per draw) against rcheck 8.12: **−7.38 per draw, 90%
+CI −11.12..−3.88**. No extension. The mechanism is the interim's: the adapter hands in reproduction scripts.
