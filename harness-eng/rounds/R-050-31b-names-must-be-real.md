@@ -30,3 +30,14 @@ Validator: the two known errors only.
    21%); introspection commands per task; tool calls per task; call-cap and time-cap tasks.
 
 **Blind guess.** The error share falls by 5 points or more: 35%. Extension: 15%. Promote: 7%.
+
+## Result, four draws (read 2026-11-28 09:20 UTC)
+
+- Solved 32, 30, 32, 33: mean 31.75 against kfctl 30.38. **Paired +1.38 solves per draw, 90% CI -0.75..+3.50.**
+  Empty patches 12, 9, 9, 15 (kfctl 6-15). Mean wall 368, 374, 382, 393 s (kfctl 385.6 s).
+- **Reading 3: the extension bar (+1.0) is met. Draws 5-8 are queued.** Promotion needs +1.5 at 8 draws with the CI
+  lower bound above -0.5.
+- **Mechanism did not move.** Failing patches ending in an import, attribute, name or type error: 22.2% (144
+  failing patches) against 21.0%. Commands using introspection: 0.38 per task, in 14% of tasks (kfctl 0.27, 10%).
+  Tool calls per task 24.6 against 24.6. So if the gain is real it does not come from the lookup command; the
+  second bullet (create what the issue names under exactly that name) is the other candidate.
