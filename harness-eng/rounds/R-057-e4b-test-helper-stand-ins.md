@@ -73,3 +73,9 @@ Solves of 79, control draws `R-041-e4b-rcheck-d1..d4`.
 - This is the grading effect alone. It is below the +2.0 bar of reading 4, which was fixed before this result and
   stays as written; the arm reaches it only if the solver's own working test runs add solves.
 - Regraded control mean for reading 2 on these four draws: 7.00.
+
+## Deviation logged before any result: smoke job 68734 did not start the model server (2026-11-28)
+
+Job 68734 ended after 70 s with no task run: 22 GiB of the assigned card were held by another process (25.3 of
+47.4 GiB free against the 42.7 GiB the server reserves). The 31B smoke job 68699 failed the same way one minute
+earlier on the same node. No result file was written. Resubmitted unchanged as job 68744; readings as written.
