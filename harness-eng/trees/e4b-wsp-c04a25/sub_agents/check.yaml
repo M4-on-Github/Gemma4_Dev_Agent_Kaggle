@@ -1,0 +1,9 @@
+# harness-eng R-041 2026-11-26: counts changed source files inside the task sandbox. It sees only its own request, not
+# the issue, so it has nothing to work on with its shell (T-e4b-020: a root with a shell worked on the issue itself).
+name: count_changes
+description: Counts the source files changed in /workspace and answers with one integer. Takes one request string.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/check.md
+tools:
+  - run_command
+generate_content_config: !include ../configs/sampling_root.yaml

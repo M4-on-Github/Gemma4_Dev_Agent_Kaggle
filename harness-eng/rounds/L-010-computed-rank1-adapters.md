@@ -112,3 +112,29 @@ of 24, with 12 of 16 early points left without a call.** Lower doses and narrowe
 - **Mechanism:** empty patches per draw (rcheck 3.9); first-edit call index; solver calls per attempt; retries.
 
 **Blind guess.** The server loads the file: 75%. Empty patches fall: 40%. Extension: 12%.
+
+## E4B `c04` on tasks: smoke and draw 1 (2026-11-28)
+
+- **Smoke (job 68338):** both tasks served; the server loads the rank-1, one-module adapter file; the solver calls
+  tools with it. The blind guess (75%) held.
+- **Draw 1 (`L-010-e4b-c04-d1`, job 68339): 79 of 79 patches empty, mean wall 74 s. Kill gate met (25 or more
+  empty); draws 2-4 cancelled unread** (they had also failed at server start on GPUs occupied by another user's
+  processes and been resubmitted).
+- Mechanism, calls per task against rcheck d1: `solve` 2.9 against 1.3, `edit_file` 4.0 against 4.1, `read_file`
+  2.5 against 4.7, `run_command` 5.9 against 6.7. Per solver call that is about 1.4 edits after 0.9 reads: the
+  solver edits almost at once, the edit changes nothing, and the root retries until its three attempts are used.
+- **Reading.** The switch is causal on real tasks and far stronger served than on the 37 replay points, where the
+  same edit left 16 of 20 early points untouched. The replay bar did not predict task behaviour.
+
+## Dose step (pre-registered 2026-11-28, before any job)
+
+The served strength is set by `lora_alpha` in the adapter's config, so the same file is served weaker without
+recomputing: `trees/e4b-wsp-c04a50` (alpha 0.5, effective k 0.25) and `trees/e4b-wsp-c04a25` (alpha 0.25,
+effective k 0.125). One draw each on cdev2-79 (`L-010-e4b-c04a50-d1`, `L-010-e4b-c04a25-d1`), about 0.5 GPU-h each.
+
+- A dose goes on to three more draws only if its draw has 4 or fewer empty patches and 9 or more solves (rcheck
+  draws: 2-6 empty, 7-10 solves). Otherwise the dose is closed.
+- Reported for both: empty patches, solves, `solve` and `read_file` calls per task, mean wall.
+
+**Blind guess.** Alpha 0.5 still above 25 empty: 60%. Alpha 0.25 indistinguishable from the control: 60%. Either
+dose goes on: 12%.
