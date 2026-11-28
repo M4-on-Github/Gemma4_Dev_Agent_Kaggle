@@ -117,3 +117,5 @@ a slower shared card does not affect it. The four draws are pinned to pleiades-0
 
 Draw job 68751 (d2) failed at start: its card had 25.0 GiB free, under the fixed 0.70 share. The guard now sizes
 the share from what the card has left (`HENG_GPU_MIN=0.30` for this model); d2 is resubmitted under the same id.
+
+Draw job 68752 (d3) failed at start the same way as 68751 (fixed 0.70 share on a card with 25 GiB free), no task run; resubmitted under the same id as job 68777 with the sizing guard.
