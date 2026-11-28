@@ -101,3 +101,16 @@ a slower shared card does not affect it. The four draws are pinned to pleiades-0
 - In task 2 the root made one call to a tool it does not hold, between `prepare` and `solve`; it had no effect.
 - Neither task was solved; the smoke reading does not use that.
 - The four draws are released.
+
+## Deviation logged before any draw result: draws on shared cards at memory share 0.70 (2026-11-28)
+
+- Draw jobs 68735 (d1) and 68736 (d2) failed at model start on pleiades-0-23 like the smoke jobs, with no task
+  run and no trace written. Jobs 68737 and 68738 were cancelled before starting.
+- A guard added to `slurm/eval.sbatch` logs the holder: the cards the scheduler has free are the ones on which
+  another user's processes run outside the scheduler (about 11 GiB each, one card per node seen so far). These
+  processes are not ours to stop.
+- The four draws are resubmitted under the same run ids with `HENG_GPU_MEM=0.70`. The E4B server needs far less
+  than that, so only the shared compute can differ from the control's conditions.
+- Added check, fixed now: seconds per solver call in each draw against the control's (`pace.py`). A draw more
+  than 15% slower is marked slowed; the decision is then read both with and without slowed draws, and reading 2's
+  wall clause is not applied to a slowed draw 1.

@@ -67,6 +67,16 @@ if nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | grep -q "Quad
   [ -f "$TP" ] || { echo "$TP missing: run tools/turing_patches/make_triton_attn_patch.py"; exit 1; }
   FW="$FW --bind $TP:/usr/local/lib/python3.12/dist-packages/vllm/v1/attention/ops/triton_unified_attention.py:ro"
 fi
+# R-056/R-057 2026-11-28: a card handed over by the scheduler can still be part-held by a process that outlived
+# another job. Wait up to HENG_GPU_WAIT_MIN minutes (default 20) for it to clear, logging the holder's user name,
+# then start anyway (the server refuses to start if the card is still held).
+for i in $(seq 1 $(( ${HENG_GPU_WAIT_MIN:-20} * 2 ))); do
+  USED=$(nvidia-smi -i "${CUDA_VISIBLE_DEVICES:-0}" --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1)
+  [ "${USED:-0}" -lt 3000 ] && break
+  WHO=$(for q in $(nvidia-smi -i "${CUDA_VISIBLE_DEVICES:-0}" --query-compute-apps=pid --format=csv,noheader 2>/dev/null); do ps -o user= -p "$q" 2>/dev/null; done | sort | uniq -c | tr '\n' ' ')
+  echo "[gpu-wait $i] card holds ${USED} MiB before this job starts; holders: ${WHO:-not visible}"
+  sleep 30
+done
 apptainer exec --nv --cleanenv --containall \
   --bind "$REPO:$REPO" --bind "$SCRATCH/tmp:/tmp" --home "$SCRATCH/home" --pwd "$ROOT" $SHIMS $FW \
   --env "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}" \

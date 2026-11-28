@@ -65,3 +65,11 @@ written. The smoke run is resubmitted unchanged under the same run id; readings 
 The resubmitted smoke job 68743 failed like 68699 (25.3 of 47.4 GiB free on the same card of pleiades-0-17, held
 by a process outside the scheduler). The smoke run is resubmitted unchanged as job 68747 and, with the four held
 draws, pinned to pleiades-0-23. Readings as written.
+
+## Deviation logged before any result: smoke run on a shared card at memory share 0.70 (2026-11-28)
+
+Smoke job 68747 failed on pleiades-0-23 the same way, and 68748 (with a new wait-and-log guard in
+`slurm/eval.sbatch`) showed the holder is another user's processes outside the scheduler, about 11 GiB. The cards
+the scheduler has free are exactly those. The smoke run is resubmitted with `HENG_GPU_MEM=0.70`; its reading has
+no time component. The four draws stay held for a clean card, because the wall clauses of the d1 gate and the
+wall-ratio flag need the control's conditions.
