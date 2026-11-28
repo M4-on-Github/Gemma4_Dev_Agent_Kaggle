@@ -33,3 +33,10 @@ behavior in one line in the same step.
 
 79 rows; resolved 9 (rcheck draws 7-10, mean 8.12); empty 2 (rcheck 2-6); mean wall 130.8 s (rcheck 149.2 s). Kill
 gate not met. Draws 2-4 continue; no reading before four draws.
+
+## Result, four draws (read 2026-11-28 07:15 UTC)
+
+Solved 9, 7, 9, 8: mean 8.25 against rcheck 8.12 (**+0.13**; extension bar +0.75). Empty 2, 6, 5, 4 (rcheck mean
+3.9). Mean wall 131, 141, 155, 147 s (rcheck 149 s). **Not extended, not kept.** Mechanism counts (failed edits per
+task) not computed; the per-task paired interval was not computed either (the script's task key was wrong), and
+the mean difference is far inside one draw's spread.
