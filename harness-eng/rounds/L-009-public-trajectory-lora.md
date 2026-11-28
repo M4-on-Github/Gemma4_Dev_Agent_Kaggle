@@ -171,3 +171,10 @@ the model to write edit text and paths from nothing.
 
 **Blind guess.** The E4B c-adapter passes the d1 gate: 60%; is within 1.5 of control: 45%; beats it by 1 on fold B:
 12%. The 31B c-adapter beats control: 15%.
+
+### L-009-s31 training (job 68281) and its check draw
+
+`final/` written, no error. Tree `trees/31b-kf-s31` = `trees/31b-kf-ctl` with `adapter: s31`. As pre-registered in
+L-009b it gets a smoke and one draw (`L-009-31b-s31-d1`, cdev2-79, concurrency 4) as a check of whether the 31B
+copies the teacher's routine and of the adapter's decode cost; it was trained on the unstripped, ungrounded rows, so
+no gain is expected and no further draw follows unless d1 solves 33 or more.
