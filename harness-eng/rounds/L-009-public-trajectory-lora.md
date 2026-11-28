@@ -184,3 +184,9 @@ no gain is expected and no further draw follows unless d1 solves 33 or more.
 691 train rows (600 grounded public rows and 125 own rows before the validation split; 86 own rows over the cap of 40
 per task and 88 too long), 34 validation rows; `final/` written, no error; validation loss 0.2925 at step 0, 0.1433
 at the end. Tree `trees/e4b-sw-s9c`. Smoke, then `L-009c-e4b-s9c-d1..d4`, d1 gate by hand as for L-009b.
+
+### 31B round-1 adapter, check draw (`L-009-31b-s31-d1`, job 68320, read 2026-11-28 05:45 UTC)
+
+79 rows; resolved 12 against kfctl 30.38 (range 27-35); empty patches 1 (kfctl 6-15); mean wall 302.7 s (kfctl
+385.6 s). Below the 33 needed for a further draw: **harm, no further draw.** The adapter makes the 31B hand in a
+patch nearly every time and sooner, and most of them are wrong, as with the E4B round-1 adapter.

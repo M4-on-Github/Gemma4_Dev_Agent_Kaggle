@@ -28,3 +28,8 @@ behavior in one line in the same step.
    attribute, name or type error; calls per task; mean wall.
 
 **Blind guess.** Failed edits per task fall by a third: 45%. Extension: 20%. Promote: 8%.
+
+## Draw 1 (job 68326, read 2026-11-28 05:45 UTC)
+
+79 rows; resolved 9 (rcheck draws 7-10, mean 8.12); empty 2 (rcheck 2-6); mean wall 130.8 s (rcheck 149.2 s). Kill
+gate not met. Draws 2-4 continue; no reading before four draws.
