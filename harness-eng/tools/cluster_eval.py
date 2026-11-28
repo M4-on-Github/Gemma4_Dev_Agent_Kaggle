@@ -212,7 +212,8 @@ def main():
         default_chat_template_kwargs={"enable_thinking": True}, max_model_len=32768,
         # bf16 needs compute capability 8.0 in vLLM; torch's is_bf16_supported() also says yes on Turing (emulated),
         # so the Quadro RTX 6000 (7.5) gets float16 explicitly. Ada (8.9) is unchanged. 2026-11-19.
-        dtype="bfloat16" if torch.cuda.get_device_capability()[0] >= 8 else "float16", gpu_memory_utilization=0.90,
+        dtype="bfloat16" if torch.cuda.get_device_capability()[0] >= 8 else "float16", gpu_memory_utilization=float(os.environ.get("HENG_GPU_MEM", "0.90")),  # R-057 2026-11-28: override for a card partly held by another process
+        
         enable_auto_tool_choice=True, enable_lora=True, max_loras=8, max_lora_rank=128,
         tensor_parallel_size=1, startup_timeout=60 * 20), adapter_manifest=adapters)
       server.start()

@@ -59,3 +59,9 @@ near 28.
 Job 68699 ended after 52 s with no task run: the model server refused to start because 11 GiB of the assigned
 card were held by another process (36.1 of 47.4 GiB free against the 42.7 GiB it reserves). No result file was
 written. The smoke run is resubmitted unchanged under the same run id; readings as written.
+
+## Deviation logged before any result: second failed start, jobs pinned to pleiades-0-23 (2026-11-28)
+
+The resubmitted smoke job 68743 failed like 68699 (25.3 of 47.4 GiB free on the same card of pleiades-0-17, held
+by a process outside the scheduler). The smoke run is resubmitted unchanged as job 68747 and, with the four held
+draws, pinned to pleiades-0-23. Readings as written.

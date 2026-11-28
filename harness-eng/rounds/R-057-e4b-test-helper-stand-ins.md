@@ -79,3 +79,11 @@ Solves of 79, control draws `R-041-e4b-rcheck-d1..d4`.
 Job 68734 ended after 70 s with no task run: 22 GiB of the assigned card were held by another process (25.3 of
 47.4 GiB free against the 42.7 GiB the server reserves). The 31B smoke job 68699 failed the same way one minute
 earlier on the same node. No result file was written. Resubmitted unchanged as job 68744; readings as written.
+
+## Deviation logged before any result: smoke run on a shared card at a lower memory share (2026-11-28)
+
+The resubmitted smoke job 68744 failed like 68734 (25.3 of 47.4 GiB free), as did the 31B smoke jobs 68699 and
+68743: one card of pleiades-0-17 is persistently part-held by a process outside the scheduler. `tools/cluster_eval.py`
+and `slurm/eval.sbatch` now read an optional `HENG_GPU_MEM` (default 0.90, unchanged for every other run). The
+smoke run is resubmitted as job 68746 with `HENG_GPU_MEM=0.45` on that card. Reading 1 has no time component, so
+a slower shared card does not affect it. The four draws are pinned to pleiades-0-23 and run at the default 0.90.

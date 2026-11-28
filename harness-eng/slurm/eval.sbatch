@@ -70,6 +70,7 @@ fi
 apptainer exec --nv --cleanenv --containall \
   --bind "$REPO:$REPO" --bind "$SCRATCH/tmp:/tmp" --home "$SCRATCH/home" --pwd "$ROOT" $SHIMS $FW \
   --env "CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}" \
+  --env "HENG_GPU_MEM=${HENG_GPU_MEM:-0.90}" \
   "$SIF" python3 -I -X utf8 tools/cluster_eval.py \
     --tree "$TREE" --cohort "$COHORT" --out "runs/$RUN_ID" \
     --data "$ROOT/data/raw" --models "$ROOT/models" "$@"
