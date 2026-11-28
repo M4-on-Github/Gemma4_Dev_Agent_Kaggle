@@ -272,3 +272,28 @@ produced a change to ship.
   the 31B's time budget before any slowdown from three streams, and neither is built.
 - **State on 2026-11-27:** no round since `31b-base` (0.18) and the E4B bundle (0.05) has beaten its control. No
   upload is proposed.
+
+## Weight-side work, L-009 and L-010 (added 2026-11-28)
+
+The harness-side lines are closed (race rounds above; R-049, the background timer, was dropped at its early check).
+From 2026-11-27 the work is on the weights, which the submission may carry as a LoRA adapter.
+
+| Line | What | State on 2026-11-28 01:30 UTC |
+|---|---|---|
+| L-009 `s9` (E4B) | LoRA trained on public solved trajectories of a stronger agent (SWE-smith, MIT) | **harm**: 0.75 vs 8.12 per draw (−7.38); the adapter copies the teacher's reproduce-script routine |
+| L-009 `s31` (31B) | the same data for the 31B | training; gets one draw as a check |
+| L-009b `s9b` (E4B) | the routine stripped from the data, own solves mixed in (59 rows made it in) | trained; smoke and 4 draws queued |
+| L-009b `s31b` (31B) | the same for the 31B | training |
+| L-010 (E4B, 31B) | computed rank-1 adapters, no gradient step, scored by replaying stalled turns; run as an edit loop | both loops running; first E4B candidates move stalled turns to edits but also early turns |
+
+**Plan, in order.**
+1. Read `s9b` (fold-B reading, d1 kill gate on patches that modify no existing file).
+2. Evaluate `s31` (one draw) and `s31b` when trained; the 31B's decode cost under an adapter is read from the same
+   draws. If an adapter helps but is too slow, pair it with an early give-up on stalled tasks.
+3. Edit loops: find a dose that moves stalled turns without moving early turns; then unit-level edits (the units
+   most responsible for the difference, as in the weight-space-programming post); a candidate that passes the
+   replay bar gets a served smoke and task draws, pre-registered in `rounds/L-010` first.
+4. A computed adapter has not yet been loaded by the server; its first smoke is also the check that a rank-1,
+   one-module adapter file is accepted.
+5. Upload window: Kaggle grading has taken 30-40 h and the deadline is 2026-12-02 23:59 UTC, so a candidate must
+   be ready by about 2026-11-30. Any upload needs the user's approval file.

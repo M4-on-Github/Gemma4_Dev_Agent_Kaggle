@@ -108,6 +108,8 @@ def main():
     dev = torch.device("cuda")
 
     mlp_in_sum = [None] * nl
+    unit_out = [None] * nl   # down_proj inputs (unit activations) at the decision positions of the current row
+    res_idx = [None]
     mlp_in_n = [0]
     grab = {"on": False}
 
@@ -119,11 +121,13 @@ def main():
                 mlp_in_sum[i] = s if mlp_in_sum[i] is None else mlp_in_sum[i] + s
                 if i == 0:
                     mlp_in_n[0] += x.shape[0]
+            if res_idx[0] is not None:
+                unit_out[i] = inp[0][0, res_idx[0]].float().cpu()
         return hook
 
     hooks = [layers[i].mlp.down_proj.register_forward_pre_hook(mk(i)) for i in range(nl)]
     # residual after each layer, only at the decision positions (all positions of all layers do not fit for the 31B)
-    res_idx, res_out = [None], [None] * nl
+    res_out = [None] * nl
 
     def mkres(i):
         def hook(mod, inp, out):
@@ -137,6 +141,7 @@ def main():
     def collect(rows, sel, cap, mu=False):
         """residuals [n, nl, d] at the decision points sel(pt) of up to `cap` rows; -> (tensor, [task])."""
         feats, owner, used = [], [], 0
+        units = [[] for _ in range(nl)]
         rows = rows[:]
         rng.shuffle(rows)
         for r in rows:
@@ -161,16 +166,20 @@ def main():
             grab["on"] = False
             res_idx[0] = None
             feats.append(torch.stack(res_out, 1))  # [pts, nl, d]
+            for i in range(nl):
+                units[i].append(unit_out[i])
             owner += [r["task"]] * len(idx)
             used += 1
-        return (torch.cat(feats) if feats else torch.zeros(0, nl, 1)), owner
+        return (torch.cat(feats) if feats else torch.zeros(0, nl, 1)), owner, [torch.cat(u) for u in units]
 
-    P, Pt = collect(pos_rows, lambda pt: pt[2], a.rows_per_set, mu=True)
-    N, Nt = collect(neg_rows, lambda pt: (not pt[2]) and pt[1] >= a.stall_from, a.rows_per_set, mu=True)
+    P, Pt, PU = collect(pos_rows, lambda pt: pt[2], a.rows_per_set, mu=True)
+    N, Nt, NU = collect(neg_rows, lambda pt: (not pt[2]) and pt[1] >= a.stall_from, a.rows_per_set, mu=True)
     for h in hooks:
         h.remove()
     pf = torch.tensor([t in fit_tasks for t in Pt])
     nf = torch.tensor([t in fit_tasks for t in Nt])
+    # per layer: how much more each feed-forward unit fires before an edit than at a stalled turn (fit tasks)
+    unit_diff = [PU[i][pf].mean(0) - NU[i][nf].mean(0) for i in range(nl)]
     delta = P[pf].mean(0) - N[nf].mean(0)  # [nl, d]
     resid_norm = torch.cat([P[pf], N[nf]]).norm(dim=-1).mean(0)
 
@@ -245,6 +254,7 @@ def main():
         """One rank-1 factor pair (B [d], A [mlp]) for an edit spec.
         mode add:    dW = k * v a^T, a = mu/(mu.mu)          (adds k*v on the average token)
         mode ablate: dW = -k * u u^T W, u = unit(v)          (removes the layer's writes along v)
+        mode units:  dW[:, j] = k * u * |u.W[:, j]| on the top `units` units by attribution (see below)
         v = delta at `src` layer (default: the edited layer), sign flipped by `sign`; `topdims` keeps only the
         largest |v| coordinates."""
         L, k = int(e["layer"]), float(e.get("k", 1.0))
@@ -259,7 +269,17 @@ def main():
             return L, k * v, mu / (mu @ mu)
         u = v / v.norm()
         W = layers[L].mlp.down_proj.weight
-        return L, -k * u, (u.to(W.device).to(W.dtype) @ W).float().cpu()
+        align = (u.to(W.device).to(W.dtype) @ W).float().cpu()  # [mlp]: how each unit's output column points along u
+        if e.get("mode") == "units":
+            # unit-level edit (the post's form): the `units` units most responsible for the POS-NEG difference along
+            # u (activation difference x alignment) each get k * |alignment| added along u: units that push toward
+            # the edit push harder, units that push against it are turned around. dW[:, j] = k * u * |u.W[:, j]|.
+            attr = unit_diff[L] * align
+            top = attr.topk(int(e.get("units", 64))).indices
+            m = torch.zeros_like(align)
+            m[top] = 1.0
+            return L, k * u, align.abs() * m
+        return L, -k * u, align
 
     def run_cand(name, edits):
         saved, tensors, by_layer = [], {}, collections.defaultdict(list)
