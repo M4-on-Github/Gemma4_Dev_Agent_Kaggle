@@ -142,3 +142,32 @@ CI −11.12..−3.88**. No extension. The mechanism is the interim's: the adapte
   trained; the fold-B reading stands as written.
 - Tree `trees/e4b-sw-s9b` (as `e4b-sw-s9` with adapter `s9b`). Smoke, then `L-009b-e4b-s9b-d1..d4` on cdev2-79,
   all queued behind the smoke; the d1 kill gate is applied by hand and cancels d2-d4 unread if it fails.
+
+### L-009b E4B: killed at the draw-1 gate (2026-11-28)
+
+Smoke (68300) passed. d1 (68301): 79 rows, all served; **32 empty patches (bar 25): kill.** d2-d4 (68302-68304)
+were cancelled unread (d2 had 10 or more rows). No resolved count of d1 was looked at.
+- What the strip fixed: 9% of patches modify no existing file (s9: 77%); `write_file` 0.1 per task (s9: 5.1).
+- What is still wrong, per task in d1 against rcheck d1: `edit_file` fails 6.3 times and succeeds 1.3 (rcheck 2.1 and
+  1.9); `read_file` fails 3.7 times (0.2). 25 of the 32 empty tasks have no successful edit call. Mean task wall
+  120.7 s.
+
+**Cause, found in the data.** The harness shows less than the teacher saw: 150 lines per read and 5,000 characters
+per command. The converter cut the teacher's observations to those limits but kept its later actions, so many
+trained edits name an `old_string`, and many reads a path, that is nowhere in the context the row shows. Checked on
+the stripped set: 2,141 trajectories have such an edit and 505 more such a read, out of about 3,600. Those rows teach
+the model to write edit text and paths from nothing.
+
+## L-009c: grounded rows only (pre-registered 2026-11-28, before training)
+
+- **Data.** As L-009b, plus `--grounded`: a trajectory is kept only if every edit's `old_string` and every read
+  path occurs in the problem statement or in a tool response shown before it. 954 rows (31B layout, median 7 calls)
+  and 933 rows (E4B solver layout, median 6 calls) over 98-99 repositories.
+- **Mix.** Own resolved fold-A rows with `--cap-per-task 40`, so that they are not cut to 8 per task as in L-009b.
+- **Adapters.** `L-009c-se4`: 600 grounded rows + d5. `L-009c-s31`: 400 grounded rows + d2-fast. Settings as before.
+  The L-009b 31B training (68298, on ungrounded rows) was cancelled at step 44, unread and unevaluated.
+- **Readings.** As L-009b (training readings; smoke; d1 kill gate; fold-B decision over 4 draws, extension at +0.5,
+  promote at 8 draws with +1.0 and CI lower bound above -0.5).
+
+**Blind guess.** The E4B c-adapter passes the d1 gate: 60%; is within 1.5 of control: 45%; beats it by 1 on fold B:
+12%. The 31B c-adapter beats control: 15%.

@@ -222,6 +222,8 @@ def main():
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--no-create", action="store_true",
                    help="L-009b: strip created files and the commands that name them (the teacher's reproduce-script habit)")
+    p.add_argument("--grounded", action="store_true",
+                   help="L-009c: keep only trajectories whose edits and reads name text and paths already shown")
     p.add_argument("--need-source-edit", action="store_true", help="L-009b: require a successful edit_file")
     a = p.parse_args()
 
@@ -302,6 +304,30 @@ def main():
                         kept.append(st4)
                     why["stripped_steps"] += len(out) - len(kept)
                     out = kept
+                if a.grounded:
+                    # L-009c: the harness shows less than the teacher saw (150 lines per read, 5000 characters per
+                    # command), so some teacher actions name text or paths that are not in the converted context.
+                    # Training on those teaches guessing. Keep a trajectory only if every edit's old_string and every
+                    # read path occurs in what was shown before it.
+                    seen, bad_g = problem, None
+                    for _, t, args, resp in out:
+                        if t == "edit_file" and args["old_string"].strip() not in seen:
+                            bad_g = "edit"
+                            break
+                        if t == "read_file" and args["filepath"] not in seen:
+                            bad_g = "read"
+                            break
+                        try:
+                            d = json.loads(resp)
+                        except ValueError:
+                            d = {}
+                        seen += "\n" + str(d.get("content") or "") + "\n" + str(d.get("stdout") or "")
+                        seen += "\n" + str((d.get("details") or {}).get("stderr") or "")
+                        if t == "edit_file":
+                            seen += "\n" + args["new_string"]
+                    if bad_g:
+                        why["drop_ungrounded_" + bad_g] += 1
+                        continue
                 if a.need_source_edit and not any(t == "edit_file" and '"status": "ok"' in resp
                                                   for _, t, _, resp in out):
                     why["drop_no_source_edit"] += 1
