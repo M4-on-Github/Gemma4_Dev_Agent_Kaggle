@@ -1,0 +1,10 @@
+name: runner_c
+description: Starts solver c, hands in finished attempts and restarts it until two attempts agree.
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/runner_c.md
+tools:
+  - run_command
+  - submit_patch
+  - agent_tool:
+      config_path: sub_agents/solver_c.yaml
+generate_content_config: !include configs/sampling_root.yaml
