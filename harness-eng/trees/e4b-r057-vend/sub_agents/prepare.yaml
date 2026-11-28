@@ -1,0 +1,9 @@
+# harness-eng R-057 2026-11-28: adds stand-ins for two test-helper modules when they are absent (the R-056 command),
+#   run once before the first solve so the solver's own test runs and the graded tests can import them.
+name: prepare
+description: Prepares /workspace for testing with one fixed shell command. Takes one request string.
+model: gemma-4-e4b-it-qat-w4a16-ct
+instruction: !include ../prompts/prepare.md
+tools:
+  - run_command
+generate_content_config: !include ../configs/sampling_root.yaml
