@@ -297,3 +297,22 @@ From 2026-11-27 the work is on the weights, which the submission may carry as a 
    one-module adapter file is accepted.
 5. Upload window: Kaggle grading has taken 30-40 h and the deadline is 2026-12-02 23:59 UTC, so a candidate must
    be ready by about 2026-11-30. Any upload needs the user's approval file.
+
+## Desk check 2026-11-28: could a run of the existing tests catch a failing patch before it is handed in?
+
+Zero GPU, from the graded test output of the control draws (kfctl x8, rcheck x8) and each task's test patch.
+A failing patch is "checkable" when the graded run stops at a collection error that is not a missing new name, or
+fails a test the test patch does not touch. This is an upper bound: the agent does not know which test files are
+graded.
+
+| | 31B (295 failing patches) | E4B (536) |
+|---|---|---|
+| only new or changed tests fail (not checkable) | 62% | 50% |
+| collection error, not a missing new name (checkable) | 18% | 28% |
+| breaks a test the test patch does not touch (checkable) | 8% | 13% |
+| collection error on a new name the test needs | 8% | 7% |
+
+Selection simulation over the same draws (solves per 79): 31B one attempt 30.38; first non-empty of three 33.14;
+with the test gate 33.87; oracle of three 37.39. E4B 8.12; 8.45; 9.46; 12.79. Tasks solved in any of eight draws:
+43 of 79 (31B). So the gate is worth about +0.7 (31B) and +1.0 (E4B) as a selector on top of three attempts; its
+value as repair feedback is not measured.
